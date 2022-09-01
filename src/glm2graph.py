@@ -240,6 +240,6 @@ def glm2graph(file_path, edge_smoothing = False):
     return g.show("network.html")             
 
 if __name__ == "__main__":
-    glm2graph(sys.argv[1])
+    glm2graph(sys.argv[1],sys.argv[2])
 
 # glm2graph(path_to_file)
