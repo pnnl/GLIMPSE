@@ -11,11 +11,11 @@ g = Network(height="100%", width="100%", directed=True, heading="Power Grid Mode
 edge_types = ["overhead_line", "switch", "underground_line", "regulator","transformer"]
 node_types = ["load", "node", "meter", "inverter_dyn", "diesel_dg"]
 
-node_options = {"load": {"color": "#edf2f4", "shape": "circularImage", "image": "C:/Users/mend166/Desktop/MainProj/imgs/node.png"},
-                "node": {"color": "#4361ee", "shape": "circularImage", "image": "C:/Users/mend166/Desktop/MainProj/imgs/node.png"},
-                "meter": {"color": "#d90429", "shape": "circularImage", "image": "C:/Users/mend166/Desktop/MainProj/imgs/meter.jpg"},
-                "inverter_dyn": {"color": "#c8b6ff", "shape": "circularImage", "image": "C:/Users/mend166/Desktop/MainProj/imgs/inverter.jpg"},
-                "diesel_dg": {"color": "#fee440", "shape": "circularImage", "image": "C:/Users/mend166/Desktop/MainProj/imgs/dieselgen.jpg"}}
+node_options = {"load": {"color": "#edf2f4", "shape": "circularImage", "image": "/imgs/node.png"},
+                "node": {"color": "#4361ee", "shape": "circularImage", "image": "/imgs/node.png"},
+                "meter": {"color": "#d90429", "shape": "circularImage", "image": "/imgs/meter.jpg"},
+                "inverter_dyn": {"color": "#c8b6ff", "shape": "circularImage", "image": "/imgs/inverter.jpg"},
+                "diesel_dg": {"color": "#fee440", "shape": "circularImage", "image": "/imgs/dieselgen.jpg"}}
 
 edge_options = {"overhead_line": {"width": 4, "color": "#000000"},
                 "switch": {"width": 4, "color": "#3a0ca3"},
