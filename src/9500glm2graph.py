@@ -55,44 +55,90 @@ def glm2graph(file_path, hide_edges = False):
                 exit() #script will end if one or more of the includes files are not in the same path
             index += 1
             
-            for obj in objects:
-                obj_type = obj["name"]
-                attr = obj["attributes"]
-            
-                if obj_type in node_types:
-                    node_id = attr["name"]
-                    g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            attr = obj["attributes"]
+        
+            if obj_type in node_types:
+                node_id = attr["name"]
+                g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
 
-            for obj in objects:
-                obj_type = obj["name"]
-                attr = obj["attributes"]
+        # print(g.get_nodes())
+        
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            attr = obj["attributes"]
+        
+            if obj_type in edge_types:
+                edge_from = attr["from"]#.split(":")[1]
+                edge_to = attr["to"]#.split(":")[1]
+                g.add_edge(edge_from, edge_to, label = obj_type, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+            elif obj_type in node_types:
+                if obj_type == "capacitor":
+                    obj_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent, obj_id, dashes = True)   
+                elif obj_type == "triplex_meter":
+                    obj_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent, obj_id, dashes = True) 
+                elif obj_type == "triplex_load":
+                    obj_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent, obj_id, dashes = True)
+    
+    with open (included_files[1], "r") as glm_file:
+        data = glm.load(glm_file)
+        objects = data["objects"]
+        
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            attr = obj["attributes"]
             
-                if obj_type in edge_types:
-                    edge_from = attr["from"]
-                    edge_to = attr["to"]
-                    g.add_edge(edge_from, edge_to, title = f"Object Type: {obj_type}\n" + getTitle(attr))
-                elif obj_type in node_types:
-                    if obj_type == "capacitor":
-                        obj_id = attr["name"]
-                        parent = attr["parent"]
-                        g.add_edge(parent, obj_id, dashes = True)   
-                    elif obj_type == "triplex_meter":
-                        obj_id = attr["name"]
-                        parent = attr["parent"]
-                        g.add_edge(parent, obj_id, dashes = True) 
-                    elif obj_type == "triplex_load":
-                        obj_id = attr["name"]
-                        parent = attr["parent"]
-                        g.add_edge(parent, obj_id, dashes = True)
-                    
-                 
-        g.toggle_hide_edges_on_drag(hide_edges)
-        g.barnes_hut()
-        # g.toggle_physics(False)        
-        g.show("9500Graph.html")
+            if obj_type in node_types:
+                node_id = attr["name"]
+                g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+        
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            # print(obj_type)
+            attr = obj["attributes"]
+            
+            if obj_type in node_types:
+                node_id = attr["name"]
+                parent = attr["parent"]
+                g.add_edge(parent,node_id, dashes = True)
+        
+    with open (included_files[0], "r") as glm_file:
+        data = glm.load(glm_file)
+        objects = data["objects"]
+        
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            attr = obj["attributes"]
+            # print(attr)
+            if obj_type in node_types:
+                node_id = attr["name"]
+                g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+        
+        for obj in objects:
+            obj_type = obj["name"].split(":")[0]
+            attr = obj["attributes"]
+            
+            if obj_type in node_types:
+                node_id = attr["name"]
+                parent = attr["parent"]
+                g.add_edge(parent,node_id, dashes = True)
+                                     
+    g.toggle_hide_edges_on_drag(hide_edges)
+    g.barnes_hut()
+    # g.toggle_physics(False)
+    print(g.num_edges(), g.num_nodes())
+    # print(g.get_edges())
+    g.show("9500Graph.html")
 
-if __name__ == "__main__":
-    glm2graph(sys.argv[1],sys.argv[2])
-# glm2graph("C:\\Users\\mend166\\Desktop\\glm_viz\\data\\9500\\IEEE_9500.glm", hide_edges=True)
+# if __name__ == "__main__":
+#     glm2graph(sys.argv[1],sys.argv[2])
+glm2graph("data\\9500\\IEEE_9500.glm", hide_edges=True)
                     
                     

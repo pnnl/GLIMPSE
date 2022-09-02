@@ -62,7 +62,7 @@ object diesel_dg {
 }
 
 object diesel_dg {
-  parent "m1089-lng1_dgmtr";
+  name "m1089-lng1_dgmtr";
   parent "m1089-lng1";
   Gen_type CONSTANT_PQ;
   Rated_VA 2250000.00;
