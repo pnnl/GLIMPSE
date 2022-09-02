@@ -88,9 +88,11 @@ def glm2graph(file_path, hide_edges = False):
                  
         g.toggle_hide_edges_on_drag(hide_edges)
         g.barnes_hut()
-        g.toggle_physics(False)           
+        # g.toggle_physics(False)        
         g.show("9500Graph.html")
-        
-glm2graph("C:\\Users\\mend166\\Desktop\\glm_viz\\data\\9500\\IEEE_9500.glm", hide_edges=True)
+
+if __name__ == "__main__":
+    glm2graph(sys.argv[1],sys.argv[2])
+# glm2graph("C:\\Users\\mend166\\Desktop\\glm_viz\\data\\9500\\IEEE_9500.glm", hide_edges=True)
                     
                     
