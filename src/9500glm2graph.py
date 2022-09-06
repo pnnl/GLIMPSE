@@ -1,4 +1,3 @@
-from turtle import width
 from pyvis.network import Network
 import os
 import sys
@@ -27,12 +26,12 @@ def glm2graph(file_path, hide_edges = False):
     g = Network(height="100%", width="100%", directed=True, heading="Power Grid Model Visualization",
                 bgcolor="white", font_color="black")
     
-    edge_types = ["overhead_line", "switch", "underground_line","series_reactor", "triplex_line", "regulator","transformer"]
-    node_types = ["load", "triplex_load", "node", "triplex_node", "meter", "triplex_meter","inverter", "diesel_dg", "substation"]
+    edge_types = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
+    node_types = ["load", "triplex_load","capacitor", "node", "triplex_node", "substation", "meter", "triplex_meter","inverter", "diesel_dg"]
     
     included_files = []
     
-    path = file_path.replace("\\", "/") #replace the path's forward slashes with backward slashes for python
+    path = file_path.replace("\\", "/") #replace the path's backward slashes with forward slashes for python
     parent_path = pathlib.Path(file_path).parent.resolve() #get parent directory of the file
     
     with open (file_path, "r") as glm_file:
@@ -54,25 +53,54 @@ def glm2graph(file_path, hide_edges = False):
                 print("Include files are not in the same path.")
                 exit() #script will end if one or more of the includes files are not in the same path
             index += 1
-            
+        
+        count = 0
+        
+        #gather all nodes from file    
         for obj in objects:
             obj_type = obj["name"].split(":")[0]
             attr = obj["attributes"]
-        
+            
             if obj_type in node_types:
                 node_id = attr["name"]
+                # print(node_id)
                 g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
-
-        # print(g.get_nodes())
+                count +=1
+    
+    #gather all nodes from included files
+    for incl_file in included_files:
+            with open (incl_file, "r") as glm_file:
+                data = glm.load(glm_file)
+                objects = data["objects"]
+                
+                for obj in objects:
+                    obj_type = obj["name"].split(":")[0]
+                    attr = obj["attributes"]
+                    
+                    if obj_type in node_types:
+                        node_id = attr["name"]
+                        # print(node_id)
+                        g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+                        count +=1
+    print(count)
+    #create all edges from the passed file
+    with open (path, "r") as glm_file:
+        data = glm.load(glm_file)
+        includes = data["includes"]
+        objects = data["objects"]
         
         for obj in objects:
             obj_type = obj["name"].split(":")[0]
             attr = obj["attributes"]
-        
             if obj_type in edge_types:
-                edge_from = attr["from"]#.split(":")[1]
-                edge_to = attr["to"]#.split(":")[1]
-                g.add_edge(edge_from, edge_to, label = obj_type, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+                
+                print(obj_type)
+                edge_from = attr["from"].split(":")[1] if ":" in attr["from"] else attr["from"]
+                edge_to = attr["to"].split(":")[1] if ":" in attr["to"] else attr["to"]
+                g.add_edge(edge_from, edge_to, title = f"Object Type: {obj_type}\n" + getTitle(attr))
+                # print("edge added\n")
+            
+            #create dashed edges for nodes that dont have edges... just parents   
             elif obj_type in node_types:
                 if obj_type == "capacitor":
                     obj_id = attr["name"]
@@ -86,59 +114,30 @@ def glm2graph(file_path, hide_edges = False):
                     obj_id = attr["name"]
                     parent = attr["parent"]
                     g.add_edge(parent, obj_id, dashes = True)
-    
-    with open (included_files[1], "r") as glm_file:
-        data = glm.load(glm_file)
-        objects = data["objects"]
-        
-        for obj in objects:
-            obj_type = obj["name"].split(":")[0]
-            attr = obj["attributes"]
+                elif obj_type == "meter":
+                    obj_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent, obj_id, dashes = True)
+
+    #Create all edges from included files. All edges are dashes as these edges are parent - child 
+    for incl_file in included_files:
+        with open (incl_file,"r") as glm_file:
+            data = glm.load(glm_file)
+            objects = data["objects"]
             
-            if obj_type in node_types:
-                node_id = attr["name"]
-                g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
-        
-        for obj in objects:
-            obj_type = obj["name"].split(":")[0]
-            # print(obj_type)
-            attr = obj["attributes"]
+            for obj in objects:
+                obj_type = obj["name"].split(":")[0]
+                attr = obj["attributes"]
+                
+                if obj_type in node_types:
+                    node_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent,node_id, dashes = True)
             
-            if obj_type in node_types:
-                node_id = attr["name"]
-                parent = attr["parent"]
-                g.add_edge(parent,node_id, dashes = True)
-        
-    with open (included_files[0], "r") as glm_file:
-        data = glm.load(glm_file)
-        objects = data["objects"]
-        
-        for obj in objects:
-            obj_type = obj["name"].split(":")[0]
-            attr = obj["attributes"]
-            # print(attr)
-            if obj_type in node_types:
-                node_id = attr["name"]
-                g.add_node(node_id, title = f"Object Type: {obj_type}\n" + getTitle(attr))
-        
-        for obj in objects:
-            obj_type = obj["name"].split(":")[0]
-            attr = obj["attributes"]
-            
-            if obj_type in node_types:
-                node_id = attr["name"]
-                parent = attr["parent"]
-                g.add_edge(parent,node_id, dashes = True)
-                                     
     g.toggle_hide_edges_on_drag(hide_edges)
-    g.barnes_hut()
-    # g.toggle_physics(False)
     print(g.num_edges(), g.num_nodes())
-    # print(g.get_edges())
     g.show("9500Graph.html")
 
 # if __name__ == "__main__":
-#     glm2graph(sys.argv[1],sys.argv[2])
-glm2graph("data\\9500\\IEEE_9500.glm", hide_edges=True)
-                    
-                    
+    # glm2graph(sys.argv[1],sys.argv[2])
+glm2graph("data\\IEEE-123_Dynamic_fixed.glm", hide_edges=True)
