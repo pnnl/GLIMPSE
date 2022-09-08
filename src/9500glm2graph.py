@@ -175,6 +175,6 @@ def glm2graph(file_path, hide_edges = False):
                     """)
     g.show("9500Graph.html")
 
-# if __name__ == "__main__":
-#     glm2graph(sys.argv[1],sys.argv[2])
-glm2graph("data\\9500\\IEEE_9500.glm", hide_edges=True)
+if __name__ == "__main__":
+    glm2graph(sys.argv[1],sys.argv[2])
+# glm2graph("data\\9500\\IEEE_9500.glm", hide_edges=True)
