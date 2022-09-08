@@ -1,5 +1,3 @@
-from email.mime import image
-from platform import node
 from pyvis.network import Network
 import os
 import sys
@@ -14,7 +12,7 @@ def getTitle(attributes):
 
 def glm2graph(file_path, hide_edges = False):
     """_summary_
-        This method will take a file path containing a IEEE_9500 glm file and its includes files
+        This method will take a file path containing a glm file and its includes files
         and generate a static html file contating the visualisation of the glm file.
 
     Args:
@@ -25,7 +23,7 @@ def glm2graph(file_path, hide_edges = False):
         html file: The method will generate a html file that will automatically open in 
         a browser displaying the generated graph. 
     """
-    g = Network(height="100%", width="65%", directed=True, heading="Power Grid Model Visualization",
+    g = Network(height="100%", width="100%", directed=True, heading="Power Grid Model Visualization",
                 bgcolor="white", font_color="black")
                         
     edge_types = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
@@ -52,7 +50,7 @@ def glm2graph(file_path, hide_edges = False):
                     "transformer": {"width": 4, "color": "#00FF00"}}
     
     included_files = []
-    # nodes = []
+
     path = file_path.replace("\\", "/") #replace the path's backward slashes with forward slashes for python
     parent_path = pathlib.Path(file_path).parent.resolve() #get parent directory of the file
     
@@ -89,7 +87,6 @@ def glm2graph(file_path, hide_edges = False):
                                     borderWidth = node_options[obj_type]["borderWidth"],
                                     shape = node_options[obj_type]["shape"], image = node_options[obj_type]["image"],
                                     title = f"Object Type: {obj_type}\n" + getTitle(attr))
-                # nodes.append(node_id)
     
     #gather all nodes from included files
     for incl_file in included_files:
@@ -107,7 +104,6 @@ def glm2graph(file_path, hide_edges = False):
                                             borderWidth = node_options[obj_type]["borderWidth"],
                                             shape = node_options[obj_type]["shape"], image = node_options[obj_type]["image"],
                                             title = f"Object Type: {obj_type}\n" + getTitle(attr))
-                        # nodes.append(node_id)
 
     #create all edges from the passed file
     with open (path, "r") as glm_file:
@@ -140,7 +136,7 @@ def glm2graph(file_path, hide_edges = False):
                     parent = attr["parent"]
                     g.add_edge(parent, obj_id, dashes = True)
                 elif obj_type == "meter":
-                    obj_id = attr["name"]
+                    obj_id = attr["name"]   #Having this conflicts with the meters in the 123 file
                     parent = attr["parent"]
                     g.add_edge(parent, obj_id, dashes = True)
 
@@ -158,16 +154,25 @@ def glm2graph(file_path, hide_edges = False):
                     node_id = attr["name"]
                     parent = attr["parent"]
                     g.add_edge(parent,node_id, dashes = True)
-            
-    g.toggle_hide_edges_on_drag(hide_edges)
-    # for n in nodes:
-    #     if n in g.get_nodes():
-    #         print(n)
-    #     else:
-    #         print(f"{n} Is not in graph")
-    #         exit()
-    g.toggle_physics(False)
-    g.show_buttons(filter_ = ["physics"])
+      
+    #These options were generated from the show buttons function in pyvis after configuring them      
+    g.set_options("""const options = {
+                        "interaction": {
+                            "hideEdgesOnDrag": true,
+                            "hideEdgesOnZoom": true
+                        },
+                        "physics": {
+                            "enabled": true,
+                            "barnesHut": {
+                            "gravitationalConstant": -30000,
+                            "centralGravity": 0,
+                            "springConstant": 0.18
+                            },
+                            "maxVelocity": 150,
+                            "minVelocity": 0.75
+                        }
+                        }
+                    """)
     g.show("9500Graph.html")
 
 # if __name__ == "__main__":
