@@ -46,7 +46,7 @@ def glm2graph(file_path):
         html file: The method will generate a html file that will automatically open in 
         a browser displaying the generated graph. 
     """
-    g = Network(height="100%", width="65%", directed=True, heading="Power Grid Model Visualization",
+    g = Network(height="100%", width="100%", directed=True, heading="Power Grid Model Visualization",
                 bgcolor="white", font_color="black")
                         
     edge_types = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
