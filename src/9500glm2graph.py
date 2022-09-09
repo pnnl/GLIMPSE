@@ -4,13 +4,36 @@ import sys
 import pathlib
 import glm
 
+#This method genrates a title containing all the attributes belonging to an edge or node
 def getTitle(attributes):
     titleStr = ""
     for k , v in attributes.items():
         titleStr = titleStr + str(k) + ": " + str(v) + "\n"
     return titleStr
 
-def glm2graph(file_path, hide_edges = False):
+#This method creates dashed edges between parent-child connections
+def setDashedEdges(g, obj_type, attr):
+    try:
+        if obj_type == "capacitor":
+            obj_id = attr["name"]
+            parent = attr["parent"]
+            g.add_edge(parent, obj_id, dashes = True)   
+        elif obj_type == "triplex_meter":
+            obj_id = attr["name"]
+            parent = attr["parent"]
+            g.add_edge(parent, obj_id, dashes = True) 
+        elif obj_type == "triplex_load":
+            obj_id = attr["name"]
+            parent = attr["parent"]
+            g.add_edge(parent, obj_id, dashes = True)
+        elif obj_type == "meter":
+            obj_id = attr["name"]   
+            parent = attr["parent"]
+            g.add_edge(parent, obj_id, dashes = True)
+    except:
+        pass
+
+def glm2graph(file_path):
     """_summary_
         This method will take a file path containing a glm file and its includes files
         and generate a static html file contating the visualisation of the glm file.
@@ -23,7 +46,7 @@ def glm2graph(file_path, hide_edges = False):
         html file: The method will generate a html file that will automatically open in 
         a browser displaying the generated graph. 
     """
-    g = Network(height="100%", width="100%", directed=True, heading="Power Grid Model Visualization",
+    g = Network(height="100%", width="65%", directed=True, heading="Power Grid Model Visualization",
                 bgcolor="white", font_color="black")
                         
     edge_types = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
@@ -114,6 +137,7 @@ def glm2graph(file_path, hide_edges = False):
         for obj in objects:
             obj_type = obj["name"].split(":")[0]
             attr = obj["attributes"]
+            
             if obj_type in edge_types:
                 edge_from = attr["from"].split(":")[1] if ":" in attr["from"] else attr["from"]
                 edge_to = attr["to"].split(":")[1] if ":" in attr["to"] else attr["to"]
@@ -121,24 +145,8 @@ def glm2graph(file_path, hide_edges = False):
                 g.add_edge(edge_from, edge_to, color = edge_options[obj_type]["color"],
                                                width = edge_options[obj_type]["width"],
                                                title = f"Object Type: {obj_type}\n" + getTitle(attr))
-                # print("edge added\n")
             elif obj_type in node_types:#create dashed edges for nodes that dont have edges... just parents 
-                if obj_type == "capacitor":
-                    obj_id = attr["name"]
-                    parent = attr["parent"]
-                    g.add_edge(parent, obj_id, dashes = True)   
-                elif obj_type == "triplex_meter":
-                    obj_id = attr["name"]
-                    parent = attr["parent"]
-                    g.add_edge(parent, obj_id, dashes = True) 
-                elif obj_type == "triplex_load":
-                    obj_id = attr["name"]
-                    parent = attr["parent"]
-                    g.add_edge(parent, obj_id, dashes = True)
-                elif obj_type == "meter":
-                    obj_id = attr["name"]   #Having this conflicts with the meters in the 123 file
-                    parent = attr["parent"]
-                    g.add_edge(parent, obj_id, dashes = True)
+                setDashedEdges(g,obj_type,attr)
 
     #Create all edges from included files. All edges are dashes as these edges are parent - child 
     for incl_file in included_files:
@@ -155,8 +163,18 @@ def glm2graph(file_path, hide_edges = False):
                     parent = attr["parent"]
                     g.add_edge(parent,node_id, dashes = True)
       
-    #These options were generated from the show buttons function in pyvis after configuring them      
+    #These options were generated from the show buttons function in pyvis after configuring them
     g.set_options("""const options = {
+                        "configure": {
+                            "enabled": true,
+                            "filter": "physics"
+                        },
+                        "edges": {
+                            "smooth": {
+                                "enabled": true,
+                                "type": "dynamic"
+                            }
+                        },
                         "interaction": {
                             "hideEdgesOnDrag": true,
                             "hideEdgesOnZoom": true
@@ -176,5 +194,5 @@ def glm2graph(file_path, hide_edges = False):
     g.show("9500Graph.html")
 
 if __name__ == "__main__":
-    glm2graph(sys.argv[1],sys.argv[2])
-# glm2graph("data\\9500\\IEEE_9500.glm", hide_edges=True)
+    glm2graph(sys.argv[1])
+# glm2graph("data\\IEEE-123_Dynamic_fixed.glm")
