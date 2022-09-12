@@ -53,16 +53,16 @@ def glm2graph(file_path):
     node_types = ["load", "triplex_load","capacitor", "node", "triplex_node", "substation", "meter", "triplex_meter","inverter", "diesel_dg"]
                     #0             #1275        #10     #2751       #2550           #1          #15         #177        #180            #12
     
-    node_options = {"load": {"color": "#edf2f4", "borderWidth": 6, "shape": "circularImage", "image": "/imgs/node.png"},
-                    "triplex_load": {"color": "#ffea00", "borderWidth": 6, "shape": "circularImage","image": "/imgs/node.png"},
-                    "capacitor": {"color": "#283618", "borderWidth": 6, "shape": "circularImage","image": "/imgs/capacitor.webp"},
-                    "triplex_node": {"color": "#003566", "borderWidth": 6, "shape": "circularImage","image": "/imgs/node.png"},
-                    "substation": {"color": "#fca311", "borderWidth": 6, "shape": "circularImage","image": "/imgs/substation.jpg"},
-                    "triplex_meter": {"color": "#072ac8", "borderWidth": 6, "shape": "circularImage","image": "/imgs/meter.jpg"},
-                    "node": {"color": "#4361ee", "borderWidth": 6, "shape": "circularImage", "image": "/imgs/node.png"},
-                    "meter": {"color": "#d90429", "borderWidth": 6, "shape": "circularImage", "image": "/imgs/meter.jpg"},
-                    "inverter": {"color": "#c8b6ff", "borderWidth": 6, "shape": "circularImage", "image": "/imgs/inverter.jpg"},
-                    "diesel_dg": {"color": "#fee440", "borderWidth": 6, "shape": "circularImage", "image": "/imgs/dieselgen.jpg"}}
+    node_options = {"load": {"color": "#edf2f4", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/node.png"},
+                    "triplex_load": {"color": "#ffea00", "borderWidth": 6, "shape": "circularImage","image": "./imgs/node.png"},
+                    "capacitor": {"color": "#283618", "borderWidth": 6, "shape": "circularImage","image": "./imgs/capacitor.webp"},
+                    "triplex_node": {"color": "#003566", "borderWidth": 6, "shape": "circularImage","image": "./imgs/node.png"},
+                    "substation": {"color": "#fca311", "borderWidth": 6, "shape": "circularImage","image": "./imgs/substation.jpg"},
+                    "triplex_meter": {"color": "#072ac8", "borderWidth": 6, "shape": "circularImage","image": "./imgs/meter.jpg"},
+                    "node": {"color": "#4361ee", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/node.png"},
+                    "meter": {"color": "#d90429", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/meter.jpg"},
+                    "inverter": {"color": "#c8b6ff", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/inverter.jpg"},
+                    "diesel_dg": {"color": "#fee440", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/dieselgen.jpg"}}
 
     edge_options = {"overhead_line": {"width": 4, "color": "#000000"},
                     "switch": {"width": 4, "color": "#3a0ca3"},
@@ -162,7 +162,24 @@ def glm2graph(file_path):
                     node_id = attr["name"]
                     parent = attr["parent"]
                     g.add_edge(parent,node_id, dashes = True)
-      
+    
+    #Legend Nodes and Edges
+    # x = -20000
+    # y = -20000
+    # step = 1250
+    # g.add_node(1000, x = x, y = y, 
+    #                  label="Legend Node", 
+    #                  fixed = False,
+    #                  size = 500, 
+    #                  physics = False,
+    #                  color = node_options["node"]["color"])
+    # g.add_node(1001, x = x, y = y + step, 
+    #                  label= "Legend Node", 
+    #                  fixed = False,
+    #                  size = 500,
+    #                  physics = False,
+    #                  color = node_options["load"]["color"])
+    
     #These options were generated from the show buttons function in pyvis after configuring them
     g.set_options("""const options = {
                         "configure": {
@@ -193,6 +210,6 @@ def glm2graph(file_path):
                     """)
     g.show("9500Graph.html")
 
-if __name__ == "__main__":
-    glm2graph(sys.argv[1])
-# glm2graph("data\\IEEE-123_Dynamic_fixed.glm")
+# if __name__ == "__main__":
+#     glm2graph(sys.argv[1])
+glm2graph("data\\9500\\IEEE_9500.glm")

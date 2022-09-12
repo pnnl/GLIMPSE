@@ -1,7 +1,7 @@
 import glm
 import matplotlib.pyplot as plt
 
-file = "/Users/mend166/Desktop/MainProj/data/IEEE-123_Dynamic_fixed.glm"
+file = "./data/IEEE-123_Dynamic_fixed.glm"
 
 data = glm.load(file)
 objects = data["objects"]
