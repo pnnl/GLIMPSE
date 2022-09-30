@@ -175,4 +175,4 @@ def glm2graph(file_path):
 
 # if __name__ == "__main__":
 #     glm2graph(sys.argv[1])
-glm2graph("C:\\Users\\mend166\\Desktop\\glm_viz\\data\\IEEE-123_Dynamic_fixed.glm")
+glm2graph("data\\IEEE-123_Dynamic_fixed.glm")
