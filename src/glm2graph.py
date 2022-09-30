@@ -11,28 +11,6 @@ def getTitle(attributes):
         titleStr = titleStr + str(k) + ": " + str(v) + "\n"
     return titleStr
 
-#This method creates dashed edges between parent-child connections
-def setDashedEdges(g, obj_type, attr):
-    try:
-        if obj_type == "capacitor":
-            obj_id = attr["name"]
-            parent = attr["parent"]
-            g.add_edge(parent, obj_id, dashes = True)   
-        elif obj_type == "triplex_meter":
-            obj_id = attr["name"]
-            parent = attr["parent"]
-            g.add_edge(parent, obj_id, dashes = True) 
-        elif obj_type == "triplex_load":
-            obj_id = attr["name"]
-            parent = attr["parent"]
-            g.add_edge(parent, obj_id, dashes = True)
-        elif obj_type == "meter":
-            obj_id = attr["name"]   
-            parent = attr["parent"]
-            g.add_edge(parent, obj_id, dashes = True)
-    except:
-        pass
-
 def glm2graph(file_path):
     """_summary_
         This method will take a file path containing a glm file and its includes files
@@ -46,13 +24,13 @@ def glm2graph(file_path):
         html file: The method will generate a html file that will automatically open in 
         a browser displaying the generated graph. 
     """
-    g = Network(height="100%", width="100%", directed=True, heading="Power Grid Model Visualization",
+    g = Network(height = "100%",width="100%", heading="Power Grid Model Visualizaiton",
                 bgcolor="white", font_color="black")
                         
     edge_types = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
-    node_types = ["load", "triplex_load","capacitor", "node", "triplex_node", "substation", "meter", "triplex_meter","inverter", "diesel_dg"]
-                    #0             #1275        #10     #2751       #2550           #1          #15         #177        #180            #12
-    
+    node_types = ["load", "triplex_load","capacitor", "node", "triplex_node", "substation", "meter", "triplex_meter","inverter", "diesel_dg"]  
+    parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"]
+
     node_options = {"load": {"color": "#edf2f4", "borderWidth": 6, "shape": "circularImage", "image": "./imgs/node.png"},
                     "triplex_load": {"color": "#ffea00", "borderWidth": 6, "shape": "circularImage","image": "./imgs/node.png"},
                     "capacitor": {"color": "#283618", "borderWidth": 6, "shape": "circularImage","image": "./imgs/capacitor.webp"},
@@ -75,7 +53,6 @@ def glm2graph(file_path):
     included_files = []
 
     path = file_path.replace("\\", "/") #replace the path's backward slashes with forward slashes for python
-    parent_path = pathlib.Path(file_path).parent.resolve() #get parent directory of the file
     
     with open (file_path, "r") as glm_file:
         data = glm.load(glm_file)
@@ -96,8 +73,6 @@ def glm2graph(file_path):
                 print("Include files are not in the same path.")
                 exit() #script will end if one or more of the includes files are not in the same path
             index += 1
-        
-        count = 0
         
         #gather all nodes from file    
         for obj in objects:
@@ -145,10 +120,15 @@ def glm2graph(file_path):
                 g.add_edge(edge_from, edge_to, color = edge_options[obj_type]["color"],
                                                width = edge_options[obj_type]["width"],
                                                title = f"Object Type: {obj_type}\n" + getTitle(attr))
-            elif obj_type in node_types:#create dashed edges for nodes that dont have edges... just parents 
-                setDashedEdges(g,obj_type,attr)
+            elif obj_type in parent_child_edge_types:#create parent - child edges 
+                try:
+                    node_id = attr["name"]
+                    parent = attr["parent"]
+                    g.add_edge(parent,node_id)
+                except:
+                    pass
 
-    #Create all edges from included files. All edges are dashes as these edges are parent - child 
+    #Create all edges from included files are parent - child 
     for incl_file in included_files:
         with open (incl_file,"r") as glm_file:
             data = glm.load(glm_file)
@@ -161,24 +141,7 @@ def glm2graph(file_path):
                 if obj_type in node_types:
                     node_id = attr["name"]
                     parent = attr["parent"]
-                    g.add_edge(parent,node_id, dashes = True)
-    
-    #Legend Nodes and Edges
-    # x = -20000
-    # y = -20000
-    # step = 1250
-    # g.add_node(1000, x = x, y = y, 
-    #                  label="Legend Node", 
-    #                  fixed = False,
-    #                  size = 500, 
-    #                  physics = False,
-    #                  color = node_options["node"]["color"])
-    # g.add_node(1001, x = x, y = y + step, 
-    #                  label= "Legend Node", 
-    #                  fixed = False,
-    #                  size = 500,
-    #                  physics = False,
-    #                  color = node_options["load"]["color"])
+                    g.add_edge(parent,node_id)
     
     #These options were generated from the show buttons function in pyvis after configuring them
     g.set_options("""const options = {
@@ -208,8 +171,8 @@ def glm2graph(file_path):
                         }
                         }
                     """)
-    g.show("9500Graph.html")
+    g.show("Graph.html")
 
 # if __name__ == "__main__":
 #     glm2graph(sys.argv[1])
-glm2graph("data\\9500\\IEEE_9500.glm")
+glm2graph("C:\\Users\\mend166\\Desktop\\glm_viz\\data\\IEEE-123_Dynamic_fixed.glm")
