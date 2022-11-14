@@ -1,0 +1,55 @@
+.App {
+  text-align: center;
+}
+
+.visDiv{
+  height: 100%;
+  width: 100%;
+}
+
+h1 {
+  text-align: center;
+}
+
+.visLegend {
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  float: left;
+  height: 75vh;
+  width: 55vh;
+}
+
+.mainNetwork {
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  border: 1px solid lightgrey;
+  border-radius: 5px;
+  float: left;
+  height: 75vh;
+  width: 150vh;
+}
+
+ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+li {
+  color: white;
+  float: left;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+  border-right: 1px solid rgb(71, 73, 76);
+}
+
+li:last-child {
+  border-right: none;
+}
+
+li:hover{
+  background-color: #b25a00;
+}
