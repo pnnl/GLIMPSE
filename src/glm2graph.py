@@ -106,7 +106,6 @@ def glm2graph(file_path):
     #create all edges from the passed file
     with open (path, "r") as glm_file:
         data = glm.load(glm_file)
-        includes = data["includes"]
         objects = data["objects"]
         
         for obj in objects:
