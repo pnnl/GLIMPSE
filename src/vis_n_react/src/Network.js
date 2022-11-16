@@ -47,15 +47,26 @@ const options = {
     navigationButtons: true
   },
   physics: {
-    enabled: true,
     barnesHut: {
-      gravitationalConstant: -30000,
+      theta: 0.5,
+      gravitationalConstant: -15000,
       centralGravity: 0,
-      springConstant: 0.18
+      springLength: 230,
+      springConstant: 0.18,
+      damping: 0.09,
+      avoidOverlap: 0
     },
     maxVelocity: 150,
-    minVelocity: 0.75
-  }
+    minVelocity: 0.75,
+    solver: 'barnesHut',
+    stabilization: {
+      enabled: true,
+      iterations: 2000,
+      updateInterval: 100,
+      onlyDynamicEdges: false,
+      fit: true
+    },
+  },
 };
 const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
 const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
@@ -159,10 +170,30 @@ const Graph = () => {
   useEffect(() =>{
     glmNetwork = new Network(container.current, data, options);
 
+    glmNetwork.on("stabilizationProgress", function (params) {
+      var maxWidth = 496;
+      var minWidth = 20;
+      var widthFactor = params.iterations / params.total;
+      var width = Math.max(minWidth, maxWidth * widthFactor);
+
+      document.getElementById("bar").style.width = width + "px";
+      document.getElementById("text").innerText =
+        Math.round(widthFactor * 100) + "%";
+    });
+    glmNetwork.once("stabilizationIterationsDone", function () {
+      document.getElementById("text").innerText = "100%";
+      document.getElementById("bar").style.width = "496px";
+      document.getElementById("loadingBar").style.opacity = 0;
+      // really clean the dom element
+      setTimeout(function () {
+        document.getElementById("loadingBar").style.display = "none";
+      }, 500);
+    });
   }, [container, data]);
 
   return (
     <>
+      <div id='wrapper'>
       <SearchBar 
         data = {data.nodes} 
         reset = {Reset} 
@@ -170,8 +201,18 @@ const Graph = () => {
         prev = {Prev}
         next = {Next}
       />
-      <div className='mainNetwork' ref={container} />
-      <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
+        <div className='mainNetwork' ref={container} />
+        <div id="loadingBar">
+          <div class="outerBorder">
+            <div id="text">0%</div>
+              <div id="border">
+                <div id="bar"></div>
+              </div>
+            </div>
+        </div>
+        <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
+      </div>
+      
     </>
   );
 }
