@@ -3,7 +3,6 @@ import React, {useState} from "react";
 const SearchBar = (props) =>{
 
     const nodes = props.data;
-    const prevBtn = document.getElementById("btn-prev");
     const [node, setNode] = useState("");
     const handleChange = (e) =>
     {
@@ -22,11 +21,6 @@ const SearchBar = (props) =>{
         {
             alert(node + " is not in the graph.")
         }
-    }
-
-    const ready = (e) =>
-    {
-        prevBtn.disabled = true;
     }
 
     const handleReset = (e) =>
@@ -49,7 +43,7 @@ const SearchBar = (props) =>{
 
     return (
         <>
-            <form onLoad={ready} onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit}>
                 <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
                 <button type="submit" onSubmit={handleSubmit}>Find</button>
                 <button id='btn-reset' onClick={handleReset}>Reset</button>

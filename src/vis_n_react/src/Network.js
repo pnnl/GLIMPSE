@@ -15,7 +15,7 @@ import invertersData from './data/IEEE-123_Inverters_fixed.json';
 import dieselsData from './data/IEEE-123_Diesels_fixed.json';
 
 var glmNetwork = null;
-var nxt_prev = 0;
+var counter = -1;
 const options = {
   edges: {
     smooth: {
@@ -209,7 +209,8 @@ function Reset() {
     }
   });
 
-  nxt_prev = 0;
+  glmNetwork.
+  counter = 0;
 }
 
 function Prev()
@@ -229,8 +230,13 @@ function Prev()
       prev.push(n.id)
     }
   });
-  nxt_prev--;
-  glmNetwork.focus(prev[nxt_prev], options)
+  
+  counter--;
+  if(counter < 0)
+  {
+    counter = prev.length - 1;
+  }
+  glmNetwork.focus(prev[counter], options)
 }
 
 function Next()
@@ -250,8 +256,16 @@ function Next()
     }
   });
 
-  nxt_prev++;
-  glmNetwork.focus(nxt[nxt_prev], options)
+  counter++;
+  if(counter >= nxt.length)
+  {
+    counter = 0;
+    glmNetwork.focus(nxt[counter], options)
+  }
+  else
+  {
+    glmNetwork.focus(nxt[counter], options)
+  }
   
 }
 
