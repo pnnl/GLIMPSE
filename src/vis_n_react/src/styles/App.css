@@ -11,6 +11,16 @@ h1 {
   text-align: center;
 }
 
+#form-wrapper{
+  /* border: 1px solid black; */
+  width: 205vh;
+  height: 3.5vh;
+}
+
+#form-div{
+  float: right;
+}
+
 .visLegend {
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   border: 1px solid lightgrey;

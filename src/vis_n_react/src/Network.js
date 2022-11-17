@@ -180,6 +180,7 @@ const Graph = () => {
       document.getElementById("text").innerText =
         Math.round(widthFactor * 100) + "%";
     });
+    
     glmNetwork.once("stabilizationIterationsDone", function () {
       document.getElementById("text").innerText = "100%";
       document.getElementById("bar").style.width = "496px";
@@ -212,7 +213,6 @@ const Graph = () => {
         </div>
         <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
       </div>
-      
     </>
   );
 }
@@ -308,7 +308,6 @@ function Next()
   {
     glmNetwork.focus(nxt[counter], options)
   }
-  
 }
 
 function NodeFocus(nodeID)
@@ -368,7 +367,6 @@ function HighlightEdges(edgeID)
       data.edges.update(e);
     }
   });
-
 }
 
 function getTitle(attributes)

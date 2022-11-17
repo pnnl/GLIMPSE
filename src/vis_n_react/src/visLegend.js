@@ -8,6 +8,7 @@ import inverterImg from './imgs/inverter.png';
 import meterImg from './imgs/meter.jpg';
 import substationImg from './imgs/substation.jpg';
 import generatorImg from './imgs/generator.jpg';
+
 const nodeOptions = new Map([["load", {"group": "load"}],
                     ["triplex_load", {"group": "triplex_load"}],
                     ["capacitor", {"group": "capacitor"}],
@@ -343,7 +344,7 @@ const options = {
         }
     },
     "groups":{
-        "load": {"color": "#edf2f4", "borderWidth": 4, "shape": "circularImage", "image": loadImg},
+        "load": {"color": "#2a9d8f", "borderWidth": 4, "shape": "circularImage", "image": loadImg},
         "triplex_load":{"color": "#ffea00", "borderWidth": 4, "shape": "circularImage","image": loadImg},
         "capacitor":{"color": "#283618", "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
         "triplex_node":{"color": "#003566", "borderWidth": 4, "shape": "circularImage","image": ""},
