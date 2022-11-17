@@ -218,6 +218,8 @@ const Graph = () => {
 }
 
 function Reset() {
+  glmNetwork.fit();
+
   data.nodes.forEach((n) => {
     if(n['color'])
     {
@@ -250,7 +252,6 @@ function Reset() {
     }
   });
 
-  glmNetwork.
   counter = 0;
 }
 
