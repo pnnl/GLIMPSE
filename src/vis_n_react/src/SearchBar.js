@@ -48,8 +48,8 @@ const SearchBar = (props) =>{
             <form id="search-form" onSubmit={handleSubmit}>
                 <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
                 <button type="submit" onSubmit={handleSubmit}>Find</button>   
-                <button id="btn-next" onClick={handleNext}>Next</button>
                 <button id="btn-prev" onClick={handlePrev}>Prev</button>
+                <button id="btn-next" onClick={handleNext}>Next</button>
                 <button id='btn-reset' onClick={handleReset}>Reset</button>
             </form>
             </div>

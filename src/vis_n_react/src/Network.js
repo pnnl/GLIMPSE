@@ -13,7 +13,12 @@ import generatorImg from './imgs/generator.jpg';
 import dynamic_fixedData from './data/IEEE-123_Dynamic_fixed.json';
 import invertersData from './data/IEEE-123_Inverters_fixed.json';
 import dieselsData from './data/IEEE-123_Diesels_fixed.json';
+// import IEEE_NFH from './data/9500/IEEE_9500.json';
+// import IEEE_INV from './data/9500/Inverters.json'
+// import IEEE_GEN from './data/9500/Rotating_Machines.json'
 
+// const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
+const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
 var glmNetwork = null;
 var counter = -1;
 const options = {
@@ -48,27 +53,22 @@ const options = {
   },
   physics: {
     barnesHut: {
-      theta: 0.5,
-      gravitationalConstant: -15000,
-      centralGravity: 0,
-      springLength: 230,
-      springConstant: 0.18,
-      damping: 0.09,
-      avoidOverlap: 0
+      gravitationalConstant: -80000,
+      springLength: 200,
+      springConstant: 0.50,
     },
     maxVelocity: 150,
     minVelocity: 0.75,
     solver: 'barnesHut',
     stabilization: {
       enabled: true,
-      iterations: 2000,
-      updateInterval: 100,
+      iterations: 1000,
+      updateInterval: 1,
       onlyDynamicEdges: false,
       fit: true
     },
   },
 };
-const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
 const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
 const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
                     "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
@@ -106,6 +106,7 @@ for (let file of dataFiles)
     if (nodeTypes.includes(objectType))
     {
       var nodeID = attributes.name;
+      // console.log(nodeID);
       nodes.push({id: nodeID, label: nodeID, 
                   group: nodeOptions.get(objectType).group,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
@@ -169,7 +170,6 @@ const Graph = () => {
 
   useEffect(() =>{
     glmNetwork = new Network(container.current, data, options);
-
     glmNetwork.on("stabilizationProgress", function (params) {
       var maxWidth = 496;
       var minWidth = 20;
@@ -189,6 +189,8 @@ const Graph = () => {
       setTimeout(function () {
         document.getElementById("loadingBar").style.display = "none";
       }, 500);
+
+      // glmNetwork.setOptions({physics: {enabled: false}}) //Turning off physics after stabilization creates delay in highlighting
     });
   }, [container, data]);
 
@@ -204,7 +206,7 @@ const Graph = () => {
       />
         <div className='mainNetwork' ref={container} />
         <div id="loadingBar">
-          <div class="outerBorder">
+          <div className="outerBorder">
             <div id="text">0%</div>
               <div id="border">
                 <div id="bar"></div>
@@ -220,38 +222,44 @@ const Graph = () => {
 function Reset() {
   glmNetwork.fit();
 
-  data.nodes.forEach((n) => {
-    if(n['color'])
-    {
-      delete n['color'];
-      data.nodes.update(n);
-    }
-    if(n['size'])
-    {
-      delete n['size'];
-      data.nodes.update(n);
-    }
-  });
+  let nodeItems = data.nodes.get();
+  let edgeItems = data.edges.get();
 
-  data.edges.forEach((e) => {
-    if(e.width === 20)
+  for (let n = 0; n < nodeItems.length; n++)
+  {
+    if(nodeItems[n]['color'])
     {
-      e['width'] = 4;
-      data.edges.update(e);
+      delete nodeItems[n]['color'];
+      data.nodes.update(nodeItems[n]);
     }
-    if(edgeTypes.includes(e.id.split(":")[0]))
+    if(nodeItems[n]['size'])
     {
-      e['color'] = edgeOptions.get(e.id.split(":")[0]).color;
-      e['width'] = edgeOptions.get(e.id.split(":")[0]).width;
-      data.edges.update(e);
+      delete nodeItems[n]['size'];
+      data.nodes.update(nodeItems[n]);
+    }
+  }
+  nodeItems = [];
+
+  for (let e = 0; e < edgeItems.length; e++)
+  {
+    if(edgeItems[e].width === 20)
+    {
+      edgeItems[e]['width'] = 4;
+      data.edges.update(edgeItems[e]);
+    }
+    if(edgeTypes.includes(edgeItems[e].id.split(":")[0]))
+    {
+      edgeItems[e]['color'] = edgeOptions.get(edgeItems[e].id.split(":")[0]).color;
+      edgeItems[e]['width'] = edgeOptions.get(edgeItems[e].id.split(":")[0]).width;
+      data.edges.update(edgeItems[e]);
     }
     else
     {
-      e['color'] = {inherit: true};
-      data.edges.update(e);
+      edgeItems[e]['color'] = {inherit: true};
+      data.edges.update(edgeItems[e]);
     }
-  });
-
+  }
+  edgeItems = [];
   counter = 0;
 }
 
@@ -264,15 +272,18 @@ function Prev()
       easing: "easeInOutQuart"
     }
   };
-  var prev = [];
 
-  data.nodes.forEach((n) =>{
-    if(n['size'] === 50)
+  let items = data.nodes.get();
+  var prev = [];
+  for (let i = 0; i < items.length; i++)
+  {
+    if (items[i]['size'] === 50)
     {
-      prev.push(n.id)
+      prev.push(items[i].id);
     }
-  });
-  
+  }
+  items = [];
+
   counter--;
   if(counter < 0)
   {
@@ -290,13 +301,17 @@ function Next()
       easing: "easeInOutQuart"
     }
   };
-  var nxt = []
-  data.nodes.forEach((n) =>{
-    if(n['size'] === 50)
+
+  let items = data.nodes.get();
+  var nxt = [];
+  for (let i = 0; i < items.length; i++)
+  {
+    if (items[i]['size'] === 50)
     {
-      nxt.push(n.id)
+      nxt.push(items[i].id);
     }
-  });
+  }
+  items = [];
 
   counter++;
   if(counter >= nxt.length)
@@ -325,48 +340,57 @@ function NodeFocus(nodeID)
 
 function HighlightGroup(group)
 {
-  data.nodes.forEach((n) => {
-    
-    if(n.group === group)
+  let items = data.nodes.get();
+
+  for (let n = 0; n < items.length; n++)
+  {
+    if(items[n]['group'] === group)
     {
-      delete n['color'];
-      n['size'] = 50;
-      data.nodes.update(n);
+      delete items[n]['color'];
+      items[n]['size'] = 50;
+      data.nodes.update(items[n]);
     }
     else
     {
-      delete n['size'];
-      n['color'] = "lightgrey"
-      data.nodes.update(n);
+      delete items[n]['size'];
+      items[n]['color'] = "lightgrey"
+      data.nodes.update(items[n]);
     }
-  });
+  }
+  items = [];
 }
 
 function HighlightEdges(edgeID)
 {
-    data.nodes.forEach((n) => {
-    if(!(n['size'] === 50))
-    {
-      n['color'] = 'lightgrey';
-    }
-    data.nodes.update(n);
-  });
+  let nodeItems = data.nodes.get();
+  let edgeItems = data.edges.get();
 
-  data.edges.forEach((e) =>
+  for (let n = 0; n < nodeItems.length; n++)
   {
-    if(e.id.split(":")[0] === edgeID)
+    if(!(nodeItems[n]['size'] === 50))
     {
-      e['color'] = edgeOptions.get(edgeID).color;
-      e['width'] = 20;
-      data.edges.update(e);
+      nodeItems[n]['color'] = 'lightgrey';
+    }
+    data.nodes.update(nodeItems[n]);
+  }
+  nodeItems = [];
+
+  for (let e = 0; e < edgeItems.length; e++)
+  {
+    if(edgeItems[e].id.split(":")[0] === edgeID)
+    {
+      edgeItems[e]['color'] = edgeOptions.get(edgeID).color;
+      edgeItems[e]['width'] = 20;
+      data.edges.update(edgeItems[e]);
     }
     else
     {
-      e['color'] = "lightgrey";
-      e['width'] = 4;
-      data.edges.update(e);
+      edgeItems[e]['color'] = "lightgrey";
+      edgeItems[e]['width'] = 4;
+      data.edges.update(edgeItems[e]);
     }
-  });
+  }
+  edgeItems = [];
 }
 
 function getTitle(attributes)
