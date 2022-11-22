@@ -12,13 +12,20 @@ h1 {
 }
 
 #form-wrapper{
-  /* border: 1px solid black; */
-  width: 205vh;
+  width: 99.2%;
   height: 3.5vh;
 }
 
 #form-div{
-  float: right;
+  float:right;
+}
+
+#btn-prev {
+  margin-left: 48px;
+}
+
+#btn-next {
+  margin-right: 48px;
 }
 
 .visLegend {
@@ -26,8 +33,8 @@ h1 {
   border: 1px solid lightgrey;
   border-radius: 5px;
   float: left;
-  height: 75vh;
-  width: 55vh;
+  height: 74vh;
+  width: 29%;
 }
 
 .mainNetwork {
@@ -35,8 +42,8 @@ h1 {
   border: 1px solid lightgrey;
   border-radius: 5px;
   float: left;
-  height: 75vh;
-  width: 150vh;
+  height: 74vh;
+  width: 70%;
 }
 
 ul {

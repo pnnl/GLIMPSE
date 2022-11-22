@@ -10,15 +10,18 @@ import inverterImg from './imgs/inverter.png';
 import meterImg from './imgs/meter.jpg';
 import substationImg from './imgs/substation.jpg';
 import generatorImg from './imgs/generator.jpg';
+
 import dynamic_fixedData from './data/IEEE-123_Dynamic_fixed.json';
 import invertersData from './data/IEEE-123_Inverters_fixed.json';
 import dieselsData from './data/IEEE-123_Diesels_fixed.json';
+
 // import IEEE_NFH from './data/9500/IEEE_9500.json';
 // import IEEE_INV from './data/9500/Inverters.json'
 // import IEEE_GEN from './data/9500/Rotating_Machines.json'
 
 // const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
 const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
+
 var glmNetwork = null;
 var counter = -1;
 const options = {
@@ -106,10 +109,9 @@ for (let file of dataFiles)
     if (nodeTypes.includes(objectType))
     {
       var nodeID = attributes.name;
-      // console.log(nodeID);
       nodes.push({id: nodeID, label: nodeID, 
-                  group: nodeOptions.get(objectType).group,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                group: nodeOptions.get(objectType).group,
+                title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
     }
   }
 }
@@ -131,10 +133,10 @@ for (let file of dataFiles)
       var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
 
       edges.push({from: edgeFrom, to: edgeTo,
-                  id: edgeID,
-                  color: edgeOptions.get(objectType).color,
-                  width: edgeOptions.get(objectType).width,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                id: edgeID,
+                color: edgeOptions.get(objectType).color,
+                width: edgeOptions.get(objectType).width,
+                title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
     }
     else if (parent_child_edge_types.includes(objectType))
     {
@@ -190,7 +192,7 @@ const Graph = () => {
         document.getElementById("loadingBar").style.display = "none";
       }, 500);
 
-      // glmNetwork.setOptions({physics: {enabled: false}}) //Turning off physics after stabilization creates delay in highlighting
+      glmNetwork.setOptions({physics: {enabled: false}})
     });
   }, [container, data]);
 
@@ -220,46 +222,40 @@ const Graph = () => {
 }
 
 function Reset() {
-  glmNetwork.fit();
-
-  let nodeItems = data.nodes.get();
-  let edgeItems = data.edges.get();
-
-  for (let n = 0; n < nodeItems.length; n++)
-  {
-    if(nodeItems[n]['color'])
+  let nodeItems = data.nodes.map((n) => {
+    if(n.color)
     {
-      delete nodeItems[n]['color'];
-      data.nodes.update(nodeItems[n]);
+      delete n.color;
+      return n;
     }
-    if(nodeItems[n]['size'])
+    if(n.size)
     {
-      delete nodeItems[n]['size'];
-      data.nodes.update(nodeItems[n]);
+      delete n.size;
+      return n;
     }
-  }
-  nodeItems = [];
+  });
+  data.nodes.update(nodeItems);
 
-  for (let e = 0; e < edgeItems.length; e++)
-  {
-    if(edgeItems[e].width === 20)
+  let edgeItems = data.edges.map((e) => {
+    if(e.width === 20)
     {
-      edgeItems[e]['width'] = 4;
-      data.edges.update(edgeItems[e]);
+      e.width = 4;
+      return e;
     }
-    if(edgeTypes.includes(edgeItems[e].id.split(":")[0]))
+    if(edgeTypes.includes(e.id.split(":")[0]))
     {
-      edgeItems[e]['color'] = edgeOptions.get(edgeItems[e].id.split(":")[0]).color;
-      edgeItems[e]['width'] = edgeOptions.get(edgeItems[e].id.split(":")[0]).width;
-      data.edges.update(edgeItems[e]);
+      e.color = edgeOptions.get(e.id.split(":")[0]).color;
+      e.width = edgeOptions.get(e.id.split(":")[0]).width;
+      return e;
     }
     else
     {
-      edgeItems[e]['color'] = {inherit: true};
-      data.edges.update(edgeItems[e]);
+      e.color = {inherit: true};
+      return e;
     }
-  }
-  edgeItems = [];
+  });
+  data.edges.update(edgeItems);
+  glmNetwork.fit();
   counter = 0;
 }
 
@@ -273,23 +269,18 @@ function Prev()
     }
   };
 
-  let items = data.nodes.get();
-  var prev = [];
-  for (let i = 0; i < items.length; i++)
-  {
-    if (items[i]['size'] === 50)
-    {
-      prev.push(items[i].id);
+  var prev = data.nodes.get({
+    filter: function (n) {
+      return (n.size === 50);
     }
-  }
-  items = [];
+  });
 
   counter--;
   if(counter < 0)
   {
     counter = prev.length - 1;
   }
-  glmNetwork.focus(prev[counter], options)
+  glmNetwork.focus(prev[counter].id, options)
 }
 
 function Next()
@@ -302,26 +293,21 @@ function Next()
     }
   };
 
-  let items = data.nodes.get();
-  var nxt = [];
-  for (let i = 0; i < items.length; i++)
-  {
-    if (items[i]['size'] === 50)
-    {
-      nxt.push(items[i].id);
+  var nxt = data.nodes.get({
+    filter: function (n) {
+      return (n.size === 50);
     }
-  }
-  items = [];
+  });
 
   counter++;
   if(counter >= nxt.length)
   {
     counter = 0;
-    glmNetwork.focus(nxt[counter], options)
+    glmNetwork.focus(nxt[counter].id, options)
   }
   else
   {
-    glmNetwork.focus(nxt[counter], options)
+    glmNetwork.focus(nxt[counter].id, options)
   }
 }
 
@@ -340,57 +326,60 @@ function NodeFocus(nodeID)
 
 function HighlightGroup(group)
 {
-  let items = data.nodes.get();
-
-  for (let n = 0; n < items.length; n++)
-  {
-    if(items[n]['group'] === group)
+  var nodesMap = data.nodes.map((n) => {
+    if(n.group === group)
     {
-      delete items[n]['color'];
-      items[n]['size'] = 50;
-      data.nodes.update(items[n]);
+      delete n.color;
+      n.size = 50;
+      return n;
     }
     else
     {
-      delete items[n]['size'];
-      items[n]['color'] = "lightgrey"
-      data.nodes.update(items[n]);
+      delete n.size;
+      n.color = "lightgrey";
+      return n;
     }
-  }
-  items = [];
+  });
+
+  var edgesMap = data.edges.map((e) => {
+    if(!(e.width === 20))
+      e.color = 'lightgrey';
+
+    return e;
+  });
+  // console.log(nodesMap);
+  data.nodes.update(nodesMap);
+  data.edges.update(edgesMap);
 }
 
 function HighlightEdges(edgeID)
 {
-  let nodeItems = data.nodes.get();
-  let edgeItems = data.edges.get();
-
-  for (let n = 0; n < nodeItems.length; n++)
-  {
-    if(!(nodeItems[n]['size'] === 50))
+  let nodeItems = data.nodes.map((n) => {
+    if (!(n.size === 50))
     {
-      nodeItems[n]['color'] = 'lightgrey';
+      n.color = "lightgrey";
     }
-    data.nodes.update(nodeItems[n]);
-  }
-  nodeItems = [];
-
-  for (let e = 0; e < edgeItems.length; e++)
-  {
-    if(edgeItems[e].id.split(":")[0] === edgeID)
+    return n;
+  });
+  // console.log(nodeItems);
+  
+  let edgeItems = data.edges.map((e) => {
+    if(e.id.split(":")[0] === edgeID)
     {
-      edgeItems[e]['color'] = edgeOptions.get(edgeID).color;
-      edgeItems[e]['width'] = 20;
-      data.edges.update(edgeItems[e]);
+      e.color = edgeOptions.get(edgeID).color;
+      e.width = 20;
+      return e;
     }
     else
     {
-      edgeItems[e]['color'] = "lightgrey";
-      edgeItems[e]['width'] = 4;
-      data.edges.update(edgeItems[e]);
+      e.color = "lightgrey";
+      e.width = 4;
+      return e;
     }
-  }
-  edgeItems = [];
+  });
+  
+  data.nodes.update(nodeItems);
+  data.edges.update(edgeItems);
 }
 
 function getTitle(attributes)

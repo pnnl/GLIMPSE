@@ -354,7 +354,7 @@ const options = {
         "meter":{"color": "#d90429", "borderWidth": 4, "shape": "circularImage", "image": meterImg},
         "inverter":{"color": "#c8b6ff", "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
         "generator":{"color": "#fee440", "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
-      },
+    },
 };
 
 const Legend = (props) => {
@@ -378,9 +378,10 @@ const Legend = (props) => {
         });
     }, [container,data]);
 
-    return <div 
-        className='visLegend' 
-        ref={container} />;
+    return (
+    <>
+    <div className='visLegend' ref={container} />
+    </>);
 };
 
 export default Legend;
