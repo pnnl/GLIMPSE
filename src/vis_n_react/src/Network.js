@@ -11,16 +11,16 @@ import meterImg from './imgs/meter.jpg';
 import substationImg from './imgs/substation.jpg';
 import generatorImg from './imgs/generator.jpg';
 
-import dynamic_fixedData from './data/IEEE-123_Dynamic_fixed.json';
-import invertersData from './data/IEEE-123_Inverters_fixed.json';
-import dieselsData from './data/IEEE-123_Diesels_fixed.json';
+// import dynamic_fixedData from './data/IEEE-123_Dynamic_fixed.json';
+// import invertersData from './data/IEEE-123_Inverters_fixed.json';
+// import dieselsData from './data/IEEE-123_Diesels_fixed.json';
 
-// import IEEE_NFH from './data/9500/IEEE_9500.json';
-// import IEEE_INV from './data/9500/Inverters.json'
-// import IEEE_GEN from './data/9500/Rotating_Machines.json'
+import IEEE_NFH from './data/9500/IEEE_9500.json';
+import IEEE_INV from './data/9500/Inverters.json'
+import IEEE_GEN from './data/9500/Rotating_Machines.json'
 
-// const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
-const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
+const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
+// const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
 
 var glmNetwork = null;
 var counter = -1;
