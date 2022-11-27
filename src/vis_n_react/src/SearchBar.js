@@ -41,11 +41,23 @@ const SearchBar = (props) =>{
         props.next();
     }
 
+    function togglePhysics ()
+    {
+        var checkBox = document.getElementById("phyCheck");
+        var toggle = checkBox.checked ? true : false;
+        props.togglePhy(toggle);
+    }
+
     return (
         <>
-        <div id="form-wrapper">
+        <div id="form-wrapper"> 
             <div id="form-div">
             <form id="search-form" onSubmit={handleSubmit}>
+            <label className="physics-lbl">Toggle Physics</label>
+            <label className="switch">
+                <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
+                <span className="slider round"></span>
+            </label>
                 <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
                 <button type="submit" onSubmit={handleSubmit}>Find</button>   
                 <button id="btn-prev" onClick={handlePrev}>Prev</button>
