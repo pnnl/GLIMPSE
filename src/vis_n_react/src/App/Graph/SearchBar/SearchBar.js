@@ -1,4 +1,5 @@
 import React, {useState} from "react";
+import "./SearchBar.css"
 
 const SearchBar = (props) =>{
 
@@ -50,21 +51,21 @@ const SearchBar = (props) =>{
 
     return (
         <>
-        <div id="form-wrapper"> 
-            <div id="form-div">
-            <form id="search-form" onSubmit={handleSubmit}>
-            <label className="physics-lbl">Toggle Physics</label>
-            <label className="switch">
-                <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
-                <span className="slider round"></span>
-            </label>
-                <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
-                <button type="submit" onSubmit={handleSubmit}>Find</button>   
-                <button id="btn-prev" onClick={handlePrev}>Prev</button>
-                <button id="btn-next" onClick={handleNext}>Next</button>
-                <button id='btn-reset' onClick={handleReset}>Reset</button>
-            </form>
+        <div className="form-wrapper">
+            <form onSubmit={handleSubmit}>
+            <div className="physics-switch">
+                <label className="physics-lbl">Toggle Physics</label>
+                <label className="switch">
+                    <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
+                    <span className="slider round"></span>
+                </label>
             </div>
+                <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
+                <button className = "find-btn" onClick={handleSubmit}>Find</button>   
+                <button className = "prev-btn" onClick={handlePrev}>Prev</button>
+                <button className = "next-btn" onClick={handleNext}>Next</button>
+                <button className = "reset-btn" onClick={handleReset}>Reset</button>
+            </form>
         </div>
         </>
     );

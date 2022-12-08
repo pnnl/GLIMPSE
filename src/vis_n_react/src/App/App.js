@@ -1,19 +1,21 @@
-import './styles/App.css';
+import './App.css';
 import { Link } from 'react-router-dom';
-import Graph from './Network';
+import Graph from './Graph/Network';
 
 function Home()
 {
   return (
     <>
-    <div>
-      <ul>
-        <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
-        <li style={{float: "right"}}><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
-      </ul>
-    </div>
-    <h1>Power Grid Model Visualization Tool</h1>
-    <div className='visDiv'>
+    <header>
+        <h1 className="title">Power Grid Model Visualization Tool</h1>
+        <nav>
+            <ul className="nav-links">
+                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
+                <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
+            </ul>
+        </nav>
+    </header>
+    <div className='main'>
       <Graph />
     </div>
     </>

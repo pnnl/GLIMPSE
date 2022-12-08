@@ -1,19 +1,20 @@
 import React, {useEffect, useRef} from 'react';
+import "./Network.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
-import SearchBar from './SearchBar';
-import './styles/vis-network.css';
-import Legend from './visLegend';
-import loadImg from './imgs/load.png';
-import capacitorImg from './imgs/capacitor.jpg';
-import inverterImg from './imgs/inverter.png';
-import meterImg from './imgs/meter.jpg';
-import substationImg from './imgs/substation.jpg';
-import generatorImg from './imgs/generator.jpg';
+import SearchBar from './SearchBar/SearchBar';
+import '../../styles/vis-network.css';
+import Legend from './Legend/Legend';
+import loadImg from '../../imgs/load.png';
+import capacitorImg from '../../imgs/capacitor.jpg';
+import inverterImg from '../../imgs/inverter.png';
+import meterImg from '../../imgs/meter.jpg';
+import substationImg from '../../imgs/substation.jpg';
+import generatorImg from '../../imgs/generator.jpg';
 
-import dynamic_fixedData from './data/IEEE-123_Dynamic_fixed.json';
-import invertersData from './data/IEEE-123_Inverters_fixed.json';
-import dieselsData from './data/IEEE-123_Diesels_fixed.json';
+import dynamic_fixedData from '../../data/IEEE-123_Dynamic_fixed.json';
+import invertersData from '../../data/IEEE-123_Inverters_fixed.json';
+import dieselsData from '../../data/IEEE-123_Diesels_fixed.json';
 
 // import IEEE_NFH from './data/9500/IEEE_9500.json';
 // import IEEE_INV from './data/9500/Inverters.json'
@@ -169,36 +170,32 @@ const data = {
 
 const Graph = () => {
   const container = useRef(null);
-
-  useEffect(() =>{
+  useEffect(() => {
     glmNetwork = new Network(container.current, data, options);
     glmNetwork.on("stabilizationProgress", function (params) {
-      var maxWidth = 496;
-      var minWidth = 20;
+      var maxWidth = 484;
+      var minWidth = 16;
       var widthFactor = params.iterations / params.total;
       var width = Math.max(minWidth, maxWidth * widthFactor);
-
-      document.getElementById("bar").style.width = width + "px";
-      document.getElementById("text").innerText =
-        Math.round(widthFactor * 100) + "%";
+      document.getElementById("loadingBar").style.width = width + "px";
+    
     });
     
     glmNetwork.once("stabilizationIterationsDone", function () {
-      document.getElementById("text").innerText = "100%";
-      document.getElementById("bar").style.width = "496px";
-      document.getElementById("loadingBar").style.opacity = 0;
-      // really clean the dom element
+      document.getElementById("loadingBar").innerText = "Done!"
+      document.getElementById("loadingBar").style.width = "100%";
+      document.getElementById("progressBar").style.opacity = 0;
+
       setTimeout(function () {
-        document.getElementById("loadingBar").style.display = "none";
-      }, 500);
+        document.getElementById("progressBar").style.display = "none";
+      }, 500);      
 
       glmNetwork.setOptions({physics: {enabled: false}})
     });
-  }, [container, data]);
+  }, [container]); 
 
   return (
     <>
-      <div id='wrapper'>
       <SearchBar 
         data = {data.nodes}
         togglePhy = {TogglePhysics}
@@ -207,17 +204,11 @@ const Graph = () => {
         prev = {Prev}
         next = {Next}
       />
-        <div className='mainNetwork' ref={container} />
-        <div id="loadingBar">
-          <div className="outerBorder">
-            <div id="text">0%</div>
-              <div id="border">
-                <div id="bar"></div>
-              </div>
-            </div>
-        </div>
+        <div className='main-network' ref={container}/>
+          <div className="progress-bar" id='progressBar'>
+            <div className='bar' id='loadingBar'>Loading...</div>
+          </div>
         <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
-      </div>
     </>
   );
 }
@@ -241,14 +232,13 @@ function Reset() {
       delete n.color;
       return n;
     }
-    if(n.size)
+    else if(n.size)
     {
       delete n.size;
       return n;
     }
   });
-  data.nodes.update(nodeItems);
-
+  
   let edgeItems = data.edges.map((e) => {
     if(e.width === 20)
     {
@@ -267,6 +257,7 @@ function Reset() {
       return e;
     }
   });
+  data.nodes.update(nodeItems);
   data.edges.update(edgeItems);
   glmNetwork.fit();
   counter = 0;

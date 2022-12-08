@@ -1,13 +1,14 @@
 import React, {useEffect, useRef } from 'react';
 import { Network } from 'vis-network';
 import { DataSet} from 'vis-data';
-import './styles/vis-network.css';
-import loadImg from './imgs/load.png';
-import capacitorImg from './imgs/capacitor.jpg';
-import inverterImg from './imgs/inverter.png';
-import meterImg from './imgs/meter.jpg';
-import substationImg from './imgs/substation.jpg';
-import generatorImg from './imgs/generator.jpg';
+import '../../../styles/vis-network.css';
+import "./Legend.css";
+import loadImg from '../../../imgs/load.png';
+import capacitorImg from '../../../imgs/capacitor.jpg';
+import inverterImg from '../../../imgs/inverter.png';
+import meterImg from '../../../imgs/meter.jpg';
+import substationImg from '../../../imgs/substation.jpg';
+import generatorImg from '../../../imgs/generator.jpg';
 
 const nodeOptions = new Map([["load", {"group": "load"}],
                     ["triplex_load", {"group": "triplex_load"}],
@@ -376,11 +377,11 @@ const Legend = (props) => {
             }
             
         });
-    }, [container,data]);
+    }, [container, props]);
 
     return (
     <>
-    <div className='visLegend' ref={container} />
+        <div className='visLegend' ref={container} />
     </>);
 };
 
