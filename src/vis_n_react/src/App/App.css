@@ -28,3 +28,8 @@ header {
 .nav-links li:hover {
   background-color: #b25a00;
 }
+
+main {
+ height: 100vh;
+ width: 100%;
+}

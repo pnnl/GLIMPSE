@@ -1,6 +1,6 @@
 import './App.css';
 import { Link } from 'react-router-dom';
-import Graph from './Graph/Network';
+import Graph from './Graph/Graph';
 
 function Home()
 {
@@ -15,9 +15,9 @@ function Home()
             </ul>
         </nav>
     </header>
-    <div className='main'>
+    <main>
       <Graph />
-    </div>
+    </main>
     </>
   );
 }
@@ -26,10 +26,15 @@ export function About()
 {
   return (
     <div>
-      <ul>
-        <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
-        <li style={{float: "right"}}><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
-      </ul>
+      <header>
+        <h1 className="title">Power Grid Model Visualization Tool</h1>
+        <nav>
+            <ul className="nav-links">
+                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
+                <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
+            </ul>
+        </nav>
+    </header>
       <h1>About The tool</h1>
     </div>
   );

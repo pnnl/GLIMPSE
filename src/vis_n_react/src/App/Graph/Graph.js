@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from 'react';
-import "./Network.css"
+import "./Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
 import SearchBar from './SearchBar/SearchBar';
@@ -12,16 +12,16 @@ import meterImg from '../../imgs/meter.jpg';
 import substationImg from '../../imgs/substation.jpg';
 import generatorImg from '../../imgs/generator.jpg';
 
-import dynamic_fixedData from '../../data/IEEE-123_Dynamic_fixed.json';
-import invertersData from '../../data/IEEE-123_Inverters_fixed.json';
-import dieselsData from '../../data/IEEE-123_Diesels_fixed.json';
+import IEE_DF from '../../data/IEEE-123_Dynamic_fixed.json';
+import IEE_INVF from '../../data/IEEE-123_Inverters_fixed.json';
+import IEE_GENF from '../../data/IEEE-123_Diesels_fixed.json';
 
-// import IEEE_NFH from './data/9500/IEEE_9500.json';
-// import IEEE_INV from './data/9500/Inverters.json'
-// import IEEE_GEN from './data/9500/Rotating_Machines.json'
+// import IEEE_NFH from '../../data/9500/IEEE_9500.json';
+// import IEEE_INV from '../../data/9500/Inverters.json'
+// import IEEE_GEN from '../../data/9500/Rotating_Machines.json'
 
 // const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
-const dataFiles = [dynamic_fixedData,invertersData,dieselsData];
+const dataFiles = [IEE_DF,IEE_INVF,IEE_GENF];
 
 var glmNetwork = null;
 var counter = -1;
@@ -170,25 +170,29 @@ const data = {
 
 const Graph = () => {
   const container = useRef(null);
+
   useEffect(() => {
     glmNetwork = new Network(container.current, data, options);
+
     glmNetwork.on("stabilizationProgress", function (params) {
-      var maxWidth = 484;
-      var minWidth = 16;
+
+      var maxWidth = 360;
+      var minWidth = 1;
       var widthFactor = params.iterations / params.total;
       var width = Math.max(minWidth, maxWidth * widthFactor);
-      document.getElementById("loadingBar").style.width = width + "px";
+      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
+      document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
     
     });
     
     glmNetwork.once("stabilizationIterationsDone", function () {
-      document.getElementById("loadingBar").innerText = "Done!"
-      document.getElementById("loadingBar").style.width = "100%";
-      document.getElementById("progressBar").style.opacity = 0;
 
-      setTimeout(function () {
-        document.getElementById("progressBar").style.display = "none";
-      }, 500);      
+      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
+      document.getElementById("progressValue").innerText = "100%";
+      document.getElementById("circularProgress").style.opacity = 0.7;
+      setTimeout(function (){
+        document.getElementById("circularProgress").style.display = "none";
+      }, 500)
 
       glmNetwork.setOptions({physics: {enabled: false}})
     });
@@ -205,9 +209,12 @@ const Graph = () => {
         next = {Next}
       />
         <div className='main-network' ref={container}/>
-          <div className="progress-bar" id='progressBar'>
+        <div id='circularProgress'>
+          <span id='progressValue'>0%</span>
+        </div>
+          {/* <div className="progress-bar" id='progressBar'>
             <div className='bar' id='loadingBar'>Loading...</div>
-          </div>
+          </div> */}
         <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
     </>
   );

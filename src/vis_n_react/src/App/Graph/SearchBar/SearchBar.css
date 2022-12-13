@@ -15,7 +15,8 @@ form {
 
 /* The switch - the box around the slider */
 .switch {
-    margin-right: 50px;
+    margin-right: 2rem;
+    margin-left: 0.5rem;
     float: left;
     position: relative;
     width: 45px;

@@ -54,7 +54,7 @@ const SearchBar = (props) =>{
         <div className="form-wrapper">
             <form onSubmit={handleSubmit}>
             <div className="physics-switch">
-                <label className="physics-lbl">Toggle Physics</label>
+                <label className="physics-lbl">Toggle Physics: </label>
                 <label className="switch">
                     <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
                     <span className="slider round"></span>
