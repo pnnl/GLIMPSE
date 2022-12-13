@@ -190,6 +190,7 @@ const Graph = () => {
       document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
       document.getElementById("progressValue").innerText = "100%";
       document.getElementById("circularProgress").style.opacity = 0.7;
+
       setTimeout(function (){
         document.getElementById("circularProgress").style.display = "none";
       }, 500)
@@ -212,9 +213,6 @@ const Graph = () => {
         <div id='circularProgress'>
           <span id='progressValue'>0%</span>
         </div>
-          {/* <div className="progress-bar" id='progressBar'>
-            <div className='bar' id='loadingBar'>Loading...</div>
-          </div> */}
         <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
     </>
   );
