@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import "./Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
@@ -11,6 +11,7 @@ import inverterImg from '../../imgs/inverter.png';
 import meterImg from '../../imgs/meter.jpg';
 import substationImg from '../../imgs/substation.jpg';
 import generatorImg from '../../imgs/generator.jpg';
+import nodeImg from '../../imgs/node.png'
 
 import IEE_DF from '../../data/IEEE-123_Dynamic_fixed.json';
 import IEE_INVF from '../../data/IEEE-123_Inverters_fixed.json';
@@ -41,10 +42,10 @@ const options = {
     load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
     triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
     capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-    triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": ""},
+    triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
     substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
     triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
-    node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "dot", "image": ""},
+    node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
     meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
     inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
     generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
@@ -110,9 +111,10 @@ for (let file of dataFiles)
     if (nodeTypes.includes(objectType))
     {
       var nodeID = attributes.name;
-      nodes.push({id: nodeID, label: nodeID, 
-                group: nodeOptions.get(objectType).group,
-                title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+      nodes.push({id: nodeID, label: nodeID,
+                  attributes: attributes,
+                  group: nodeOptions.get(objectType).group,
+                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
     }
   }
 }
@@ -168,56 +170,6 @@ const data = {
   edges: edgesDataSet
 }
 
-const Graph = () => {
-  const container = useRef(null);
-
-  useEffect(() => {
-    glmNetwork = new Network(container.current, data, options);
-
-    glmNetwork.on("stabilizationProgress", function (params) {
-
-      var maxWidth = 360;
-      var minWidth = 1;
-      var widthFactor = params.iterations / params.total;
-      var width = Math.max(minWidth, maxWidth * widthFactor);
-      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
-      document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
-    
-    });
-    
-    glmNetwork.once("stabilizationIterationsDone", function () {
-
-      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
-      document.getElementById("progressValue").innerText = "100%";
-      document.getElementById("circularProgress").style.opacity = 0.7;
-
-      setTimeout(function (){
-        document.getElementById("circularProgress").style.display = "none";
-      }, 500)
-
-      glmNetwork.setOptions({physics: {enabled: false}})
-    });
-  }, [container]); 
-
-  return (
-    <>
-      <SearchBar 
-        data = {data.nodes}
-        togglePhy = {TogglePhysics}
-        reset = {Reset} 
-        onFind = {NodeFocus}
-        prev = {Prev}
-        next = {Next}
-      />
-        <div className='main-network' ref={container}/>
-        <div id='circularProgress'>
-          <span id='progressValue'>0%</span>
-        </div>
-        <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
-    </>
-  );
-}
-
 function TogglePhysics(toggle)
 {
   if(toggle)
@@ -262,6 +214,7 @@ function Reset() {
       return e;
     }
   });
+
   data.nodes.update(nodeItems);
   data.edges.update(edgeItems);
   glmNetwork.fit();
@@ -354,9 +307,9 @@ function HighlightGroup(group)
     if(!(e.width === 20))
       e.color = 'lightgrey';
 
-    return e;
+      return e;
   });
-  // console.log(nodesMap);
+
   data.nodes.update(nodesMap);
   data.edges.update(edgesMap);
 }
@@ -370,7 +323,6 @@ function HighlightEdges(edgeID)
     }
     return n;
   });
-  // console.log(nodeItems);
   
   let edgeItems = data.edges.map((e) => {
     if(e.id.split(":")[0] === edgeID)
@@ -399,6 +351,111 @@ function getTitle(attributes)
     str = str + k +": " + v +"\n";
   }
   return str;
+}
+
+const Graph = () => {
+  const container = useRef(null);
+  const [nodeToEdit, setNodeToEdit] = useState({})
+  
+  function setNodeEdit(node_id)
+  {
+    var node = data.nodes.get(node_id);
+    setNodeToEdit(node);
+  }
+
+  function closePopUp() 
+  {
+    document.getElementById("node-saveButton").onclick = null;
+    document.getElementById("node-cancelButton").onclick = null;
+    document.getElementById("node-popUp").style.display = "none";
+  }
+
+  function saveEdits() {
+    var node = data.nodes.get(nodeToEdit.id);
+    node.attributes = nodeToEdit.attributes;
+    node.title = getTitle(node.attributes);
+    data.nodes.update(node);
+  }
+
+  useEffect(() => {
+    glmNetwork = new Network(container.current, data, options);
+    
+    glmNetwork.on("stabilizationProgress", function (params) {
+
+      var maxWidth = 360;
+      var minWidth = 1;
+      var widthFactor = params.iterations / params.total;
+      var width = Math.max(minWidth, maxWidth * widthFactor);
+      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
+      document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
+    
+    });
+    
+    glmNetwork.once("stabilizationIterationsDone", function () {
+
+      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
+      document.getElementById("progressValue").innerText = "100%";
+      document.getElementById("circularProgress").style.opacity = 0.7;
+
+      setTimeout(function (){
+        document.getElementById("circularProgress").style.display = "none";
+      }, 500);
+
+      glmNetwork.setOptions({physics: {enabled: false}})
+    });
+    
+    glmNetwork.on("doubleClick", function (params) {
+      if (params.nodes[0] === undefined)
+      {
+        alert("Double Click on a Node to edit")
+      }
+      else
+      {
+        setNodeEdit(params.nodes[0]);
+        document.getElementById("node-popUp").style.display = "block";
+      }
+      
+    });
+  }, [container]); 
+
+  return (
+    <>
+      <SearchBar 
+        data = {data.nodes}
+        togglePhy = {TogglePhysics}
+        reset = {Reset} 
+        onFind = {NodeFocus}
+        prev = {Prev}
+        next = {Next}
+      />
+
+      <div id="node-popUp">
+        <span id="node-operation">Edit Node</span> <br />
+        <table style={{"margin": "auto"}}>
+          <tbody>
+            {
+              Object.entries(nodeToEdit.attributes === undefined ? {}: nodeToEdit.attributes).map(([key, val], index) => {
+                return(
+                  <tr key={index} >
+                    <td>{key}</td>
+                    <td><input value={val} onChange = {(e) => {setNodeToEdit({...nodeToEdit, attributes: {...nodeToEdit.attributes, [key]: e.target.value}});}}></input></td>
+                  </tr>
+                );
+              }) 
+            }
+          </tbody>
+        </table>
+        <input type="button" value="save" id="node-saveButton" onClick={saveEdits}/>
+        <input type="button" value="cancel" id="node-cancelButton" onClick={closePopUp}/>
+      </div>
+      
+      <div className='main-network' ref={container}/>
+      <div id='circularProgress'>
+        <span id='progressValue'>0%</span>
+      </div>
+      <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
+    </>
+  );
 }
 
 export default Graph;
