@@ -42,7 +42,7 @@ const SearchBar = (props) =>{
         props.next();
     }
 
-    function togglePhysics ()
+    const togglePhysics = () =>
     {
         var checkBox = document.getElementById("phyCheck");
         var toggle = checkBox.checked ? true : false;
