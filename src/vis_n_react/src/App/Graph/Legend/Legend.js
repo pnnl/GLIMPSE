@@ -9,6 +9,7 @@ import inverterImg from '../../../imgs/inverter.png';
 import meterImg from '../../../imgs/meter.jpg';
 import substationImg from '../../../imgs/substation.jpg';
 import generatorImg from '../../../imgs/generator.jpg';
+import nodeImg from '../../../imgs/node.png';
 
 const nodeOptions = new Map([["load", {"group": "load"}],
                     ["triplex_load", {"group": "triplex_load"}],
@@ -348,10 +349,10 @@ const options = {
         "load": {"color": "#2a9d8f", "borderWidth": 4, "shape": "circularImage", "image": loadImg},
         "triplex_load":{"color": "#ffea00", "borderWidth": 4, "shape": "circularImage","image": loadImg},
         "capacitor":{"color": "#283618", "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-        "triplex_node":{"color": "#003566", "borderWidth": 4, "shape": "circularImage","image": ""},
+        "triplex_node":{"color": "#003566", "borderWidth": 4, "shape": "circularImage","image": nodeImg},
         "substation":{"color": "#fca311", "borderWidth": 4, "shape": "circularImage","image": substationImg},
         "triplex_meter":{"color": "#072ac8", "borderWidth": 4, "shape": "circularImage","image": meterImg},
-        "node":{"color": "#4361ee", "borderWidth": 4, "shape": "dot", "image": ""},
+        "node":{"color": "#4361ee", "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
         "meter":{"color": "#d90429", "borderWidth": 4, "shape": "circularImage", "image": meterImg},
         "inverter":{"color": "#c8b6ff", "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
         "generator":{"color": "#fee440", "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
