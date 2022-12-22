@@ -1,9 +1,40 @@
+#node-popUp {
+  display: none;
+  position: absolute;
+  top: 20%;
+  left: 1%;
+  z-index: 299;
+  width: auto;
+  height: auto;
+  background-color: #f9f9f9;
+  border: 3px solid #5394ed;
+  padding: 10px;
+  text-align: center;
+}
+
+table.legend_table {
+  font-size: 1rem;
+  border: 1px solid #d3d3d3;
+}
+table.legend_table,
+td {
+  border: 1px solid #d3d3d3;
+  padding: 2px;
+}
+div.table_content {
+  width: 80px;
+  text-align: center;
+}
+div.table_description {
+  width: 100px;
+}
+
 .main-network {
   display: inline-block;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   border: 1px solid lightgrey;
   border-radius: 5px;
-  height: 80%;
+  height: 100%;
   width: 70%;
 }
 
