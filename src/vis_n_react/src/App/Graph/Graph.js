@@ -366,7 +366,7 @@ const Graph = () => {
   function closePopUp() 
   {
     document.getElementById("node-saveButton").onclick = null;
-    document.getElementById("node-cancelButton").onclick = null;
+    document.getElementById("node-closeButton").onclick = null;
     document.getElementById("node-popUp").style.display = "none";
   }
 
@@ -397,7 +397,7 @@ const Graph = () => {
       document.getElementById("progressValue").innerText = "100%";
       document.getElementById("circularProgress").style.opacity = 0.7;
 
-      setTimeout(function (){
+      setTimeout(function () {
         document.getElementById("circularProgress").style.display = "none";
       }, 500);
 
@@ -434,7 +434,7 @@ const Graph = () => {
         <table style={{"margin": "auto"}}>
           <tbody>
             {
-              Object.entries(nodeToEdit.attributes === undefined ? {}: nodeToEdit.attributes).map(([key, val], index) => {
+              Object.entries(nodeToEdit.attributes === undefined ? {} : nodeToEdit.attributes).map(([key, val], index) => {
                 return(
                   <tr key={index} >
                     <td>{key}</td>
@@ -446,7 +446,7 @@ const Graph = () => {
           </tbody>
         </table>
         <input type="button" value="save" id="node-saveButton" onClick={saveEdits}/>
-        <input type="button" value="cancel" id="node-cancelButton" onClick={closePopUp}/>
+        <input type="button" value="Close" id="node-closeButton" onClick={closePopUp}/>
       </div>
       
       <div className='main-network' ref={container}/>

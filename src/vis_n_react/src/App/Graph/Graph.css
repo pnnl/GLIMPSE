@@ -12,6 +12,10 @@
   text-align: center;
 }
 
+#node-operation {
+  font-weight: bolder;
+}
+
 table.legend_table {
   font-size: 1rem;
   border: 1px solid #d3d3d3;
@@ -27,6 +31,11 @@ div.table_content {
 }
 div.table_description {
   width: 100px;
+}
+
+#node-saveButton, #node-closeButton{
+  margin: .5rem .25rem;
+  padding: 5px;
 }
 
 .main-network {
