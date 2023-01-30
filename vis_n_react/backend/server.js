@@ -8,6 +8,7 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const errorHandler = require('./middleware/errorHandler');
 const { logger } = require('./middleware/logEvents');
+const { resolve } = require('path');
 const PORT =  process.env.PORT || 3500;
 
 app.use(logger);
@@ -30,9 +31,11 @@ app.use(express.json());
 
 var storage = multer.diskStorage({
     destination: (req, file, callback) => {
+
         callback(null, './glm_file_upload');
     },
     filename: (req, file, callback) => {
+
         callback(null, file.originalname);
     }
 });
@@ -52,22 +55,28 @@ app.post("/upload", async (req, res) => {
         }
     });
     
+    var outputData;
+    let i = 0;
+
     var python = spawn('python', ['./pyScript/glm2json.py', './glm_file_upload/']);
-    var outputDataFilePath;
+    python.stdout.on('data', (data) => {
 
-    python.stdout.on('data', function (data) {
-        console.log('Pipe data from python script ...');
-        outputDataFilePath = data.toString().replace(/\r?\n|\r/g, "");
+        console.log(`Pipe data from python script ... ${i++}`); // the python child loops twice for some reason
+        console.log(data.toString());
+        outputData = data.toString();
     });
+    
+    python.on('exit', (code) => {
 
-    var jsonFile;
-
-    python.on('close', (code) => {
         console.log(`child process close all stdio with code ${code}`);
-        jsonFile = fs.readFileSync(outputDataFilePath, 'utf-8');
-        res.json(JSON.parse(jsonFile));
+        res.json(outputData);
     });
+    
+    python.on("error", (err) => {
 
+        console.log(err);
+        res.sendStatus(500);
+    })
 });
 
 app.use(errorHandler);

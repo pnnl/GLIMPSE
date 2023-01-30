@@ -25,9 +25,11 @@ const Home = () => {
     };
 
     await axios.post("http://localhost:3500/upload", formData, header).then((res) => {
+
       console.log(res.data);
-      setFilesToVis(res.data);
+      setFilesToVis(JSON.parse(res.data));
     });
+    
     setDisplayComponent({"fileUpload": false});
   }
   
