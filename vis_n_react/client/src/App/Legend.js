@@ -31,7 +31,6 @@ const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}]
                             ["regulator", {"width": 4, "color": "#ff447d"}],
                             ["transformer", {"width": 4, "color": "#00FF00"}]]);
 
-var network = null;
 const nodes = [];
 const edges = [];
 
@@ -363,7 +362,7 @@ const Legend = (props) => {
     const container = useRef(null);
     
     useEffect(() => {
-        network = new Network(container.current, data, options);
+        const network = new Network(container.current, data, options);
 
         network.on('doubleClick', function(params) {
             if(params.nodes[0])

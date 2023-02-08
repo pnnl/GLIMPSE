@@ -2,13 +2,10 @@ const express = require('express');
 const app = express();
 const spawn = require('child_process').spawn;
 const cors = require("cors");
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const errorHandler = require('./middleware/errorHandler');
 const { logger } = require('./middleware/logEvents');
-const { resolve } = require('path');
 const PORT =  process.env.PORT || 3500;
 
 app.use(logger);
@@ -25,6 +22,7 @@ const corsOptions = {
     },
     optionsSuccessStatus: 200
 };
+
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.json());
@@ -47,11 +45,11 @@ app.post("/upload", async (req, res) => {
     upload(req, res, (error) => {
         if (error instanceof multer.MulterError) {
 
-            return res.end("Error uploading files involving multer.");
+            return res.status(500).end("Error uploading files involving multer.");
         }
         else if (error)
         {
-            return res.end("Error uploading files.");
+            return res.status(500).end("Error uploading files.");
         }
     });
     
@@ -59,17 +57,19 @@ app.post("/upload", async (req, res) => {
     let i = 0;
 
     var python = spawn('python', ['./pyScript/glm2json.py', './glm_file_upload/']);
+
     python.stdout.on('data', (data) => {
 
-        console.log(`Pipe data from python script ... ${i++}`); // the python child loops twice for some reason
-        console.log(data.toString());
+        console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
         outputData = data.toString();
+        
+        res.end(outputData);
     });
     
     python.on('exit', (code) => {
 
         console.log(`child process close all stdio with code ${code}`);
-        res.json(outputData);
+
     });
     
     python.on("error", (err) => {

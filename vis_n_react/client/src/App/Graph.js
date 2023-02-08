@@ -25,23 +25,21 @@ import nodeImg from '../imgs/node.png'
 
 
 const Graph = (props) => {
-
+  
+  let glmNetwork = null;
   let dataFiles = [];
-
+  
   for (let [k,v] of Object.entries(props.visFiles))
   {
     dataFiles.push(v);
   }
-
-  var glmNetwork = null;
-  var counter = -1;
-
+  
   const options = {
     edges: {
       smooth: {
         enabled: true,
         type: "dynamic"
-      }
+      },
     },
     nodes: {
       shapeProperties: {
@@ -68,9 +66,9 @@ const Graph = (props) => {
     },
     physics: {
       barnesHut: {
-        gravitationalConstant: -80000,
+        gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
         springLength: 200,
-        springConstant: 0.50,
+        springConstant: 0.50, // the higher the value the springy the edges are
       },
       maxVelocity: 150,
       minVelocity: 0.75,
@@ -86,7 +84,7 @@ const Graph = (props) => {
   };
   const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
   const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
-                      "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
+                    "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
   const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
   
   const nodeOptions = new Map([["load", {"group": "load"}],
@@ -100,7 +98,7 @@ const Graph = (props) => {
                       ["inverter", {"group": "inverter"}],
                       ["inverter_dyn", {"group": "inverter"}],
                       ["diesel_dg", {"group": "generator"}]]);
-  
+                      
   const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
                               ["switch", {"width": 4, "color": "#3a0ca3"}],
                               ["series_reactor", {"width": 4, "color": "#8c0000"}],
@@ -108,6 +106,7 @@ const Graph = (props) => {
                               ["underground_line", {"width": 4, "color": "#FFFF00"}],
                               ["regulator", {"width": 4, "color": "#ff447d"}],
                               ["transformer", {"width": 4,"color": "#00FF00"}]]);
+  var counter = -1;
   
   var nodes = [];
   for (let file of dataFiles)
@@ -128,7 +127,7 @@ const Graph = (props) => {
         }
       }
     }
-  var nodesDataSet = new DataSet(nodes);
+  const nodesDataSet = new DataSet(nodes);
   
   const edges = [];
   for (let file of dataFiles)
@@ -173,9 +172,9 @@ const Graph = (props) => {
       }
     }
   }
-  var edgesDataSet = new DataSet(edges);
+  const edgesDataSet = new DataSet(edges);
   
-  var data = {
+  const data = {
     nodes: nodesDataSet,
     edges: edgesDataSet
   };
@@ -363,28 +362,24 @@ const Graph = (props) => {
     return str;
   }
 
-  const container = useRef(null);
-  const [nodeToEdit, setNodeToEdit] = useState({})
-  
-  function setNodeEdit(node_id)
-  {
-    var node = data.nodes.get(node_id);
-    setNodeToEdit(node);
-  }
-
   function closePopUp() 
   {
     document.getElementById("node-saveButton").onclick = null;
     document.getElementById("node-closeButton").onclick = null;
     document.getElementById("node-popUp").style.display = "none";
   }
-
+  
   function saveEdits() {
     var node = data.nodes.get(nodeToEdit.id);
     node.attributes = nodeToEdit.attributes;
     node.title = getTitle(node.attributes);
     data.nodes.update(node);
   }
+  
+  const container = useRef(null);
+  const [nodeToEdit, setNodeToEdit] = useState({})
+
+  
 
   useEffect(() => {
     
@@ -415,26 +410,27 @@ const Graph = (props) => {
     });
     
     glmNetwork.on("doubleClick", function (params) {
+      
       if (params.nodes[0] === undefined)
       {
         alert("Double Click on a Node to edit")
       }
       else
       {
-        setNodeEdit(params.nodes[0]);
+        setNodeToEdit(data.nodes.get(params.nodes[0]));
         document.getElementById("node-popUp").style.display = "block";
       }
-      
+
     });
     
-  }, [container, props]); 
+  }, [container, data, options]); 
 
   return (
     <>
       <SearchBar 
         data = {data.nodes}
         togglePhy = {TogglePhysics}
-        reset = {Reset} 
+        reset = {Reset}
         onFind = {NodeFocus}
         prev = {Prev}
         next = {Next}
