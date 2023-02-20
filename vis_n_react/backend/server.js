@@ -40,7 +40,7 @@ var storage = multer.diskStorage({
 
 var upload = multer({storage: storage}).array('glmFile', 4);
 
-app.post("/upload", async (req, res) => {
+app.post("/upload", (req, res) => {
 
     upload(req, res, (error) => {
         if (error instanceof multer.MulterError) {
@@ -55,11 +55,10 @@ app.post("/upload", async (req, res) => {
     
     var outputData;
     let i = 0;
-
-    var python = spawn('python', ['./pyScript/glm2json.py', './glm_file_upload/']);
-
+    
+    const python = spawn('python', ['./py/glm2json.py', './glm_file_upload/']);
     python.stdout.on('data', (data) => {
-
+        
         console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
         outputData = data.toString();
         
@@ -67,16 +66,33 @@ app.post("/upload", async (req, res) => {
     });
     
     python.on('exit', (code) => {
-
-        console.log(`child process close all stdio with code ${code}`);
-
+        
+        console.log(`python process closed all stdio with code ${code}`);
+        
     });
     
     python.on("error", (err) => {
-
+        
         console.log(err);
         res.sendStatus(500);
-    })
+    });
+    
+    // const jarArgs = ["-cp","./jar/uber-STM-1.4-SNAPSHOT.jar", "gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType", `-input_file="./csv/metrics.csv"`,
+    //         `-separator=,`, "-sampling=false", "-valid_etypes=1", "-delta_limit=false", "-k_top=4", "-max_cores=1", ` -base_out_dir="./item-output/"`]
+    // const javaJar = spawn("java", jarArgs);
+
+    // javaJar.stdout.on('data', (data) => {
+    //     console.log(data.toString());
+    // });
+
+    // javaJar.on('exit', (code, signal) => {
+    //     console.log(`Java jar closed with code ${code}`);
+
+    // });
+
+    // javaJar.on("error", (error) => {
+    //     console.log(error)
+    // });
 });
 
 app.use(errorHandler);

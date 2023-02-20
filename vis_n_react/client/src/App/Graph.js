@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useRef, useState, useMemo} from 'react';
 import "../styles/Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
@@ -22,66 +22,18 @@ import nodeImg from '../imgs/node.png'
 // import IEEE_GEN from '../data/9500/Rotating_Machines.json'
 
 // const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
-
+// const dataFiles = [IEE_DF, IEE_GENF, IEE_INVF];
 
 const Graph = (props) => {
   
-  let glmNetwork = null;
   let dataFiles = [];
+  let glmNetwork;
   
   for (let [k,v] of Object.entries(props.visFiles))
   {
     dataFiles.push(v);
   }
-  
-  const options = {
-    edges: {
-      smooth: {
-        enabled: true,
-        type: "dynamic"
-      },
-    },
-    nodes: {
-      shapeProperties: {
-        interpolation: false
-      }
-    },
-    groups:{
-      load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
-      triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
-      capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-      triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
-      substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
-      triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
-      node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
-      meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
-      inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
-      generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
-    },
-    interaction: {
-      hover:true,
-      hideEdgesOnDrag: true,
-      hideEdgesOnZoom: true,
-      navigationButtons: true
-    },
-    physics: {
-      barnesHut: {
-        gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
-        springLength: 200,
-        springConstant: 0.50, // the higher the value the springy the edges are
-      },
-      maxVelocity: 150,
-      minVelocity: 0.75,
-      solver: 'barnesHut',
-      stabilization: {
-        enabled: true,
-        iterations: 1000,
-        updateInterval: 1,
-        onlyDynamicEdges: false,
-        fit: true
-      },
-    },
-  };
+
   const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
   const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
                     "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
@@ -108,79 +60,98 @@ const Graph = (props) => {
                               ["transformer", {"width": 4,"color": "#00FF00"}]]);
   var counter = -1;
   
-  var nodes = [];
-  for (let file of dataFiles)
-  {
-    var objs = file.objects;
-  
-    for (let obj of objs)
-    {
-      var objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      var attributes = obj.attributes;
-      if (nodeTypes.includes(objectType))
-      {
-        var nodeID = attributes.name;
-        nodes.push({id: nodeID, label: nodeID,
-          attributes: attributes,
-          group: nodeOptions.get(objectType).group,
-          title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-        }
-      }
-    }
-  const nodesDataSet = new DataSet(nodes);
-  
-  const edges = [];
-  for (let file of dataFiles)
-  {
-    objs = file.objects;
-  
-    for (let obj of objs)
-    {
-      objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      attributes = obj.attributes;
-      if (edgeTypes.includes(objectType))
-      {
-        var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-        var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-        var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+  const getTitle = (attributes) => {
         
-        edges.push({from: edgeFrom, to: edgeTo,
-                  id: edgeID,
-                  color: edgeOptions.get(objectType).color,
-                  width: edgeOptions.get(objectType).width,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-                }
-      else if (parent_child_edge_types.includes(objectType))
-      {
-        nodeID = attributes.name;
-        var parent = attributes.parent;
-  
-        if(parent !== undefined)
-        {
-          edges.push({from: parent, to: nodeID, color: {inherit: true}});
-        }
-      }
-      else if(nodeTypes.includes(objectType))
-      {
-        nodeID = attributes.name;
-        parent = attributes.parent;
-        
-        if(parent !== undefined)
-        {
-          edges.push({from: parent, to: nodeID, color: {inherit: true}});
-        }
-      }
+    let str = "";
+    for (let [k, v] of Object.entries(attributes))
+    {
+      str = str + k +": " + v +"\n";
     }
+    return str;
   }
-  const edgesDataSet = new DataSet(edges);
-  
-  const data = {
-    nodes: nodesDataSet,
-    edges: edgesDataSet
-  };
 
-  function TogglePhysics(toggle)
-  {
+  const getNodes = (dataFiles) => {
+
+    let nodes = new DataSet();
+    for (let file of dataFiles)
+    {
+      let objs = file.objects;
+    
+      for (let obj of objs)
+      {
+        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+        let attributes = obj.attributes;
+        if (nodeTypes.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          nodes.add({id: nodeID, label: nodeID,
+            attributes: attributes,
+            group: nodeOptions.get(objectType).group,
+            title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+        }
+      }
+    }
+
+    return nodes;
+  }
+  
+  const getEdges = (dataFiles) => {
+
+    let edges = new DataSet();
+
+    for (let file of dataFiles)
+    {
+      
+      let objs = file.objects;
+    
+      for (let obj of objs)
+      {
+        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+        let attributes = obj.attributes;
+        if (edgeTypes.includes(objectType))
+        {
+          var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
+          var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
+          var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+          
+          edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
+                    color: edgeOptions.get(objectType).color,
+                    width: edgeOptions.get(objectType).width,
+                    title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                  }
+        else if (parent_child_edge_types.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          var parent = attributes.parent;
+    
+          if(parent !== undefined)
+          {
+            edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          }
+        }
+        else if(nodeTypes.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          parent = attributes.parent;
+          
+          if(parent !== undefined)
+          {
+            edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          }
+        }
+      }
+    }
+
+    return edges;
+  }
+
+  const data = {
+    nodes: getNodes(dataFiles),
+    edges: getEdges(dataFiles)
+  }
+
+  const TogglePhysics = (toggle) => {
+    
     if(toggle)
     {
       glmNetwork.setOptions({physics: {enabled: true}})
@@ -191,7 +162,8 @@ const Graph = (props) => {
     }
   }
   
-  function Reset() {
+  const Reset = () => {
+
     let nodeItems = data.nodes.map((n) => {
       if(n.color)
       {
@@ -203,6 +175,7 @@ const Graph = (props) => {
         delete n.size;
         return n;
       }
+      return n;
     });
     
     let edgeItems = data.edges.map((e) => {
@@ -230,8 +203,8 @@ const Graph = (props) => {
     counter = 0;
   }
   
-  function Prev()
-  {
+  const Prev = () => {
+
     var options = {
       scale: 1,
       animation: {
@@ -241,7 +214,7 @@ const Graph = (props) => {
     };
   
     var prev = data.nodes.get({
-      filter: function (n) {
+      filter: (n) => {
         return (n.size === 50);
       }
     });
@@ -254,8 +227,8 @@ const Graph = (props) => {
     glmNetwork.focus(prev[counter].id, options)
   }
   
-  function Next()
-  {
+  const Next = () => {
+
     var options = {
       scale: 1,
       animation: {
@@ -265,7 +238,7 @@ const Graph = (props) => {
     };
   
     var nxt = data.nodes.get({
-      filter: function (n) {
+      filter: (n) => {
         return (n.size === 50);
       }
     });
@@ -282,8 +255,8 @@ const Graph = (props) => {
     }
   }
   
-  function NodeFocus(nodeID)
-  {
+  const NodeFocus = (nodeID) => {
+    
     var options = {
       scale: 1,
       animation: {
@@ -295,8 +268,8 @@ const Graph = (props) => {
     glmNetwork.focus(nodeID, options)
   }
   
-  function HighlightGroup(group)
-  {
+  const HighlightGroup = (group) => {
+    
     var nodesMap = data.nodes.map((n) => {
       if(n.group === group)
       {
@@ -314,17 +287,19 @@ const Graph = (props) => {
   
     var edgesMap = data.edges.map((e) => {
       if(!(e.width === 20))
+      {
         e.color = 'lightgrey';
-  
-        return e;
+      }
+      return e;
+        
     });
   
     data.nodes.update(nodesMap);
     data.edges.update(edgesMap);
   }
   
-  function HighlightEdges(edgeID)
-  {
+  const HighlightEdges = (edgeID) => {
+    
     let nodeItems = data.nodes.map((n) => {
       if (!(n.size === 50))
       {
@@ -352,40 +327,98 @@ const Graph = (props) => {
     data.edges.update(edgeItems);
   }
   
-  function getTitle(attributes)
-  {
-    let str = "";
-    for (let [k, v] of Object.entries(attributes))
-    {
-      str = str + k +": " + v +"\n";
-    }
-    return str;
+  const editNode = (data, cancelAction, callback) => {
+    
+    setNodeToEdit(data)
+    console.log(data);
+
+    document.getElementById("node-saveButton").onclick = saveEdits.bind(this, data, callback);
+    document.getElementById("node-closeButton").onclick = cancelAction.bind(this, callback);
+    document.getElementById("node-popUp").style.display = "block";
   }
 
-  function closePopUp() 
-  {
+  const closePopUp = () => {
+    
     document.getElementById("node-saveButton").onclick = null;
     document.getElementById("node-closeButton").onclick = null;
     document.getElementById("node-popUp").style.display = "none";
   }
-  
-  function saveEdits() {
-    var node = data.nodes.get(nodeToEdit.id);
-    node.attributes = nodeToEdit.attributes;
-    node.title = getTitle(node.attributes);
-    data.nodes.update(node);
+
+  const cancelNodeEdit = (callback) => {
+    closePopUp();
+    callback(null);
   }
   
-  const container = useRef(null);
-  const [nodeToEdit, setNodeToEdit] = useState({})
+  const saveEdits = (data, callback) => {
 
-  
+    data.attributes = nodeToEdit.attributes;
+    data.title = getTitle(data.attributes);
+    closePopUp();
+    callback(data);
+  }
+
+  const container = useRef(null);
+  const [nodeToEdit, setNodeToEdit] = useState({});
 
   useEffect(() => {
+
+    const options = {
+      edges: {
+        smooth: {
+          enabled: true,
+          type: "dynamic"
+        },
+      },
+      nodes: {
+        shapeProperties: {
+          interpolation: false
+        }
+      },
+      manipulation: {
+        editNode: (data, callback) => {
+          editNode(data, cancelNodeEdit, callback)
+        }
+      },
+      groups:{
+        load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
+        triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
+        capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
+        triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
+        substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
+        triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
+        node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
+        meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
+        inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
+        generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
+      },
+      interaction: {
+        hover:true,
+        hideEdgesOnDrag: true,
+        hideEdgesOnZoom: true,
+        navigationButtons: true
+      },
+      physics: {
+        barnesHut: {
+          gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
+          springLength: 200,
+          springConstant: 0.50, // the higher the value the springy the edges are
+        },
+        maxVelocity: 150,
+        minVelocity: 0.75,
+        solver: 'barnesHut',
+        stabilization: {
+          enabled: true,
+          iterations: 1000,
+          updateInterval: 1,
+          onlyDynamicEdges: false,
+          fit: true
+        },
+      },
+    };
     
-    glmNetwork = new Network(container.current, data, options);
-    
-    glmNetwork.on("stabilizationProgress", function (params) {
+    glmNetwork = container.current && new Network(container.current, data, options);
+
+    glmNetwork.on("stabilizationProgress", (params) => {
 
       var maxWidth = 360;
       var minWidth = 1;
@@ -396,34 +429,20 @@ const Graph = (props) => {
     
     });
     
-    glmNetwork.once("stabilizationIterationsDone", function () {
+    glmNetwork.once("stabilizationIterationsDone", () => {
 
       document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
       document.getElementById("progressValue").innerText = "100%";
       document.getElementById("circularProgress").style.opacity = 0.7;
 
-      setTimeout(function () {
+      setTimeout(() => {
         document.getElementById("circularProgress").style.display = "none";
       }, 500);
 
       glmNetwork.setOptions({physics: {enabled: false}})
     });
     
-    glmNetwork.on("doubleClick", function (params) {
-      
-      if (params.nodes[0] === undefined)
-      {
-        alert("Double Click on a Node to edit")
-      }
-      else
-      {
-        setNodeToEdit(data.nodes.get(params.nodes[0]));
-        document.getElementById("node-popUp").style.display = "block";
-      }
-
-    });
-    
-  }, [container, data, options]); 
+  }, [container, data]);
 
   return (
     <>
@@ -440,25 +459,25 @@ const Graph = (props) => {
         <span id="node-operation">Edit Node</span> <br />
         <table style={{"margin": "auto"}}>
           <tbody>
-            {
-              Object.entries(nodeToEdit.attributes === undefined ? {} : nodeToEdit.attributes).map(([key, val], index) => {
-                return(
-                  <tr key={index} >
-                    <td>{key}</td>
-                    <td>
-                      <input value={val} onChange = {(e) => {
-                          setNodeToEdit({...nodeToEdit, attributes: {...nodeToEdit.attributes, [key]: e.target.value}});
-                        }}>
-                      </input>
-                    </td>
-                  </tr>
-                );
-              }) 
-            }
+          {
+            Object.entries(nodeToEdit.attributes === undefined ? {} : nodeToEdit.attributes).map(([key, val], index) => {
+            return(
+                <tr key={index} >
+                  <td>{key}</td>
+                  <td>
+                    <input value={val} onChange = {(e) => {
+                      setNodeToEdit({...nodeToEdit, attributes: {...nodeToEdit.attributes, [key]: e.target.value}});
+                    }}>
+                    </input>
+                  </td>
+                </tr>
+              );
+            }) 
+          }
           </tbody>
         </table>
-        <input type="button" value="save" id="node-saveButton" onClick={saveEdits}/>
-        <input type="button" value="Close" id="node-closeButton" onClick={closePopUp}/>
+        <input type="button" value="save" id="node-saveButton" />
+        <input type="button" value="Close" id="node-closeButton" />
       </div>
 
       <div id = "networks-wrapper">

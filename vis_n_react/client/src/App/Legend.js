@@ -328,40 +328,43 @@ edges.push({
 const nodesDataSet = new DataSet(nodes);
 const edgesDataSet = new DataSet(edges);
 
-const data = {
-    nodes: nodesDataSet,
-    edges: edgesDataSet
-}
 
-const options = {
-    "nodes":{
-        "font":{
-            "size": 20
-        }
-    },
-    "edges":{
-        "font":{
-            "size": 30,
-        }
-    },
-    "groups":{
-        "load": {"color": "#2a9d8f", "borderWidth": 4, "shape": "circularImage", "image": loadImg},
-        "triplex_load":{"color": "#ffea00", "borderWidth": 4, "shape": "circularImage","image": loadImg},
-        "capacitor":{"color": "#283618", "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-        "triplex_node":{"color": "#003566", "borderWidth": 4, "shape": "circularImage","image": nodeImg},
-        "substation":{"color": "#fca311", "borderWidth": 4, "shape": "circularImage","image": substationImg},
-        "triplex_meter":{"color": "#072ac8", "borderWidth": 4, "shape": "circularImage","image": meterImg},
-        "node":{"color": "#4361ee", "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
-        "meter":{"color": "#d90429", "borderWidth": 4, "shape": "circularImage", "image": meterImg},
-        "inverter":{"color": "#c8b6ff", "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
-        "generator":{"color": "#fee440", "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
-    },
-};
 
 const Legend = (props) => {
+    
+    const data = {
+        nodes: nodesDataSet,
+        edges: edgesDataSet
+    }
     const container = useRef(null);
     
     useEffect(() => {
+
+        const options = {
+            "nodes":{
+                "font":{
+                    "size": 20
+                }
+            },
+            "edges":{
+                "font":{
+                    "size": 30,
+                }
+            },
+            "groups":{
+                "load": {"color": "#2a9d8f", "borderWidth": 4, "shape": "circularImage", "image": loadImg},
+                "triplex_load":{"color": "#ffea00", "borderWidth": 4, "shape": "circularImage","image": loadImg},
+                "capacitor":{"color": "#283618", "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
+                "triplex_node":{"color": "#003566", "borderWidth": 4, "shape": "circularImage","image": nodeImg},
+                "substation":{"color": "#fca311", "borderWidth": 4, "shape": "circularImage","image": substationImg},
+                "triplex_meter":{"color": "#072ac8", "borderWidth": 4, "shape": "circularImage","image": meterImg},
+                "node":{"color": "#4361ee", "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
+                "meter":{"color": "#d90429", "borderWidth": 4, "shape": "circularImage", "image": meterImg},
+                "inverter":{"color": "#c8b6ff", "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
+                "generator":{"color": "#fee440", "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
+            },
+        };
+
         const network = new Network(container.current, data, options);
 
         network.on('doubleClick', function(params) {
@@ -376,7 +379,7 @@ const Legend = (props) => {
                 props.findEdges(e.id);
             }
         });
-    }, [container, props]);
+    }, [container, data]);
 
     return (
     <>

@@ -1,5 +1,5 @@
 import '../styles/App.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import GlmFileUpload from './GlmFileUpload';
@@ -24,7 +24,7 @@ const Home = () => {
       }
     };
 
-    await axios.post("http://localhost:3500/upload", formData, header).then((res) => {
+    axios.post("http://localhost:3500/upload", formData, header).then((res) => {
 
       console.log(res.data);
       setFilesToVis(res.data);

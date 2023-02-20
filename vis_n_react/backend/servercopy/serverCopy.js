@@ -2,8 +2,6 @@ const express = require('express');
 const app = express();
 const spawn = require('child_process').spawn;
 const cors = require("cors");
-const path = require('path');
-const fs = require('fs');
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const errorHandler = require('./middleware/errorHandler');
@@ -24,50 +22,76 @@ const corsOptions = {
     },
     optionsSuccessStatus: 200
 };
+
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.json());
 
 var storage = multer.diskStorage({
     destination: (req, file, callback) => {
+
         callback(null, './glm_file_upload');
     },
     filename: (req, file, callback) => {
+
         callback(null, file.originalname);
     }
 });
 
 var upload = multer({storage: storage}).array('glmFile', 4);
 
-app.post("/upload", async (req, res) => {
+app.post("/upload", (req, res) => {
 
     upload(req, res, (error) => {
         if (error instanceof multer.MulterError) {
 
-            return res.end("Error uploading files involving multer.");
+            return res.status(500).end("Error uploading files involving multer.");
         }
         else if (error)
         {
-            return res.end("Error uploading files.");
+            return res.status(500).end("Error uploading files.");
         }
     });
     
-    var python = spawn('python', ['./pyScript/glm2json.py', './glm_file_upload/']);
-    var outputDataFilePath;
+    var outputData;
+    let i = 0;
+    
+    const python = spawn('python', ['./py/glm2json.py', './glm_file_upload/']);
+    python.stdout.on('data', (data) => {
+        
+        console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
+        outputData = data.toString();
+        
+        res.end(outputData);
+    });
+    
+    python.on('exit', (code) => {
+        
+        console.log(`python process closed all stdio with code ${code}`);
+        
+    });
+    
+    python.on("error", (err) => {
+        
+        console.log(err);
+        res.sendStatus(500);
+    });
+    
+    const jarArgs = [`-cp`,`./jar/uber-STM-1.4-SNAPSHOT.jar`, `gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType`, `-input_file=./csv/metrics.csv`,
+            `-separator=","`, `-sampling=false`, `-valid_etypes=1`, `-delta_limit=false`, `-k_top=4`, `-max_cores=1 `, ` -base_out_dir=./item-output/`]
+    const javaJar = spawn("java", jarArgs);
 
-    python.stdout.on('data', function (data) {
-        console.log('Pipe data from python script ...');
-        outputDataFilePath = data.toString().replace(/\r?\n|\r/g, "");
+    javaJar.stdout.on('data', (data) => {
+        console.log(data.toString());
     });
 
-    var jsonFile;
-
-    python.on('close', (code) => {
-        console.log(`child process close all stdio with code ${code}`);
-        jsonFile = fs.readFileSync(outputDataFilePath, 'utf-8');
-        res.json(JSON.parse(jsonFile));
+    javaJar.on('exit', (code) => {
+        console.log(`Java jar closed with code ${code}`)
     });
 
+    javaJar.on("error", (error) => {
+        console.log(error)
+    });
 });
 
 app.use(errorHandler);

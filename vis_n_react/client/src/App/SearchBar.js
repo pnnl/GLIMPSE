@@ -1,10 +1,11 @@
 import React, {useState} from "react";
 import "../styles/SearchBar.css"
 
-const SearchBar = (props) =>{
+const SearchBar = (props) => {
 
     const nodes = props.data;
     const [node, setNode] = useState("");
+
     const handleChange = (e) =>
     {
         setNode(e.target.value);
@@ -20,7 +21,7 @@ const SearchBar = (props) =>{
         }
         else
         {
-            alert(node + " is not in the graph.")
+            alert(`${node} is not in the graph.`)
         }
     }
 
