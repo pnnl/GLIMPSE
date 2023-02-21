@@ -23,14 +23,12 @@ const Home = () => {
         "content-type": "multipart/form-data"
       }
     };
-
-    axios.post("http://localhost:3500/upload", formData, header).then((res) => {
-
-      console.log(res.data);
-      setFilesToVis(res.data);
-    });
     
-    setDisplayComponent({"fileUpload": false});
+    axios
+      .post("http://localhost:3500/upload", formData, header)
+      .then((res) => {setFilesToVis(res.data)})
+      .catch((error) => console.log(error.message))
+      .finally(() => setDisplayComponent({"fileUpload": false}));
   }
   
   if(displayComponent.fileUpload)
