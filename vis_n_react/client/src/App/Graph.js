@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState, useMemo} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import "../styles/Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
@@ -70,84 +70,76 @@ const Graph = (props) => {
     return str;
   }
 
-  const getNodes = (dataFiles) => {
 
-    let nodes = new DataSet();
-    for (let file of dataFiles)
+  let nodes = new DataSet();
+  for (let file of dataFiles)
+  {
+    let objs = file.objects;
+  
+    for (let obj of objs)
     {
-      let objs = file.objects;
-    
-      for (let obj of objs)
+      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+      let attributes = obj.attributes;
+      if (nodeTypes.includes(objectType))
       {
-        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-        let attributes = obj.attributes;
-        if (nodeTypes.includes(objectType))
-        {
-          let nodeID = attributes.name;
-          nodes.add({id: nodeID, label: nodeID,
-            attributes: attributes,
-            group: nodeOptions.get(objectType).group,
-            title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-        }
+        let nodeID = attributes.name;
+        nodes.add({id: nodeID, label: nodeID,
+          attributes: attributes,
+          group: nodeOptions.get(objectType).group,
+          title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
       }
     }
-
-    return nodes;
   }
   
-  const getEdges = (dataFiles) => {
 
-    let edges = new DataSet();
+  let edges = new DataSet();
 
-    for (let file of dataFiles)
+  for (let file of dataFiles)
+  {
+    
+    let objs = file.objects;
+  
+    for (let obj of objs)
     {
-      
-      let objs = file.objects;
-    
-      for (let obj of objs)
+      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+      let attributes = obj.attributes;
+      if (edgeTypes.includes(objectType))
       {
-        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-        let attributes = obj.attributes;
-        if (edgeTypes.includes(objectType))
+        var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
+        var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
+        var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+        
+        edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
+                  color: edgeOptions.get(objectType).color,
+                  width: edgeOptions.get(objectType).width,
+                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                }
+      else if (parent_child_edge_types.includes(objectType))
+      {
+        let nodeID = attributes.name;
+        var parent = attributes.parent;
+  
+        if(parent !== undefined)
         {
-          var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-          var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-          var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
-          
-          edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
-                    color: edgeOptions.get(objectType).color,
-                    width: edgeOptions.get(objectType).width,
-                    title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-                  }
-        else if (parent_child_edge_types.includes(objectType))
-        {
-          let nodeID = attributes.name;
-          var parent = attributes.parent;
-    
-          if(parent !== undefined)
-          {
-            edges.add({from: parent, to: nodeID, color: {inherit: true}});
-          }
+          edges.add({from: parent, to: nodeID, color: {inherit: true}});
         }
-        else if(nodeTypes.includes(objectType))
+      }
+      else if(nodeTypes.includes(objectType))
+      {
+        let nodeID = attributes.name;
+        parent = attributes.parent;
+        
+        if(parent !== undefined)
         {
-          let nodeID = attributes.name;
-          parent = attributes.parent;
-          
-          if(parent !== undefined)
-          {
-            edges.add({from: parent, to: nodeID, color: {inherit: true}});
-          }
+          edges.add({from: parent, to: nodeID, color: {inherit: true}});
         }
       }
     }
-
-    return edges;
   }
 
   const data = {
-    nodes: getNodes(dataFiles),
-    edges: getEdges(dataFiles)
+    nodes: nodes,
+    edges: edges
   }
 
   const TogglePhysics = (toggle) => {
@@ -326,16 +318,6 @@ const Graph = (props) => {
     data.nodes.update(nodeItems);
     data.edges.update(edgeItems);
   }
-  
-  const editNode = (data, cancelAction, callback) => {
-    
-    setNodeToEdit(data)
-    console.log(data);
-
-    document.getElementById("node-saveButton").onclick = saveEdits.bind(this, data, callback);
-    document.getElementById("node-closeButton").onclick = cancelAction.bind(this, callback);
-    document.getElementById("node-popUp").style.display = "block";
-  }
 
   const closePopUp = () => {
     
@@ -343,18 +325,11 @@ const Graph = (props) => {
     document.getElementById("node-closeButton").onclick = null;
     document.getElementById("node-popUp").style.display = "none";
   }
-
-  const cancelNodeEdit = (callback) => {
-    closePopUp();
-    callback(null);
-  }
   
-  const saveEdits = (data, callback) => {
-
-    data.attributes = nodeToEdit.attributes;
-    data.title = getTitle(data.attributes);
+  const saveEdits = () => {
+    nodeToEdit.title = getTitle(nodeToEdit.attributes);
+    data.nodes.update(nodeToEdit);
     closePopUp();
-    callback(data);
   }
 
   const container = useRef(null);
@@ -372,11 +347,6 @@ const Graph = (props) => {
       nodes: {
         shapeProperties: {
           interpolation: false
-        }
-      },
-      manipulation: {
-        editNode: (data, callback) => {
-          editNode(data, cancelNodeEdit, callback)
         }
       },
       groups:{
@@ -441,6 +411,11 @@ const Graph = (props) => {
 
       glmNetwork.setOptions({physics: {enabled: false}})
     });
+
+    glmNetwork.on("doubleClick", (params) => {
+      setNodeToEdit(data.nodes.get(params.nodes[0]));
+      document.getElementById("node-popUp").style.display = "block";
+    });
     
   }, [container, data]);
 
@@ -476,8 +451,8 @@ const Graph = (props) => {
           }
           </tbody>
         </table>
-        <input type="button" value="save" id="node-saveButton" />
-        <input type="button" value="Close" id="node-closeButton" />
+        <input type="button" value="save" id="node-saveButton" onClick={saveEdits} />
+        <input type="button" value="Close" id="node-closeButton" onClick={closePopUp}/>
       </div>
 
       <div id = "networks-wrapper">
