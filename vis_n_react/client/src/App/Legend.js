@@ -379,7 +379,7 @@ const Legend = (props) => {
                 props.findEdges(e.id);
             }
         });
-    }, [container, data]);
+    }, [container, data, props]);
 
     return (
     <>

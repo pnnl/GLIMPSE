@@ -56,3 +56,9 @@
 02/21/2023	10:57:46	8a6fcab0-e941-43a7-9dbe-0d4c893560bd	GET	undefined	/src/index3.css
 02/21/2023	10:57:47	6a4dc992-cb97-4af1-89c8-b94c1fc2fef4	GET	undefined	/manifest.json
 02/21/2023	10:57:52	62c97bff-1375-4a3e-ae07-92c50242d59a	POST	http://localhost:3000	/upload
+02/22/2023	13:34:11	9948ab0e-6062-4980-80de-51078a0a3dca	GET	undefined	/src/index3.css
+02/22/2023	13:34:12	669b1c25-9f7c-4980-a94d-74853ce37b15	GET	undefined	/favicon.ico
+02/22/2023	13:34:12	1c3154e4-e3e8-42fe-8169-4c611e63d30a	GET	undefined	/manifest.json
+02/22/2023	13:34:38	4093a8a1-3c29-4e59-bbe9-61c6abe54cf1	POST	http://localhost:3000	/upload
+02/22/2023	13:34:44	69db3f51-9edb-43e2-bce1-87cc7dc1215c	GET	undefined	/src/index3.css
+02/22/2023	13:34:44	66d422c9-4deb-45c9-9471-21acfd8e256c	GET	undefined	/manifest.json

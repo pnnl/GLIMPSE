@@ -21,6 +21,7 @@ header {
   padding: 0.7rem;
   margin: 0.5rem;
   border: 1px solid white;
+  border-radius: .5rem;
   text-decoration: none;
   color: white;
 }

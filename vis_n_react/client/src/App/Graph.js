@@ -24,54 +24,36 @@ import nodeImg from '../imgs/node.png'
 // const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
 // const dataFiles = [IEE_DF, IEE_GENF, IEE_INVF];
 
-const Graph = (props) => {
-  
-  let dataFiles = [];
-  let glmNetwork;
-  
-  for (let [k,v] of Object.entries(props.visFiles))
-  {
-    dataFiles.push(v);
-  }
+const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
+const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
+                  "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
+const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
 
-  const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
-  const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
-                    "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
-  const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
-  
-  const nodeOptions = new Map([["load", {"group": "load"}],
-                      ["triplex_load", {"group": "triplex_load"}],
-                      ["capacitor", {"group": "capacitor"}],
-                      ["triplex_node", {"group": "triplex_node"}],
-                      ["substation", {"group": "substation"}],
-                      ["triplex_meter", {"group": "triplex_meter"}],
-                      ["node", {"group": "node"}],
-                      ["meter", {"group": "meter"}],
-                      ["inverter", {"group": "inverter"}],
-                      ["inverter_dyn", {"group": "inverter"}],
-                      ["diesel_dg", {"group": "generator"}]]);
-                      
-  const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
-                              ["switch", {"width": 4, "color": "#3a0ca3"}],
-                              ["series_reactor", {"width": 4, "color": "#8c0000"}],
-                              ["triplex_line", {"width": 4, "color": "#c86bfa"}],
-                              ["underground_line", {"width": 4, "color": "#FFFF00"}],
-                              ["regulator", {"width": 4, "color": "#ff447d"}],
-                              ["transformer", {"width": 4,"color": "#00FF00"}]]);
-  var counter = -1;
-  
-  const getTitle = (attributes) => {
-        
-    let str = "";
-    for (let [k, v] of Object.entries(attributes))
-    {
-      str = str + k +": " + v +"\n";
-    }
-    return str;
-  }
+const nodeOptions = new Map([["load", {"group": "load"}],
+                    ["triplex_load", {"group": "triplex_load"}],
+                    ["capacitor", {"group": "capacitor"}],
+                    ["triplex_node", {"group": "triplex_node"}],
+                    ["substation", {"group": "substation"}],
+                    ["triplex_meter", {"group": "triplex_meter"}],
+                    ["node", {"group": "node"}],
+                    ["meter", {"group": "meter"}],
+                    ["inverter", {"group": "inverter"}],
+                    ["inverter_dyn", {"group": "inverter"}],
+                    ["diesel_dg", {"group": "generator"}]]);
+                    
+const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
+                            ["switch", {"width": 4, "color": "#3a0ca3"}],
+                            ["series_reactor", {"width": 4, "color": "#8c0000"}],
+                            ["triplex_line", {"width": 4, "color": "#c86bfa"}],
+                            ["underground_line", {"width": 4, "color": "#FFFF00"}],
+                            ["regulator", {"width": 4, "color": "#ff447d"}],
+                            ["transformer", {"width": 4,"color": "#00FF00"}]]);
 
+const getGraphData= (dataFiles) => {
+  const graphData = {};
+  const edges = new DataSet();
+  const nodes = new DataSet();
 
-  let nodes = new DataSet();
   for (let file of dataFiles)
   {
     let objs = file.objects;
@@ -90,9 +72,7 @@ const Graph = (props) => {
       }
     }
   }
-  
-
-  let edges = new DataSet();
+  graphData.nodes = nodes;
 
   for (let file of dataFiles)
   {
@@ -136,11 +116,34 @@ const Graph = (props) => {
       }
     }
   }
+  graphData.edges = edges;
 
-  const data = {
-    nodes: nodes,
-    edges: edges
+  return graphData;
+}
+
+const getTitle = (attributes) => {
+        
+  let str = "";
+  for (let [k, v] of Object.entries(attributes))
+  {
+    str = str + k +": " + v +"\n";
   }
+  return str;
+}
+
+let glmNetwork;
+
+const Graph = (props) => {
+  
+  let dataFiles = [];
+  var counter = -1;
+  
+  for (let k in props.visFiles)
+  {
+    dataFiles.push(props.visFiles[k]);
+  }
+
+  const data = getGraphData(dataFiles);
 
   const TogglePhysics = (toggle) => {
     

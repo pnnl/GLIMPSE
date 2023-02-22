@@ -53,51 +53,51 @@ app.post("/upload", (req, res) => {
         }
     });
     
-    // var outputData;
-    // let i = 0;
+    var outputData;
+    let i = 0;
     
-    // const python = spawn('python', ['./py/glm2json.py', './glm_file_upload/']);
-    // python.stdout.on('data', (data) => {
+    const python = spawn('python', ['./py/glm2json.py', './glm_file_upload/']);
+    python.stdout.on('data', (data) => {
         
-    //     console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
-    //     outputData = data.toString();
+        console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
+        outputData = data.toString();
         
-    //     res.end(outputData);
+        res.end(outputData);
+    });
+    
+    python.on('exit', (code) => {
+        
+        console.log(`python process closed all stdio with code ${code}`);
+        
+    });
+    
+    python.on("error", (err) => {
+        
+        console.log(err);
+        res.sendStatus(500);
+    });
+    
+    // const jarArgs = ["-cp","./jar/uber-STM-1.4-SNAPSHOT.jar", "gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType", `-input_file="./csv/metrics.csv"`,
+    //         `-separator=","`, "-sampling=false", "-valid_etypes=1", "-delta_limit=false", "-k_top=4", "-max_cores=1", ` -base_out_dir="./item-output/"`]
+    
+    // const javaJar = spawn("java", jarArgs);
+
+    // javaJar.stdout.on('data', (data) => {
+    //     console.log(data.toString());
     // });
-    
-    // python.on('exit', (code) => {
-        
-    //     console.log(`python process closed all stdio with code ${code}`);
-        
+
+    // javaJar.on("close", (code) => {
+    //     console.log(`Jar closed with code ${code}`)
     // });
-    
-    // python.on("error", (err) => {
-        
-    //     console.log(err);
-    //     res.sendStatus(500);
+
+    // javaJar.on('exit', (code, signal) => {
+    //     console.log(`Java jar exited with code ${code}`);
+
     // });
-    
-    const jarArgs = ["-cp","./jar/uber-STM-1.4-SNAPSHOT.jar", "gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType", `-input_file="./csv/metrics.csv"`,
-            `-separator=","`, "-sampling=false", "-valid_etypes=1", "-delta_limit=false", "-k_top=4", "-max_cores=1", ` -base_out_dir="./item-output/"`]
-    
-    const javaJar = spawn("java", jarArgs);
 
-    javaJar.stdout.on('data', (data) => {
-        console.log(data.toString());
-    });
-
-    javaJar.on("close", (code) => {
-        console.log(`Jar closed with code ${code}`)
-    });
-
-    javaJar.on('exit', (code, signal) => {
-        console.log(`Java jar exited with code ${code}`);
-
-    });
-
-    javaJar.on("error", (error) => {
-        console.log(error)
-    });
+    // javaJar.on("error", (error) => {
+    //     console.log(error)
+    // });
 });
 
 app.use(errorHandler);
