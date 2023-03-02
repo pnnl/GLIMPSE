@@ -1,5 +1,5 @@
 import '../styles/App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import GlmFileUpload from './GlmFileUpload';
@@ -12,6 +12,7 @@ const Home = () => {
   const [filesToVis, setFilesToVis] = useState({});
 
   const fileUpload = async (files) => {
+
     const formData = new FormData();
     for(let i = 0; i < files.length; i++)
     {
@@ -30,7 +31,8 @@ const Home = () => {
       .catch((error) => console.log(error.message))
       .finally(() => setDisplayComponent({"fileUpload": false}));
   }
-  
+
+
   if(displayComponent.fileUpload)
   {
     content = <GlmFileUpload fileUpload = {fileUpload} />;

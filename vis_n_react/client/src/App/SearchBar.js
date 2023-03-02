@@ -45,9 +45,8 @@ const SearchBar = (props) => {
 
     const togglePhysics = () =>
     {
-        var checkBox = document.getElementById("phyCheck");
-        var toggle = checkBox.checked ? true : false;
-        props.togglePhy(toggle);
+        const checkBox = document.getElementById("phyCheck");
+        props.physicsToggle(checkBox.checked);
     }
 
     return (
@@ -62,7 +61,7 @@ const SearchBar = (props) => {
                     </label>
                 </div>
                     <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
-                    <button className = "find-btn" onClick={handleSubmit}>Find</button>   
+                    <button className = "find-btn">Find</button>
                     <button className = "prev-btn" onClick={handlePrev}>Prev</button>
                     <button className = "next-btn" onClick={handleNext}>Next</button>
                     <button className = "reset-btn" onClick={handleReset}>Reset</button>

@@ -1,8 +1,9 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import "../styles/Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
 import SearchBar from './SearchBar';
+import NodePopup from './NodePopup';
 import '../styles/vis-network.css';
 import Legend from './Legend';
 import loadImg from '../imgs/load.png';
@@ -23,140 +24,193 @@ import nodeImg from '../imgs/node.png'
 
 // const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
 // const dataFiles = [IEE_DF, IEE_GENF, IEE_INVF];
-
-const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
-const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
-                  "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
-const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
-
-const nodeOptions = new Map([["load", {"group": "load"}],
-                    ["triplex_load", {"group": "triplex_load"}],
-                    ["capacitor", {"group": "capacitor"}],
-                    ["triplex_node", {"group": "triplex_node"}],
-                    ["substation", {"group": "substation"}],
-                    ["triplex_meter", {"group": "triplex_meter"}],
-                    ["node", {"group": "node"}],
-                    ["meter", {"group": "meter"}],
-                    ["inverter", {"group": "inverter"}],
-                    ["inverter_dyn", {"group": "inverter"}],
-                    ["diesel_dg", {"group": "generator"}]]);
-                    
-const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
-                            ["switch", {"width": 4, "color": "#3a0ca3"}],
-                            ["series_reactor", {"width": 4, "color": "#8c0000"}],
-                            ["triplex_line", {"width": 4, "color": "#c86bfa"}],
-                            ["underground_line", {"width": 4, "color": "#FFFF00"}],
-                            ["regulator", {"width": 4, "color": "#ff447d"}],
-                            ["transformer", {"width": 4,"color": "#00FF00"}]]);
-
-const getGraphData= (dataFiles) => {
-  const graphData = {};
-  const edges = new DataSet();
-  const nodes = new DataSet();
-
-  for (let file of dataFiles)
-  {
-    let objs = file.objects;
-  
-    for (let obj of objs)
-    {
-      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      let attributes = obj.attributes;
-      if (nodeTypes.includes(objectType))
-      {
-        let nodeID = attributes.name;
-        nodes.add({id: nodeID, label: nodeID,
-          attributes: attributes,
-          group: nodeOptions.get(objectType).group,
-          title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-      }
-    }
-  }
-  graphData.nodes = nodes;
-
-  for (let file of dataFiles)
-  {
-    
-    let objs = file.objects;
-  
-    for (let obj of objs)
-    {
-      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      let attributes = obj.attributes;
-      if (edgeTypes.includes(objectType))
-      {
-        var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-        var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-        var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
-        
-        edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
-                  color: edgeOptions.get(objectType).color,
-                  width: edgeOptions.get(objectType).width,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-                }
-      else if (parent_child_edge_types.includes(objectType))
-      {
-        let nodeID = attributes.name;
-        var parent = attributes.parent;
-  
-        if(parent !== undefined)
-        {
-          edges.add({from: parent, to: nodeID, color: {inherit: true}});
-        }
-      }
-      else if(nodeTypes.includes(objectType))
-      {
-        let nodeID = attributes.name;
-        parent = attributes.parent;
-        
-        if(parent !== undefined)
-        {
-          edges.add({from: parent, to: nodeID, color: {inherit: true}});
-        }
-      }
-    }
-  }
-  graphData.edges = edges;
-
-  return graphData;
-}
-
-const getTitle = (attributes) => {
-        
-  let str = "";
-  for (let [k, v] of Object.entries(attributes))
-  {
-    str = str + k +": " + v +"\n";
-  }
-  return str;
-}
-
-let glmNetwork;
-
 const Graph = (props) => {
   
-  let dataFiles = [];
+  console.log(props.visFiles)
+  
+  
+  let data;
+
+  let glmNetwork;
   var counter = -1;
-  
-  for (let k in props.visFiles)
-  {
-    dataFiles.push(props.visFiles[k]);
+  const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
+  const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
+                    "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
+  const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
+
+  const nodeOptions = new Map([["load", {"group": "load"}],
+                      ["triplex_load", {"group": "triplex_load"}],
+                      ["capacitor", {"group": "capacitor"}],
+                      ["triplex_node", {"group": "triplex_node"}],
+                      ["substation", {"group": "substation"}],
+                      ["triplex_meter", {"group": "triplex_meter"}],
+                      ["node", {"group": "node"}],
+                      ["meter", {"group": "meter"}],
+                      ["inverter", {"group": "inverter"}],
+                      ["inverter_dyn", {"group": "inverter"}],
+                      ["diesel_dg", {"group": "generator"}]]);
+                      
+  const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
+                              ["switch", {"width": 4, "color": "#3a0ca3"}],
+                              ["series_reactor", {"width": 4, "color": "#8c0000"}],
+                              ["triplex_line", {"width": 4, "color": "#c86bfa"}],
+                              ["underground_line", {"width": 4, "color": "#FFFF00"}],
+                              ["regulator", {"width": 4, "color": "#ff447d"}],
+                              ["transformer", {"width": 4,"color": "#00FF00"}]]);
+
+  const options = {
+    edges: {
+      smooth: {
+        enabled: true,
+        type: "dynamic"
+      },
+    },
+    nodes: {
+      shapeProperties: {
+        interpolation: false
+      }
+    },
+    groups:{
+      load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
+      triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
+      capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
+      triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
+      substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
+      triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
+      node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
+      meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
+      inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
+      generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
+    },
+    interaction: {
+      hover:true,
+      hideEdgesOnDrag: true,
+      hideEdgesOnZoom: true,
+      navigationButtons: true
+    },
+    physics: {
+      barnesHut: {
+        gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
+        springLength: 200,
+        springConstant: 0.50, // the higher the value the springy the edges are
+      },
+      maxVelocity: 150,
+      minVelocity: 0.75,
+      solver: 'barnesHut',
+      stabilization: {
+        enabled: true,
+        iterations: 1000,
+        updateInterval: 1,
+        onlyDynamicEdges: false,
+        fit: true
+      },
+    },
+  };
+
+      
+  const getTitle = (attributes) => {
+    let str = "";
+    for (let [k, v] of Object.entries(attributes))
+    {
+      str = str + k +": " + v +"\n";
+    }
+    return str;
   }
 
-  const data = getGraphData(dataFiles);
+  const getGraphData= (dataFiles) => {
 
-  const TogglePhysics = (toggle) => {
+    const graphData = {};
+    const files = [];
+    const edges = new DataSet();
+    const nodes = new DataSet();
+
+    for (let k in dataFiles)
+    {
+      files.push(dataFiles[k]);
+    }
+
+    for (let file of files)
+    {
+      let objs = file.objects;
     
-    if(toggle)
-    {
-      glmNetwork.setOptions({physics: {enabled: true}})
+      for (let obj of objs)
+      {
+        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+        let attributes = obj.attributes;
+        if (nodeTypes.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          nodes.add({id: nodeID, label: nodeID,
+            attributes: attributes,
+            group: nodeOptions.get(objectType).group,
+            title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+        }
+      }
     }
-    else
+    graphData.nodes = nodes;
+
+    for (let file of files)
     {
-      glmNetwork.setOptions({physics: {enabled: false}})
+      
+      let objs = file.objects;
+    
+      for (let obj of objs)
+      {
+        let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+        let attributes = obj.attributes;
+        if (edgeTypes.includes(objectType))
+        {
+          var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
+          var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
+          var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+          
+          edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
+                    color: edgeOptions.get(objectType).color,
+                    width: edgeOptions.get(objectType).width,
+                    title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                  }
+        else if (parent_child_edge_types.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          var parent = attributes.parent;
+    
+          if(parent !== undefined)
+          {
+            edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          }
+        }
+        else if(nodeTypes.includes(objectType))
+        {
+          let nodeID = attributes.name;
+          parent = attributes.parent;
+          
+          if(parent !== undefined)
+          {
+            edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          }
+        }
+      }
     }
+    graphData.edges = edges;
+
+    return graphData;
   }
+
+  data = getGraphData(props.visFiles);
   
+  const NodeFocus = (nodeID) => {
+      
+    var options = {
+      scale: 1,
+      animation: {
+        duration: 1000,
+        easing: "easeInOutQuart"
+      }
+    };
+
+    glmNetwork.focus(nodeID, options)
+  }
+
   const Reset = () => {
 
     let nodeItems = data.nodes.map((n) => {
@@ -191,15 +245,27 @@ const Graph = (props) => {
         return e;
       }
     });
-  
+
     data.nodes.update(nodeItems);
     data.edges.update(edgeItems);
     glmNetwork.fit();
     counter = 0;
   }
-  
-  const Prev = () => {
 
+  const TogglePhysics = (toggle) => {
+      
+    if(toggle)
+    {
+      glmNetwork.setOptions({physics: {enabled: true}})
+    }
+    else
+    {
+      glmNetwork.setOptions({physics: {enabled: false}})
+    }
+  }
+
+  const Prev = () => {
+    
     var options = {
       scale: 1,
       animation: {
@@ -207,13 +273,13 @@ const Graph = (props) => {
         easing: "easeInOutQuart"
       }
     };
-  
+
     var prev = data.nodes.get({
       filter: (n) => {
         return (n.size === 50);
       }
     });
-  
+    
     counter--;
     if(counter < 0)
     {
@@ -231,13 +297,13 @@ const Graph = (props) => {
         easing: "easeInOutQuart"
       }
     };
-  
+
     var nxt = data.nodes.get({
       filter: (n) => {
         return (n.size === 50);
       }
     });
-  
+
     counter++;
     if(counter >= nxt.length)
     {
@@ -249,20 +315,7 @@ const Graph = (props) => {
       glmNetwork.focus(nxt[counter].id, options)
     }
   }
-  
-  const NodeFocus = (nodeID) => {
-    
-    var options = {
-      scale: 1,
-      animation: {
-        duration: 1000,
-        easing: "easeInOutQuart"
-      }
-    };
-  
-    glmNetwork.focus(nodeID, options)
-  }
-  
+
   const HighlightGroup = (group) => {
     
     var nodesMap = data.nodes.map((n) => {
@@ -279,20 +332,20 @@ const Graph = (props) => {
         return n;
       }
     });
-  
+    
     var edgesMap = data.edges.map((e) => {
       if(!(e.width === 20))
       {
         e.color = 'lightgrey';
       }
       return e;
-        
+      
     });
-  
+
     data.nodes.update(nodesMap);
     data.edges.update(edgesMap);
   }
-  
+
   const HighlightEdges = (edgeID) => {
     
     let nodeItems = data.nodes.map((n) => {
@@ -327,72 +380,29 @@ const Graph = (props) => {
     document.getElementById("node-saveButton").onclick = null;
     document.getElementById("node-closeButton").onclick = null;
     document.getElementById("node-popUp").style.display = "none";
+
   }
   
-  const saveEdits = () => {
-    nodeToEdit.title = getTitle(nodeToEdit.attributes);
-    data.nodes.update(nodeToEdit);
+  const saveEdits = (selectedNode) => {
+    
+    selectedNode.title = getTitle(selectedNode.attributes);
+    data.nodes.update(selectedNode);
     closePopUp();
+    
   }
 
+  let selectedNode = data.nodes.get("8");
+
+  console.log(selectedNode);
+
   const container = useRef(null);
-  const [nodeToEdit, setNodeToEdit] = useState({});
-
+  
   useEffect(() => {
-
-    const options = {
-      edges: {
-        smooth: {
-          enabled: true,
-          type: "dynamic"
-        },
-      },
-      nodes: {
-        shapeProperties: {
-          interpolation: false
-        }
-      },
-      groups:{
-        load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
-        triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
-        capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-        triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
-        substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
-        triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
-        node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
-        meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
-        inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
-        generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
-      },
-      interaction: {
-        hover:true,
-        hideEdgesOnDrag: true,
-        hideEdgesOnZoom: true,
-        navigationButtons: true
-      },
-      physics: {
-        barnesHut: {
-          gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
-          springLength: 200,
-          springConstant: 0.50, // the higher the value the springy the edges are
-        },
-        maxVelocity: 150,
-        minVelocity: 0.75,
-        solver: 'barnesHut',
-        stabilization: {
-          enabled: true,
-          iterations: 1000,
-          updateInterval: 1,
-          onlyDynamicEdges: false,
-          fit: true
-        },
-      },
-    };
     
-    glmNetwork = container.current && new Network(container.current, data, options);
+    glmNetwork = new Network(container.current, data, options);
 
     glmNetwork.on("stabilizationProgress", (params) => {
-
+      
       var maxWidth = 360;
       var minWidth = 1;
       var widthFactor = params.iterations / params.total;
@@ -403,60 +413,53 @@ const Graph = (props) => {
     });
     
     glmNetwork.once("stabilizationIterationsDone", () => {
-
+      
       document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
       document.getElementById("progressValue").innerText = "100%";
       document.getElementById("circularProgress").style.opacity = 0.7;
-
+      
       setTimeout(() => {
+
         document.getElementById("circularProgress").style.display = "none";
+
       }, 500);
-
+      
       glmNetwork.setOptions({physics: {enabled: false}})
-    });
 
-    glmNetwork.on("doubleClick", (params) => {
-      setNodeToEdit(data.nodes.get(params.nodes[0]));
-      document.getElementById("node-popUp").style.display = "block";
     });
     
-  }, [container, data]);
+    glmNetwork.on("doubleClick", (params) => {
+
+      if(params.nodes[0] === undefined)
+      {
+        alert("Double click on a node to edit.");
+      }
+      else
+      {
+        selectedNode = data.nodes.get(params.nodes[0]);
+        document.getElementById("node-popUp").style.display = "block";
+      }
+
+    });
+    
+  }, [container.current, data]);
 
   return (
     <>
       <SearchBar 
         data = {data.nodes}
-        togglePhy = {TogglePhysics}
+        physicsToggle = {TogglePhysics}
         reset = {Reset}
         onFind = {NodeFocus}
         prev = {Prev}
         next = {Next}
       />
 
-      <div id="node-popUp">
-        <span id="node-operation">Edit Node</span> <br />
-        <table style={{"margin": "auto"}}>
-          <tbody>
-          {
-            Object.entries(nodeToEdit.attributes === undefined ? {} : nodeToEdit.attributes).map(([key, val], index) => {
-            return(
-                <tr key={index} >
-                  <td>{key}</td>
-                  <td>
-                    <input value={val} onChange = {(e) => {
-                      setNodeToEdit({...nodeToEdit, attributes: {...nodeToEdit.attributes, [key]: e.target.value}});
-                    }}>
-                    </input>
-                  </td>
-                </tr>
-              );
-            }) 
-          }
-          </tbody>
-        </table>
-        <input type="button" value="save" id="node-saveButton" onClick={saveEdits} />
-        <input type="button" value="Close" id="node-closeButton" onClick={closePopUp}/>
-      </div>
+      <NodePopup 
+        currentNode = {selectedNode} 
+        onSave = {saveEdits} 
+        onClose = {closePopUp}
+        />
 
       <div id = "networks-wrapper">
         <div className='main-network' ref={container}/>

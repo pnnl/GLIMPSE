@@ -77,6 +77,26 @@ app.post("/upload", (req, res) => {
         res.sendStatus(500);
     });
     
+
+    // const testJarArgs = ["-jar", "./jar/jarTest.jar", "50"];
+    // const testJar = spawn("java", testJarArgs);
+
+    // testJar.stdout.on('data', (data) => {
+
+    //     console.log(data.toString());
+
+    // });
+
+    // testJar.on("close", (code) => {
+
+    //     console.log(`Test jar closed with code: ${code}`);
+    // });
+
+    // testJar.on("error", (error) => {
+
+    //     console.log(error);
+    // });
+
     // const jarArgs = ["-cp","./jar/uber-STM-1.4-SNAPSHOT.jar", "gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType", `-input_file="./csv/metrics.csv"`,
     //         `-separator=","`, "-sampling=false", "-valid_etypes=1", "-delta_limit=false", "-k_top=4", "-max_cores=1", ` -base_out_dir="./item-output/"`]
     
