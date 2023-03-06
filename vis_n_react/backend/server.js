@@ -30,7 +30,7 @@ app.use(express.json());
 var storage = multer.diskStorage({
     destination: (req, file, callback) => {
 
-        callback(null, './glm_file_upload');
+        callback(null, './glmUploads');
     },
     filename: (req, file, callback) => {
 
@@ -56,7 +56,8 @@ app.post("/upload", (req, res) => {
     var outputData;
     let i = 0;
     
-    const python = spawn('python', ['./py/glm2json.py', './glm_file_upload/']);
+    const python = spawn('python', ['./py/glm2json.py', './glmUploads/']);
+
     python.stdout.on('data', (data) => {
         
         console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
@@ -67,11 +68,11 @@ app.post("/upload", (req, res) => {
     
     python.on('exit', (code) => {
         
-        console.log(`python process closed all stdio with code ${code}`);
+        console.log(`python process exited all stdio with code ${code}`);
         
     });
     
-    python.on("error", (err) => {
+    python.stdout.on("error", (err) => {
         
         console.log(err);
         res.sendStatus(500);

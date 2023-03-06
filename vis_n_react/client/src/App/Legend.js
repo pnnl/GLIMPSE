@@ -353,13 +353,13 @@ const options = {
     },
 };
 
+const data = {
+    nodes: nodesDataSet,
+    edges: edgesDataSet
+}
 
 const Legend = (props) => {
     
-    const data = {
-        nodes: nodesDataSet,
-        edges: edgesDataSet
-    }
 
     const container = useRef(null);
     
@@ -380,7 +380,7 @@ const Legend = (props) => {
             }
         });
         
-    });
+    }, [container]);
 
     return (
     <>

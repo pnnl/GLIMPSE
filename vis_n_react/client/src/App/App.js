@@ -1,5 +1,5 @@
 import '../styles/App.css';
-import React, { useState, useEffect} from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import GlmFileUpload from './GlmFileUpload';
