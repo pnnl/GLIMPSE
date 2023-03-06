@@ -394,7 +394,7 @@ const Graph = (props) => {
 
   // const selectedNode = useRef(data.nodes.get()[0]) 
   // console.log(selectedNode.current);
-const selectedNode = useRef({}); 
+  const selectedNode = useRef({}); 
 
   const container = useRef(null);
   
@@ -438,7 +438,7 @@ const selectedNode = useRef({});
       else
       {
         selectedNode.current = data.nodes.get(params.nodes[0]);
-        console.log(selectedNode.current);
+        // console.log(selectedNode.current);
         document.getElementById("node-popUp").style.display = "block";
       }
   

@@ -3,8 +3,9 @@ import "../styles/NodePopup.css";
 
 function NodePopup(props) {
 
-    const [selectedNode, setSelectedNode] = useState({});
-    setSelectedNode(props.currentNode);
+    console.log(props.currentNode);
+    const [selectedNode, setSelectedNode] = useState(props.currentNode);
+    console.log(selectedNode);
 
     const onSave = () => {
         props.onSave(selectedNode);
