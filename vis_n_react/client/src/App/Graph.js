@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useEffect, useRef} from 'react';
 import "../styles/Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
@@ -392,12 +392,14 @@ const Graph = (props) => {
     
   }
 
-  // const selectedNode = useRef(data.nodes.get()[0]) 
-  // console.log(selectedNode.current);
-  const selectedNode = useRef({}); 
+  let setCurrentNode = null;
 
-  const container = useRef(null);
+  const onChildMount = (childData) => {
+
+    setCurrentNode = childData[0];
+  }
   
+  const container = useRef(null);
   useEffect(() => {
 
     glmNetwork = new Network(container.current, data, options);
@@ -437,15 +439,13 @@ const Graph = (props) => {
       }
       else
       {
-        selectedNode.current = data.nodes.get(params.nodes[0]);
-        // console.log(selectedNode.current);
+        setCurrentNode(data.nodes.get(params.nodes[0]));
         document.getElementById("node-popUp").style.display = "block";
       }
   
     });
     
-  }, [container, data]);
-  
+  }, [container, setCurrentNode]);
 
   return (
     <>
@@ -459,10 +459,10 @@ const Graph = (props) => {
       />
 
       <NodePopup 
-        currentNode = {selectedNode.current} 
+        onMount={onChildMount} 
         onSave = {saveEdits} 
         onClose = {closePopUp}
-        />
+      />
 
       <div id = "networks-wrapper">
         <div className='main-network' ref={container}/>
