@@ -86,9 +86,9 @@ const options = {
   },
   physics: {
     barnesHut: {
-      gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
+      gravitationalConstant: -50500, // this value effects graph render time and how spread out it looks
       springLength: 200,
-      springConstant: 0.50, // the higher the value the springy the edges are
+      springConstant: 0.5, // the higher the value the springy the edges are 
     },
     maxVelocity: 150,
     minVelocity: 0.75,
@@ -100,7 +100,7 @@ const options = {
       onlyDynamicEdges: false,
       fit: true
     },
-  },
+  }
 };
 
     
@@ -376,6 +376,9 @@ const Graph = (props) => {
   
   data = getGraphData(props.visFiles);
 
+  console.log("Number of Nodes: " + data.nodes.length);
+  console.log("Number of Edges: " + data.edges.length);
+
   const closePopUp = () => {
     
     document.getElementById("node-saveButton").onclick = null;
@@ -394,9 +397,9 @@ const Graph = (props) => {
 
   let setCurrentNode = null;
 
-  const onChildMount = (childData) => {
+  const onChildMount = (childSetFunc) => {
 
-    setCurrentNode = childData[0];
+    setCurrentNode = childSetFunc;
   }
   
   const container = useRef(null);

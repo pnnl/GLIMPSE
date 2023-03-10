@@ -6,7 +6,7 @@ function NodePopup({onMount, onSave, onClose}) {
     const [selectedNode, setSelectedNode] = useState({});
 
     useEffect(() => {
-        onMount([setSelectedNode]);
+        onMount(setSelectedNode);
     }, [onMount, selectedNode]);
 
     const saveChanges = () => {

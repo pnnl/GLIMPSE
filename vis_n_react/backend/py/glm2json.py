@@ -29,6 +29,12 @@ def glm2json(glmDict):
 
     return glm_json
 
+def removeGlmFiles(folderDir):
+
+    for file in os.listdir(folderDir):
+        if re.search(".glm$", file):
+            os.remove(folderDir + file)
+
 #creates metrics file
 def createMetrics(glmDict):
     edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"]
@@ -62,11 +68,12 @@ def main(folderDir):
     # folderDir = "./backend/glmUploads/"
     fileNames = getFiles(folderDir)
     glmDict = glmToDict(fileNames, folderDir)
-    
+
+    removeGlmFiles(folderDir)
+    createMetrics(glmDict)
+
     #prints out the converted glm files to json
     print(glm2json(glmDict))
-
-    createMetrics(glmDict)
 
 
 if __name__ == "__main__":
