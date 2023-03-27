@@ -1,10 +1,18 @@
 .form-wrapper{
-    margin: 1rem;
+    margin: 0.5rem;
 }
 
 .search-nav-form {
     display: flex;
-    justify-content: flex-end;
+    flex-direction: row;
+    align-items: center;
+    justify-content: end;
+}
+
+.export-btn {
+    padding: 0.25rem;
+    margin-right: auto;
+    
 }
 
 .physics-lbl {
@@ -76,18 +84,30 @@ input:checked + .slider:before {
     border-radius: 50%;
 }
 
+.node-search {
+    padding: 0.25rem;
+    margin-left: auto;
+}
+
+/* Buttons */
 .find-btn {
     padding: 0.25rem;
+    width: 3rem;
+    margin-right: auto;
 }
 
 .prev-btn {
     padding: 0.25rem;
+    width: 3.5rem;
 }
 
 .next-btn {
     padding: 0.25rem;
+    width: 3.5rem;
+    margin-right: 1rem;
 }
 
 .reset-btn {
+    width: 4rem;
     padding: 0.25rem;
 }

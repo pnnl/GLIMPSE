@@ -3,6 +3,7 @@ import "../styles/Graph.css"
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
 import SearchBar from './SearchBar';
+import axios from 'axios';
 import NodePopup from './NodePopup';
 import '../styles/vis-network.css';
 import Legend from './Legend';
@@ -137,9 +138,9 @@ const getGraphData= (dataFiles) => {
       {
         let nodeID = attributes.name;
         nodes.add({id: nodeID, label: nodeID,
-          attributes: attributes,
-          group: nodeOptions.get(objectType).group,
-          title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                  attributes: attributes,
+                  group: nodeOptions.get(objectType).group,
+                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
       }
     }
   }
@@ -164,7 +165,7 @@ const getGraphData= (dataFiles) => {
                   color: edgeOptions.get(objectType).color,
                   width: edgeOptions.get(objectType).width,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
-                }
+      }
       else if (parent_child_edge_types.includes(objectType))
       {
         let nodeID = attributes.name;
@@ -369,12 +370,12 @@ const HighlightEdges = (edgeID) => {
   data.edges.update(edgeItems);
 }
 
-
-
 //component
 const Graph = (props) => {
   
-  data = getGraphData(props.visFiles);
+  let jsonFromGlm = props.visFiles;
+
+  data = getGraphData(jsonFromGlm);
 
   console.log("Number of Nodes: " + data.nodes.length);
   console.log("Number of Edges: " + data.edges.length);
@@ -395,13 +396,41 @@ const Graph = (props) => {
     
   }
 
+  const Export = () => {
+
+    Object.keys(jsonFromGlm).forEach((file) => {
+      
+      jsonFromGlm[file]['objects'].forEach((object) => {
+
+        let objType = object.name.includes(":") ? object.name.split(":")[0] : object.name;
+
+        if (nodeTypes.includes(objType))
+        {
+          let newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
+
+          object.attributes = newNodeAttributes;
+        }
+        
+      });
+
+    });
+
+    axios
+      .post("http://localhost:3500/jsontoglm", jsonFromGlm)
+      .then((res) => console.log(res.data))
+      .catch((err) => console.log(err))
+      .finally(console.log("success"));
+
+  }
+
   let setCurrentNode = null;
 
   const onChildMount = (childSetFunc) => {
 
     setCurrentNode = childSetFunc;
+
   }
-  
+
   const container = useRef(null);
   useEffect(() => {
 
@@ -459,6 +488,7 @@ const Graph = (props) => {
         onFind = {NodeFocus}
         prev = {Prev}
         next = {Next}
+        export = {Export}
       />
 
       <NodePopup 

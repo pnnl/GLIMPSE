@@ -25,13 +25,44 @@ const Home = () => {
       }
     };
     
-    axios
-      .post("http://localhost:3500/upload", formData, header)
-      .then((res) => {setFilesToVis(res.data)})
-      .catch((error) => console.log(error.message))
-      .finally(() => setDisplayComponent({"fileUpload": false}));
-  }
+    axios.post("http://localhost:3500/upload", formData, header)
+      .then((res) => {
 
+      let empty_includes = 0;
+      let num_of_included_files = 0;
+      let response = res.data;
+
+      Object.keys(response).forEach((fileName) => {
+
+        if(!response[fileName]['includes'].length)
+        {
+          empty_includes++;
+        }
+
+      })
+
+      Object.keys(response).forEach((fileName) => {
+
+        if(response[fileName]['includes'].length > 0)
+        {
+          num_of_included_files = response[fileName]['includes'].length;
+        }
+
+      })
+      
+      if(empty_includes === num_of_included_files)
+      {
+        setDisplayComponent({"fileUpload": false});
+        setFilesToVis(res.data);
+      }
+      else
+      {
+        alert("You are missing one or more necessary include files");
+      }
+      
+    }).catch((error) => console.log(error.message))
+
+  }
 
   if(displayComponent.fileUpload)
   {

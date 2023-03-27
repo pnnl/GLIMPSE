@@ -19,7 +19,7 @@ def glmToDict(files, fileDir):
     glmDicts = {}
 
     for file in files:
-        glmDicts[file] = glm.load(fileDir + file)
+        glmDicts[file.split(".")[0] + ".json"] = glm.load(fileDir + file)
 
     return glmDicts
 

@@ -25,6 +25,11 @@ const SearchBar = (props) => {
         }
     }
 
+    const handleExport = (e) => {
+        e.preventDefault()
+        props.export();
+    }
+
     const handleReset = (e) =>
     {
         e.preventDefault();
@@ -52,7 +57,11 @@ const SearchBar = (props) => {
     return (
         <>
         <div className="form-wrapper">
-            <form className="search-nav-form" onSubmit={handleSubmit}>
+            <form className="search-nav-form">
+                <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
+                <input className="node-search" type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
+                <button className = "find-btn" onClick={handleSubmit}>Find</button>
+
                 <div className="physics-switch">
                     <label className="physics-lbl">Toggle Physics: </label>
                     <label className="switch">
@@ -60,11 +69,10 @@ const SearchBar = (props) => {
                         <span className="slider round"></span>
                     </label>
                 </div>
-                    <input type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
-                    <button className = "find-btn">Find</button>
-                    <button className = "prev-btn" onClick={handlePrev}>Prev</button>
-                    <button className = "next-btn" onClick={handleNext}>Next</button>
-                    <button className = "reset-btn" onClick={handleReset}>Reset</button>
+                
+                <button className = "prev-btn" onClick={handlePrev}>Prev</button>
+                <button className = "next-btn" onClick={handleNext}>Next</button>
+                <button className = "reset-btn" onClick={handleReset}>Reset</button>
             </form>
         </div>
         </>

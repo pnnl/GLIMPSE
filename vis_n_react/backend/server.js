@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
-const spawn = require('child_process').spawn;
+const { spawn, exec } = require('child_process');
+const fs = require("fs");
 const cors = require("cors");
 const multer = require('multer');
 const bodyParser = require('body-parser');
@@ -25,7 +26,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
-app.use(express.json());
+app.use(bodyParser.json());
 
 var storage = multer.diskStorage({
     destination: (req, file, callback) => {
@@ -56,9 +57,9 @@ app.post("/upload", (req, res) => {
     var outputData;
     let i = 0;
     
-    const python = spawn('python', ['./py/glm2json.py', './glmUploads/']);
+    const glm2json_py = spawn('python', ['./py/glm2json.py', './glmUploads/']);
 
-    python.stdout.on('data', (data) => {
+    glm2json_py.stdout.on('data', (data) => {
         
         console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
         outputData = data.toString();
@@ -66,35 +67,89 @@ app.post("/upload", (req, res) => {
         res.end(outputData);
     });
     
-    python.on('exit', (code) => {
+    glm2json_py.on('exit', (code) => {
         
         console.log(`python process exited all stdio with code ${code}`);
-        
-        // const jarArgs = ["-cp","./jar/uber-STM-1.4-SNAPSHOT.jar", "gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType", `-input_file="./csv/metrics.csv"`,
-        //         `-separator=","`, "-sampling=false", "-valid_etypes=1", "-delta_limit=false", "-k_top=4", "-max_cores=1", ` -base_out_dir="./item-output/"`]
-         
-        // const javaJar = spawn("java", jarArgs);
-    
-        // javaJar.stdout.on('data', (data) => {
-        //     console.log(data.toString());
-        // });
-    
-        // javaJar.on("close", (code) => {
-        //     console.log(`Jar closed with code ${code}`)
-        // });
-    
-        // javaJar.on("error", (error) => {
-        //     console.log(error)
-        // });
     });
     
-    python.stdout.on("error", (err) => {
+    glm2json_py.stdout.on("error", (err) => {
         
         console.log(err);
         res.sendStatus(500);
     });
+    
+
+    // let jarArgs = `java -cp ./jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="./item-output/"`;
+    // exec(jarArgs, (error, stdout, stderr) => {
+        
+    //     if(error)
+    //     {
+    //         console.error(`exec error: ${error}`)
+    //         return;
+    //     }
+    //     console.log(`stdout: ${stdout}`);
+    //     console.log(`stderr: ${stderr}`);
+
+    // });
+
+    // const STMGetEmbedding_py = spawn("python", ["./py/STMGetEmbedding.py", "./item-output/", "./emb/"]);
+    
+    // STMGetEmbedding_py.stdout.on("data", (data) => {
+        
+    //     console.log(`Pipe data from python script..............`);
+    //     console.log(data.toString());
+        
+    // })
+    
+    // STMGetEmbedding_py.on('exit', (code) => {
+        
+    //     console.log(`python process exited all stdio with code ${code}`);
+        
+    // });
+    
+    // STMGetEmbedding_py.stdout.on("error", (err) => {
+        
+    //     console.log(err);
+        
+    // });
 
 });
+
+app.post("/jsontoglm", (req, res) => {
+
+    let jsonglm = req.body;
+
+    Object.keys(jsonglm).forEach((filename) => {
+        try 
+        {
+            fs.writeFileSync("./json/" + filename, JSON.stringify(jsonglm[filename], null, 3), 'utf8');
+        } 
+        catch (error) 
+        {
+            console.log('An error has occurred ', error);
+        }
+    })
+
+    fs.readdirSync("./json/").forEach((filename) => {
+
+        let json2glmArgs = "json2glm.exe --path-to-file ./json/" + filename + " >> ./glmOutput/" + filename.split(".")[0] + ".glm";
+
+        console.log(json2glmArgs);
+
+        exec(json2glmArgs, (error) => {
+
+            if(error)
+            {
+                console.error(`exec error: ${error}`)
+                return;
+            }
+
+        });
+
+    });
+
+    res.send("JSON was received");
+})
 
 app.use(errorHandler);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
