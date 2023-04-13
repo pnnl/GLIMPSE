@@ -4,3 +4,33 @@
 03/14/2023	13:36:25	01ece57e-8346-4622-8bd4-fe6885868aef	SyntaxError: Unexpected token o in JSON at position 1
 03/14/2023	15:52:27	36def103-a705-43ba-a4c8-18afb2ab17d2	TypeError: The "data" argument must be of type string or an instance of Buffer, TypedArray, or DataView. Received an instance of Object
 03/16/2023	12:24:50	f01000ba-f745-461a-9d2a-5b3bff3a1db1	PayloadTooLargeError: request entity too large
+03/31/2023	10:52:26	5df75d9b-a7f3-434b-a5e3-82fd5c395699	Error: File not found: ./glmOutput/IEEE-123_Diesels_fixed.glm
+03/31/2023	10:58:38	b798ece1-d1a8-4003-b91f-9f908521dbee	Error: File not found: ./glmOutput/IEEE-123_Dynamic_fixed.glm
+03/31/2023	11:05:12	03e3c140-10e3-4a21-a519-26720b7b96ab	Error: File not found: ./glmOutput/description.glm
+03/31/2023	17:41:39	d7e63ccd-87a1-43d8-8ffc-087222e8bce9	PayloadTooLargeError: request entity too large
+03/31/2023	17:45:44	435d0bfa-2880-4541-9eb5-7c7849d8946b	PayloadTooLargeError: request entity too large
+03/31/2023	17:49:10	0fd6a243-71ea-4494-8df5-0d630a2f7559	PayloadTooLargeError: request entity too large
+03/31/2023	17:49:18	a2394078-4ed3-4318-bdcc-441fa680c89b	PayloadTooLargeError: request entity too large
+03/31/2023	17:53:10	a2ea7be0-2f00-4269-9a81-6427c32385dc	PayloadTooLargeError: request entity too large
+04/07/2023	11:28:11	e0c43a91-1128-4f39-94a5-a92d425d1452	PayloadTooLargeError: request entity too large
+04/07/2023	11:43:34	ecf547f6-f22c-4b1c-bf90-f70c4a382554	PayloadTooLargeError: request entity too large
+04/08/2023	11:52:38	fb854ef8-5d52-4c17-a0d5-329d3a28a041	PayloadTooLargeError: request entity too large
+04/08/2023	16:48:19	a2741053-aab7-43e6-879a-6957e3bde3e7	PayloadTooLargeError: request entity too large
+04/08/2023	16:48:35	7f85ecb4-4ae0-4121-b9cd-d14434944068	PayloadTooLargeError: request entity too large
+04/08/2023	16:49:04	e660e1f8-4f1b-446f-9d98-5810c9480d68	PayloadTooLargeError: request entity too large
+04/08/2023	16:50:35	5916a49b-f449-44cc-bf78-ce86f6e21392	PayloadTooLargeError: request entity too large
+04/10/2023	12:28:39	03d015f6-0819-462d-b186-9bbacfd035c6	SyntaxError: Unexpected token o in JSON at position 1
+04/10/2023	15:48:08	f5f89331-e712-4e1e-bd33-f5e1dedbd0df	PayloadTooLargeError: request entity too large
+04/10/2023	15:53:26	d0687eac-1010-4111-8384-df58bf2b511a	PayloadTooLargeError: request entity too large
+04/10/2023	16:00:13	107363f1-0905-4cef-b8e2-4996fcc317c6	PayloadTooLargeError: request entity too large
+04/10/2023	16:13:23	815aaa62-c817-4a7e-a34a-249c7b73fa3f	ReferenceError: glmOutputPath is not defined
+04/10/2023	16:13:58	7b98ef38-600f-480a-87ec-4ac0823a8c4d	ReferenceError: glmOutputPath is not defined
+04/13/2023	11:44:00	ede9190a-e34a-4c40-a30a-6b7476e719e9	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmOutput'
+04/13/2023	11:45:45	c7ba2c51-f8f4-4f38-a4c0-1bbd66f4fa44	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmOutput'
+04/13/2023	11:49:42	76c3f0f8-6f0c-4211-a278-92a553af8ac3	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmOutput'
+04/13/2023	11:52:40	13524f13-1896-49dc-815d-f87d3b11e001	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmOutput'
+04/13/2023	11:54:06	b6c51bb0-58fd-4efb-a0ce-c933876686ef	Error: ENOENT: no such file or directory, open './json/IEEE-123_Diesels_fixed.json'
+04/13/2023	11:54:41	653cc519-f0cd-4e40-81dd-b8d44bbb8edd	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/13/2023	11:55:18	e5277454-519e-47e6-9806-90719df20583	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/13/2023	11:55:46	7b6129b2-ad2c-41b8-91e2-d72553a607fd	Error: ENOTEMPTY: directory not empty, rmdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/13/2023	11:57:36	0ba01b89-bbc5-472e-88df-ddc66f94ec04	Error: ENOTEMPTY: directory not empty, rmdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'

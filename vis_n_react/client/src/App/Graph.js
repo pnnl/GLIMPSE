@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from 'react';
-import "../styles/Graph.css"
+import "../styles/Graph.css";
 import {Network} from 'vis-network';
 import { DataSet } from 'vis-data';
 import SearchBar from './SearchBar';
@@ -13,7 +13,7 @@ import inverterImg from '../imgs/inverter.png';
 import meterImg from '../imgs/meter.jpg';
 import substationImg from '../imgs/substation.jpg';
 import generatorImg from '../imgs/generator.jpg';
-import nodeImg from '../imgs/node.png'
+import nodeImg from '../imgs/node.png';
 
 // import IEE_DF from '../data/IEEE-123_Dynamic_fixed.json';
 // import IEE_INVF from '../data/IEEE-123_Inverters_fixed.json';
@@ -101,6 +101,9 @@ const options = {
       onlyDynamicEdges: false,
       fit: true
     },
+  },
+  layout: {
+    improvedLayout: false
   }
 };
 
@@ -351,10 +354,10 @@ const HighlightEdges = (edgeID) => {
     return n;
   });
   
-  let edgeItems = data.edges.map((e) => {
-    if(e.id.split(":")[0] === edgeID)
+  let edgeItems = data.edges.map(( e ) => {
+    if( e.id.split( ":" )[ 0 ] === edgeID )
     {
-      e.color = edgeOptions.get(edgeID).color;
+      e.color = edgeOptions.get( edgeID ).color;
       e.width = 20;
       return e;
     }
@@ -366,47 +369,47 @@ const HighlightEdges = (edgeID) => {
     }
   });
   
-  data.nodes.update(nodeItems);
-  data.edges.update(edgeItems);
+  data.nodes.update( nodeItems );
+  data.edges.update( edgeItems );
 }
 
 //component
-const Graph = (props) => {
+const Graph = ( props ) => {
   
   let jsonFromGlm = props.visFiles;
 
-  data = getGraphData(jsonFromGlm);
+  data = getGraphData( jsonFromGlm );
 
-  console.log("Number of Nodes: " + data.nodes.length);
-  console.log("Number of Edges: " + data.edges.length);
+  console.log( "Number of Nodes: " + data.nodes.length );
+  console.log( "Number of Edges: " + data.edges.length );
 
   const closePopUp = () => {
     
-    document.getElementById("node-saveButton").onclick = null;
-    document.getElementById("node-closeButton").onclick = null;
-    document.getElementById("node-popUp").style.display = "none";
+    document.getElementById( "node-saveButton" ).onclick = null;
+    document.getElementById( "node-closeButton" ).onclick = null;
+    document.getElementById( "node-popUp" ).style.display = "none";
 
   }
   
-  const saveEdits = (selectedNode) => {
+  const saveEdits = ( selectedNode ) => {
     
-    selectedNode.title = getTitle(selectedNode.attributes);
-    data.nodes.update(selectedNode);
+    selectedNode.title = getTitle( selectedNode.attributes );
+    data.nodes.update( selectedNode );
     closePopUp();
     
   }
 
   const Export = () => {
 
-    Object.keys(jsonFromGlm).forEach((file) => {
+    Object.keys( jsonFromGlm ).forEach(( file ) => {
       
-      jsonFromGlm[file]['objects'].forEach((object) => {
+      jsonFromGlm[ file ][ 'objects' ].forEach(( object ) => {
 
-        let objType = object.name.includes(":") ? object.name.split(":")[0] : object.name;
+        let objType = object.name.includes( ":" ) ? object.name.split( ":" )[ 0 ] : object.name;
 
-        if (nodeTypes.includes(objType))
+        if ( nodeTypes.includes( objType ) )
         {
-          let newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
+          let newNodeAttributes = data.nodes.get( object.attributes.name ).attributes;
 
           object.attributes = newNodeAttributes;
         }
@@ -415,11 +418,26 @@ const Graph = (props) => {
 
     });
 
-    axios
-      .post("http://localhost:3500/jsontoglm", jsonFromGlm)
-      .then((res) => console.log(res.data))
-      .catch((err) => console.log(err))
-      .finally(console.log("success"));
+    const axios_instance = axios.create({
+      baseURL: 'http://localhost:3500',
+      timeout: 15000,
+      headers: {'Content-Type': 'application/json'}
+    });
+
+    // await axios_instance.post("/jsontoglm", jsonFromGlm)
+    //   .then(( res ) => console.log( res.data ))
+    //   .catch(( error ) => console.log( error ));
+
+    axios_instance.post("/jsontoglm", jsonFromGlm, { responseType: 'blob' })
+      .then(( { data: blob } ) => {
+        const link = document.createElement( 'a' );
+        const url = URL.createObjectURL( blob ) ;
+        console.log( url );
+        link.href = url;
+        link.download = 'glmOutput.zip';
+        link.click();
+      })
+      .catch(( err ) => console.log( err ))
 
   }
 
