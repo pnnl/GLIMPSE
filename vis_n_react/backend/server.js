@@ -79,7 +79,22 @@ app.post("/upload", (req, res) => {
     glm2json_py.on('exit', (code) => {
         
         console.log(`python process exited all stdio with code ${code}`);
-        fs.rmdirSync(path.join(__dirname, "glmUploads"));
+        fs.rmSync(path.join(__dirname, "glmUploads"), { recursive: true, force: true });
+
+        const jarArgs = `java -cp ./jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="./item-output/"`;
+
+        console.log(jarArgs);
+    
+        execSync( jarArgs, ( error, stdout, stderr) => {
+            if ( error )
+            {
+                console.error( `exec error: ${error}` );
+                return;
+            }
+
+            console.log(stdout);
+            console.log(stderr);
+        });
     });
     
     glm2json_py.stdout.on("error", (err) => {
@@ -111,7 +126,7 @@ app.post("/jsontoglm", ( req, res ) => {
     
             if( error )
             {
-                console.error( `exec error: ${error}` )
+                console.error( `exec error: ${error}` );
                 return;
             }
 
@@ -128,8 +143,8 @@ app.post("/jsontoglm", ( req, res ) => {
     });
 
     res.on("finish", () => {
-        fs.rmdirSync(path.join(__dirname, "json"),{ recursive: true, force: true });
-        fs.rmdirSync(path.join(__dirname, "glmOutput"),{ recursive: true, force: true });
+        fs.rmSync(path.join(__dirname, "json"),{ recursive: true, force: true });
+        fs.rmSync(path.join(__dirname, "glmOutput"),{ recursive: true, force: true });
     })
 
   

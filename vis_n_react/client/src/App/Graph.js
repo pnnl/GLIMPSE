@@ -15,17 +15,6 @@ import substationImg from '../imgs/substation.jpg';
 import generatorImg from '../imgs/generator.jpg';
 import nodeImg from '../imgs/node.png';
 
-// import IEE_DF from '../data/IEEE-123_Dynamic_fixed.json';
-// import IEE_INVF from '../data/IEEE-123_Inverters_fixed.json';
-// import IEE_GENF from '../data/IEEE-123_Diesels_fixed.json';
-
-// import IEEE_NFH from '../data/9500/IEEE_9500.json';
-// import IEEE_INV from '../data/9500/Inverters.json'
-// import IEEE_GEN from '../data/9500/Rotating_Machines.json'
-
-// const dataFiles = [IEEE_NFH, IEEE_INV, IEEE_GEN];
-// const dataFiles = [IEE_DF, IEE_GENF, IEE_INVF];
-
 let data;
 let glmNetwork;
 var counter = -1;

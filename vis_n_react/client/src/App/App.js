@@ -25,7 +25,7 @@ const Home = () => {
       }
     };
     
-    axios.post("http://localhost:3500/upload", formData, header)
+    await axios.post("http://localhost:3500/upload", formData, header)
       .then((res) => {
 
       let empty_includes = 0;
