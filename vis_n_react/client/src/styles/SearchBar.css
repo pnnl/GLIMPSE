@@ -86,14 +86,13 @@ input:checked + .slider:before {
 
 .node-search {
     padding: 0.25rem;
-    margin-left: auto;
 }
 
 /* Buttons */
 .find-btn {
     padding: 0.25rem;
     width: 3rem;
-    margin-right: auto;
+    margin-right: 1rem;
 }
 
 .prev-btn {

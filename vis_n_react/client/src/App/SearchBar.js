@@ -1,10 +1,12 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import "../styles/SearchBar.css"
+import axios from 'axios';
 
 const SearchBar = (props) => {
 
     const nodes = props.data;
     const [node, setNode] = useState("");
+    const [imgData, setImgData] = useState(null);
 
     const handleChange = (e) =>
     {
@@ -54,13 +56,31 @@ const SearchBar = (props) => {
         props.physicsToggle(checkBox.checked);
     }
 
+    const plot = async (e) => 
+    {
+        e.preventDefault();
+        const axios_instance = axios.create({
+            baseURL: 'http://localhost:3500',
+            timeout: 5000
+          });
+
+        await axios_instance
+            .get("/getplot",{responseType: 'arraybuffer' })
+            .then( ( res ) => {
+                const buffer = Buffer.from(res.data, 'binary').toString('base64');
+                setImgData(`data:${res.headers['content-type']};base64,${buffer}`);
+            })
+            .catch(( err ) => console.log( err ))
+        
+       
+    }
+
     return (
         <>
         <div className="form-wrapper">
             <form className="search-nav-form">
                 <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
-                <input className="node-search" type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
-                <button className = "find-btn" onClick={handleSubmit}>Find</button>
+                <button className="plt-btn" onClick={plot}>Show Plot</button>
 
                 <div className="physics-switch">
                     <label className="physics-lbl">Toggle Physics: </label>
@@ -70,6 +90,8 @@ const SearchBar = (props) => {
                     </label>
                 </div>
                 
+                <input className="node-search" type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
+                <button className = "find-btn" onClick={handleSubmit}>Find</button>
                 <button className = "prev-btn" onClick={handlePrev}>Prev</button>
                 <button className = "next-btn" onClick={handleNext}>Next</button>
                 <button className = "reset-btn" onClick={handleReset}>Reset</button>

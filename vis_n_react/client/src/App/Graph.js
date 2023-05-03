@@ -17,13 +17,24 @@ import nodeImg from '../imgs/node.png';
 
 let data;
 let glmNetwork;
-var counter = -1;
+let counter = -1;
+const objectTypeCount = {"nodes": {"load": 0, "node": 0, "meter": 0, "inverter": 0,
+                       "inverter_dyn": 0, "diesel_dg": 0, "capacitor": 0, "triplex_load": 0, 
+                       "triplex_node": 0, "triplex_meter": 0, "substation": 0},
+                        "edges": {"overhead_line": 0, "switch": 0, "underground_line": 0,
+                        "series_reactor": 0, "triplex_line": 0, "regulator": 0,"transformer": 0}};
 
+//These types are what are considered edges
 const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
+
+//These types are recognized as nodes by electrical engineers.
 const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
                   "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
+
+//These edges or connections are between parent and child nodes
 const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
 
+//these nodes options can be further changed in the options object below
 const nodeOptions = new Map([["load", {"group": "load"}],
                     ["triplex_load", {"group": "triplex_load"}],
                     ["capacitor", {"group": "capacitor"}],
@@ -44,6 +55,7 @@ const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}]
                             ["regulator", {"width": 4, "color": "#ff447d"}],
                             ["transformer", {"width": 4,"color": "#00FF00"}]]);
 
+//These are the graph options
 const options = {
   edges: {
     smooth: {
@@ -56,7 +68,7 @@ const options = {
       interpolation: false
     }
   },
-  groups:{
+  groups:{ //These options can be changes to affect the style of each node type
     load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
     triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
     capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
@@ -77,7 +89,7 @@ const options = {
   physics: {
     barnesHut: {
       gravitationalConstant: -50500, // this value effects graph render time and how spread out it looks
-      springLength: 200,
+      springLength: 200, //this value if for how springy the edges are
       springConstant: 0.5, // the higher the value the springy the edges are 
     },
     maxVelocity: 150,
@@ -96,7 +108,7 @@ const options = {
   }
 };
 
-    
+//This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
   let str = "";
   for (let [k, v] of Object.entries(attributes))
@@ -106,6 +118,7 @@ const getTitle = (attributes) => {
   return str;
 }
 
+//This function will retreve all nodes and edges from a glm file that has be converted to json
 const getGraphData= (dataFiles) => {
 
   const graphData = {};
@@ -113,11 +126,14 @@ const getGraphData= (dataFiles) => {
   const edges = new DataSet();
   const nodes = new DataSet();
 
+  //this loop splits the json into each file name and their data to an array
+  //each key of the json is the file name along with the file's data
   for (let k in dataFiles)
   {
     files.push(dataFiles[k]);
   }
 
+  //For each file gather all of the nodes that matches the types
   for (let file of files)
   {
     let objs = file.objects;
@@ -133,10 +149,14 @@ const getGraphData= (dataFiles) => {
                   attributes: attributes,
                   group: nodeOptions.get(objectType).group,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+
+        objectTypeCount.nodes[objectType]++;
       }
     }
   }
   graphData.nodes = nodes;
+
+  console.log(objectTypeCount);
 
   for (let file of files)
   {
@@ -157,6 +177,8 @@ const getGraphData= (dataFiles) => {
                   color: edgeOptions.get(objectType).color,
                   width: edgeOptions.get(objectType).width,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+        
+        objectTypeCount.edges[objectType]++
       }
       else if (parent_child_edge_types.includes(objectType))
       {
@@ -409,13 +431,9 @@ const Graph = ( props ) => {
 
     const axios_instance = axios.create({
       baseURL: 'http://localhost:3500',
-      timeout: 15000,
+      timeout: 20000,
       headers: {'Content-Type': 'application/json'}
     });
-
-    // await axios_instance.post("/jsontoglm", jsonFromGlm)
-    //   .then(( res ) => console.log( res.data ))
-    //   .catch(( error ) => console.log( error ));
 
     axios_instance.post("/jsontoglm", jsonFromGlm, { responseType: 'blob' })
       .then(( { data: blob } ) => {
@@ -509,7 +527,12 @@ const Graph = ( props ) => {
         <div id='circularProgress'>
           <span id='progressValue'>0%</span>
         </div>
-        <Legend findGroup = {HighlightGroup} findEdges = {HighlightEdges}/>
+        
+        <Legend 
+          findGroup = {HighlightGroup} 
+          findEdges = {HighlightEdges}
+          nodeCounts = {objectTypeCount}
+        />
       </div>
     </>
   );

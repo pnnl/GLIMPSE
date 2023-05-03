@@ -104,3 +104,44 @@ See http://www.oracle.com/technetwork/java/javase/documentation/index.html for m
 
 04/17/2023	10:49:33	9d5a57b0-3b21-45ee-bc38-ba5fc5b9d5e1	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmUploads'
 04/18/2023	11:02:11	f30c5207-d579-48c9-aa7d-112501ad91ec	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/20/2023	10:36:34	5d55b542-f183-468e-819c-dda4b69a69b2	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/20/2023	10:37:15	1b86c17b-820e-4c7a-8292-23aedbb00d47	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+04/29/2023	19:07:26	ac330feb-f473-4692-bc2c-7e9d41261635	Error: Command failed: java -cp ./jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="./item-output/"
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Exception in thread "main" java.lang.UnsupportedOperationException: empty collection
+	at org.apache.spark.rdd.RDD.$anonfun$reduce$4(RDD.scala:1122)
+	at scala.Option.getOrElse(Option.scala:189)
+	at org.apache.spark.rdd.RDD.$anonfun$reduce$1(RDD.scala:1122)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:151)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:112)
+	at org.apache.spark.rdd.RDD.withScope(RDD.scala:414)
+	at org.apache.spark.rdd.RDD.reduce(RDD.scala:1102)
+	at org.apache.spark.rdd.RDD.$anonfun$min$1(RDD.scala:1545)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:151)
+	at org.apache.spark.rdd.RDDOperationScope$.withScope(RDDOperationScope.scala:112)
+	at org.apache.spark.rdd.RDD.withScope(RDD.scala:414)
+	at org.apache.spark.rdd.RDD.min(RDD.scala:1545)
+	at gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType$.complete_STM(STM_NodeArrivalRateMultiType.scala:858)
+	at gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType$.processTAG(STM_NodeArrivalRateMultiType.scala:423)
+	at gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType$.main(STM_NodeArrivalRateMultiType.scala:324)
+	at gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType.main(STM_NodeArrivalRateMultiType.scala)
+
+04/29/2023	19:10:52	512e51a2-2c32-43f5-8219-5d2a30023d5f	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\figs'
+04/29/2023	19:14:53	c30278f9-9811-4e03-a812-c7f3b6fa3d68	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\figs'
+04/29/2023	19:15:42	92783cfc-0762-42c0-8cae-607448fac0f0	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\figs'
+05/01/2023	09:04:58	b58739fb-2c0a-4c28-b706-bf094af79487	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmUploads'
+05/01/2023	09:06:36	732000d8-c518-41c6-afd8-5bb0d60dcd03	Error: Command failed: python ./py/glm2json.py ../glmUploads/
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\glm2json.py", line 82, in <module>
+    main()
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\glm2json.py", line 70, in main
+    fileNames = getFiles( folderDir )
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\glm2json.py", line 11, in getFiles
+    for file in os.listdir(folderPath):
+FileNotFoundError: [WinError 3] The system cannot find the path specified: '../glmUploads/'
+
+05/01/2023	09:14:43	63da60c9-02aa-481f-b88b-78994356eb70	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmUploads'
+05/01/2023	09:15:43	4fc1cb17-1a08-4906-840f-19016233e492	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\emb'
+05/01/2023	09:17:12	87398c22-1be4-45f3-a099-8fafef1efb2c	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmUploads'
+05/01/2023	09:26:13	13f176b5-cc9d-47c7-9aef-5aa342ee46c6	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
+05/01/2023	10:15:30	554666c8-0521-4ed4-b477-6c17c8e8edef	ReferenceError: readFileSync is not defined

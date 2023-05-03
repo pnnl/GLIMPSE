@@ -11,7 +11,7 @@ const Home = () => {
   const [displayComponent, setDisplayComponent] = useState({"fileUpload": true});
   const [filesToVis, setFilesToVis] = useState({});
 
-  const fileUpload = async (files) => {
+  const fileUpload = (files) => {
 
     const formData = new FormData();
     for(let i = 0; i < files.length; i++)
@@ -25,39 +25,45 @@ const Home = () => {
       }
     };
     
-    await axios.post("http://localhost:3500/upload", formData, header)
+    axios.post("http://localhost:3500/upload", formData, header)
       .then((res) => {
 
-      let empty_includes = 0;
-      let num_of_included_files = 0;
-      let response = res.data;
+      const data = res.data;
+      let included_files = [];
+      let includeS_files = [];
 
-      Object.keys(response).forEach((fileName) => {
-
-        if(!response[fileName]['includes'].length)
-        {
-          empty_includes++;
-        }
-
-      })
-
-      Object.keys(response).forEach((fileName) => {
-
-        if(response[fileName]['includes'].length > 0)
-        {
-          num_of_included_files = response[fileName]['includes'].length;
-        }
-
-      })
+      console.log(data);
       
-      if(empty_includes === num_of_included_files)
+      Object.keys(data).forEach((fileName) => {
+
+        if (data[fileName]["includes"].length === 0)
+        {
+          included_files.push(fileName);
+        }
+        
+      });
+
+      Object.keys(data).forEach((fileName) => {
+
+        if (data[fileName]["includes"].length > 0)
+        {
+          data[fileName]["includes"].forEach((include) => {
+
+            includeS_files.push(include.value.split(".")[0] + ".json");
+
+          });
+        }
+        
+      });
+
+      if(included_files.sort().toString() === includeS_files.sort().toString())
       {
-        setDisplayComponent({"fileUpload": false});
-        setFilesToVis(res.data);
+        setDisplayComponent({"fileUpload": false})
+        setFilesToVis(data);
       }
-      else
+      else 
       {
-        alert("You are missing one or more necessary include files");
+        alert("One or more include files are missing!")
       }
       
     }).catch((error) => console.log(error.message))

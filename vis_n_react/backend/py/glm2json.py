@@ -29,11 +29,11 @@ def glm2json( glmDict ):
 
     return glm_json
 
-def removeGlmFiles( folderDir ):
+# def removeGlmFiles( folderDir ):
 
-    for file in os.listdir( folderDir ):
-        if re.search( ".glm$", file ):
-            os.remove( folderDir + file )
+#     for file in os.listdir( folderDir ):
+#         if re.search( ".glm$", file ):
+#             os.remove( folderDir + file )
 
 #creates metrics file
 def createMetrics( glmDict ):
@@ -70,11 +70,12 @@ def main():
     fileNames = getFiles( folderDir )
     glmDict = glmToDict( fileNames, folderDir )
 
-    removeGlmFiles( folderDir )
+    # removeGlmFiles( folderDir )
     createMetrics( glmDict )
-
-    #prints out the converted glm files to json
-    print( glm2json( glmDict ) )
+ 
+    # Writing to sample.json
+    with open("./json/glm2json_output.json", "w") as jsonFile:
+        jsonFile.write( glm2json( glmDict ) )
 
     sys.stdout.flush()
 
