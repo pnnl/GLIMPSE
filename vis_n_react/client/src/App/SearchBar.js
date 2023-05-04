@@ -1,12 +1,14 @@
 import React, { useState } from "react";
-import "../styles/SearchBar.css"
+import "../styles/SearchBar.css";
+import PlotModal from "./PlotModal";
 import axios from 'axios';
 
 const SearchBar = (props) => {
 
     const nodes = props.data;
     const [node, setNode] = useState("");
-    const [imgData, setImgData] = useState(null);
+    const [imgUrl, setImgUrl] = useState(null);
+    const [showPlot, setShowPlot] = useState(false);
 
     const handleChange = (e) =>
     {
@@ -59,20 +61,16 @@ const SearchBar = (props) => {
     const plot = async (e) => 
     {
         e.preventDefault();
-        const axios_instance = axios.create({
-            baseURL: 'http://localhost:3500',
-            timeout: 5000
-          });
 
-        await axios_instance
-            .get("/getplot",{responseType: 'arraybuffer' })
-            .then( ( res ) => {
-                const buffer = Buffer.from(res.data, 'binary').toString('base64');
-                setImgData(`data:${res.headers['content-type']};base64,${buffer}`);
+        setShowPlot(true);
+
+        await axios.get("http://localhost:3500/getplot", {responseType: 'blob' })
+            .then( ( { data: blob } ) => {
+                const imageUrl = URL.createObjectURL(blob);
+                setImgUrl(imageUrl);
             })
             .catch(( err ) => console.log( err ))
-        
-       
+    
     }
 
     return (
@@ -81,6 +79,7 @@ const SearchBar = (props) => {
             <form className="search-nav-form">
                 <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
                 <button className="plt-btn" onClick={plot}>Show Plot</button>
+
 
                 <div className="physics-switch">
                     <label className="physics-lbl">Toggle Physics: </label>
@@ -97,6 +96,7 @@ const SearchBar = (props) => {
                 <button className = "reset-btn" onClick={handleReset}>Reset</button>
             </form>
         </div>
+        <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)}/>
         </>
     );
 }

@@ -1,5 +1,6 @@
 .form-wrapper{
     margin: 0.5rem;
+    z-index: -1;
 }
 
 .search-nav-form {
@@ -11,8 +12,12 @@
 
 .export-btn {
     padding: 0.25rem;
-    margin-right: auto;
     
+}
+
+.plt-btn {
+    padding: 0.25rem;
+    margin-right: auto;
 }
 
 .physics-lbl {

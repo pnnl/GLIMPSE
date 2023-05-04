@@ -145,3 +145,5 @@ FileNotFoundError: [WinError 3] The system cannot find the path specified: '../g
 05/01/2023	09:17:12	87398c22-1be4-45f3-a099-8fafef1efb2c	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\glmUploads'
 05/01/2023	09:26:13	13f176b5-cc9d-47c7-9aef-5aa342ee46c6	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\json'
 05/01/2023	10:15:30	554666c8-0521-4ed4-b477-6c17c8e8edef	ReferenceError: readFileSync is not defined
+05/03/2023	16:46:40	a2248d16-ce8a-4eea-a238-81e268bf651e	TypeError: path must be absolute or specify root to res.sendFile
+05/03/2023	16:49:43	83c1410a-c6b3-4545-9afc-29582b9b2d47	TypeError: path must be absolute or specify root to res.sendFile

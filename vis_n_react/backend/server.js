@@ -170,19 +170,9 @@ app.post("/jsontoglm", ( req, res ) => {
 
 });
 
-app.get("./getplot", (req, res) => {
+app.get("/getplot", (req, res) => {
 
-    fs.mkdirSync(path.join(__dirname, "figs"));
-
-    const plotArgs = "python ./emb/nodes.emb"
-    execSync(plotArgs, (error) =>
-    {
-        if( error )
-        {
-            console.error( `exec error: ${error}` );
-            return;
-        }
-    })
+    res.sendFile(path.join(__dirname, "figs", "plot.png"));
 
 })
 
