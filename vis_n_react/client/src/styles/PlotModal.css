@@ -1,33 +1,39 @@
-.overlay {
-    background-color: rgba(0,0,0,0.5);
-    position: fixed;
-    width: 100%;
-    height: 100%;
+.modal {
+    z-index: 9999;
 }
 
-.modalContainer {
-    max-width: 600px;
-    width: 100%;
+.modal, .modal-overlay {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: fixed;
+}
+
+.modal-overlay {
+    background-color: rgba(49,49,49,0.8);
+}
+
+.modal-content {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 9999;
-    display: flex;
-    background-color: white;
-    box-shadow: 0px 0px 18px 0px rgba(0,0,0,0.75);
+    border-radius: 3px;
+    max-width: 900px;
+    min-width: 300px;
 }
 
 .plot {
-    width: 50%;
-    height: 50%;
-    object-fit: cover;
+    width: 100%;
+    height: 100%;
 }
 
 .closeBtn {
-    position: fixed;
-    padding: 1rem;
-    top: 8px;
-    right: 8px;
-    cursor: pointer;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    padding: 5px 7px;
 }

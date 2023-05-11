@@ -1,1 +1,0 @@
-{ "itr":0,"w":0,"orb0":[NaN],"orb1":[NaN,NaN,NaN],"orb2":[NaN,NaN],"orb3":[NaN],"orb4":[NaN],"orb5":[NaN,NaN],"orb6":[NaN,NaN],"orb7":[NaN,NaN],"orb8":[NaN,NaN],"orb9":[NaN,NaN,NaN]}

@@ -8,7 +8,7 @@ import Graph from './Graph';
 
 const Home = () => {
   let content;
-  const [displayComponent, setDisplayComponent] = useState({"fileUpload": true});
+  const [showFileUpload, setShowFileUpload] = useState(true);
   const [filesToVis, setFilesToVis] = useState({});
 
   const fileUpload = (files) => {
@@ -25,52 +25,25 @@ const Home = () => {
       }
     };
     
-    axios.post("http://localhost:3500/upload", formData, header)
-      .then((res) => {
+    axios.post("http://localhost:3500/upload", formData, header).then((res) => {
 
       const data = res.data;
-      let included_files = [];
-      let includeS_files = [];
-
-      console.log(data);
       
-      Object.keys(data).forEach((fileName) => {
-
-        if (data[fileName]["includes"].length === 0)
-        {
-          included_files.push(fileName);
-        }
-        
-      });
-
-      Object.keys(data).forEach((fileName) => {
-
-        if (data[fileName]["includes"].length > 0)
-        {
-          data[fileName]["includes"].forEach((include) => {
-
-            includeS_files.push(include.value.split(".")[0] + ".json");
-
-          });
-        }
-        
-      });
-
-      if(included_files.sort().toString() === includeS_files.sort().toString())
+      if(data.alert)
       {
-        setDisplayComponent({"fileUpload": false})
-        setFilesToVis(data);
+        alert(data.alert);
       }
-      else 
+      else
       {
-        alert("One or more include files are missing!")
+        setFilesToVis(data);
+        setShowFileUpload(false);
       }
       
     }).catch((error) => console.log(error.message))
 
   }
 
-  if(displayComponent.fileUpload)
+  if(showFileUpload)
   {
     content = <GlmFileUpload fileUpload = {fileUpload} />;
   }

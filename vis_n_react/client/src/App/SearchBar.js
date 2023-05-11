@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import "../styles/SearchBar.css";
+import axios from "axios";
 import PlotModal from "./PlotModal";
-import axios from 'axios';
 
-const SearchBar = (props) => {
+const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle}) => {
 
-    const nodes = props.data;
+    const nodes = data;
     const [node, setNode] = useState("");
     const [imgUrl, setImgUrl] = useState(null);
     const [showPlot, setShowPlot] = useState(false);
@@ -21,7 +21,7 @@ const SearchBar = (props) => {
         
         if (nodes.get(node))
         {
-            props.onFind(node);
+            onFind(node);
         }
         else
         {
@@ -31,46 +31,51 @@ const SearchBar = (props) => {
 
     const handleExport = (e) => {
         e.preventDefault()
-        props.export();
+        download();
     }
 
     const handleReset = (e) =>
     {
         e.preventDefault();
-        props.reset();
+        reset();
     }
 
     const handlePrev = (e) => 
     {
         e.preventDefault();
-        props.prev();
+        prev();
     }
 
     const handleNext = (e) =>
     {
         e.preventDefault();
-        props.next();
+        next();
     }
 
     const togglePhysics = () =>
     {
         const checkBox = document.getElementById("phyCheck");
-        props.physicsToggle(checkBox.checked);
+        physicsToggle(checkBox.checked);
     }
 
     const plot = async (e) => 
     {
         e.preventDefault();
-
-        setShowPlot(true);
-
-        await axios.get("http://localhost:3500/getplot", {responseType: 'blob' })
-            .then( ( { data: blob } ) => {
-                const imageUrl = URL.createObjectURL(blob);
+        
+        if(imgUrl === null)
+        {
+            await axios.get("http://localhost:3500/getplot", {responseType: 'blob' }).then( ( { data: blob } ) => {
+                let imageUrl = URL.createObjectURL(blob);
                 setImgUrl(imageUrl);
+                setShowPlot(true);
             })
             .catch(( err ) => console.log( err ))
-    
+        }
+        else
+        {
+            setShowPlot(true);
+        }
+  
     }
 
     return (
@@ -79,7 +84,6 @@ const SearchBar = (props) => {
             <form className="search-nav-form">
                 <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
                 <button className="plt-btn" onClick={plot}>Show Plot</button>
-
 
                 <div className="physics-switch">
                     <label className="physics-lbl">Toggle Physics: </label>

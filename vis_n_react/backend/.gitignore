@@ -24,4 +24,4 @@ yarn-error.log*
 package-lock.json
 
 #jar
-./jar/uber-STM-1.4-SNAPSHOT.jar
+jar/uber-STM-1.4-SNAPSHOT.jar

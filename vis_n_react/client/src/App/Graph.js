@@ -169,9 +169,9 @@ const getGraphData= (dataFiles) => {
       let attributes = obj.attributes;
       if (edgeTypes.includes(objectType))
       {
-        var edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-        var edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-        var edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+        let edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
+        let edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
+        let edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
         
         edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
                   color: edgeOptions.get(objectType).color,
@@ -183,7 +183,7 @@ const getGraphData= (dataFiles) => {
       else if (parent_child_edge_types.includes(objectType))
       {
         let nodeID = attributes.name;
-        var parent = attributes.parent;
+        let parent = attributes.parent;
   
         if(parent !== undefined)
         {
@@ -193,7 +193,7 @@ const getGraphData= (dataFiles) => {
       else if(nodeTypes.includes(objectType))
       {
         let nodeID = attributes.name;
-        parent = attributes.parent;
+        let parent = attributes.parent;
         
         if(parent !== undefined)
         {
@@ -209,7 +209,7 @@ const getGraphData= (dataFiles) => {
 
 const NodeFocus = (nodeID) => {
     
-  var options = {
+  const options = {
     scale: 1,
     animation: {
       duration: 1000,
@@ -275,7 +275,7 @@ const TogglePhysics = (toggle) => {
 
 const Prev = () => {
   
-  var options = {
+  const options = {
     scale: 1,
     animation: {
       duration: 1000,
@@ -283,7 +283,7 @@ const Prev = () => {
     }
   };
 
-  var prev = data.nodes.get({
+  let prev = data.nodes.get({
     filter: (n) => {
       return (n.size === 50);
     }
@@ -299,7 +299,7 @@ const Prev = () => {
 
 const Next = () => {
 
-  var options = {
+  const options = {
     scale: 1,
     animation: {
       duration: 1000,
@@ -307,27 +307,27 @@ const Next = () => {
     }
   };
 
-  var nxt = data.nodes.get({
+  let next = data.nodes.get({
     filter: (n) => {
       return (n.size === 50);
     }
   });
 
   counter++;
-  if(counter >= nxt.length)
+  if(counter >= next.length)
   {
     counter = 0;
-    glmNetwork.focus(nxt[counter].id, options)
+    glmNetwork.focus(next[counter].id, options)
   }
   else
   {
-    glmNetwork.focus(nxt[counter].id, options)
+    glmNetwork.focus(next[counter].id, options)
   }
 }
 
 const HighlightGroup = (group) => {
   
-  var nodesMap = data.nodes.map((n) => {
+  let nodesMap = data.nodes.map((n) => {
     if(n.group === group)
     {
       delete n.color;
@@ -342,7 +342,7 @@ const HighlightGroup = (group) => {
     }
   });
   
-  var edgesMap = data.edges.map((e) => {
+  let edgesMap = data.edges.map((e) => {
     if(!(e.width === 20))
     {
       e.color = 'lightgrey';
@@ -385,9 +385,9 @@ const HighlightEdges = (edgeID) => {
 }
 
 //component
-const Graph = ( props ) => {
+const Graph = ({ visFiles }) => {
   
-  let jsonFromGlm = props.visFiles;
+  let jsonFromGlm = visFiles;
 
   data = getGraphData( jsonFromGlm );
 
@@ -463,10 +463,10 @@ const Graph = ( props ) => {
 
     glmNetwork.on("stabilizationProgress", (params) => {
       
-      var maxWidth = 360;
-      var minWidth = 1;
-      var widthFactor = params.iterations / params.total;
-      var width = Math.max(minWidth, maxWidth * widthFactor);
+      let maxWidth = 360;
+      let minWidth = 1;
+      let widthFactor = params.iterations / params.total;
+      let width = Math.max(minWidth, maxWidth * widthFactor);
       document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
       document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
     
@@ -513,7 +513,7 @@ const Graph = ( props ) => {
         onFind = {NodeFocus}
         prev = {Prev}
         next = {Next}
-        export = {Export}
+        download = {Export}
       />
 
       <NodePopup 
