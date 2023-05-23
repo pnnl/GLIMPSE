@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import "../styles/SearchBar.css";
 import axios from "axios";
 import PlotModal from "./PlotModal";
+import OverlayUpload from "./OverlayUpload";
 
-const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle}) => {
+const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle, addGraphOverlay}) => {
 
     const nodes = data;
     const [node, setNode] = useState("");
     const [imgUrl, setImgUrl] = useState(null);
     const [showPlot, setShowPlot] = useState(false);
+    const [showUpload, setShowUpload] = useState(false);
 
     const handleChange = (e) =>
     {
@@ -75,7 +77,12 @@ const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle}) =
         {
             setShowPlot(true);
         }
-  
+    }
+
+    const showOverlay = (e) => {
+
+        e.preventDefault();
+        setShowUpload(true)
     }
 
     return (
@@ -84,9 +91,10 @@ const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle}) =
             <form className="search-nav-form">
                 <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
                 <button className="plt-btn" onClick={plot}>Show Plot</button>
+                <button className="add-overlay" onClick={showOverlay}>Attach overlay</button>
 
                 <div className="physics-switch">
-                    <label className="physics-lbl">Toggle Physics: </label>
+                    <label className="physics-lbl">Auto Layout: </label>
                     <label className="switch">
                         <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
                         <span className="slider round"></span>
@@ -100,6 +108,7 @@ const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle}) =
                 <button className = "reset-btn" onClick={handleReset}>Reset</button>
             </form>
         </div>
+        <OverlayUpload show = {showUpload} overlayFunc = {addGraphOverlay} close={() => setShowUpload(false)}/>
         <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)}/>
         </>
     );

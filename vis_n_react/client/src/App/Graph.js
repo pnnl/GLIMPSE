@@ -7,15 +7,12 @@ import axios from 'axios';
 import NodePopup from './NodePopup';
 import '../styles/vis-network.css';
 import Legend from './Legend';
-import loadImg from '../imgs/load.png';
-import capacitorImg from '../imgs/capacitor.jpg';
-import inverterImg from '../imgs/inverter.png';
-import meterImg from '../imgs/meter.jpg';
-import substationImg from '../imgs/substation.jpg';
-import generatorImg from '../imgs/generator.jpg';
-import nodeImg from '../imgs/node.png';
+import options from './graphConfig/graphOptions.js';
 
-let data;
+const data = {
+  nodes: new DataSet(),
+  edges: new DataSet()
+};
 let glmNetwork;
 let counter = -1;
 const objectTypeCount = {"nodes": {"load": 0, "node": 0, "meter": 0, "inverter": 0,
@@ -25,11 +22,11 @@ const objectTypeCount = {"nodes": {"load": 0, "node": 0, "meter": 0, "inverter":
                         "series_reactor": 0, "triplex_line": 0, "regulator": 0,"transformer": 0}};
 
 //These types are what are considered edges
-const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer"];
+const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer", "mapping", "communication", "microgrid_connection"];
 
 //These types are recognized as nodes by electrical engineers.
 const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
-                  "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg"];
+                  "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"];
 
 //These edges or connections are between parent and child nodes
 const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
@@ -45,68 +42,20 @@ const nodeOptions = new Map([["load", {"group": "load"}],
                     ["meter", {"group": "meter"}],
                     ["inverter", {"group": "inverter"}],
                     ["inverter_dyn", {"group": "inverter"}],
-                    ["diesel_dg", {"group": "generator"}]]);
+                    ["diesel_dg", {"group": "generator"}],
+                    ["microgrid_node", {"group": "microgrid_node"}],
+                    ["communication_node", {"group": "communication_node"}]]);
                     
-const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
-                            ["switch", {"width": 4, "color": "#3a0ca3"}],
-                            ["series_reactor", {"width": 4, "color": "#8c0000"}],
-                            ["triplex_line", {"width": 4, "color": "#c86bfa"}],
-                            ["underground_line", {"width": 4, "color": "#FFFF00"}],
-                            ["regulator", {"width": 4, "color": "#ff447d"}],
-                            ["transformer", {"width": 4,"color": "#00FF00"}]]);
-
-//These are the graph options
-const options = {
-  edges: {
-    smooth: {
-      enabled: true,
-      type: "dynamic"
-    },
-  },
-  nodes: {
-    shapeProperties: {
-      interpolation: false
-    }
-  },
-  groups:{ //These options can be changes to affect the style of each node type
-    load: {"color": "#2a9d8f","size": 25, "borderWidth": 4, "shape": "circularImage", "image": loadImg},
-    triplex_load:{"color": "#ffea00","size": 25, "borderWidth": 4, "shape": "circularImage","image": loadImg},
-    capacitor:{"color": "#283618","size": 25, "borderWidth": 4, "shape": "circularImage","image": capacitorImg},
-    triplex_node:{"color": "#003566","size": 25, "borderWidth": 4, "shape": "circularImage","image": nodeImg},
-    substation:{"color": "#fca311","size": 25, "borderWidth": 4, "shape": "circularImage","image": substationImg},
-    triplex_meter:{"color": "#072ac8","size": 25, "borderWidth": 4, "shape": "circularImage","image": meterImg},
-    node:{"color": "#4361ee","size": 25, "borderWidth": 4, "shape": "circularImage", "image": nodeImg},
-    meter:{"color": "#d90429","size": 25, "borderWidth": 4, "shape": "circularImage", "image": meterImg},
-    inverter:{"color": "#c8b6ff","size": 25, "borderWidth": 4, "shape": "circularImage", "image": inverterImg},
-    generator:{"color": "#fee440","size": 25, "borderWidth": 4, "shape": "circularImage", "image": generatorImg},
-  },
-  interaction: {
-    hover:true,
-    hideEdgesOnDrag: true,
-    hideEdgesOnZoom: true,
-    navigationButtons: true
-  },
-  physics: {
-    barnesHut: {
-      gravitationalConstant: -50500, // this value effects graph render time and how spread out it looks
-      springLength: 200, //this value if for how springy the edges are
-      springConstant: 0.5, // the higher the value the springy the edges are 
-    },
-    maxVelocity: 150,
-    minVelocity: 0.75,
-    solver: 'barnesHut',
-    stabilization: {
-      enabled: true,
-      iterations: 1000,
-      updateInterval: 1,
-      onlyDynamicEdges: false,
-      fit: true
-    },
-  },
-  layout: {
-    improvedLayout: false
-  }
-};
+const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000"}],
+                            ["switch", {"width": 1, "color": "#3a0ca3"}],
+                            ["series_reactor", {"width": 1, "color": "#8c0000"}],
+                            ["triplex_line", {"width": 1, "color": "#c86bfa"}],
+                            ["underground_line", {"width": 1, "color": "#FFFF00"}],
+                            ["regulator", {"width": 1, "color": "#ff447d"}],
+                            ["transformer", {"width": 1,"color": "#00FF00"}],
+                            ["mapping", {"width": 0.15, "color": {"inherit": true}}],
+                            ["communication", {"width": 0.15, "color": {"inherit": true}}],
+                            ["microgrid_connection", {"width": 0.15, "color": {"inherit": true}}]]);
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
@@ -121,16 +70,13 @@ const getTitle = (attributes) => {
 //This function will retreve all nodes and edges from a glm file that has be converted to json
 const getGraphData= (dataFiles) => {
 
-  const graphData = {};
   const files = [];
-  const edges = new DataSet();
-  const nodes = new DataSet();
 
   //this loop splits the json into each file name and their data to an array
   //each key of the json is the file name along with the file's data
-  for (let k in dataFiles)
+  for (let file in dataFiles)
   {
-    files.push(dataFiles[k]);
+    files.push(dataFiles[file]);
   }
 
   //For each file gather all of the nodes that matches the types
@@ -145,7 +91,7 @@ const getGraphData= (dataFiles) => {
       if (nodeTypes.includes(objectType))
       {
         let nodeID = attributes.name;
-        nodes.add({id: nodeID, label: nodeID,
+        data.nodes.add({id: nodeID, label: nodeID,
                   attributes: attributes,
                   group: nodeOptions.get(objectType).group,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
@@ -154,9 +100,6 @@ const getGraphData= (dataFiles) => {
       }
     }
   }
-  graphData.nodes = nodes;
-
-  console.log(objectTypeCount);
 
   for (let file of files)
   {
@@ -173,7 +116,7 @@ const getGraphData= (dataFiles) => {
         let edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
         let edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
         
-        edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
+        data.edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
                   color: edgeOptions.get(objectType).color,
                   width: edgeOptions.get(objectType).width,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
@@ -187,7 +130,7 @@ const getGraphData= (dataFiles) => {
   
         if(parent !== undefined)
         {
-          edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          data.edges.add({from: parent, to: nodeID, color: {inherit: true}});
         }
       }
       else if(nodeTypes.includes(objectType))
@@ -197,14 +140,11 @@ const getGraphData= (dataFiles) => {
         
         if(parent !== undefined)
         {
-          edges.add({from: parent, to: nodeID, color: {inherit: true}});
+          data.edges.add({from: parent, to: nodeID, color: {inherit: true}});
         }
       }
     }
   }
-  graphData.edges = edges;
-
-  return graphData;
 }
 
 const NodeFocus = (nodeID) => {
@@ -237,9 +177,9 @@ const Reset = () => {
   });
   
   let edgeItems = data.edges.map((e) => {
-    if(e.width === 20)
+    if(e.width === 6)
     {
-      e.width = 4;
+      e.width = 1;
       return e;
     }
     else if(edgeTypes.includes(e.id.split(":")[0]))
@@ -285,7 +225,7 @@ const Prev = () => {
 
   let prev = data.nodes.get({
     filter: (n) => {
-      return (n.size === 50);
+      return (n.size === 30);
     }
   });
   
@@ -309,7 +249,7 @@ const Next = () => {
 
   let next = data.nodes.get({
     filter: (n) => {
-      return (n.size === 50);
+      return (n.size === 30);
     }
   });
 
@@ -331,7 +271,7 @@ const HighlightGroup = (group) => {
     if(n.group === group)
     {
       delete n.color;
-      n.size = 50;
+      n.size = 30;
       return n;
     }
     else
@@ -343,7 +283,7 @@ const HighlightGroup = (group) => {
   });
   
   let edgesMap = data.edges.map((e) => {
-    if(!(e.width === 20))
+    if(!(e.width === 6))
     {
       e.color = 'lightgrey';
     }
@@ -358,7 +298,7 @@ const HighlightGroup = (group) => {
 const HighlightEdges = (edgeID) => {
   
   let nodeItems = data.nodes.map((n) => {
-    if (!(n.size === 50))
+    if (!(n.size === 30))
     {
       n.color = "lightgrey";
     }
@@ -369,13 +309,13 @@ const HighlightEdges = (edgeID) => {
     if( e.id.split( ":" )[ 0 ] === edgeID )
     {
       e.color = edgeOptions.get( edgeID ).color;
-      e.width = 20;
+      e.width = 6;
       return e;
     }
     else
     {
       e.color = "lightgrey";
-      e.width = 4;
+      e.width = 1;
       return e;
     }
   });
@@ -384,12 +324,11 @@ const HighlightEdges = (edgeID) => {
   data.edges.update( edgeItems );
 }
 
-//component
+/* ------------------------ Component ------------------------ */
 const Graph = ({ visFiles }) => {
   
-  let jsonFromGlm = visFiles;
-
-  data = getGraphData( jsonFromGlm );
+  const jsonFromGlm = visFiles;
+  getGraphData( jsonFromGlm );
 
   console.log( "Number of Nodes: " + data.nodes.length );
   console.log( "Number of Edges: " + data.edges.length );
@@ -448,8 +387,13 @@ const Graph = ({ visFiles }) => {
 
   }
 
-  let setCurrentNode = null;
+  const addOverlay = ( overlayData ) => {
 
+    getGraphData(overlayData);
+
+  }
+
+  let setCurrentNode = null;
   const onChildMount = (childSetFunc) => {
 
     setCurrentNode = childSetFunc;
@@ -514,6 +458,7 @@ const Graph = ({ visFiles }) => {
         prev = {Prev}
         next = {Next}
         download = {Export}
+        addGraphOverlay={addOverlay}
       />
 
       <NodePopup 

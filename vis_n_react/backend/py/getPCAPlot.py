@@ -27,7 +27,7 @@ def plot_emb(fname, titlestr = "2 Component PCA", dataannotation=True):
 
 
 def main():
-    plot_emb(sys.argv[1],titlestr = "ITeM embeddings of 9500 model")
+    plot_emb(sys.argv[1],titlestr = "ITeM embeddings of current model")
 
 if __name__ == "__main__":
     main()

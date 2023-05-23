@@ -40,6 +40,7 @@ module generators {
 
 #include "IEEE-123_Diesels_fixed.glm";
 #include "IEEE-123_Inverters_fixed.glm";
+//#include "topology.glm";
 
 //Fault check option
 //object fault_check {

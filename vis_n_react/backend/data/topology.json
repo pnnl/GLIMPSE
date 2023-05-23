@@ -1,0 +1,1329 @@
+{
+   "clock": {},
+   "includes": [],
+   "objects": [
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm0"
+         },
+         "children": []
+      },
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm1"
+         },
+         "children": []
+      },
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm2"
+         },
+         "children": []
+      },
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm3"
+         },
+         "children": []
+      },
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm4"
+         },
+         "children": []
+      },
+      {
+         "name": "communication_node",
+         "attributes": {
+            "name": "comm5"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_node",
+         "attributes": {
+            "name": "CC"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_node",
+         "attributes": {
+            "name": "MG1"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_node",
+         "attributes": {
+            "name": "MG2"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_node",
+         "attributes": {
+            "name": "MG3"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_node",
+         "attributes": {
+            "name": "SS"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm0-comm1",
+            "from": "comm0",
+            "to": "comm1"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm1-comm2",
+            "from": "comm1",
+            "to": "comm2"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm2-comm3",
+            "from": "comm2",
+            "to": "comm3"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm3-comm4",
+            "from": "comm3",
+            "to": "comm4"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm4-comm5",
+            "from": "comm4",
+            "to": "comm5"
+         },
+         "children": []
+      },
+      {
+         "name": "communication",
+         "attributes": {
+            "name": "comm5-comm0",
+            "from": "comm5",
+            "to": "comm0"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_connection",
+         "attributes": {
+            "name": "comm1-CC",
+            "from": "comm1",
+            "to": "CC"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_connection",
+         "attributes": {
+            "name": "comm2-MG1",
+            "from": "comm2",
+            "to": "MG1"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_connection",
+         "attributes": {
+            "name": "comm3-MG2",
+            "from": "comm3",
+            "to": "MG2"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_connection",
+         "attributes": {
+            "name": "comm4-MG3",
+            "from": "comm4",
+            "to": "MG3"
+         },
+         "children": []
+      },
+      {
+         "name": "microgrid_connection",
+         "attributes": {
+            "name": "comm0-SS",
+            "from": "comm0",
+            "to": "SS"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-36",
+            "from": "MG1",
+            "to": "node:36"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-40",
+            "from": "MG1",
+            "to": "node:40"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-44",
+            "from": "MG1",
+            "to": "node:44"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-135",
+            "from": "MG1",
+            "to": "node:135"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-151",
+            "from": "MG1",
+            "to": "node:151"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-35",
+            "from": "MG1",
+            "to": "load:35"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-37",
+            "from": "MG1",
+            "to": "load:37"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-38",
+            "from": "MG1",
+            "to": "load:38"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-39",
+            "from": "MG1",
+            "to": "load:39"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-41",
+            "from": "MG1",
+            "to": "load:41"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-42",
+            "from": "MG1",
+            "to": "load:42"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-43",
+            "from": "MG1",
+            "to": "load:43"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-45",
+            "from": "MG1",
+            "to": "load:45"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-46",
+            "from": "MG1",
+            "to": "load:46"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-47",
+            "from": "MG1",
+            "to": "load:47"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-48",
+            "from": "MG1",
+            "to": "load:48"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-49",
+            "from": "MG1",
+            "to": "load:49"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-50",
+            "from": "MG1",
+            "to": "load:50"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-52",
+            "from": "MG1",
+            "to": "load:51"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-trip_shad_inv",
+            "from": "MG1",
+            "to": "trip_shad_inv"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG1-trip_shad_inv4",
+            "from": "MG1",
+            "to": "trip_shad_inv4"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-101",
+            "from": "MG2",
+            "to": "node:101"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-105",
+            "from": "MG2",
+            "to": "node:105"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-108",
+            "from": "MG2",
+            "to": "node:108"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-110",
+            "from": "MG2",
+            "to": "node:110"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-197",
+            "from": "MG2",
+            "to": "node:197"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-300",
+            "from": "MG2",
+            "to": "node:300"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-102",
+            "from": "MG2",
+            "to": "load:102"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-103",
+            "from": "MG2",
+            "to": "load:103"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-104",
+            "from": "MG2",
+            "to": "load:104"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-106",
+            "from": "MG2",
+            "to": "load:106"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-107",
+            "from": "MG2",
+            "to": "load:107"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-109",
+            "from": "MG2",
+            "to": "load:109"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-111",
+            "from": "MG2",
+            "to": "load:111"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-112",
+            "from": "MG2",
+            "to": "load:112"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-113",
+            "from": "MG2",
+            "to": "load:113"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG2-114",
+            "from": "MG2",
+            "to": "load:114"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-67",
+            "from": "MG3",
+            "to": "node:67"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-78",
+            "from": "MG3",
+            "to": "node:78"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-81",
+            "from": "MG3",
+            "to": "node:81"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-89",
+            "from": "MG3",
+            "to": "node:89"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-91",
+            "from": "MG3",
+            "to": "node:91"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-93",
+            "from": "MG3",
+            "to": "node:93"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-97",
+            "from": "MG3",
+            "to": "node:97"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-160",
+            "from": "MG3",
+            "to": "node:160"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-450",
+            "from": "MG3",
+            "to": "node:450"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-68",
+            "from": "MG3",
+            "to": "load:68"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-69",
+            "from": "MG3",
+            "to": "load:69"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-70",
+            "from": "MG3",
+            "to": "load:70"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-71",
+            "from": "MG3",
+            "to": "load:71"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-72",
+            "from": "MG3",
+            "to": "load:72"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-73",
+            "from": "MG3",
+            "to": "load:73"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-74",
+            "from": "MG3",
+            "to": "load:74"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-75",
+            "from": "MG3",
+            "to": "load:75"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-76",
+            "from": "MG3",
+            "to": "load:76"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-77",
+            "from": "MG3",
+            "to": "load:77"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-79",
+            "from": "MG3",
+            "to": "load:79"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-80",
+            "from": "MG3",
+            "to": "load:80"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-82",
+            "from": "MG3",
+            "to": "load:82"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-83",
+            "from": "MG3",
+            "to": "load:83"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-84",
+            "from": "MG3",
+            "to": "load:84"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-85",
+            "from": "MG3",
+            "to": "load:85"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-86",
+            "from": "MG3",
+            "to": "load:86"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-87",
+            "from": "MG3",
+            "to": "load:87"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-88",
+            "from": "MG3",
+            "to": "load:88"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-90",
+            "from": "MG3",
+            "to": "load:90"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-92",
+            "from": "MG3",
+            "to": "load:92"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-94",
+            "from": "MG3",
+            "to": "load:94"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-95",
+            "from": "MG3",
+            "to": "load:95"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-96",
+            "from": "MG3",
+            "to": "load:96"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-98",
+            "from": "MG3",
+            "to": "load:98"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-99",
+            "from": "MG3",
+            "to": "load:99"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-100",
+            "from": "MG3",
+            "to": "load:100"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "MG3-Gen3",
+            "from": "MG3",
+            "to": "Gen3"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-3",
+            "from": "SS",
+            "to": "node:3"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-8",
+            "from": "SS",
+            "to": "node:8"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-13",
+            "from": "SS",
+            "to": "node:13"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-14",
+            "from": "SS",
+            "to": "node:14"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-15",
+            "from": "SS",
+            "to": "node:15"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-18",
+            "from": "SS",
+            "to": "node:18"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-21",
+            "from": "SS",
+            "to": "node:21"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-23",
+            "from": "SS",
+            "to": "node:23"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-25",
+            "from": "SS",
+            "to": "node:25"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-26",
+            "from": "SS",
+            "to": "node:26"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-27",
+            "from": "SS",
+            "to": "node:27"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-54",
+            "from": "SS",
+            "to": "node:54"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-57",
+            "from": "SS",
+            "to": "node:57"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-61",
+            "from": "SS",
+            "to": "node:61"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-149",
+            "from": "SS",
+            "to": "node:149"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-150",
+            "from": "SS",
+            "to": "node:150"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-195",
+            "from": "SS",
+            "to": "node:195"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-250",
+            "from": "SS",
+            "to": "node:250"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-1",
+            "from": "SS",
+            "to": "load:1"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-2",
+            "from": "SS",
+            "to": "load:2"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-4",
+            "from": "SS",
+            "to": "load:4"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-5",
+            "from": "SS",
+            "to": "load:5"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-6",
+            "from": "SS",
+            "to": "load:6"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-7",
+            "from": "SS",
+            "to": "load:7"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-9",
+            "from": "SS",
+            "to": "load:9"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-10",
+            "from": "SS",
+            "to": "load:10"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-11",
+            "from": "SS",
+            "to": "load:11"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-12",
+            "from": "SS",
+            "to": "load:12"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-16",
+            "from": "SS",
+            "to": "load:16"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-17",
+            "from": "SS",
+            "to": " load:17"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-19",
+            "from": "SS",
+            "to": "load:19"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-20",
+            "from": "SS",
+            "to": "load:20"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-22",
+            "from": "SS",
+            "to": "load:22"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-24",
+            "from": "SS",
+            "to": "load:24"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-28",
+            "from": "SS",
+            "to": "load:28"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-29",
+            "from": "SS",
+            "to": "load:29"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-30",
+            "from": "SS",
+            "to": "load:30"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-31",
+            "from": "SS",
+            "to": "load:31"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-32",
+            "from": "SS",
+            "to": "load:32"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-33",
+            "from": "SS",
+            "to": "load:33"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-34",
+            "from": "SS",
+            "to": "load:34"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-52",
+            "from": "SS",
+            "to": "load:52"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-53",
+            "from": "SS",
+            "to": "load:53"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-55",
+            "from": "SS",
+            "to": "load:55"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-56",
+            "from": "SS",
+            "to": "load:56"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-58",
+            "from": "SS",
+            "to": "load:58"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-59",
+            "from": "SS",
+            "to": "load:59"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-60",
+            "from": "SS",
+            "to": "load:60"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-62",
+            "from": "SS",
+            "to": "load:62"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-63",
+            "from": "SS",
+            "to": "load:63"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-64",
+            "from": "SS",
+            "to": "load:64"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-65",
+            "from": "SS",
+            "to": "load:65"
+         },
+         "children": []
+      },
+      {
+         "name": "mapping",
+         "attributes": {
+            "name": "SS-66",
+            "from": "SS",
+            "to": "load:66"
+         },
+         "children": []
+      }
+   ],
+   "modules": [],
+   "directives": [],
+   "definitions": [],
+   "schedules": []
+}

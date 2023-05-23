@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/GlmFileUpload.css'
+import '../styles/FileUpload.css'
 import { useState, useRef } from 'react'
 
 const GlmFileUpload = (props) => {
@@ -67,6 +67,5 @@ const GlmFileUpload = (props) => {
         </div>    
     );
 };
-
 
 export default GlmFileUpload

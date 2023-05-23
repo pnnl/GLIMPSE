@@ -1,11 +1,12 @@
 import React from 'react';
+import ReactDom from "react-dom";
 import "../styles/PlotModal.css";
 
-function PlotModal({plot, show, close}) {
+const PlotModal = ({plot, show, close}) => {
   
   if (!show) return null;
 
-  return (
+  return ReactDom.createPortal(
     <>
       <div className='modal'>
         <div className='modal-overlay' onClick={close}>
@@ -18,7 +19,8 @@ function PlotModal({plot, show, close}) {
         </div>
       </div>
 
-    </>
+    </>,
+    document.getElementById("portal")
   )
 }
 

@@ -1,37 +1,25 @@
 const express = require('express');
 const app = express();
-const { spawn, exec, execSync } = require('child_process');
-const fs = require("fs");
+const corsOptions = require("./config/corsOptions");
 const path = require("path");
-const cors = require("cors");
-const multer = require('multer');
-const zip = require("express-easy-zip");
 const bodyParser = require('body-parser');
+const fs = require("fs");
+const cors = require("cors");
+const zip = require("express-easy-zip");
+const multer = require('multer');
 const errorHandler = require('./middleware/errorHandler');
+const { execSync } = require('child_process');
 const { logger } = require('./middleware/logEvents');
 const PORT =  process.env.PORT || 3500;
 
 app.use(logger);
-
-// CORS: (Cross Origin Resource Sharing) remove all development urls and the !origin
-const whitelist = ['http://localhost:3000'];
-const corsOptions = {
-    origin: (origin, callback) => {
-        if(whitelist.indexOf(origin) !== -1 || !origin) {
-            callback(null, true)
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    optionsSuccessStatus: 200
-};
 
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json({ limit: '3mb' }));
 app.use(zip());
 
-var storage = multer.diskStorage({
+const storage = multer.diskStorage({
     destination: (req, file, callback) => {
 
         callback(null, './glmUploads');
@@ -42,62 +30,196 @@ var storage = multer.diskStorage({
     }
 });
 
-var upload = multer({storage: storage}).array('glmFile', 4);
+const upload = multer({storage: storage}).array('glmFile', 4);
 
-app.post("/upload", (req, res) => {
+const multerUpload = (req, res) => {
+    return new Promise((resolve, reject) => {
 
-    fs.mkdirSync(path.join(__dirname, "glmUploads"));
+        upload(req, res, (error) => {
+            if (error instanceof multer.MulterError) {
+                
+                return res.status(500).end("Error uploading files involving multer.");
+            }
+            else if (error)
+            {
+                return res.status(500).end("Error uploading files.");
+            }
+        });
 
-    fs.existsSync(path.join(__dirname, "glmUploads"), (exists) => {
-        console.log(exists ? "glmUploads folder exits" : "glmUploads folder does not exits")
-    })
+        setTimeout(() => {
+          resolve('Done');
+        }, 3500);
+    });
+}
 
-    upload(req, res, (error) => {
-        if (error instanceof multer.MulterError) {
+const checkIncludes = ( res, jsonData ) => {
 
-            return res.status(500).end("Error uploading files involving multer.");
-        }
-        else if (error)
+    let included_files = [];
+    let includeS_files = [];
+    const missingIncludesRes = {"alert": "One or more include files are missing!"};
+    
+    Object.keys(jsonData).forEach((fileName) => {
+
+        if (jsonData[fileName]["includes"].length === 0)
         {
-            return res.status(500).end("Error uploading files.");
+            included_files.push(fileName);
         }
+        
     });
-    
-    var outputData;
-    let i = 0;
-    
-    const glm2json_py = spawn('python', ['./py/glm2json.py', './glmUploads/']);
 
-    glm2json_py.stdout.on('data', (data) => {
+    Object.keys(jsonData).forEach((fileName) => {
+
+        if (jsonData[fileName]["includes"].length > 0)
+        {
+            jsonData[fileName]["includes"].forEach((include) => {
+
+                includeS_files.push(include.value.split(".")[0] + ".json");
+
+            });
+        }
         
-        console.log(`Pipe data from python script ...${i++}`); // the python child loops twice for some reason
-        outputData = data.toString();
-        
-        res.end(outputData);
     });
+
+    if(included_files.sort().toString() === includeS_files.sort().toString())
+    {
+        res.send(jsonData);
+        return true;
+    }
+    else 
+    {
+        res.end(JSON.stringify(missingIncludesRes));
+        return false;
+    }
+
+}
+
+app.post("/upload", async (req, res) => {
     
-    glm2json_py.on('exit', (code) => {
-        
-        console.log(`python process exited all stdio with code ${code}`);
-        fs.rmdirSync(path.join(__dirname, "glmUploads"));
+    const tempFolderPaths = [
+        path.join(__dirname, "glmUploads"),
+        path.join(__dirname, "json"),
+        path.join(__dirname, "item-output"),
+        path.join(__dirname, "emb")
+    ];
+
+    tempFolderPaths.forEach((folderPath) => {
+
+        if(fs.existsSync(folderPath))
+        {
+            fs.rmSync(folderPath, { recursive: true, force: true });
+            fs.mkdirSync(folderPath);
+        }
+        else
+        {
+            fs.mkdirSync(folderPath);
+        }
+
     });
+
+    await multerUpload(req, res);
+
+    try {
+        
+        const glm2jsonArgs = `python ./py/glm2json.py ./glmUploads/`;
+        execSync(glm2jsonArgs, ( error ) => {
     
-    glm2json_py.stdout.on("error", (err) => {
+            if ( error )
+            {
+                console.error( `exec glm2json error: ${error}` );
+                return;
+            }
+    
+        })
+    
+        const jsonData = JSON.parse(fs.readFileSync('./json/glm2json_output.json'));
+        const carryOn = checkIncludes(res, jsonData);
         
-        console.log(err);
-        res.sendStatus(500);
-    });
+        if(carryOn)
+        {
+            const jarArgs = `java -cp ./jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="./item-output/"`;
+            execSync( jarArgs, ( error, stdout, stderr) => {
+                if ( error )
+                {
+                    console.error( `exec java jar error: ${error}` );
+                    return;
+                }
+        
+                console.log(stdout);
+                console.log(stderr);
+            });
+        
+            const getEmbeddingArgs = `python ./py/STMGetEmbedding.py ./item-output/ ./emb/`;
+            execSync(getEmbeddingArgs, (error) => {
+        
+                if ( error )
+                {
+                    console.error( `exec STMgetEmbedding error: ${error}` );
+                    return;
+                }
+                
+            });
+        
+            const plotArgs = "python ./py/getPCAPlot.py ./emb/node.emb";
+            execSync(plotArgs, (error) =>
+            {
+                if( error )
+                {
+                    console.error( `exec error: ${error}` );
+                    return;
+                }
+            })
+            
+            tempFolderPaths.forEach(( folderPath ) => {
+                
+                fs.rmSync(folderPath, { recursive: true, force: true })
+        
+            });
+        }
+        else 
+        {
+            tempFolderPaths.forEach(( folderPath ) => {
+                
+                fs.rmSync(folderPath, { recursive: true, force: true })
+        
+            });
+        }
+
+    }
+    catch (error) 
+    {
+        console.log(error);
+
+        tempFolderPaths.forEach(( folderPath ) => {
+            
+            fs.rmSync(folderPath, { recursive: true, force: true })
+
+        });
+    }
 
 });
 
 app.post("/jsontoglm", ( req, res ) => {
 
-    let jsonGlm = req.body;
+    const jsonGlm = req.body;
     const contentLength = req.headers['content-length'];
     console.log(`Incoming JSON payload size: ${contentLength} bytes`);
 
-    fs.mkdirSync(path.join(__dirname, "json"));
-    fs.mkdirSync(path.join(__dirname, "glmOutput"));
+    const tempFolderPaths = [
+        path.join(__dirname, "glmOutput"),
+        path.join(__dirname, "json")
+    ];
+
+    tempFolderPaths.forEach(( folderPath ) => {
+        if(fs.existsSync(folderPath))
+        {
+            fs.rmSync(folderPath, { recursive: true, force: true });
+            fs.mkdirSync(folderPath);
+        }
+        else
+        {
+            fs.mkdirSync(folderPath);
+        }
+    })
 
     Object.keys( jsonGlm ).forEach( ( filename ) => {
 
@@ -106,12 +228,12 @@ app.post("/jsontoglm", ( req, res ) => {
     
     fs.readdirSync("./json/").forEach(( filename ) => {
 
-        let json2glmArgs = "json2glm.exe --path-to-file ./json/" + filename + " >> ./glmOutput/" + filename.split( "." )[ 0 ] + ".glm";
+        const json2glmArgs = "json2glm.exe --path-to-file ./json/" + filename + " >> ./glmOutput/" + filename.split( "." )[ 0 ] + ".glm";
         execSync(json2glmArgs, ( error ) => {
     
             if( error )
             {
-                console.error( `exec error: ${error}` )
+                console.error( `exec error: ${error}` );
                 return;
             }
 
@@ -128,12 +250,18 @@ app.post("/jsontoglm", ( req, res ) => {
     });
 
     res.on("finish", () => {
-        fs.rmdirSync(path.join(__dirname, "json"),{ recursive: true, force: true });
-        fs.rmdirSync(path.join(__dirname, "glmOutput"),{ recursive: true, force: true });
+        tempFolderPaths.forEach(( folderPath ) => {
+            fs.rmSync(folderPath, { recursive: true, force: true });
+        })
     })
 
-  
 });
+
+app.get("/getplot", (req, res) => {
+
+    res.sendFile(path.join(__dirname, "figs", "plot.png"));
+
+})
 
 app.use(errorHandler);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

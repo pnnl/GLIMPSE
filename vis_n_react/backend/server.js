@@ -223,7 +223,7 @@ app.post("/jsontoglm", ( req, res ) => {
 
     Object.keys( jsonGlm ).forEach( ( filename ) => {
 
-        fs.writeFileSync( "./json/" + filename, JSON.stringify( jsonGlm[ filename ], null, 3 ),"utf-8" );
+        fs.writeFileSync( "./json/" + filename, JSON.stringify( jsonGlm[ filename ], null, 3 ), "utf-8" );
     })
     
     fs.readdirSync("./json/").forEach(( filename ) => {
