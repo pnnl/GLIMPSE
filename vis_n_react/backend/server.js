@@ -263,5 +263,21 @@ app.get("/getplot", (req, res) => {
 
 })
 
+app.post("/createmapping", (req, res) => {
+
+    const nodes_mapping = req.body;
+    fs.mkdirSync(path.join(__dirname, "map"));
+    
+    nodes_mapping["mapping"].forEach((node) => {
+        for (let key in node)
+        {
+            fs.writeFileSync("./map/mapping.csv", key + "," + node[key].x + "," + node[key].y + "\n", { flag: 'a' });
+        }
+    })
+
+    // fs.rmSync(path.join(__dirname, "map"), { recursive: true, force: true });
+
+})
+
 app.use(errorHandler);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

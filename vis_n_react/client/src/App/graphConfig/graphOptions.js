@@ -5,6 +5,8 @@ import meterImg from '../../imgs/meter.jpg';
 import substationImg from '../../imgs/substation.jpg';
 import generatorImg from '../../imgs/generator.jpg';
 import nodeImg from '../../imgs/node.png';
+import microGridImg from '../../imgs/microgrid.png';
+import commImg from "../../imgs/comm.jpg";
 
 //These are the graph options
 const options = {
@@ -31,8 +33,8 @@ const options = {
         meter:{"color": "#d90429","size": 10, "borderWidth": 2, "shape": "circularImage", "image": meterImg},
         inverter:{"color": "#c8b6ff","size": 10, "borderWidth": 2, "shape": "circularImage", "image": inverterImg},
         generator:{"color": "#fee440","size": 10, "borderWidth": 2, "shape": "circularImage", "image": generatorImg},
-        communication_node: {"color": "#c1121f", "size": 25, "borderWidth": 2, "shape": "square"},
-        microgrid_node: {"color": "#6b9080", "size": 25, "borderWidth": 2, "shape": "square"},
+        communication_node: {"color": "#c1121f", "size": 20, "borderWidth": 2, "shape": "image", "image": commImg},
+        microgrid_node: {"color": "#6b9080", "size": 20, "borderWidth": 2, "shape": "image", "image": microGridImg},
 
     },
     interaction: {
@@ -44,14 +46,14 @@ const options = {
     physics: {
         barnesHut: {
             gravitationalConstant: -80000, // this value effects graph render time and how spread out it looks
-            springLength: 75, //this value if for how springy the edges are
-            springConstant: 0.04, // the higher the value the springy the edges are 
+            springLength: 150, //this value if for how springy the edges are
+            springConstant: 0.50, // the higher the value the springy the edges are 
         },
         maxVelocity: 150,
         minVelocity: 0.25,
         solver: 'barnesHut',
         stabilization: {
-            enabled: true,
+            enabled: false,
             iterations: 1000,
             updateInterval: 1,
             onlyDynamicEdges: false,

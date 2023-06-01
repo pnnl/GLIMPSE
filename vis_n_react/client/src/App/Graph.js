@@ -13,6 +13,7 @@ const data = {
   nodes: new DataSet(),
   edges: new DataSet()
 };
+
 let glmNetwork;
 let counter = -1;
 const objectTypeCount = {"nodes": {"load": 0, "node": 0, "meter": 0, "inverter": 0,
@@ -22,11 +23,11 @@ const objectTypeCount = {"nodes": {"load": 0, "node": 0, "meter": 0, "inverter":
                         "series_reactor": 0, "triplex_line": 0, "regulator": 0,"transformer": 0}};
 
 //These types are what are considered edges
-const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer", "mapping", "communication", "microgrid_connection"];
+const edgeTypes = ["overhead_line", "switch", "underground_line", "series_reactor", "triplex_line",
+"regulator","transformer", "mapping", "communication", "microgrid_connection"];
 
 //These types are recognized as nodes by electrical engineers.
-const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation",
-                  "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"];
+const nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation", "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"];
 
 //These edges or connections are between parent and child nodes
 const parent_child_edge_types = ["capacitor", "triplex_meter", "triplex_load", "meter"];
@@ -48,14 +49,14 @@ const nodeOptions = new Map([["load", {"group": "load"}],
                     
 const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000"}],
                             ["switch", {"width": 1, "color": "#3a0ca3"}],
-                            ["series_reactor", {"width": 1, "color": "#8c0000"}],
+                            ["series_reactor", {"width": 1, "color": "#3c1642"}],
                             ["triplex_line", {"width": 1, "color": "#c86bfa"}],
                             ["underground_line", {"width": 1, "color": "#FFFF00"}],
                             ["regulator", {"width": 1, "color": "#ff447d"}],
                             ["transformer", {"width": 1,"color": "#00FF00"}],
                             ["mapping", {"width": 0.15, "color": {"inherit": true}}],
                             ["communication", {"width": 0.15, "color": {"inherit": true}}],
-                            ["microgrid_connection", {"width": 0.15, "color": {"inherit": true}}]]);
+                            ["microgrid_connection", {"width": 0.15, "color": "cyan"}]]);
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
@@ -92,9 +93,11 @@ const getGraphData= (dataFiles) => {
       {
         let nodeID = attributes.name;
         data.nodes.add({id: nodeID, label: nodeID,
-                  attributes: attributes,
-                  group: nodeOptions.get(objectType).group,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
+                        attributes: attributes,
+                        group: nodeOptions.get(objectType).group,
+                        title: "Object Type: " + objectType + "\n" + getTitle(attributes),
+                        x: attributes.x === undefined ? undefined : parseInt(attributes.x, 10),
+                        y: attributes.y === undefined ? undefined : parseInt(attributes.y, 10)});
 
         objectTypeCount.nodes[objectType]++;
       }
@@ -211,6 +214,7 @@ const TogglePhysics = (toggle) => {
   {
     glmNetwork.setOptions({physics: {enabled: false}})
   }
+
 }
 
 const Prev = () => {
@@ -403,34 +407,45 @@ const Graph = ({ visFiles }) => {
   const container = useRef(null);
   useEffect(() => {
 
-    glmNetwork = new Network(container.current, data, options);
-
-    glmNetwork.on("stabilizationProgress", (params) => {
-      
-      let maxWidth = 360;
-      let minWidth = 1;
-      let widthFactor = params.iterations / params.total;
-      let width = Math.max(minWidth, maxWidth * widthFactor);
-      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
-      document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
-    
-    });
-    
-    glmNetwork.once("stabilizationIterationsDone", () => {
-      
-      document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
-      document.getElementById("progressValue").innerText = "100%";
-      document.getElementById("circularProgress").style.opacity = 0.7;
-      
-      setTimeout(() => {
-
-        document.getElementById("circularProgress").style.display = "none";
-
-      }, 500);
-      
+    if(data.nodes.get()[0].x !== undefined && data.nodes.get()[0].y !== undefined)
+    {
+      document.getElementById("circularProgress").style.display = "none";
+      glmNetwork = new Network(container.current, data, options);
       glmNetwork.setOptions({physics: {enabled: false}})
+    }
+    else
+    {
+      options.physics.stabilization.enabled = true;
+      glmNetwork = new Network(container.current, data, options);
+  
+      glmNetwork.on("stabilizationProgress", (params) => {
+        
+        let maxWidth = 360;
+        let minWidth = 1;
+        let widthFactor = params.iterations / params.total;
+        let width = Math.max(minWidth, maxWidth * widthFactor);
+        document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
+        document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
+      
+      });
+      
+      glmNetwork.once("stabilizationIterationsDone", () => {
+        
+        document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
+        document.getElementById("progressValue").innerText = "100%";
+        document.getElementById("circularProgress").style.opacity = 0.7;
+        
+        setTimeout(() => {
+  
+          document.getElementById("circularProgress").style.display = "none";
+  
+        }, 500);
+        
+        glmNetwork.setOptions({physics: {enabled: false}})
+  
+      });
 
-    });
+    }
     
     glmNetwork.on("doubleClick", (params) => {
   

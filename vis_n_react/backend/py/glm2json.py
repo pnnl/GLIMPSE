@@ -35,6 +35,26 @@ def glm2json( glmDict ):
 #         if re.search( ".glm$", file ):
 #             os.remove( folderDir + file )
 
+'''
+this function will create a csv file named map.csv
+that will store <node id>, <x>, <y>
+'''
+def createMapping( glmDict ):
+    nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation", "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"]
+    map_file = open("./mapping/map.csv", "w")
+
+    for glmFile in glmDict.values():
+        for obj in glmFile['objects']:
+
+            object_type = obj[ 'name' ].split(":")[0]
+
+            if object_type in nodeTypes:
+                try:
+                    map_file.write(",".join([ obj[ 'attributes' ][ 'name' ], obj[ 'attributes' ][ 'x' ], obj[ 'attributes' ][ 'y' ] ]) + "\n")
+                except:
+                    break
+
+
 #creates metrics file
 def createMetrics( glmDict ):
     edgeTypes = [ "overhead_line", "switch", "underground_line", "series_reactor", "triplex_line", "regulator","transformer" ]
@@ -72,7 +92,8 @@ def main():
 
     # removeGlmFiles( folderDir )
     createMetrics( glmDict )
- 
+    createMapping( glmDict )
+
     # Writing to sample.json
     with open("./json/glm2json_output.json", "w") as jsonFile:
         jsonFile.write( glm2json( glmDict ) )

@@ -1,1 +1,14 @@
 05/11/2023	09:04:25	5760bc91-2f4f-4c97-bf62-ef9e99fbda7a	Error: ENOENT: no such file or directory, open './json/IEEE-123_Diesels_fixed.json'
+05/25/2023	16:20:25	f492fcfa-87e0-455b-b50a-7920437bd045	TypeError: nodes.forEach is not a function
+05/25/2023	16:30:34	52423212-30d7-439e-bbdc-166cb7432711	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/25/2023	16:30:50	4111d203-de19-4050-b684-2ff2868c345b	TypeError: nodes.forEach is not a function
+05/25/2023	16:31:29	dd795109-2e75-4d8a-bc65-c0feca26d69e	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/25/2023	17:34:58	afdf374e-0fd9-47aa-a0ca-4f0b28f97db2	Error: EISDIR: illegal operation on a directory, open 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/25/2023	17:35:19	c62132c9-1e6c-4c79-9b47-1ec302e25e2b	Error: EISDIR: illegal operation on a directory, open 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/25/2023	17:43:28	0476674d-958a-4ed2-8e22-b444ee0c0731	Error: EISDIR: illegal operation on a directory, open 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/25/2023	17:43:41	ca56ddf4-f56a-4d41-bd1e-da2e91ef890b	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/26/2023	09:58:33	6f105476-71fc-4a2c-a68c-99a5adab6b11	TypeError: Cannot read properties of undefined (reading 'x')
+05/26/2023	09:58:34	161beb0d-5c72-4c92-8a12-f32cae41243e	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/26/2023	09:58:55	93fc2ff3-8d75-4cd0-958a-bca785f45816	TypeError: Cannot read properties of undefined (reading 'x')
+05/26/2023	10:06:33	dcee1489-00d6-43ac-998c-05fc33fcbe61	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+05/26/2023	10:26:24	fb1a0499-62ce-4441-81b6-e7db94d9433e	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'

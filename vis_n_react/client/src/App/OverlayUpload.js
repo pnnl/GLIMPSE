@@ -1,12 +1,11 @@
 import React from 'react';
 import ReactDom from 'react-dom';
-import '../styles/OverlayUpload.css'
-import { useState, useRef } from 'react'
+import '../styles/OverlayUpload.css';
+import { useState, useRef } from 'react';
 
 const OverlayUpload = ({show, overlayFunc, close}) => {
-    // drag state
+
     const [dragActive, setDragActive] = useState(false);
-    // ref
     const inputRef = useRef(null);
 
     if (!show) return null;
@@ -23,7 +22,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
         {
             setDragActive(false);
         }
-    };
+    }
 
     // triggers when file is dropped
     const handleDrop = (e) => {
@@ -35,6 +34,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
         const filename = file.name;
         const reader = new FileReader(); // Create a FileReader object
 
+        
         reader.onload = (e) => {
             const fileContents = e.target.result; // Read the file contents
             const jsonData = JSON.parse(fileContents); // Parse the JSON data
@@ -43,7 +43,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
 
         reader.readAsText(file);
         close();
-    };
+    }
     
     // triggers when file is selected with click
     const handleChange = (e) => {
@@ -61,14 +61,14 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
 
         reader.readAsText(file);
         close();
-    };
+    }
 
     // triggers the input when the button is clicked
     const onButtonClick = () => {
         inputRef.current.click();
-    };
+    }
 
-    return ReactDom.createPortal(
+    return ReactDom.createPortal (
         <div className='upload-modal'>
         <div className='upload-overlay' onDoubleClick={close} >
         <div className='file-upload-form-container'>
@@ -78,15 +78,15 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
                 <div>
                     <p>Drag and drop your json file here or</p>
                     <button className="upload-button" onClick={onButtonClick}>Upload file</button>
-                </div> 
+                </div>
                 </label>
                 { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
             </form>
-        </div>    
+        </div>
         </div>
         </div>,
         document.getElementById("portal")
     );
-};
+}
 
-export default OverlayUpload
+export default OverlayUpload;

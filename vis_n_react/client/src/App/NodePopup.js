@@ -28,8 +28,8 @@ function NodePopup({onMount, onSave, onClose}) {
                         <tr key={index} >
                         <td>{key}</td>
                         <td>
-                            <input value={val} onChange = {(e) => {
-                                setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}});
+                            <input value={val} onChange = {(e) => { 
+                                    setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}}) 
                                 }}>
                             </input>
                         </td>
