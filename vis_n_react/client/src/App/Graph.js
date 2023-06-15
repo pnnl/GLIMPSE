@@ -47,23 +47,23 @@ const nodeOptions = new Map([["load", {"group": "load"}],
                     ["microgrid_node", {"group": "microgrid_node"}],
                     ["communication_node", {"group": "communication_node"}]]);
                     
-const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000"}],
-                            ["switch", {"width": 1, "color": "#3a0ca3"}],
-                            ["series_reactor", {"width": 1, "color": "#3c1642"}],
-                            ["triplex_line", {"width": 1, "color": "#c86bfa"}],
-                            ["underground_line", {"width": 1, "color": "#FFFF00"}],
-                            ["regulator", {"width": 1, "color": "#ff447d"}],
-                            ["transformer", {"width": 1,"color": "#00FF00"}],
-                            ["mapping", {"width": 0.15, "color": {"inherit": true}}],
-                            ["communication", {"width": 0.15, "color": {"inherit": true}}],
-                            ["microgrid_connection", {"width": 0.15, "color": "cyan"}]]);
+const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000", "hidden": false}],
+                            ["switch", {"width": 1, "color": "#3a0ca3", "hidden": false}],
+                            ["series_reactor", {"width": 1, "color": "#3c1642", "hidden": false}],
+                            ["triplex_line", {"width": 1, "color": "#c86bfa", "hidden": false}],
+                            ["underground_line", {"width": 1, "color": "#FFFF00", "hidden": false}],
+                            ["regulator", {"width": 1, "color": "#ff447d", "hidden": false}],
+                            ["transformer", {"width": 1,"color": "#00FF00", "hidden": false}],
+                            ["mapping", {"width": 0.15, "color": {"inherit": true}, "hidden": true}],
+                            ["communication", {"width": 0.15, "color": {"inherit": false}, "hidden": false}],
+                            ["microgrid_connection", {"width": 0.15, "color": "cyan", "hidden": false}]]);
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
   let str = "";
   for (let [k, v] of Object.entries(attributes))
   {
-    str = str + k +": " + v +"\n";
+    str += k +": " + v +"\n";
   }
   return str;
 }
@@ -122,9 +122,10 @@ const getGraphData= (dataFiles) => {
         data.edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
                   color: edgeOptions.get(objectType).color,
                   width: edgeOptions.get(objectType).width,
+                  hidden: edgeOptions.get(objectType).hidden,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes)});
         
-        objectTypeCount.edges[objectType]++
+        objectTypeCount.edges[objectType]++;
       }
       else if (parent_child_edge_types.includes(objectType))
       {
@@ -269,29 +270,31 @@ const Next = () => {
   }
 }
 
-const HighlightGroup = (group) => {
+const HighlightGroup = (nodeType) => {
   
-  let nodesMap = data.nodes.map((n) => {
-    if(n.group === group)
+  let nodesMap = data.nodes.map((node) => {
+    if(node.group === nodeType)
     {
-      delete n.color;
-      n.size = 30;
-      return n;
+      delete node.color;
+      node.size = 30;
+      return node;
     }
-    else
+    else if (node.size !== 30)
     {
-      delete n.size;
-      n.color = "lightgrey";
-      return n;
+      delete node.size;
+      node.color = "lightgrey";
+      return node;
     }
+
+    return node;
   });
   
-  let edgesMap = data.edges.map((e) => {
-    if(!(e.width === 6))
+  let edgesMap = data.edges.map((edge) => {
+    if(edge.width !== 6)
     {
-      e.color = 'lightgrey';
+      edge.color = 'lightgrey';
     }
-    return e;
+    return edge;
     
   });
 
@@ -299,29 +302,31 @@ const HighlightGroup = (group) => {
   data.edges.update(edgesMap);
 }
 
-const HighlightEdges = (edgeID) => {
+const HighlightEdges = (edgeType) => {
   
   let nodeItems = data.nodes.map((n) => {
-    if (!(n.size === 30))
+    if (n.size !== 30)
     {
       n.color = "lightgrey";
     }
     return n;
   });
   
-  let edgeItems = data.edges.map(( e ) => {
-    if( e.id.split( ":" )[ 0 ] === edgeID )
+  let edgeItems = data.edges.map(( edge ) => {
+    if( edge.id.split( ":" )[ 0 ] === edgeType )
     {
-      e.color = edgeOptions.get( edgeID ).color;
-      e.width = 6;
-      return e;
+      edge.color = edgeOptions.get( edgeType ).color;
+      edge.width = 6;
+      return edge;
     }
-    else
+    else if( edge.width !== 6)
     {
-      e.color = "lightgrey";
-      e.width = 1;
-      return e;
+      edge.color = "lightgrey";
+      edge.width = 0.15;
+      return edge;
     }
+
+    return edge;
   });
   
   data.nodes.update( nodeItems );
@@ -395,6 +400,12 @@ const Graph = ({ visFiles }) => {
 
     getGraphData(overlayData);
 
+  }
+
+  //Update current nodes with update JSON string
+  const updateData = ( updateObj ) => {
+    const nodeToUpdate = data.nodes.get(updateObj.id);
+    
   }
 
   let setCurrentNode = null;

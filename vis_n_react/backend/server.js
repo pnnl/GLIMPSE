@@ -1,6 +1,10 @@
 const express = require('express');
 const app = express();
+const http = require('http');
+const server = http.createServer(app);
+const { Server } = require("socket.io");
 const corsOptions = require("./config/corsOptions");
+const io = new Server(server, {cors: corsOptions});
 const path = require("path");
 const bodyParser = require('body-parser');
 const fs = require("fs");
@@ -13,7 +17,6 @@ const { logger } = require('./middleware/logEvents');
 const PORT =  process.env.PORT || 3500;
 
 app.use(logger);
-
 app.use(cors(corsOptions));
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json({ limit: '3mb' }));
@@ -92,6 +95,12 @@ const checkIncludes = ( res, jsonData ) => {
     }
 
 }
+
+io.on('connection', (socket) => {
+
+    console.log('a user connected');
+    
+});
 
 app.post("/upload", async (req, res) => {
     
@@ -263,21 +272,21 @@ app.get("/getplot", (req, res) => {
 
 })
 
-app.post("/createmapping", (req, res) => {
+// app.post("/createmapping", (req, res) => {
 
-    const nodes_mapping = req.body;
-    fs.mkdirSync(path.join(__dirname, "map"));
+//     const nodes_mapping = req.body;
+//     fs.mkdirSync(path.join(__dirname, "map"));
     
-    nodes_mapping["mapping"].forEach((node) => {
-        for (let key in node)
-        {
-            fs.writeFileSync("./map/mapping.csv", key + "," + node[key].x + "," + node[key].y + "\n", { flag: 'a' });
-        }
-    })
+//     nodes_mapping["mapping"].forEach((node) => {
+//         for (let key in node)
+//         {
+//             fs.writeFileSync("./map/mapping.csv", key + "," + node[key].x + "," + node[key].y + "\n", { flag: 'a' });
+//         }
+//     })
 
-    // fs.rmSync(path.join(__dirname, "map"), { recursive: true, force: true });
+//     fs.rmSync(path.join(__dirname, "map"), { recursive: true, force: true });
 
-})
+// })
 
 app.use(errorHandler);
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

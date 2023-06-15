@@ -1,16 +1,41 @@
-import React, { useState } from "react";
-import "../styles/SearchBar.css";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PlotModal from "./PlotModal";
 import OverlayUpload from "./OverlayUpload";
+import { socket } from "./socket";
+import Button from '@mui/material/Button';
+import { createTheme, ThemeProvider } from "@mui/material";
+import Stack from '@mui/material/Stack';
+import ButtonGroup from '@mui/material/ButtonGroup';
+import TextField from '@mui/material/TextField';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from '@mui/material/Switch';
+import SearchIcon from '@mui/icons-material/Search';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
 
-const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle, addGraphOverlay}) => {
+
+const SearchBar = ({data, onFind, download, reset, updateData,
+    prev, next, physicsToggle, addGraphOverlay}) => {
 
     const nodes = data;
     const [node, setNode] = useState("");
     const [imgUrl, setImgUrl] = useState(null);
+    const [checked, setChecked] = useState(false);
     const [showPlot, setShowPlot] = useState(false);
     const [showUpload, setShowUpload] = useState(false);
+    
+    const theme = createTheme({
+        palette: {
+            primary: {
+                main: '#333333'
+            },
+            secondary: {
+                main: '#b25a00'
+            }
+        }
+    })
 
     const handleChange = (e) =>
     {
@@ -54,10 +79,10 @@ const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle, ad
         next();
     }
 
-    const togglePhysics = () =>
+    const autoLayout = (e) =>
     {
-        const checkBox = document.getElementById("phyCheck");
-        physicsToggle(checkBox.checked);
+        physicsToggle(e.target.checked);
+        setChecked(e.target.checked)
     }
 
     const plot = async (e) => 
@@ -85,29 +110,106 @@ const SearchBar = ({data, onFind, download, reset, prev, next, physicsToggle, ad
         setShowUpload(true)
     }
 
+    const establishConn = () => {
+        socket.connect();
+
+        socket.on("connect", () => {
+            console.log("connected to socket server");
+        })
+    }
+
     return (
         <>
-        <div className="form-wrapper">
-            <form className="search-nav-form">
-                <button className="export-btn" onClick={handleExport}>Export w/ Changes</button>
-                <button className="plt-btn" onClick={plot}>Show Plot</button>
-                <button className="add-overlay" onClick={showOverlay}>Attach overlay</button>
+        <Box sx={{m: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
+            <ThemeProvider theme={theme}>
+                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
+                    <Button 
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleExport}>
+                        Export w/ Changes
+                    </Button>
 
-                <div className="physics-switch">
-                    <label className="physics-lbl">Auto Layout: </label>
-                    <label className="switch">
-                        <input type="checkbox" id="phyCheck" onClick={togglePhysics}></input>
-                        <span className="slider round"></span>
-                    </label>
-                </div>
-                
-                <input className="node-search" type="text" value={node} onChange={handleChange} placeholder="Search by node ID"></input>
-                <button className = "find-btn" onClick={handleSubmit}>Find</button>
-                <button className = "prev-btn" onClick={handlePrev}>Prev</button>
-                <button className = "next-btn" onClick={handleNext}>Next</button>
-                <button className = "reset-btn" onClick={handleReset}>Reset</button>
-            </form>
-        </div>
+                    <Button 
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={plot}>
+                        Show Plot
+                    </Button>
+
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={showOverlay}>
+                        Attach overlay
+                    </Button>
+
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={establishConn}>
+                        connect to sim
+                    </Button>
+                </Stack>
+
+                <FormGroup>
+                    <FormControlLabel
+                        control={<Switch checked={checked} onChange={autoLayout} />}
+                        label="Auto Layout"
+                        />
+                </FormGroup>
+
+                <TextField 
+                    id="outlined-basic" 
+                    label="Search by node id" 
+                    variant="outlined"
+                    size="small"
+                    onChange={handleChange}
+                    sx={{width: '10rem'}}
+                />
+
+                <Stack direction="row" spacing={2}>
+                    <IconButton
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleSubmit}
+                        >
+                        <SearchIcon />
+                    </IconButton>
+
+                    <ButtonGroup variant="outlined" aria-label="cycle through nodes">
+                        <Button
+                            size="small"
+                            color="primary"
+                            onClick={handlePrev}
+                            >
+                            Prev
+                        </Button>
+                        <Button
+                            size="small"
+                            color="primary"
+                            onClick={handleNext}
+                            >
+                            Next
+                        </Button>
+                    </ButtonGroup>
+
+                    <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleReset}
+                        >
+                        Reset
+                    </Button>
+                </Stack>
+            </ThemeProvider>
+        </Box>
         <OverlayUpload show = {showUpload} overlayFunc = {addGraphOverlay} close={() => setShowUpload(false)}/>
         <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)}/>
         </>

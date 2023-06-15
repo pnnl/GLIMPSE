@@ -39,21 +39,20 @@ def glm2json( glmDict ):
 this function will create a csv file named map.csv
 that will store <node id>, <x>, <y>
 '''
-def createMapping( glmDict ):
-    nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation", "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"]
-    map_file = open("./mapping/map.csv", "w")
+# def createMapping( glmDict ):
+#     nodeTypes = ["load", "triplex_load","capacitor", "node", "triplex_node","substation", "meter", "triplex_meter", "inverter_dyn", "inverter", "diesel_dg", "communication_node", "microgrid_node"]
+#     map_file = open("./mapping/map.csv", "w")
 
-    for glmFile in glmDict.values():
-        for obj in glmFile['objects']:
+#     for glmFile in glmDict.values():
+#         for obj in glmFile['objects']:
 
-            object_type = obj[ 'name' ].split(":")[0]
+#             object_type = obj[ 'name' ].split(":")[0]
 
-            if object_type in nodeTypes:
-                try:
-                    map_file.write(",".join([ obj[ 'attributes' ][ 'name' ], obj[ 'attributes' ][ 'x' ], obj[ 'attributes' ][ 'y' ] ]) + "\n")
-                except:
-                    break
-
+#             if object_type in nodeTypes:
+#                 try:
+#                     map_file.write(",".join([ obj[ 'attributes' ][ 'name' ], obj[ 'attributes' ][ 'x' ], obj[ 'attributes' ][ 'y' ] ]) + "\n")
+#                 except:
+#                     break
 
 #creates metrics file
 def createMetrics( glmDict ):
@@ -62,6 +61,10 @@ def createMetrics( glmDict ):
     parent_child_edge_types = [ "capacitor", "triplex_meter", "triplex_load", "meter" ]
 
     file = open( "./csv/metrics.csv", "w" )
+    mockData = {
+        'edges': [],
+        'nodes': []
+    }
 
     for glmFile in glmDict.values():
         for obj in glmFile[ 'objects' ]:
@@ -70,6 +73,7 @@ def createMetrics( glmDict ):
 
             if obj_type in edgeTypes:
                 file.write( ",".join( [obj[ 'attributes' ][ 'from' ], "0", obj[ 'attributes' ][ 'to' ], "1" ] ) + "\n" )
+                mockData["edges"].append(obj['attributes'])
 
             elif obj_type in parent_child_edge_types:
                 try:
@@ -80,8 +84,12 @@ def createMetrics( glmDict ):
             elif obj_type in nodeTypes:
                 try:
                     file.write(",".join( [ obj[ 'attributes' ][ 'name' ], "0", obj[ 'attributes' ][ 'parent' ], "1" ] ) + "\n")
+                    mockData["nodes"].append(obj['attributes']['name'])
                 except:
-                    pass   
+                    pass
+    
+    with open("./mock_Gridlabd_data/data.json", "w") as jsonFile:
+        jsonFile.write(json.dumps( mockData, indent = 3 ))
 
 def main():
 
@@ -92,9 +100,9 @@ def main():
 
     # removeGlmFiles( folderDir )
     createMetrics( glmDict )
-    createMapping( glmDict )
+    # createMapping( glmDict )
 
-    # Writing to sample.json
+    # Writing to glm2json_output.json
     with open("./json/glm2json_output.json", "w") as jsonFile:
         jsonFile.write( glm2json( glmDict ) )
 

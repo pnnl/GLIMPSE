@@ -10,7 +10,7 @@ import meterImg from '../imgs/meter.jpg';
 import substationImg from '../imgs/substation.jpg';
 import generatorImg from '../imgs/generator.jpg';
 import nodeImg from '../imgs/node.png';
-import microGridImg from '../imgs/microgrid.png';
+import microGridImg from '../imgs/microgrid.svg';
 import commImg from "../imgs/comm.jpg";
 
 
