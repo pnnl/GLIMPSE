@@ -1,8 +1,11 @@
 {
   "name": "vis_n_react",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "private": true,
-  "proxy": "http://localhost:3500",
+  "options": {
+    "allowedHosts": ["localhost", ".localhost"],
+    "proxy": "https://localhost:3500/"
+  },
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
@@ -13,10 +16,8 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.2.2",
-    "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-redux": "^8.0.5",
     "react-router-dom": "^6.4.1",
     "react-scripts": "^5.0.1",
     "socket.io-client": "^4.6.2",

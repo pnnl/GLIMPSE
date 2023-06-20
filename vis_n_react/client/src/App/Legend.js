@@ -441,28 +441,31 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     
     const options = {
         "nodes":{
+            "borderWidth": 2,
             "font":{
+                "color": "#000",
                 "size": 20
             }
         },
         "edges":{
             "font":{
+                "color": "#000",
                 "size": 30,
             }
         },
         "groups":{
-            "load": {"color": "#2a9d8f", "borderWidth": 2, "shape": "circularImage", "image": loadImg},
-            "triplex_load":{"color": "#ffea00", "borderWidth": 2, "shape": "circularImage","image": loadImg},
-            "capacitor":{"color": "#283618", "borderWidth": 2, "shape": "circularImage","image": capacitorImg},
-            "triplex_node":{"color": "#003566", "borderWidth": 2, "shape": "circularImage","image": nodeImg},
-            "substation":{"color": "#fca311", "borderWidth": 2, "shape": "circularImage","image": substationImg},
-            "triplex_meter":{"color": "#072ac8", "borderWidth": 2, "shape": "circularImage","image": meterImg},
-            "node":{"color": "#4361ee", "borderWidth": 2, "shape": "circularImage", "image": nodeImg},
-            "meter":{"color": "#d90429", "borderWidth": 2, "shape": "circularImage", "image": meterImg},
-            "inverter":{"color": "#c8b6ff", "borderWidth": 2, "shape": "circularImage", "image": inverterImg},
-            "generator":{"color": "#fee440", "borderWidth": 2, "shape": "circularImage", "image": generatorImg},
-            "communication_node": {"color": "#c1121f", "size": 25, "borderWidth": 2, "shape": "image", "image": commImg},
-            "microgrid_node": {"color": "#6b9080", "size": 25, "borderWidth": 2, "shape": "image", "image": microGridImg}
+            "load": {"color": "#2a9d8f", "shape": "circularImage", "image": loadImg},
+            "triplex_load":{"color": "#ffea00", "shape": "circularImage","image": loadImg},
+            "capacitor":{"color": "#283618", "shape": "circularImage","image": capacitorImg},
+            "triplex_node":{"color": "#003566", "shape": "circularImage","image": nodeImg},
+            "substation":{"color": "#fca311", "shape": "circularImage","image": substationImg},
+            "triplex_meter":{"color": "#072ac8", "shape": "circularImage","image": meterImg},
+            "node":{"color": "#4361ee", "shape": "circularImage", "image": nodeImg},
+            "meter":{"color": "#d90429", "shape": "circularImage", "image": meterImg},
+            "inverter":{"color": "#c8b6ff", "shape": "circularImage", "image": inverterImg},
+            "generator":{"color": "#fee440", "shape": "circularImage", "image": generatorImg},
+            "communication_node": {"color": "#c1121f", "size": 25, "shape": "image", "image": commImg},
+            "microgrid_node": {"color": "#6b9080", "size": 25, "shape": "image", "image": microGridImg}
         }
     };
     

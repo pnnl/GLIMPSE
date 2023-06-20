@@ -18,27 +18,31 @@ const options = {
         }, 
     },
     nodes: {
+        borderWidth: 2,
         shapeProperties: {
+            useBorderWithImage: true,
             interpolation: false
         },
         font: {
-            color: "black",
+            color: "#000",
             size: 20
-        }
+        },
+        shape: 'circularImage',
+        size: 25,
     },
     groups:{ //These options can be changes to affect the style of each node type
-        load: {"color": "#2a9d8f","size": 15, "borderWidth": 2, "shape": "circularImage", "image": loadImg},
-        triplex_load:{"color": "#ffea00","size": 15, "borderWidth": 2, "shape": "circularImage","image": loadImg},
-        capacitor:{"color": "#283618","size": 15, "borderWidth": 2, "shape": "circularImage","image": capacitorImg},
-        triplex_node:{"color": "#003566","size": 15, "borderWidth": 2, "shape": "circularImage","image": nodeImg},
-        substation:{"color": "#fca311","size": 15, "borderWidth": 2, "shape": "circularImage","image": substationImg},
-        triplex_meter:{"color": "#072ac8","size": 15, "borderWidth": 2, "shape": "circularImage","image": meterImg},
-        node:{"color": "#4361ee","size": 15, "borderWidth": 2, "shape": "circularImage", "image": nodeImg},
-        meter:{"color": "#d90429","size": 15, "borderWidth": 2, "shape": "circularImage", "image": meterImg},
-        inverter:{"color": "#c8b6ff","size": 15, "borderWidth": 2, "shape": "circularImage", "image": inverterImg},
-        generator:{"color": "#fee440","size": 15, "borderWidth": 2, "shape": "circularImage", "image": generatorImg},
-        communication_node: {"color": "#c1121f", "size": 25, "borderWidth": 2, "shape": "image", "image": commImg},
-        microgrid_node: {"color": "#6b9080", "size": 25, "borderWidth": 2, "shape": "image", "image": microGridImg},
+        load: {"color": "#2a9d8f", "image": loadImg},
+        triplex_load:{"color": "#ffea00", "image": loadImg},
+        capacitor:{"color": "#283618", "image": capacitorImg},
+        triplex_node:{"color": "#003566", "image": nodeImg},
+        substation:{"color": "#fca311", "image": substationImg},
+        triplex_meter:{"color": "#072ac8", "image": meterImg},
+        node:{"color": "#4361ee", "image": nodeImg},
+        meter:{"color": "#d90429", "image": meterImg},
+        inverter:{"color": "#c8b6ff", "image": inverterImg},
+        generator:{"color": "#fee440", "image": generatorImg},
+        communication_node: {"color": "#c1121f", "size": 25, "shape": "image", "image": commImg},
+        microgrid_node: {"color": "#6b9080", "size": 25, "shape": "image", "image": microGridImg},
 
     },
     interaction: {

@@ -87,11 +87,11 @@ const getGraphData= (dataFiles) => {
   
     for (let obj of objs)
     {
-      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      let attributes = obj.attributes;
+      const objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+      const attributes = obj.attributes;
       if (nodeTypes.includes(objectType))
       {
-        let nodeID = attributes.name;
+        const nodeID = attributes.name;
         data.nodes.add({id: nodeID, label: nodeID,
                         attributes: attributes,
                         group: nodeOptions.get(objectType).group,
@@ -107,17 +107,17 @@ const getGraphData= (dataFiles) => {
   for (let file of files)
   {
     
-    let objs = file.objects;
+    const objs = file.objects;
   
     for (let obj of objs)
     {
-      let objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
-      let attributes = obj.attributes;
+      const objectType = obj.name.includes(":") ? obj.name.split(":")[0] : obj.name;
+      const attributes = obj.attributes;
       if (edgeTypes.includes(objectType))
       {
-        let edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-        let edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-        let edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
+        const edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
+        const edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
+        const edgeID = obj.name.includes(":") ? obj.name : objectType + ":" + attributes.name;
         
         data.edges.add({from: edgeFrom, to: edgeTo, id: edgeID,
                   color: edgeOptions.get(objectType).color,
@@ -129,8 +129,8 @@ const getGraphData= (dataFiles) => {
       }
       else if (parent_child_edge_types.includes(objectType))
       {
-        let nodeID = attributes.name;
-        let parent = attributes.parent;
+        const nodeID = attributes.name;
+        const parent = attributes.parent;
   
         if(parent !== undefined)
         {
@@ -139,8 +139,8 @@ const getGraphData= (dataFiles) => {
       }
       else if(nodeTypes.includes(objectType))
       {
-        let nodeID = attributes.name;
-        let parent = attributes.parent;
+        const nodeID = attributes.name;
+        const parent = attributes.parent;
         
         if(parent !== undefined)
         {
@@ -166,7 +166,7 @@ const NodeFocus = (nodeID) => {
 
 const Reset = () => {
 
-  let nodeItems = data.nodes.map((n) => {
+  const nodeItems = data.nodes.map((n) => {
     if(n.color)
     {
       delete n.color;
@@ -180,7 +180,7 @@ const Reset = () => {
     return n;
   });
   
-  let edgeItems = data.edges.map((e) => {
+  const edgeItems = data.edges.map((e) => {
     if(e.width === 6)
     {
       e.width = 1;
@@ -228,7 +228,7 @@ const Prev = () => {
     }
   };
 
-  let prev = data.nodes.get({
+  const prev = data.nodes.get({
     filter: (n) => {
       return (n.size === 30);
     }
@@ -239,7 +239,12 @@ const Prev = () => {
   {
     counter = prev.length - 1;
   }
-  glmNetwork.focus(prev[counter].id, options)
+  
+  try{
+    glmNetwork.focus(prev[counter].id, options)
+  } catch{
+    alert("There are no highlighted nodes to cycle through...");
+  }
 }
 
 const Next = () => {
@@ -252,7 +257,7 @@ const Next = () => {
     }
   };
 
-  let next = data.nodes.get({
+  const next = data.nodes.get({
     filter: (n) => {
       return (n.size === 30);
     }
@@ -262,17 +267,25 @@ const Next = () => {
   if(counter >= next.length)
   {
     counter = 0;
-    glmNetwork.focus(next[counter].id, options)
+    try{
+      glmNetwork.focus(next[counter].id, options)
+    } catch{
+      alert("There are no highlighted nodes to cycle through...");
+    }
   }
   else
   {
-    glmNetwork.focus(next[counter].id, options)
+    try{
+      glmNetwork.focus(next[counter].id, options)
+    } catch{
+      alert("There are no highlighted nodes to cycle through...");
+    }
   }
 }
 
 const HighlightGroup = (nodeType) => {
   
-  let nodesMap = data.nodes.map((node) => {
+  const nodesMap = data.nodes.map((node) => {
     if(node.group === nodeType)
     {
       delete node.color;
@@ -289,7 +302,7 @@ const HighlightGroup = (nodeType) => {
     return node;
   });
   
-  let edgesMap = data.edges.map((edge) => {
+  const edgesMap = data.edges.map((edge) => {
     if(edge.width !== 6)
     {
       edge.color = 'lightgrey';
@@ -304,7 +317,7 @@ const HighlightGroup = (nodeType) => {
 
 const HighlightEdges = (edgeType) => {
   
-  let nodeItems = data.nodes.map((n) => {
+  const nodeItems = data.nodes.map((n) => {
     if (n.size !== 30)
     {
       n.color = "lightgrey";
@@ -312,7 +325,7 @@ const HighlightEdges = (edgeType) => {
     return n;
   });
   
-  let edgeItems = data.edges.map(( edge ) => {
+  const edgeItems = data.edges.map(( edge ) => {
     if( edge.id.split( ":" )[ 0 ] === edgeType )
     {
       edge.color = edgeOptions.get( edgeType ).color;
@@ -364,11 +377,11 @@ const Graph = ({ visFiles }) => {
       
       jsonFromGlm[ file ][ 'objects' ].forEach(( object ) => {
 
-        let objType = object.name.includes( ":" ) ? object.name.split( ":" )[ 0 ] : object.name;
+        const objType = object.name.includes( ":" ) ? object.name.split( ":" )[ 0 ] : object.name;
 
         if ( nodeTypes.includes( objType ) )
         {
-          let newNodeAttributes = data.nodes.get( object.attributes.name ).attributes;
+          const newNodeAttributes = data.nodes.get( object.attributes.name ).attributes;
 
           object.attributes = newNodeAttributes;
         }
@@ -431,10 +444,10 @@ const Graph = ({ visFiles }) => {
   
       glmNetwork.on("stabilizationProgress", (params) => {
         
-        let maxWidth = 360;
-        let minWidth = 1;
-        let widthFactor = params.iterations / params.total;
-        let width = Math.max(minWidth, maxWidth * widthFactor);
+        const maxWidth = 360;
+        const minWidth = 1;
+        const widthFactor = params.iterations / params.total;
+        const width = Math.max(minWidth, maxWidth * widthFactor);
         document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
         document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
       
