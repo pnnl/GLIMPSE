@@ -1,1 +1,8 @@
 GLM Viz
+in vis_n_react/backend run 
+
+npm run dev
+
+in vis_n_react/client run 
+
+npm run start
