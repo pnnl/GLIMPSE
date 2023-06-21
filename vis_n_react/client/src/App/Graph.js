@@ -60,11 +60,14 @@ const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000", 
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
+
   let str = "";
-  for (let [k, v] of Object.entries(attributes))
+
+  for (let [key, val] of Object.entries(attributes))
   {
-    str += k +": " + v +"\n";
+    str += key + ": " + val + "\n";
   }
+  
   return str;
 }
 
@@ -166,19 +169,15 @@ const NodeFocus = (nodeID) => {
 
 const Reset = () => {
 
-  const nodeItems = data.nodes.map((n) => {
-    if(n.color)
-    {
-      delete n.color;
-      return n;
-    }
-    else if(n.size)
-    {
-      delete n.size;
-      return n;
-    }
-    return n;
+  const nodesResetMap = data.nodes.map((node) => {
+
+    delete node.color;
+    delete node.size;
+
+    return node;
+
   });
+  
   
   const edgeItems = data.edges.map((e) => {
     if(e.width === 6)
@@ -199,7 +198,7 @@ const Reset = () => {
     }
   });
 
-  data.nodes.update(nodeItems);
+  data.nodes.update(nodesResetMap);
   data.edges.update(edgeItems);
   glmNetwork.fit();
   counter = 0;
@@ -230,7 +229,7 @@ const Prev = () => {
 
   const prev = data.nodes.get({
     filter: (n) => {
-      return (n.size === 30);
+      return (n.size === 50);
     }
   });
   
@@ -259,7 +258,7 @@ const Next = () => {
 
   const next = data.nodes.get({
     filter: (n) => {
-      return (n.size === 30);
+      return (n.size === 50);
     }
   });
 
@@ -284,29 +283,28 @@ const Next = () => {
 }
 
 const HighlightGroup = (nodeType) => {
-  
+
   const nodesMap = data.nodes.map((node) => {
-    if(node.group === nodeType)
+
+    if (node.group === nodeType || node.size === 50)
     {
       delete node.color;
-      node.size = 30;
+      node.size = 50;
       return node;
     }
-    else if (node.size !== 30)
-    {
-      delete node.size;
-      node.color = "lightgrey";
-      return node;
-    }
-
+  
+    node.size = 10;
+    node.color = "lightgrey";
     return node;
   });
   
   const edgesMap = data.edges.map((edge) => {
+
     if(edge.width !== 6)
     {
       edge.color = 'lightgrey';
     }
+
     return edge;
     
   });
@@ -318,10 +316,14 @@ const HighlightGroup = (nodeType) => {
 const HighlightEdges = (edgeType) => {
   
   const nodeItems = data.nodes.map((n) => {
-    if (n.size !== 30)
+    if (n.size !== 50)
     {
       n.color = "lightgrey";
+      n.size = 10;
+
+      return n;
     }
+
     return n;
   });
   

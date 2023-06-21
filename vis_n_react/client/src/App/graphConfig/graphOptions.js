@@ -25,24 +25,73 @@ const options = {
         },
         font: {
             color: "#000",
-            size: 20
+            size: 30
         },
         shape: 'circularImage',
-        size: 25,
     },
     groups:{ //These options can be changes to affect the style of each node type
-        load: {"color": "#2a9d8f", "image": loadImg},
-        triplex_load:{"color": "#ffea00", "image": loadImg},
-        capacitor:{"color": "#283618", "image": capacitorImg},
-        triplex_node:{"color": "#003566", "image": nodeImg},
-        substation:{"color": "#fca311", "image": substationImg},
-        triplex_meter:{"color": "#072ac8", "image": meterImg},
-        node:{"color": "#4361ee", "image": nodeImg},
-        meter:{"color": "#d90429", "image": meterImg},
-        inverter:{"color": "#c8b6ff", "image": inverterImg},
-        generator:{"color": "#fee440", "image": generatorImg},
-        communication_node: {"color": "#c1121f", "size": 25, "shape": "image", "image": commImg},
-        microgrid_node: {"color": "#6b9080", "size": 25, "shape": "image", "image": microGridImg},
+        load: {
+            color: "#2a9d8f",
+            size: 50,
+            image: loadImg
+        },
+        triplex_load: {
+            color: "#ffea00",
+            size: 50,
+            image: loadImg
+        },
+        capacitor: {
+            color: "#283618",
+            size: 50,
+            image: capacitorImg
+        },
+        triplex_node: {
+            color: "#003566",
+            size: 50,
+            image: nodeImg
+        },
+        substation: {
+            color: "#fca311",
+            size: 50, 
+            image: substationImg
+        },
+        triplex_meter: {
+            color: "#072ac8",
+            size: 50, 
+            image: meterImg
+        },
+        node: {
+            color: "#4361ee",
+            size: 50, 
+            image: nodeImg
+        },
+        meter: {
+            color: "#d90429",
+            size: 50, 
+            image: meterImg
+        },
+        inverter: {
+            color: "#c8b6ff",
+            size: 50, 
+            image: inverterImg
+        },
+        generator: {
+            color: "#fee440",
+            size: 50, 
+            image: generatorImg
+        },
+        communication_node: {
+            color: "#c1121f",
+            size: 50, 
+            shape: "image",
+            image: commImg
+        },
+        microgrid_node: {
+            color: "#6b9080",
+            size: 50, 
+            shape: "image",
+            image: microGridImg
+        },
 
     },
     interaction: {
