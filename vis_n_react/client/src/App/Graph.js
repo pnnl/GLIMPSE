@@ -7,7 +7,9 @@ import axios from 'axios';
 import NodePopup from './NodePopup';
 import '../styles/vis-network.css';
 import Legend from './Legend';
+import EdgeContextMenu from './EdgeContextMenu';
 import options from './graphConfig/graphOptions.js';
+
 
 const data = {
   nodes: new DataSet(),
@@ -54,9 +56,9 @@ const edgeOptions = new Map([["overhead_line", {"width": 1, "color": "#000000", 
                             ["underground_line", {"width": 1, "color": "#FFFF00", "hidden": false}],
                             ["regulator", {"width": 1, "color": "#ff447d", "hidden": false}],
                             ["transformer", {"width": 1,"color": "#00FF00", "hidden": false}],
-                            ["mapping", {"width": 0.15, "color": {"inherit": true}, "hidden": true}],
-                            ["communication", {"width": 0.15, "color": {"inherit": false}, "hidden": false}],
-                            ["microgrid_connection", {"width": 0.15, "color": "cyan", "hidden": false}]]);
+                            ["mapping", {"width": 0.15, "color": {"inherit": true}, "hidden": false}],
+                            ["communication", {"width": 1, "color": {"inherit": false}, "hidden": false}],
+                            ["microgrid_connection", {"width": 1, "color": "cyan", "hidden": false}]]);
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
@@ -178,22 +180,24 @@ const Reset = () => {
 
   });
   
-  
   const edgeItems = data.edges.map((e) => {
     if(e.width === 6)
     {
       e.width = 1;
+      e.hidden = false;
       return e;
     }
     else if(edgeTypes.includes(e.id.split(":")[0]))
     {
       e.color = edgeOptions.get(e.id.split(":")[0]).color;
       e.width = edgeOptions.get(e.id.split(":")[0]).width;
+      e.hidden = false;
       return e;
     }
     else
     {
       e.color = {inherit: true};
+      e.hidden = false;
       return e;
     }
   });
@@ -292,8 +296,14 @@ const HighlightGroup = (nodeType) => {
       node.size = 50;
       return node;
     }
+    else if (node.group === nodeType && node.size === 50)
+    {
+      node.size = 5;
+      node.color = "lightgrey";
+      return node;
+    }
   
-    node.size = 10;
+    node.size = 5;
     node.color = "lightgrey";
     return node;
   });
@@ -319,7 +329,7 @@ const HighlightEdges = (edgeType) => {
     if (n.size !== 50)
     {
       n.color = "lightgrey";
-      n.size = 10;
+      n.size = 5;
 
       return n;
     }
@@ -408,7 +418,6 @@ const Graph = ({ visFiles }) => {
         link.click();
       })
       .catch(( err ) => console.log( err ))
-
   }
 
   const addOverlay = ( overlayData ) => {
@@ -423,11 +432,55 @@ const Graph = ({ visFiles }) => {
     
   }
 
-  let setCurrentNode = null;
+  let setCurrentNode;
   const onChildMount = (childSetFunc) => {
-
     setCurrentNode = childSetFunc;
+  }
 
+  let contextMenuData;
+  let setContextMenuData;
+  const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
+    contextMenuData = contextMenuDataState;
+    setContextMenuData = setContextMenuDataState;
+  }
+
+  const hideEdge = (edgeID) =>
+  {
+    const edgeToHide = data.edges.get().map( e => {
+      if(e.id === edgeID)
+      {
+        e.hidden = true;
+      }
+
+      return e;
+    })
+
+    data.edges.update(edgeToHide);
+  }
+  
+  const hideEdgeType = (edgeType) => {
+    const edgesToHide = data.edges.get().map(e => {
+
+      if(e.id.split(":")[0] === edgeType)
+      {
+        e.hidden = true;
+      }
+
+      return e;
+    })
+
+    data.edges.update(edgesToHide);
+  }
+  
+  const handleContextmenu = (e) => {
+    e.preventDefault();
+    
+    setContextMenuData( contextMenuData !== null ? {
+      ...contextMenuData,
+        mouseX: e.pageX + 2,
+        mouseY: e.pageY + 6,
+      } : null
+    );
   }
 
   const container = useRef(null);
@@ -443,7 +496,7 @@ const Graph = ({ visFiles }) => {
     {
       options.physics.stabilization.enabled = true;
       glmNetwork = new Network(container.current, data, options);
-  
+
       glmNetwork.on("stabilizationProgress", (params) => {
         
         const maxWidth = 360;
@@ -456,19 +509,19 @@ const Graph = ({ visFiles }) => {
       });
       
       glmNetwork.once("stabilizationIterationsDone", () => {
-        
+
         document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
         document.getElementById("progressValue").innerText = "100%";
         document.getElementById("circularProgress").style.opacity = 0.7;
         
+        glmNetwork.setOptions({physics: {enabled: false}})
+
         setTimeout(() => {
   
           document.getElementById("circularProgress").style.display = "none";
   
         }, 500);
         
-        glmNetwork.setOptions({physics: {enabled: false}})
-  
       });
 
     }
@@ -486,8 +539,20 @@ const Graph = ({ visFiles }) => {
       }
   
     });
+
+    glmNetwork.on("oncontext", (params) => {
+
+      const edgeID = glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined ?
+        glmNetwork.getEdgeAt(params.pointer.DOM) :
+        null;
+      
+      if(edgeID !== null)
+      {
+        setContextMenuData({edgeID: edgeID});
+      }
+    })
     
-  }, [container, setCurrentNode]);
+  }, [container, setCurrentNode, setContextMenuData]);
 
   return (
     <>
@@ -509,17 +574,28 @@ const Graph = ({ visFiles }) => {
       />
 
       <div id = "networks-wrapper">
-        <div className='main-network' ref={container}/>
+        <div
+          className='main-network'
+          onContextMenu={handleContextmenu}
+          ref={container}
+        />
+
         <div id='circularProgress'>
           <span id='progressValue'>0%</span>
         </div>
-        
+
         <Legend 
           findGroup = {HighlightGroup} 
           findEdges = {HighlightEdges}
           nodeCounts = {objectTypeCount}
         />
       </div>
+
+      <EdgeContextMenu
+          onMount = {onContextMenuChildMount} 
+          hideEdge={hideEdge}
+          hideEdgeType={hideEdgeType}
+        />
     </>
   );
 }

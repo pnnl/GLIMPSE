@@ -5,77 +5,99 @@
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm0"
+            "name": "comm0",
+            "x": 6095,
+            "y": 815
          },
          "children": []
       },
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm1"
+            "name": "comm1",
+            "x": 5560,
+            "y": 1237
          },
          "children": []
       },
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm2"
+            "name": "comm2",
+            "x": 4525,
+            "y": 1151
          },
          "children": []
       },
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm3"
+            "name": "comm3",
+            "x": 4465,
+            "y": 90
          },
          "children": []
       },
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm4"
+            "name": "comm4",
+            "x": 5130,
+            "y": -358
          },
          "children": []
       },
       {
          "name": "communication_node",
          "attributes": {
-            "name": "comm5"
+            "name": "comm5",
+            "x": 5840,
+            "y": 12
          },
          "children": []
       },
       {
          "name": "microgrid_node",
          "attributes": {
-            "name": "CC"
+            "name": "CC",
+            "x": 5155,
+            "y": 521
          },
          "children": []
       },
       {
          "name": "microgrid_node",
          "attributes": {
-            "name": "MG1"
+            "name": "MG1",
+            "x": 3999,
+            "y": 1910
          },
          "children": []
       },
       {
          "name": "microgrid_node",
          "attributes": {
-            "name": "MG2"
+            "name": "MG2",
+            "x": 3412,
+            "y": 4
          },
          "children": []
       },
       {
          "name": "microgrid_node",
          "attributes": {
-            "name": "MG3"
+            "name": "MG3",
+            "x": 4094,
+            "y": -1367
          },
          "children": []
       },
       {
          "name": "microgrid_node",
          "attributes": {
-            "name": "SS"
+            "name": "SS",
+            "x": 6837,
+            "y": 1134
          },
          "children": []
       },

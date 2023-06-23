@@ -9,89 +9,89 @@ import microGridImg from '../../imgs/microgrid.svg';
 import commImg from "../../imgs/comm.jpg";
 
 //These are the graph options
+const nodeSize = 50;
+
 const options = {
     edges: {
         smooth: {
             enabled: true,
             type: "continuous",
-            roundness: 0.3
-        }, 
+        },
     },
     nodes: {
         borderWidth: 2,
         shapeProperties: {
             useBorderWithImage: true,
-            interpolation: false
         },
         font: {
             color: "#000",
             size: 30
         },
-        shape: 'circularImage',
+        shape: 'circularImage'
     },
     groups:{ //These options can be changes to affect the style of each node type
         load: {
             color: "#2a9d8f",
-            size: 50,
+            size: nodeSize,
             image: loadImg
         },
         triplex_load: {
             color: "#ffea00",
-            size: 50,
+            size: nodeSize,
             image: loadImg
         },
         capacitor: {
             color: "#283618",
-            size: 50,
+            size: nodeSize,
             image: capacitorImg
         },
         triplex_node: {
             color: "#003566",
-            size: 50,
+            size: nodeSize,
             image: nodeImg
         },
         substation: {
             color: "#fca311",
-            size: 50, 
+            size: nodeSize, 
             image: substationImg
         },
         triplex_meter: {
             color: "#072ac8",
-            size: 50, 
+            size: nodeSize, 
             image: meterImg
         },
         node: {
             color: "#4361ee",
-            size: 50, 
+            size: nodeSize, 
             image: nodeImg
         },
         meter: {
             color: "#d90429",
-            size: 50, 
+            size: nodeSize, 
             image: meterImg
         },
         inverter: {
             color: "#c8b6ff",
-            size: 50, 
+            size: nodeSize, 
             image: inverterImg
         },
         generator: {
             color: "#fee440",
-            size: 50, 
+            size: nodeSize, 
             image: generatorImg
         },
         communication_node: {
             color: "#c1121f",
-            size: 50, 
+            size: nodeSize, 
             shape: "image",
             image: commImg
         },
         microgrid_node: {
             color: "#6b9080",
-            size: 50, 
+            size: nodeSize, 
             shape: "image",
             image: microGridImg
-        },
+        }
 
     },
     interaction: {
@@ -103,22 +103,19 @@ const options = {
     physics: {
         barnesHut: {
             gravitationalConstant: -80_000, // this value effects graph render time and how spread out it looks
-            springLength: 150, //this value if for how springy the edges are
             springConstant: 0.25, // the higher the value the springy the edges are 
+            springLength: 150 //this value if for how springy the edges are
         },
-        maxVelocity: 150,
-        minVelocity: 0.25,
         solver: 'barnesHut',
         stabilization: {
             enabled: false,
-            iterations: 1_000,
+            iterations: 1000,
             updateInterval: 1,
             onlyDynamicEdges: false,
             fit: true
-        },
+        }
     },
     layout: {
-        randomSeed: undefined,
         improvedLayout: false
     }
 };

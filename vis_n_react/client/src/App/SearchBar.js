@@ -148,6 +148,7 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                     </Button>
 
                     <Button
+                        disabled
                         size="small"
                         variant="outlined"
                         color="primary"
