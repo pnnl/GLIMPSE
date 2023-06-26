@@ -12,9 +12,10 @@ import generatorImg from '../imgs/generator.jpg';
 import nodeImg from '../imgs/node.png';
 import microGridImg from '../imgs/microgrid.svg';
 import commImg from "../imgs/comm.jpg";
+import LegendContextMenu from './LegendContextMenu';
 
 
-const Legend = ({findGroup, findEdges, nodeCounts}) => {
+const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
 
     const nodeOptions = new Map([["load", {"group": "load"}],
                         ["triplex_load", {"group": "triplex_load"}],
@@ -45,7 +46,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     const edges = [];
     
     nodes.push({
-        id: 1,
+        id: "load",
         x: 37, 
         y: -22,
         fixed: false,
@@ -55,7 +56,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 2,
+        id: "node",
         x: 166, 
         y: -22,
         fixed: false,
@@ -65,7 +66,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 3,
+        id: "meter",
         x: 297, 
         y: -22,
         fixed: false,
@@ -75,7 +76,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 4,
+        id: "inverter",
         x: 424, 
         y: -22,
         fixed: false,
@@ -85,7 +86,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 5,
+        id: "diesel_dg",
         x: 562, 
         y: -22,
         fixed: false,
@@ -106,7 +107,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
 
     //Bottom nodes    
     nodes.push({
-        id: 7,
+        id: "triplex_load",
         x: 37, 
         y: 100,
         fixed: false,
@@ -116,7 +117,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 8,
+        id: "triplex_node",
         x: 166 , 
         y: 100,
         fixed: false,
@@ -126,7 +127,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 9,
+        id: "triplex_meter",
         x: 297, 
         y: 100,
         fixed: false,
@@ -136,7 +137,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 10,
+        id: "substation",
         x: 424, 
         y: 100,
         fixed: false,
@@ -146,7 +147,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
     
     nodes.push({
-        id: 11,
+        id: "communication_node",
         x: 562, 
         y: 100,
         fixed: false,
@@ -156,7 +157,7 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     });
 
     nodes.push({
-        id: 12,
+        id: "microgrid_node",
         x: 700, 
         y: 100,
         fixed: false,
@@ -475,6 +476,24 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
     }
     
     const container = useRef(null);
+
+    let contextMenuData;
+    let setContextMenuData;
+    const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
+      contextMenuData = contextMenuDataState;
+      setContextMenuData = setContextMenuDataState;
+    }
+
+    const handleContext = (e) => {
+        e.preventDefault();
+    
+        setContextMenuData( contextMenuData !== null ? {
+          ...contextMenuData,
+            mouseX: e.pageX + 2,
+            mouseY: e.pageY + 6,
+          } : null
+        );
+    }
     
     useEffect(() => {
 
@@ -493,15 +512,32 @@ const Legend = ({findGroup, findEdges, nodeCounts}) => {
             }
         });
 
-        // network.on("click", (params) => {
-        //     console.log(params.pointer.canvas);
-        // })
-        
+        network.on("oncontext", params => {
+            if(network.getNodeAt(params.pointer.DOM))
+            {
+                const ID = network.getNodeAt(params.pointer.DOM);
+                setContextMenuData({object: data.nodes.get(ID).group,type: "node"});
+            }
+            else if (network.getEdgeAt(params.pointer.DOM))
+            {
+                const ID = network.getEdgeAt(params.pointer.DOM);
+                setContextMenuData({object: data.edges.get(ID).id, type: "edge"})
+            }
+        })
     });
 
     return (
     <>
-        <div className='visLegend' ref={container} />
+        <div 
+            className='visLegend'
+            ref={container}
+            onContextMenu={handleContext}
+        />
+
+        <LegendContextMenu 
+            onMount={onContextMenuChildMount}
+            hideObjects={hideObjects}
+        />
     </>
     );
 };

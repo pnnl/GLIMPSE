@@ -175,6 +175,7 @@ const Reset = () => {
 
     delete node.color;
     delete node.size;
+    node.hidden = false;
 
     return node;
 
@@ -483,6 +484,39 @@ const Graph = ({ visFiles }) => {
     );
   }
 
+  const hideObjects = (objectType, type) => {
+
+    console.log(objectType, type);
+    if (type === "node")
+    {
+      const nodesToHide = data.nodes.get().map( node => {
+
+        if (node.group === objectType)
+        {
+          node.hidden = true;
+        }
+        
+        return node;
+      })
+
+      data.nodes.update(nodesToHide);
+    }
+    else if (type === "edge") 
+    {
+      const edgesToHide = data.edges.get().map( edge => {
+
+        if (edge.id.split(":")[0] === objectType)
+        {
+          edge.hidden = true;
+        }
+        
+        return edge;
+      })
+
+      data.edges.update(edgesToHide);
+    }
+  }
+
   const container = useRef(null);
   useEffect(() => {
 
@@ -580,6 +614,12 @@ const Graph = ({ visFiles }) => {
           ref={container}
         />
 
+        <EdgeContextMenu
+          onMount = {onContextMenuChildMount} 
+          hideEdge={hideEdge}
+          hideEdgeType={hideEdgeType}
+        />
+
         <div id='circularProgress'>
           <span id='progressValue'>0%</span>
         </div>
@@ -588,14 +628,9 @@ const Graph = ({ visFiles }) => {
           findGroup = {HighlightGroup} 
           findEdges = {HighlightEdges}
           nodeCounts = {objectTypeCount}
+          hideObjects={hideObjects}
         />
       </div>
-
-      <EdgeContextMenu
-          onMount = {onContextMenuChildMount} 
-          hideEdge={hideEdge}
-          hideEdgeType={hideEdgeType}
-        />
     </>
   );
 }
