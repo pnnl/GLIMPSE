@@ -1,1081 +1,292 @@
 {
    "edges": [
-      {
-         "phases": "BN",
-         "name": "1-2",
-         "from": "load:1",
-         "to": "load:2",
-         "length": "175",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "CN",
-         "name": "1-3",
-         "from": "load:1",
-         "to": "node:3",
-         "length": "250",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "1-7",
-         "from": "load:1",
-         "to": "load:7",
-         "length": "300",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "CN",
-         "name": "3-4",
-         "from": "node:3",
-         "to": "load:4",
-         "length": "200",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "3-5",
-         "from": "node:3",
-         "to": "load:5",
-         "length": "325",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "5-6",
-         "from": "load:5",
-         "to": "load:6",
-         "length": "250",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "7-8",
-         "from": "load:7",
-         "to": "node:8",
-         "length": "200",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "BN",
-         "name": "8-12",
-         "from": "node:8",
-         "to": "load:12",
-         "length": "225",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "AN",
-         "name": "8-9",
-         "from": "node:8",
-         "to": "load:9",
-         "length": "225",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "8-13",
-         "from": "node:8",
-         "to": "meter:13",
-         "length": "300",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "AN",
-         "name": "1401-14",
-         "from": "node:1401",
-         "to": "node:14",
-         "length": "425",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "CN",
-         "name": "13-34",
-         "from": "meter:13",
-         "to": "load:34",
-         "length": "150",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "13-18",
-         "from": "meter:13",
-         "to": "node:18",
-         "length": "825",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "AN",
-         "name": "14-11",
-         "from": "node:14",
-         "to": "load:11",
-         "length": "250",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "14-10",
-         "from": "node:14",
-         "to": "load:10",
-         "length": "250",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "CN",
-         "name": "15-16",
-         "from": "node:15",
-         "to": "load:16",
-         "length": "375",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "15-17",
-         "from": "node:15",
-         "to": "load:17",
-         "length": "350",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "AN",
-         "name": "18-19",
-         "from": "node:18",
-         "to": "load:19",
-         "length": "250",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "18-21",
-         "from": "node:18",
-         "to": "node:21",
-         "length": "300",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "AN",
-         "name": "19-20",
-         "from": "load:19",
-         "to": "load:20",
-         "length": "325",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "BN",
-         "name": "21-22",
-         "from": "node:21",
-         "to": "load:22",
-         "length": "525",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "21-23",
-         "from": "node:21",
-         "to": "node:23",
-         "length": "250",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "CN",
-         "name": "23-24",
-         "from": "node:23",
-         "to": "load:24",
-         "length": "550",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "23-25",
-         "from": "node:23",
-         "to": "node:25",
-         "length": "275",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "ACN",
-         "name": "2601-26",
-         "from": "node:2601",
-         "to": "node:26",
-         "length": "350",
-         "configuration": "line_configuration:1007"
-      },
-      {
-         "phases": "ABCN",
-         "name": "25-28",
-         "from": "node:25",
-         "to": "load:28",
-         "length": "200",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "ACN",
-         "name": "26-27",
-         "from": "node:26",
-         "to": "node:27",
-         "length": "275",
-         "configuration": "line_configuration:1007"
-      },
-      {
-         "phases": "CN",
-         "name": "26-31",
-         "from": "node:26",
-         "to": "load:31",
-         "length": "225",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "AN",
-         "name": "27-33",
-         "from": "node:27",
-         "to": "load:33",
-         "length": "500",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "28-29",
-         "from": "load:28",
-         "to": "load:29",
-         "length": "300",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "ABCN",
-         "name": "29-30",
-         "from": "load:29",
-         "to": "load:30",
-         "length": "350",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "ABCN",
-         "name": "30-250",
-         "from": "load:30",
-         "to": "node:250",
-         "length": "200",
-         "configuration": "line_configuration:1002"
-      },
-      {
-         "phases": "CN",
-         "name": "31-32",
-         "from": "load:31",
-         "to": "load:32",
-         "length": "300",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "34-15",
-         "from": "load:34",
-         "to": "node:15",
-         "length": "100",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABN",
-         "name": "35-36",
-         "from": "load:35",
-         "to": "node:36",
-         "length": "650",
-         "configuration": "line_configuration:1008"
-      },
-      {
-         "phases": "ABCN",
-         "name": "35-40",
-         "from": "load:35",
-         "to": "node:40",
-         "length": "250",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "AN",
-         "name": "36-37",
-         "from": "node:36",
-         "to": "load:37",
-         "length": "300",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "BN",
-         "name": "36-38",
-         "from": "node:36",
-         "to": "load:38",
-         "length": "250",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "BN",
-         "name": "38-39",
-         "from": "load:38",
-         "to": "load:39",
-         "length": "325",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "CN",
-         "name": "40-41",
-         "from": "node:40",
-         "to": "load:41",
-         "length": "325",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "40-42",
-         "from": "node:40",
-         "to": "load:42",
-         "length": "250",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "BN",
-         "name": "42-43",
-         "from": "load:42",
-         "to": "load:43",
-         "length": "500",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "42-44",
-         "from": "load:42",
-         "to": "node:44",
-         "length": "200",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "AN",
-         "name": "44-45",
-         "from": "node:44",
-         "to": "load:45",
-         "length": "200",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "44-47",
-         "from": "node:44",
-         "to": "load:47",
-         "length": "250",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "AN",
-         "name": "45-46",
-         "from": "load:45",
-         "to": "load:46",
-         "length": "300",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "47-48",
-         "from": "load:47",
-         "to": "load:48",
-         "length": "150",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "47-49",
-         "from": "load:47",
-         "to": "load:49",
-         "length": "250",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "49-50",
-         "from": "load:49",
-         "to": "meter:50",
-         "length": "250",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "50-51",
-         "from": "meter:50",
-         "to": "load:51",
-         "length": "250",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "51-151",
-         "from": "load:51",
-         "to": "node:151",
-         "length": "700",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "52-53",
-         "from": "load:52",
-         "to": "load:53",
-         "length": "200",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "ABCN",
-         "name": "53-54",
-         "from": "load:53",
-         "to": "node:54",
-         "length": "125",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "ABCN",
-         "name": "54-55",
-         "from": "node:54",
-         "to": "load:55",
-         "length": "275",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "ABCN",
-         "name": "54-57",
-         "from": "node:54",
-         "to": "node:57",
-         "length": "350",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "55-56",
-         "from": "load:55",
-         "to": "load:56",
-         "length": "275",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "BN",
-         "name": "57-58",
-         "from": "node:57",
-         "to": "load:58",
-         "length": "250",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "57-60",
-         "from": "node:57",
-         "to": "load:60",
-         "length": "750",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "BN",
-         "name": "58-59",
-         "from": "load:58",
-         "to": "load:59",
-         "length": "250",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "60-61",
-         "from": "load:60",
-         "to": "node:61",
-         "length": "550",
-         "configuration": "line_configuration:1005"
-      },
-      {
-         "phases": "ABC",
-         "name": "60-62",
-         "from": "load:60",
-         "to": "load:62",
-         "length": "250",
-         "configuration": "line_configuration:10012"
-      },
-      {
-         "phases": "ABC",
-         "name": "62-63",
-         "from": "load:62",
-         "to": "load:63",
-         "length": "175",
-         "configuration": "line_configuration:10012"
-      },
-      {
-         "phases": "ABC",
-         "name": "63-64",
-         "from": "load:63",
-         "to": "load:64",
-         "length": "350",
-         "configuration": "line_configuration:10012"
-      },
-      {
-         "phases": "ABC",
-         "name": "64-65",
-         "from": "load:64",
-         "to": "load:65",
-         "length": "425",
-         "configuration": "line_configuration:10012"
-      },
-      {
-         "phases": "ABC",
-         "name": "65-66",
-         "from": "load:65",
-         "to": "meter:66",
-         "length": "325",
-         "configuration": "line_configuration:10012"
-      },
-      {
-         "phases": "AN",
-         "name": "67-68",
-         "from": "node:67",
-         "to": "load:68",
-         "length": "200",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "67-72",
-         "from": "node:67",
-         "to": "load:72",
-         "length": "275",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "67-97",
-         "from": "node:67",
-         "to": "node:97",
-         "length": "250",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "AN",
-         "name": "68-69",
-         "from": "load:68",
-         "to": "load:69",
-         "length": "275",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "69-70",
-         "from": "load:69",
-         "to": "load:70",
-         "length": "325",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "70-71",
-         "from": "load:70",
-         "to": "load:71",
-         "length": "275",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "CN",
-         "name": "72-73",
-         "from": "load:72",
-         "to": "load:73",
-         "length": "275",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "72-76",
-         "from": "load:72",
-         "to": "load:76",
-         "length": "200",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "CN",
-         "name": "73-74",
-         "from": "load:73",
-         "to": "load:74",
-         "length": "350",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "74-75",
-         "from": "load:74",
-         "to": "load:75",
-         "length": "400",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "76-77",
-         "from": "load:76",
-         "to": "load:77",
-         "length": "400",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "76-86",
-         "from": "load:76",
-         "to": "load:86",
-         "length": "700",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "77-78",
-         "from": "load:77",
-         "to": "node:78",
-         "length": "100",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "78-79",
-         "from": "node:78",
-         "to": "load:79",
-         "length": "225",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "78-80",
-         "from": "node:78",
-         "to": "load:80",
-         "length": "475",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "80-81",
-         "from": "load:80",
-         "to": "node:81",
-         "length": "475",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "81-82",
-         "from": "node:81",
-         "to": "load:82",
-         "length": "250",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "CN",
-         "name": "81-84",
-         "from": "node:81",
-         "to": "load:84",
-         "length": "675",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "82-83",
-         "from": "load:82",
-         "to": "load:83",
-         "length": "250",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "CN",
-         "name": "84-85",
-         "from": "load:84",
-         "to": "load:85",
-         "length": "475",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "86-87",
-         "from": "load:86",
-         "to": "load:87",
-         "length": "450",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "AN",
-         "name": "87-88",
-         "from": "load:87",
-         "to": "load:88",
-         "length": "175",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "87-89",
-         "from": "load:87",
-         "to": "node:89",
-         "length": "275",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "BN",
-         "name": "89-90",
-         "from": "node:89",
-         "to": "load:90",
-         "length": "225",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "89-91",
-         "from": "node:89",
-         "to": "node:91",
-         "length": "225",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "CN",
-         "name": "91-92",
-         "from": "node:91",
-         "to": "load:92",
-         "length": "300",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "91-93",
-         "from": "node:91",
-         "to": "node:93",
-         "length": "225",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "AN",
-         "name": "93-94",
-         "from": "node:93",
-         "to": "load:94",
-         "length": "275",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "93-95",
-         "from": "node:93",
-         "to": "load:95",
-         "length": "300",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "BN",
-         "name": "95-96",
-         "from": "load:95",
-         "to": "load:96",
-         "length": "200",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "97-98",
-         "from": "node:97",
-         "to": "load:98",
-         "length": "275",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "98-99",
-         "from": "load:98",
-         "to": "load:99",
-         "length": "550",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "99-100",
-         "from": "load:99",
-         "to": "load:100",
-         "length": "300",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "100-450",
-         "from": "load:100",
-         "to": "node:450",
-         "length": "800",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "CN",
-         "name": "101-102",
-         "from": "load:101",
-         "to": "load:102",
-         "length": "225",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "ABCN",
-         "name": "101-105",
-         "from": "load:101",
-         "to": "node:105",
-         "length": "275",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "CN",
-         "name": "102-103",
-         "from": "load:102",
-         "to": "load:103",
-         "length": "325",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "CN",
-         "name": "103-104",
-         "from": "load:103",
-         "to": "load:104",
-         "length": "700",
-         "configuration": "line_configuration:10011"
-      },
-      {
-         "phases": "BN",
-         "name": "105-106",
-         "from": "node:105",
-         "to": "load:106",
-         "length": "225",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "ABCN",
-         "name": "105-108",
-         "from": "node:105",
-         "to": "node:108",
-         "length": "325",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "BN",
-         "name": "106-107",
-         "from": "load:106",
-         "to": "load:107",
-         "length": "575",
-         "configuration": "line_configuration:10010"
-      },
-      {
-         "phases": "AN",
-         "name": "108-109",
-         "from": "node:108",
-         "to": "load:109",
-         "length": "450",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "108-300",
-         "from": "node:108",
-         "to": "meter:300",
-         "length": "1000",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "AN",
-         "name": "109-110",
-         "from": "load:109",
-         "to": "node:110",
-         "length": "300",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "110-111",
-         "from": "node:110",
-         "to": "load:111",
-         "length": "575",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "110-112",
-         "from": "node:110",
-         "to": "load:112",
-         "length": "125",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "112-113",
-         "from": "load:112",
-         "to": "load:113",
-         "length": "525",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "AN",
-         "name": "113-114",
-         "from": "load:113",
-         "to": "load:114",
-         "length": "325",
-         "configuration": "line_configuration:1009"
-      },
-      {
-         "phases": "ABCN",
-         "name": "135-35",
-         "from": "node:135",
-         "to": "load:35",
-         "length": "375",
-         "configuration": "line_configuration:1004"
-      },
-      {
-         "phases": "ABCN",
-         "name": "149-1",
-         "from": "node:149",
-         "to": "load:1",
-         "length": "400",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "ABCN",
-         "name": "152-52",
-         "from": "node:152",
-         "to": "load:52",
-         "length": "400",
-         "configuration": "line_configuration:1001"
-      },
-      {
-         "phases": "ABCN",
-         "name": "6701-67",
-         "from": "node:6701",
-         "to": "node:67",
-         "length": "350",
-         "configuration": "line_configuration:1006"
-      },
-      {
-         "phases": "ABCN",
-         "name": "197-101",
-         "from": "node:197",
-         "to": "load:101",
-         "length": "250",
-         "configuration": "line_configuration:1003"
-      },
-      {
-         "phases": "ABCN",
-         "name": "13-152",
-         "from": "meter:13",
-         "to": "node:152",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "microgrid_switch1",
-         "from": "node:18",
-         "to": "node:135",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "microgrid_switch3",
-         "from": "load:60",
-         "to": "node:160",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "61-611",
-         "from": "node:61",
-         "to": "node:611",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "microgrid_switch2",
-         "from": "node:97",
-         "to": "node:197",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "1491-149",
-         "from": "node:1491",
-         "to": "node:149",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "250-251",
-         "from": "node:250",
-         "to": "node:251",
-         "status": "OPEN"
-      },
-      {
-         "phases": "ABCN",
-         "name": "450-451",
-         "from": "node:450",
-         "to": "node:451",
-         "status": "OPEN"
-      },
-      {
-         "phases": "AN",
-         "name": "54-94",
-         "from": "node:54",
-         "to": "load:94",
-         "status": "OPEN"
-      },
-      {
-         "phases": "ABCN",
-         "name": "microgrid_switch4",
-         "from": "node:151",
-         "to": "meter:300",
-         "status": "OPEN"
-      },
-      {
-         "phases": "ABCN",
-         "name": "300-350",
-         "from": "meter:300",
-         "to": "node:350",
-         "status": "OPEN"
-      },
-      {
-         "phases": "ABCN",
-         "name": "95-195",
-         "from": "load:95",
-         "to": "node:195",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "Diesel_Switch_1",
-         "from": "meter:3001",
-         "to": "meter:300",
-         "status": "CLOSED"
-      },
-      {
-         "phases": "ABCN",
-         "name": "611-610",
-         "from": "node:611",
-         "to": "node:610",
-         "configuration": "transformer_configuration:400"
-      },
-      {
-         "phases": "ABC",
-         "from": "node:150",
-         "to": "node:1491",
-         "configuration": "regulator_configuration:1501490"
-      },
-      {
-         "phases": "AC",
-         "from": "node:25",
-         "to": "node:2601",
-         "configuration": "regulator_configuration:2526010"
-      },
-      {
-         "phases": "A",
-         "from": "load:9",
-         "to": "node:1401",
-         "configuration": "regulator_configuration:914010"
-      },
-      {
-         "phases": "ABC",
-         "from": "node:160",
-         "to": "node:6701",
-         "configuration": "regulator_configuration:16067010"
-      }
+      "overhead_line:1-2",
+      "overhead_line:1-3",
+      "overhead_line:1-7",
+      "overhead_line:3-4",
+      "overhead_line:3-5",
+      "overhead_line:5-6",
+      "overhead_line:7-8",
+      "overhead_line:8-12",
+      "overhead_line:8-9",
+      "overhead_line:8-13",
+      "overhead_line:1401-14",
+      "overhead_line:13-34",
+      "overhead_line:13-18",
+      "overhead_line:14-11",
+      "overhead_line:14-10",
+      "overhead_line:15-16",
+      "overhead_line:15-17",
+      "overhead_line:18-19",
+      "overhead_line:18-21",
+      "overhead_line:19-20",
+      "overhead_line:21-22",
+      "overhead_line:21-23",
+      "overhead_line:23-24",
+      "overhead_line:23-25",
+      "overhead_line:2601-26",
+      "overhead_line:25-28",
+      "overhead_line:26-27",
+      "overhead_line:26-31",
+      "overhead_line:27-33",
+      "overhead_line:28-29",
+      "overhead_line:29-30",
+      "overhead_line:30-250",
+      "overhead_line:31-32",
+      "overhead_line:34-15",
+      "overhead_line:35-36",
+      "overhead_line:35-40",
+      "overhead_line:36-37",
+      "overhead_line:36-38",
+      "overhead_line:38-39",
+      "overhead_line:40-41",
+      "overhead_line:40-42",
+      "overhead_line:42-43",
+      "overhead_line:42-44",
+      "overhead_line:44-45",
+      "overhead_line:44-47",
+      "overhead_line:45-46",
+      "overhead_line:47-48",
+      "overhead_line:47-49",
+      "overhead_line:49-50",
+      "overhead_line:50-51",
+      "overhead_line:51-151",
+      "overhead_line:52-53",
+      "overhead_line:53-54",
+      "overhead_line:54-55",
+      "overhead_line:54-57",
+      "overhead_line:55-56",
+      "overhead_line:57-58",
+      "overhead_line:57-60",
+      "overhead_line:58-59",
+      "overhead_line:60-61",
+      "underground_line:60-62",
+      "underground_line:62-63",
+      "underground_line:63-64",
+      "underground_line:64-65",
+      "underground_line:65-66",
+      "overhead_line:67-68",
+      "overhead_line:67-72",
+      "overhead_line:67-97",
+      "overhead_line:68-69",
+      "overhead_line:69-70",
+      "overhead_line:70-71",
+      "overhead_line:72-73",
+      "overhead_line:72-76",
+      "overhead_line:73-74",
+      "overhead_line:74-75",
+      "overhead_line:76-77",
+      "overhead_line:76-86",
+      "overhead_line:77-78",
+      "overhead_line:78-79",
+      "overhead_line:78-80",
+      "overhead_line:80-81",
+      "overhead_line:81-82",
+      "overhead_line:81-84",
+      "overhead_line:82-83",
+      "overhead_line:84-85",
+      "overhead_line:86-87",
+      "overhead_line:87-88",
+      "overhead_line:87-89",
+      "overhead_line:89-90",
+      "overhead_line:89-91",
+      "overhead_line:91-92",
+      "overhead_line:91-93",
+      "overhead_line:93-94",
+      "overhead_line:93-95",
+      "overhead_line:95-96",
+      "overhead_line:97-98",
+      "overhead_line:98-99",
+      "overhead_line:99-100",
+      "overhead_line:100-450",
+      "overhead_line:101-102",
+      "overhead_line:101-105",
+      "overhead_line:102-103",
+      "overhead_line:103-104",
+      "overhead_line:105-106",
+      "overhead_line:105-108",
+      "overhead_line:106-107",
+      "overhead_line:108-109",
+      "overhead_line:108-300",
+      "overhead_line:109-110",
+      "overhead_line:110-111",
+      "overhead_line:110-112",
+      "overhead_line:112-113",
+      "overhead_line:113-114",
+      "overhead_line:135-35",
+      "overhead_line:149-1",
+      "overhead_line:152-52",
+      "overhead_line:6701-67",
+      "overhead_line:197-101",
+      "switch:13152",
+      "switch:18135",
+      "switch:60160",
+      "switch:61611",
+      "switch:97197",
+      "switch:1491149",
+      "switch:250251",
+      "switch:450451",
+      "switch:5494",
+      "switch:151300",
+      "switch:300350",
+      "switch:95195",
+      "switch:3003001",
+      "transformer:611610",
+      "regulator:1501491",
+      "regulator:252601",
+      "regulator:91401",
+      "regulator:1606701"
    ],
    "nodes": [
       "Gen1",
       "Gen2",
       "Gen3",
+      "3",
+      "8",
+      "13",
+      "14",
+      "1401",
+      "15",
+      "18",
+      "21",
+      "23",
+      "25",
+      "26",
+      "2601",
+      "27",
+      "36",
+      "40",
+      "44",
+      "54",
+      "57",
+      "61",
+      "67",
+      "6701",
+      "72",
+      "78",
+      "81",
+      "89",
+      "91",
+      "93",
+      "97",
+      "101",
+      "105",
+      "108",
+      "110",
+      "135",
+      "149",
+      "1491",
+      "150",
+      "151",
+      "152",
+      "160",
+      "195",
+      "197",
+      "250",
+      "251",
+      "300",
+      "3001",
+      "350",
+      "450",
+      "451",
+      "610",
+      "611",
+      "1",
+      "2",
+      "4",
+      "5",
+      "6",
+      "7",
+      "9",
+      "10",
+      "11",
+      "12",
+      "16",
+      "17",
+      "19",
+      "20",
+      "22",
+      "24",
+      "28",
+      "29",
+      "30",
+      "31",
+      "32",
+      "33",
+      "34",
+      "35",
+      "37",
+      "38",
+      "39",
+      "41",
+      "42",
+      "43",
+      "45",
+      "46",
+      "47",
+      "48",
+      "49",
+      "50",
+      "51",
+      "52",
+      "53",
+      "55",
+      "56",
+      "58",
+      "59",
+      "60",
+      "62",
+      "63",
+      "64",
+      "65",
+      "66",
+      "68",
+      "69",
+      "70",
+      "71",
+      "73",
+      "74",
+      "75",
+      "76",
+      "77",
+      "79",
+      "80",
+      "82",
+      "83",
+      "84",
+      "85",
+      "86",
+      "87",
+      "88",
+      "90",
+      "92",
+      "94",
+      "95",
+      "96",
+      "98",
+      "99",
+      "100",
+      "102",
+      "103",
+      "104",
+      "106",
+      "107",
+      "109",
+      "111",
+      "112",
+      "113",
+      "114",
+      "1369",
       "trip_shad_inv",
+      "1370",
       "trip_shad_inv2",
+      "1371",
       "trip_shad_inv3",
+      "1372",
       "trip_shad_inv4",
+      "1373",
       "trip_shad_inv5",
+      "1374",
       "trip_shad_inv6"
    ]
 }

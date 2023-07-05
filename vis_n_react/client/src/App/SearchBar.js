@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import PlotModal from "./PlotModal";
 import OverlayUpload from "./OverlayUpload";
-import { socket } from "./socket";
+import { socket } from "./config/socket";
 import Button from '@mui/material/Button';
 import { createTheme, ThemeProvider } from "@mui/material";
 import Stack from '@mui/material/Stack';
@@ -110,12 +110,18 @@ const SearchBar = ({data, onFind, download, reset, updateData,
         setShowUpload(true)
     }
 
-    const establishConn = () => {
+    const establishConn = async () => {
         socket.connect();
 
         socket.on("connect", () => {
             console.log("connected to socket server");
         })
+
+        socket.on("message", (msg) => {
+            updateData(msg);
+        })
+
+        await axios.get("http://localhost:3500/simdata").catch(( err ) => console.log( err ))
     }
 
     return (
@@ -148,7 +154,6 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                     </Button>
 
                     <Button
-                        disabled
                         size="small"
                         variant="outlined"
                         color="primary"

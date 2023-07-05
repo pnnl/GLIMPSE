@@ -15,7 +15,14 @@ with open("./backend/data/topology.json", "r") as topology:
    data = json.load(topology)
 
    for obj in objects:
-      data['objects'].append({'name': 'mapping', 'attributes': {'name': 'SS-' + obj.split('_')[1], 'from': 'SS', 'to': obj.split('_')[0] + ':' + obj.split('_')[1]}})
+      data['objects'].append({
+         'name': 'mapping',
+         'attributes': {
+            'name': 'SS-' + obj.split('_')[1],
+            'from': 'SS',
+            'to': obj.split('_')[0] + ':' + obj.split('_')[1]
+            }
+         })
 
 with open("./backend/data/topology.json", "w") as topology:
    topology.write(json.dumps(data, indent=3))

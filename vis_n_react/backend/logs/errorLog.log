@@ -12,3 +12,59 @@
 05/26/2023	09:58:55	93fc2ff3-8d75-4cd0-958a-bca785f45816	TypeError: Cannot read properties of undefined (reading 'x')
 05/26/2023	10:06:33	dcee1489-00d6-43ac-998c-05fc33fcbe61	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
 05/26/2023	10:26:24	fb1a0499-62ce-4441-81b6-e7db94d9433e	Error: EEXIST: file already exists, mkdir 'C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\map'
+06/28/2023	15:37:34	62c66f32-fb4a-4013-a0a8-5680244372ac	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/28/2023	15:37:48	49e35476-a96b-4c78-8345-fc3fc010e895	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/29/2023	10:16:07	227ea97a-4fde-482e-9dfb-37aebe71c5c9	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/29/2023	10:21:48	e92cadf4-67ba-4394-b1cd-578f0c99f2f6	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/29/2023	10:34:35	2cdacf59-b87d-424f-902f-15d06dd06765	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/29/2023	10:41:01	f0ab1161-df61-4291-a420-d80d13d2621c	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+
+06/29/2023	10:42:19	7f066a9c-7ce2-4edd-940f-181719bcca4a	Error: Command failed: python ./py/mockGridlabd.py
+Traceback (most recent call last):
+  File "C:\Users\mend166\Documents\GitHub\glm_viz\vis_n_react\backend\py\mockGridlabd.py", line 19, in <module>
+    sio.connect('http://localhost:3500')
+  File "C:\Users\mend166\AppData\Local\Programs\Python\Python310\lib\site-packages\socketio\client.py", line 338, in connect
+    raise exceptions.ConnectionError(exc.args[0]) from None
+socketio.exceptions.ConnectionError: HTTPConnectionPool(host='localhost', port=3500): Read timed out. (read timeout=5)
+

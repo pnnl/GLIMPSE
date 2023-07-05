@@ -12,7 +12,7 @@ const cors = require("cors");
 const zip = require("express-easy-zip");
 const multer = require('multer');
 const errorHandler = require('./middleware/errorHandler');
-const { execSync } = require('child_process');
+const { execSync, exec } = require('child_process');
 const { logger } = require('./middleware/logEvents');
 const PORT =  process.env.PORT || 3500;
 
@@ -99,7 +99,10 @@ const checkIncludes = ( res, jsonData ) => {
 io.on('connection', (socket) => {
 
     console.log('a user connected');
-    
+
+    socket.on("message", (msg) => {
+        socket.broadcast.emit("message", msg);
+    })
 });
 
 app.post("/upload", async (req, res) => {
@@ -230,7 +233,7 @@ app.post("/jsontoglm", ( req, res ) => {
         }
     })
 
-    Object.keys( jsonGlm ).forEach( ( filename ) => {
+    Object.keys( jsonGlm ).forEach(( filename ) => {
 
         fs.writeFileSync( "./json/" + filename, JSON.stringify( jsonGlm[ filename ], null, 3 ), "utf-8" );
     })
@@ -272,21 +275,17 @@ app.get("/getplot", (req, res) => {
 
 })
 
-// app.post("/createmapping", (req, res) => {
+app.get("/simdata", (req, res) => {
 
-//     const nodes_mapping = req.body;
-//     fs.mkdirSync(path.join(__dirname, "map"));
-    
-//     nodes_mapping["mapping"].forEach((node) => {
-//         for (let key in node)
-//         {
-//             fs.writeFileSync("./map/mapping.csv", key + "," + node[key].x + "," + node[key].y + "\n", { flag: 'a' });
-//         }
-//     })
+    exec("python ./py/mockGridlabd.py", (error) => {
 
-//     fs.rmSync(path.join(__dirname, "map"), { recursive: true, force: true });
-
-// })
+        if ( error )
+        {
+            console.error( `exec mockGridlabd ${error}` );
+            return;
+        }
+    })
+})
 
 app.use(errorHandler);
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

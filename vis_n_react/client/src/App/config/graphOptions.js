@@ -9,7 +9,7 @@ import microGridImg from '../../imgs/microgrid.svg';
 import commImg from "../../imgs/comm.jpg";
 
 //These are the graph options
-const nodeSize = 50;
+const nodeSize = 12;
 
 const options = {
     edges: {
@@ -25,9 +25,10 @@ const options = {
         },
         font: {
             color: "#000",
-            size: 30
+            size: 18
         },
-        shape: 'circularImage'
+        shape: 'circularImage',
+        size: nodeSize
     },
     groups:{ //These options can be changes to affect the style of each node type
         load: {
@@ -102,11 +103,15 @@ const options = {
     },
     physics: {
         barnesHut: {
-            gravitationalConstant: -80_000, // this value effects graph render time and how spread out it looks
-            springConstant: 0.25, // the higher the value the springy the edges are 
-            springLength: 150 //this value if for how springy the edges are
+            theta: 0.1,
+            gravitationalConstant: -10000,
+            centralGravity: 0.3,
+            springConstant: 0.25,
+            springLength: 35
         },
-        solver: 'barnesHut',
+        maxVelocity: 100,
+        minVelocity: 1,
+        solver: 'barnesHut', /* Change solver to any solver algorithm above */
         stabilization: {
             enabled: false,
             iterations: 1000,
@@ -116,6 +121,7 @@ const options = {
         }
     },
     layout: {
+        randomSeed: undefined,
         improvedLayout: false
     }
 };

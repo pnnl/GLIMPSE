@@ -29,11 +29,6 @@ def glm2json( glmDict ):
 
     return glm_json
 
-# def removeGlmFiles( folderDir ):
-
-#     for file in os.listdir( folderDir ):
-#         if re.search( ".glm$", file ):
-#             os.remove( folderDir + file )
 
 '''
 this function will create a csv file named map.csv
@@ -66,28 +61,56 @@ def createMetrics( glmDict ):
         'nodes': []
     }
 
+    # objCounter = {
+    #     "load": 0,
+    #     "triplex_load": 0,
+    #     "capacitor": 0,
+    #     "node": 0,
+    #     "triplex_node": 0,
+    #     "substation": 0,
+    #     "meter": 0,
+    #     "triplex_meter": 0,
+    #     "inverter_dyn": 0,
+    #     "inverter": 0,
+    #     "diesel_dg": 0
+    # }
+
+    # edgeCounter = {
+    #     "overhead_line": 0,
+    #     "switch": 0, 
+    #     "underground_line": 0, 
+    #     "series_reactor": 0, 
+    #     "triplex_line": 0, 
+    #     "regulator": 0,
+    #     "transformer": 0
+    # }
+
     for glmFile in glmDict.values():
         for obj in glmFile[ 'objects' ]:
 
             obj_type = obj[ 'name' ].split(":")[ 0 ]
 
             if obj_type in edgeTypes:
-                file.write( ",".join( [obj[ 'attributes' ][ 'from' ], "0", obj[ 'attributes' ][ 'to' ], "1" ] ) + "\n" )
-                mockData["edges"].append(obj['attributes'])
 
-            elif obj_type in parent_child_edge_types:
+                file.write( ",".join( [obj[ 'attributes' ][ 'from' ], "0", obj[ 'attributes' ][ 'to' ], "1" ] ) + "\n" )
+
+                edgeID = obj['name'] if ":" in obj['name'] else obj_type + ":" + obj['attributes']['name']
+
+                mockData["edges"].append(edgeID)
+                    
+            if obj_type in parent_child_edge_types:
                 try:
                     file.write( ",".join( [ obj[ 'attributes' ][ 'name' ], "0", obj[ 'attributes' ][ 'parent' ], "1" ] ) + "\n")
                 except:
                     pass
 
-            elif obj_type in nodeTypes:
+            if obj_type in nodeTypes:
+                mockData["nodes"].append(obj['attributes']['name'])
                 try:
                     file.write(",".join( [ obj[ 'attributes' ][ 'name' ], "0", obj[ 'attributes' ][ 'parent' ], "1" ] ) + "\n")
-                    mockData["nodes"].append(obj['attributes']['name'])
                 except:
                     pass
-    
+                
     with open("./mock_Gridlabd_data/data.json", "w") as jsonFile:
         jsonFile.write(json.dumps( mockData, indent = 3 ))
 
