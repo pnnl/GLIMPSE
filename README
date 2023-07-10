@@ -1,8 +1,10 @@
 GLM Viz
 in vis_n_react/backend run 
 
+npm install
 npm run dev
 
 in vis_n_react/client run 
 
+npm install
 npm run start
