@@ -1,4 +1,4 @@
-/* Change paths for each objects icon */
+/* Change paths for each objects icon/image */
 import loadImg from '../imgs/load.png';
 import capacitorImg from '../imgs/capacitor.jpg';
 import inverterImg from '../imgs/inverter.png';
