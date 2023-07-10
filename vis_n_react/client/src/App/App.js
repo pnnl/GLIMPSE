@@ -1,10 +1,12 @@
-import '../styles/App.css';
 import React, { useState } from 'react';
+import '../styles/App.css';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
+import appConfig from '../appConfig/appConfig';
 
+const appOptions = appConfig.appOptions;
 
 const Home = () => {
   let content;
@@ -55,13 +57,13 @@ const Home = () => {
   return (
     <>
     <header>
-        <h1 className="title">Power Grid Model Visualization Tool</h1>
-        <nav>
-            <ul className="nav-links">
-                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
-                <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
-            </ul>
-        </nav>
+      <h1 className="title">{appOptions.title}</h1>
+      <nav>
+        <ul className="nav-links">
+          <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
+          <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
+        </ul>
+      </nav>
     </header>
     <main>{content}</main>
     </>
@@ -72,12 +74,12 @@ export const About = () => {
   return (
     <div>
       <header>
-        <h1 className="title">Power Grid Model Visualization Tool</h1>
+        <h1 className="title">{appOptions.title}</h1>
         <nav>
-            <ul className="nav-links">
-                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>Home</Link></li>
-                <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>About</Link></li>
-            </ul>
+          <ul className="nav-links">
+            <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
+            <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
+          </ul>
         </nav>
     </header>
       <h1>About The tool</h1>

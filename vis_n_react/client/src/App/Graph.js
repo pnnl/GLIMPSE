@@ -8,8 +8,11 @@ import NodePopup from './NodePopup';
 import '../styles/vis-network.css';
 import Legend from './Legend';
 import EdgeContextMenu from './EdgeContextMenu';
-import options from './config/graphOptions.js';
+// import options from './config/graphOptions.js';
+import appConfig from '../appConfig/appConfig';
+import { nodeOptions, edgeOptions } from './config/objectOptions';
 
+const options = appConfig.graphOptions;
 
 const data = {
   nodes: new DataSet(),
@@ -40,8 +43,8 @@ const objectTypeCount = {
     "triplex_line": 0,
     "regulator": 0,
     "transformer": 0
-    }
-  };
+  }
+};
 
 //These types are what are considered edges
 const edgeTypes = [
@@ -81,36 +84,6 @@ const parent_child_edge_types = [
   "triplex_load", 
   "meter"
 ];
-
-//these nodes options can be further changed in the options object below
-const nodeOptions = new Map([
-  ["load",{"group": "load"}],
-  ["triplex_load", {"group": "triplex_load"}],
-  ["capacitor", {"group": "capacitor"}],
-  ["triplex_node", {"group": "triplex_node"}],
-  ["substation", {"group": "substation"}],
-  ["triplex_meter", {"group": "triplex_meter"}],
-  ["node", {"group": "node"}],
-  ["meter", {"group": "meter"}],
-  ["inverter", {"group": "inverter"}],
-  ["inverter_dyn", {"group": "inverter"}],
-  ["diesel_dg", {"group": "generator"}],
-  ["microgrid_node", {"group": "microgrid_node"}],
-  ["communication_node", {"group": "communication_node"}]
-]);
-                    
-const edgeOptions = new Map([
-  ["overhead_line", {"width": 1, "color": "#000000", "hidden": false}],
-  ["switch", {"width": 1, "color": "#3a0ca3", "hidden": false}],
-  ["series_reactor", {"width": 1, "color": "#3c1642", "hidden": false}],
-  ["triplex_line", {"width": 1, "color": "#c86bfa", "hidden": false}],
-  ["underground_line", {"width": 1, "color": "#FFFF00", "hidden": false}],
-  ["regulator", {"width": 1, "color": "#ff447d", "hidden": false}],
-  ["transformer", {"width": 1,"color": "#00FF00", "hidden": false}],
-  ["mapping", {"width": 0.15, "color": {"inherit": true}, "hidden": false}],
-  ["communication", {"width": 1, "color": {"inherit": false}, "hidden": false}],
-  ["microgrid_connection", {"width": 1, "color": "cyan", "hidden": false}]
-]);
 
 //This functions turns attributes of a node or edge to a string tile that may be displayed
 const getTitle = (attributes) => {
@@ -225,10 +198,10 @@ const getGraphData= (dataFiles) => {
 const NodeFocus = (nodeID) => {
     
   const options = {
-    "scale": 5,
+    "scale": 3,
     "locked": true,
     "animation": {
-      "duration": 1000,
+      "duration": 1500,
       "easing": "easeInOutQuart"
     }
   };
@@ -249,9 +222,9 @@ const Reset = () => {
   });
   
   const edgeItems = data.edges.map((e) => {
-    if(e.width === 6)
+    if(e.width === 8)
     {
-      e.width = 1;
+      e.width = 2;
       e.hidden = false;
       return e;
     }
@@ -292,10 +265,10 @@ const TogglePhysics = (toggle) => {
 const Prev = () => {
   
   const options = {
-    "scale": 2,
+    "scale": 3,
     "locked": true,
     "animation": {
-      "duration": 2000,
+      "duration": 1500,
       "easing": "easeInOutQuart"
     }
   };
@@ -322,10 +295,10 @@ const Prev = () => {
 const Next = () => {
 
   const options = {
-    "scale": 2,
+    "scale": 3,
     "locked": true,
     "animation": {
-      "duration": 2000,
+      "duration": 1500,
       "easing": "easeInOutQuart"
     }
   };
@@ -380,7 +353,7 @@ const HighlightGroup = (nodeType) => {
   
   const edgesMap = data.edges.map((edge) => {
 
-    if(edge.width !== 6)
+    if(edge.width !== 8)
     {
       edge.color = 'lightgrey';
     }
@@ -411,10 +384,10 @@ const HighlightEdges = (edgeType) => {
     if( edge.id.split(":")[ 0 ] === edgeType )
     {
       edge.color = edgeOptions.get( edgeType ).color;
-      edge.width = 6;
+      edge.width = 8;
       return edge;
     }
-    else if( edge.width !== 6)
+    else if( edge.width !== 8)
     {
       edge.color = "lightgrey";
       edge.width = 0.15;
@@ -646,13 +619,10 @@ const Graph = ({ visFiles }) => {
         glmNetwork.setOptions({physics: {enabled: false}})
 
         setTimeout(() => {
-  
           document.getElementById("circularProgress").style.display = "none";
-  
         }, 500);
         
       });
-
     }
     
     glmNetwork.on("doubleClick", (params) => {

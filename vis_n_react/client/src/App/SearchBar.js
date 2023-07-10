@@ -14,7 +14,9 @@ import Switch from '@mui/material/Switch';
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import appConfig from "../appConfig/appConfig";
 
+const appOptions = appConfig.appOptions;
 
 const SearchBar = ({data, onFind, download, reset, updateData,
     prev, next, physicsToggle, addGraphOverlay}) => {
@@ -134,7 +136,7 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                         variant="outlined"
                         color="primary"
                         onClick={handleExport}>
-                        Export w/ Changes
+                        {appOptions.buttons.exportBtn}
                     </Button>
 
                     <Button 
@@ -142,7 +144,7 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                         variant="outlined"
                         color="primary"
                         onClick={plot}>
-                        Show Plot
+                        {appOptions.buttons.plotBtn}
                     </Button>
 
                     <Button
@@ -150,7 +152,7 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                         variant="outlined"
                         color="primary"
                         onClick={showOverlay}>
-                        Attach overlay
+                        {appOptions.buttons.addOverlayBtn}
                     </Button>
 
                     <Button
@@ -158,20 +160,20 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                         variant="outlined"
                         color="primary"
                         onClick={establishConn}>
-                        connect to sim
+                        {appOptions.buttons.simBtn}
                     </Button>
                 </Stack>
 
                 <FormGroup>
                     <FormControlLabel
                         control={<Switch checked={checked} onChange={autoLayout} />}
-                        label="Auto Layout"
+                        label={appOptions.buttons.layoutLbl}
                         />
                 </FormGroup>
 
                 <TextField 
                     id="outlined-basic" 
-                    label="Search by node id" 
+                    label={appOptions.buttons.searchLbl} 
                     variant="outlined"
                     size="small"
                     onChange={handleChange}
@@ -194,14 +196,14 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                             color="primary"
                             onClick={handlePrev}
                             >
-                            Prev
+                            {appOptions.buttons.previousBtn}
                         </Button>
                         <Button
                             size="small"
                             color="primary"
                             onClick={handleNext}
                             >
-                            Next
+                            {appOptions.buttons.nextBtn}
                         </Button>
                     </ButtonGroup>
 
@@ -211,7 +213,7 @@ const SearchBar = ({data, onFind, download, reset, updateData,
                         color="primary"
                         onClick={handleReset}
                         >
-                        Reset
+                        {appOptions.buttons.resetBtn}
                     </Button>
                 </Stack>
             </ThemeProvider>

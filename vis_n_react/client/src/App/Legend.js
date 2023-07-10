@@ -14,36 +14,80 @@ import microGridImg from '../imgs/microgrid.svg';
 import commImg from "../imgs/comm.jpg";
 import LegendContextMenu from './LegendContextMenu';
 
-
 const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
 
-    const nodeOptions = new Map([["load", {"group": "load"}],
-                        ["triplex_load", {"group": "triplex_load"}],
-                        ["capacitor", {"group": "capacitor"}],
-                        ["triplex_node", {"group": "triplex_node"}],
-                        ["substation", {"group": "substation"}],
-                        ["triplex_meter", {"group": "triplex_meter"}],
-                        ["node", {"group": "node"}],
-                        ["meter", {"group": "meter"}],
-                        ["inverter", {"group": "inverter"}],
-                        ["inverter_dyn", {"group": "inverter"}],
-                        ["diesel_dg", {"group": "generator"}],
-                        ["microgrid_node", {"group": "microgrid_node"}],
-                        ["communication_node", {"group": "communication_node"}]]);
-    
-    const edgeOptions = new Map([["overhead_line", {"width": 4, "color": "#000000"}],
-                                ["switch", {"width": 4, "color": "#3a0ca3"}],
-                                ["series_reactor", {"width": 4, "color": "#3c1642"}],
-                                ["triplex_line", {"width": 4, "color": "#c86bfa"}],
-                                ["underground_line", {"width": 4, "color": "#FFFF00"}],
-                                ["regulator", {"width": 4, "color": "#ff447d"}],
-                                ["transformer", {"width": 4, "color": "#00FF00"}],
-                                ["communication", {"width": 4, "color": "#c1121f"}],
-                                ["mapping", {"width": 4, "color": "#6b9080"}],
-                                ["microgrid_connection", {"width": 4, "color": "cyan"}]]);
-    
     const nodes = [];
     const edges = [];
+
+    const nodeOptions = new Map([
+        ["load",{"group": "load"}],
+        ["triplex_load", {"group": "triplex_load"}],
+        ["capacitor", {"group": "capacitor"}],
+        ["triplex_node", {"group": "triplex_node"}],
+        ["substation", {"group": "substation"}],
+        ["triplex_meter", {"group": "triplex_meter"}],
+        ["node", {"group": "node"}],
+        ["meter", {"group": "meter"}],
+        ["inverter", {"group": "inverter"}],
+        ["inverter_dyn", {"group": "inverter"}],
+        ["diesel_dg", {"group": "generator"}],
+        ["microgrid_node", {"group": "microgrid_node"}],
+        ["communication_node", {"group": "communication_node"}]
+    ]);
+                           
+    const edgeOptions = new Map([
+        ["overhead_line", {
+          "width": 8,
+          "color": "#000000",
+          "hidden": false
+        }],
+        ["switch", {
+          "width": 8, 
+          "color": "#3a0ca3", 
+          "hidden": false
+        }],
+        ["series_reactor", {
+          "width": 8, 
+          "color": 
+          "#3c1642", 
+          "hidden": false
+        }],
+        ["triplex_line", {
+          "width": 8, 
+          "color": "#c86bfa", 
+          "hidden": false
+        }],
+        ["underground_line", {
+          "width": 8, 
+          "color": "#FFFF00", 
+          "hidden": false
+        }],
+        ["regulator", {
+          "width": 8, 
+          "color": "#ff447d", 
+          "hidden": false
+        }],
+        ["transformer", {
+          "width": 8,
+          "color": "#00FF00", 
+          "hidden": false
+        }],
+        ["mapping", {
+          "width": 8, 
+          "color": {"inherit": true}, 
+          "hidden": false
+        }],
+        ["communication", {
+          "width": 8, 
+          "color": {"inherit": false},
+          "hidden": false
+        }],
+        ["microgrid_connection", {
+          "width": 8, 
+          "color": "cyan", 
+          "hidden": false
+        }]
+    ]);
     
     nodes.push({
         id: "load",

@@ -61,6 +61,7 @@ def createMetrics( glmDict ):
         'nodes': []
     }
 
+    # for testing purposes
     # objCounter = {
     #     "load": 0,
     #     "triplex_load": 0,
