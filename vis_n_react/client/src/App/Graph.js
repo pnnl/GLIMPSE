@@ -9,7 +9,8 @@ import '../styles/vis-network.css';
 import Legend from './Legend';
 import EdgeContextMenu from './EdgeContextMenu';
 // import options from './config/graphOptions.js';
-import appConfig from '../appConfig/appConfig';
+// import appConfig from '../appConfig/appConfig';
+import appConfig from '../appConfig/appConfig.json';
 import { nodeOptions, edgeOptions } from './config/objectOptions';
 
 const options = appConfig.graphOptions;
@@ -275,7 +276,7 @@ const Prev = () => {
 
   const prev = data.nodes.get({
     filter: (n) => {
-      return (n.size === 12);
+      return (n.size === 15);
     }
   });
   
@@ -305,7 +306,7 @@ const Next = () => {
 
   const next = data.nodes.get({
     filter: (n) => {
-      return (n.size === 12);
+      return (n.size === 15);
     }
   });
 
@@ -333,13 +334,13 @@ const HighlightGroup = (nodeType) => {
 
   const nodesMap = data.nodes.map((node) => {
 
-    if (node.group === nodeType || node.size === 12)
+    if (node.group === nodeType || node.size === 15)
     {
       delete node.color;
-      node.size = 12;
+      node.size = 15;
       return node;
     }
-    else if (node.group === nodeType && node.size === 12)
+    else if (node.group === nodeType && node.size === 15)
     {
       node.size = 1;
       node.color = "lightgrey";
@@ -369,7 +370,7 @@ const HighlightGroup = (nodeType) => {
 const HighlightEdges = (edgeType) => {
   
   const nodeItems = data.nodes.map((n) => {
-    if (n.size !== 12)
+    if (n.size !== 15)
     {
       n.color = "lightgrey";
       n.size = 1;

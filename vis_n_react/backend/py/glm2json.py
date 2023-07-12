@@ -61,31 +61,6 @@ def createMetrics( glmDict ):
         'nodes': []
     }
 
-    # for testing purposes
-    # objCounter = {
-    #     "load": 0,
-    #     "triplex_load": 0,
-    #     "capacitor": 0,
-    #     "node": 0,
-    #     "triplex_node": 0,
-    #     "substation": 0,
-    #     "meter": 0,
-    #     "triplex_meter": 0,
-    #     "inverter_dyn": 0,
-    #     "inverter": 0,
-    #     "diesel_dg": 0
-    # }
-
-    # edgeCounter = {
-    #     "overhead_line": 0,
-    #     "switch": 0, 
-    #     "underground_line": 0, 
-    #     "series_reactor": 0, 
-    #     "triplex_line": 0, 
-    #     "regulator": 0,
-    #     "transformer": 0
-    # }
-
     for glmFile in glmDict.values():
         for obj in glmFile[ 'objects' ]:
 

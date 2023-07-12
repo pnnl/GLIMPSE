@@ -3,15 +3,7 @@ import { Network } from 'vis-network';
 import { DataSet} from 'vis-data';
 import '../styles/vis-network.css';
 import "../styles/Legend.css";
-import loadImg from '../imgs/load.png';
-import capacitorImg from '../imgs/capacitor.jpg';
-import inverterImg from '../imgs/inverter.png';
-import meterImg from '../imgs/meter.jpg';
-import substationImg from '../imgs/substation.jpg';
-import generatorImg from '../imgs/generator.jpg';
-import nodeImg from '../imgs/node.png';
-import microGridImg from '../imgs/microgrid.svg';
-import commImg from "../imgs/comm.jpg";
+import appConfig from '../appConfig/appConfig.json';
 import LegendContextMenu from './LegendContextMenu';
 
 const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
@@ -484,85 +476,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
     const nodesDataSet = new DataSet(nodes);
     const edgesDataSet = new DataSet(edges);
     
-    const options = {
-        "nodes":{
-            "borderWidth": 2,
-            "font":{
-                "color": "#000",
-                "size": 20
-            }
-        },
-        "edges":{
-            "font":{
-                "color": "#000",
-                "size": 30,
-            }
-        },
-        "groups":{
-            "load": {
-                "color": "#2a9d8f",
-                "shape": "circularImage",
-                "image": loadImg
-            },
-            "triplex_load":{
-                "color": "#ffea00",
-                "shape": "circularImage",
-                "image": loadImg
-            },
-            "capacitor":{
-                "color": "#283618",
-                "shape": "circularImage",
-                "image": capacitorImg
-            },
-            "triplex_node":{
-                "color": "#003566",
-                "shape": "circularImage",
-                "image": nodeImg
-            },
-            "substation":{
-                "color": "#fca311",
-                "shape": "circularImage",
-                "image": substationImg
-            },
-            "triplex_meter":{
-                "color": "#072ac8",
-                "shape": "circularImage",
-                "image": meterImg
-            },
-            "node":{
-                "color": "#4361ee",
-                "shape": "circularImage",
-                "image": nodeImg
-            },
-            "meter":{
-                "color": "#d90429",
-                "shape": "circularImage",
-                "image": meterImg
-            },
-            "inverter":{
-                "color": "#c8b6ff",
-                "shape": "circularImage",
-                "image": inverterImg
-            },
-            "generator":{
-                "color": "#fee440",
-                "shape": "circularImage",
-                "image": generatorImg
-            },
-            "communication_node": {
-                "color": "#c1121f",
-                "size": 25,
-                "shape": "image",
-                "image": commImg
-            },
-            "microgrid_node": {
-                "color": "#6b9080",
-                "size": 25,
-                "shape": "image",
-                "image": microGridImg
-            }
-        }
-    };
+    const options = appConfig.legendGraphOptions;
     
     const data = {
         nodes: nodesDataSet,

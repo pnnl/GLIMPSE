@@ -14,7 +14,7 @@ import Switch from '@mui/material/Switch';
 import SearchIcon from '@mui/icons-material/Search';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import appConfig from "../appConfig/appConfig";
+import appConfig from '../appConfig/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 

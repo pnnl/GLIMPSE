@@ -1,6 +1,6 @@
 {
   "name": "vis_n_react",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "private": true,
   "options": {
     "allowedHosts": ["localhost", ".localhost"],

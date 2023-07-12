@@ -459,3 +459,12 @@
 07/10/2023	10:25:46	f5760877-da3c-4f9f-aa6d-c2e7d66bc099	POST	http://localhost:3000	/upload
 07/10/2023	10:39:49	498395f6-42de-48ef-8480-d4817c4ad75f	POST	http://localhost:3000	/upload
 07/10/2023	10:47:55	f5298858-eaf9-40c4-9819-662b2fb3f4e2	POST	http://localhost:3000	/upload
+07/10/2023	12:56:06	4138ac91-6a1e-4d68-a88d-1d450ff0ab9c	POST	http://localhost:3000	/upload
+07/11/2023	11:20:03	5e0a655f-b9db-4bd7-afec-a1543ca68bf0	POST	http://localhost:3000	/upload
+07/11/2023	11:21:42	e43090c2-d905-4fce-9190-3c0396ec1405	GET	http://localhost:3000	/simdata
+07/11/2023	11:22:07	18b25e14-721e-4dc2-947a-d928a1df500d	GET	http://localhost:3000	/getplot
+07/11/2023	11:25:22	4329864a-c05a-4352-a094-7557fff8caad	OPTIONS	http://localhost:3000	/jsontoglm
+07/11/2023	11:25:22	dc089fa5-fc09-499d-a4b1-b578b4f1b0ea	POST	http://localhost:3000	/jsontoglm
+07/11/2023	12:42:09	80b7aaa3-942b-4193-9611-306b09830ad8	POST	http://localhost:3000	/upload
+07/12/2023	15:07:40	d10fafaf-3c22-4cfc-a1f6-2536c083c74f	POST	http://localhost:3000	/upload
+07/12/2023	15:13:59	7e62ac8e-7c19-4810-9919-f602b1128f8d	POST	http://localhost:3000	/upload
