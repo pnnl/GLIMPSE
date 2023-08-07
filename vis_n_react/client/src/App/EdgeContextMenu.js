@@ -4,41 +4,40 @@ import MenuItem from '@mui/material/MenuItem';
 
 const EdgeContextMenu = ({onMount, hideEdge, hideEdgeType}) => {
     
-    const [contextMenu, setContextMenu] = useState(null);
+   const [contextMenu, setContextMenu] = useState(null);
 
-    useEffect(() => {
-        onMount(contextMenu, setContextMenu);
-    }, [onMount, contextMenu])
+   useEffect(() => {
+      onMount(contextMenu, setContextMenu);
+   }, [onMount, contextMenu])
 
-    const handleHideEdge = () => {
-        setContextMenu(null);
-        hideEdge(contextMenu.edgeID);
-    }
+   const handleHideEdge = () => {
+      setContextMenu(null);
+      hideEdge(contextMenu.edgeID);
+   }
 
-    const handleHideEdgeType = () => {
-        setContextMenu(null);
-        hideEdgeType(contextMenu.edgeID.split(":")[0]);
-    }
+   const handleHideEdgeType = () => {
+      setContextMenu(null);
+      hideEdgeType(contextMenu.edgeID.split(":")[0]);
+   }
 
-    const handleClose = () => {
-        setContextMenu(null);
-    }
+   const handleClose = () => {
+      setContextMenu(null);
+   }
 
-    return (
-        <Menu sx={{zIndex: 999}}
-            open = {contextMenu !== null}
-            onClose={handleClose}
-            anchorReference="anchorPosition"
-            anchorPosition={
-                contextMenu !== null
-                ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-                : null            
-            }
-        >
-            <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
-            <MenuItem onClick={handleHideEdgeType}>Hide Edges of This Type</MenuItem>
-        </Menu>
-    );
+   return (
+      <Menu sx={{zIndex: 999}}
+         open = {contextMenu !== null}
+         onClose={handleClose}
+         anchorReference="anchorPosition"
+         anchorPosition={
+            contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : null            
+         }>
+         <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
+         <MenuItem onClick={handleHideEdgeType}>Hide Edges of This Type</MenuItem>
+      </Menu>
+   );
 }
 
 export default EdgeContextMenu;

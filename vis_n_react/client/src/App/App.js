@@ -9,86 +9,144 @@ import appConfig from '../appConfig/appConfig';
 const appOptions = appConfig.appOptions;
 
 const Home = () => {
-  let content;
-  const [showFileUpload, setShowFileUpload] = useState(true);
-  const [filesToVis, setFilesToVis] = useState({});
+   let content;
+   const [showFileUpload, setShowFileUpload] = useState(true);
+   const [dataToVis, setDataToVis] = useState(null);
 
-  const fileUpload = (files) => {
+   const readJSONFile = async (file) => {
 
-    const formData = new FormData();
-    for(let i = 0; i < files.length; i++)
-    {
-      formData.append('glmFile', files[i]);
-    }
-  
-    var header = {
-      header: {
-        "content-type": "multipart/form-data"
-      }
-    };
-    
-    axios.post("http://localhost:3500/upload", formData, header).then((res) => {
+      return new Promise((resolve, reject) => {
+         const reader = new FileReader();
+         
+         reader.onload = (event) => {
 
-      const data = res.data;
-      
-      if(data.alert)
+            try 
+            {
+               const jsonData = JSON.parse(event.target.result);
+               resolve(jsonData);
+            } 
+            catch (error) 
+            {
+               reject(error);
+            }
+         };
+   
+         reader.onerror = (error) => {
+            reject(error);
+         };
+   
+         reader.readAsText(file);
+      });
+   } 
+
+   const fileUpload = async (files) => {
+
+      if(files[0].name.split(".")[1] === "glm")
       {
-        alert(data.alert);
+
+         const formData = new FormData();
+         for(let i = 0; i < files.length; i++)
+         {
+            formData.append('glmFile', files[i]);
+         }
+   
+         const header = {
+            "header": {
+               "content-type": "multipart/form-data"
+            }
+         };
+         
+         await axios.post("http://localhost:8000/upload", formData, header).then((res) => {
+   
+            const data = res.data;
+            
+            if(data.alert)
+            {
+               alert(data.alert);
+            }
+            else
+            {
+               setDataToVis(data);
+               setShowFileUpload(false);
+            }
+         }).catch((error) => console.log(error.message))
       }
-      else
+      else if (files[0].name.split(".")[1] === "json")
       {
-        setFilesToVis(data);
-        setShowFileUpload(false);
+         const jsonDataToVis = {};
+
+         for(const file of files)
+         {
+            try
+            {
+               const jsonData = await readJSONFile(file);
+               jsonDataToVis[file.name] = jsonData; 
+            }
+            catch(error)
+            {
+               console.error(`Error reading ${file.name}`, error)
+            }
+         }
+         
+         await axios.post("http://localhost:8000/validate", jsonDataToVis).then((res) => {
+         
+            if(res.data.isValid)
+            {
+               setDataToVis(jsonDataToVis);
+               setShowFileUpload(false);
+            }
+            else
+            {
+               alert(res.data.error);
+            }
+         })
       }
-      
-    }).catch((error) => console.log(error.message))
+   }
 
-  }
+   if(showFileUpload)
+   {
+      content = <FileUpload fileUpload = {fileUpload} />;
+   }
+   else
+   {
+      content = <Graph visFiles = {dataToVis} />;
+   }
 
-  if(showFileUpload)
-  {
-    content = <FileUpload fileUpload = {fileUpload} />;
-  }
-  else
-  {
-    content = <Graph visFiles = {filesToVis} />;
-  }
-
-  return (
-    <>
-    <header>
-      <h1 className="title">{appOptions.title}</h1>
-      <nav>
-        <ul className="nav-links">
-          <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
-          <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
-        </ul>
-      </nav>
-    </header>
-    <main>{content}</main>
-    </>
-  );
+   return (
+      <>
+      <header>
+         <h1 className="title">{appOptions.title}</h1>
+         <nav>
+         <ul className="nav-links">
+            <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
+            <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
+         </ul>
+         </nav>
+      </header>
+      <main>{content}</main>
+      </>
+   );
 }
 
 export const About = () => {
-  return (
-    <div>
-      <header>
-        <h1 className="title">{appOptions.title}</h1>
-        <nav>
-          <ul className="nav-links">
-            <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
-            <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
-          </ul>
-        </nav>
-    </header>
-      <h1>About The tool</h1>
-    </div>
-  );
+   return (
+      <div>
+         <header>
+         <h1 className="title">{appOptions.title}</h1>
+         <nav>
+            <ul className="nav-links">
+               <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
+               <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
+            </ul>
+         </nav>
+         </header>
+         <h1>About The tool</h1>
+      </div>
+   );
 }
 
 export const App = () => {
-  return (
-    <Home />
-  );
+   return (
+      <Home />
+   );
 }

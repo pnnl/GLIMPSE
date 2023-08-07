@@ -4,24 +4,24 @@ import "../styles/PlotModal.css";
 
 const PlotModal = ({plot, show, close}) => {
   
-  if (!show) return null;
+   if (!show) return null;
 
-  return ReactDom.createPortal(
-    <>
+   return ReactDom.createPortal(
+      <>
       <div className='modal'>
-        <div className='modal-overlay' onClick={close}>
-          <div className='modal-content'>
+         <div className='modal-overlay' onClick={close}>
+            <div className='modal-content'>
 
             <img className='plot' src={plot} alt='Plot'/>
             <button className='closeBtn' onClick={close}>CLOSE</button>
 
-          </div>
-        </div>
+            </div>
+         </div>
       </div>
 
-    </>,
-    document.getElementById("portal")
-  )
+      </>,
+      document.getElementById("portal")
+   )
 }
 
 export default PlotModal

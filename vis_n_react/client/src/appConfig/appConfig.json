@@ -10,6 +10,7 @@
          "plotBtn": "SHOW PLOT",
          "addOverlayBtn": "ATTACH OVERLAY",
          "simBtn": "CONNECT TO SIM",
+         "showStatsBtn": "SHOW STATS",
          "layoutLbl": "Auto Layout",
          "searchLbl": "Search by node id",
          "previousBtn": "PREV",
@@ -112,14 +113,14 @@
       },
       "interaction": {
          "hover":true,
-         "hideEdgesOnDrag": true,
-         "hideEdgesOnZoom": true,
+         "hideEdgesOnDrag": false,
+         "hideEdgesOnZoom": false,
          "navigationButtons": true
       },
       "physics": {
          "barnesHut": {
             "gravitationalConstant": -10000,
-            "springConstant": 0.25,
+            "springConstant": 0.20,
             "springLength": 35
          },
          "solver": "barnesHut",

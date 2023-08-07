@@ -4,36 +4,35 @@ import MenuItem from '@mui/material/MenuItem';
 
 const LegendContextMenu = ({onMount, hideObjects}) => {
     
-    const [contextMenu, setContextMenu] = useState(null);
+   const [contextMenu, setContextMenu] = useState(null);
 
-    useEffect(() => {
-        onMount(contextMenu, setContextMenu);
-    }, [onMount, contextMenu])
+   useEffect(() => {
+      onMount(contextMenu, setContextMenu);
+   }, [onMount, contextMenu])
 
-    const onHideObjects = () => {
-        setContextMenu(null);
+   const onHideObjects = () => {
+      setContextMenu(null);
 
-        hideObjects(contextMenu.object, contextMenu.type);
-    }
+      hideObjects(contextMenu.object, contextMenu.type);
+   }
 
-    const handleClose = () => {
-        setContextMenu(null);
-    }
+   const handleClose = () => {
+      setContextMenu(null);
+   }
 
-    return (
-        <Menu sx={{zIndex: 999}}
-            open = {contextMenu !== null}
-            onClose={handleClose}
-            anchorReference="anchorPosition"
-            anchorPosition={
-                contextMenu !== null
-                ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-                : null            
-            }
-        >
-            <MenuItem onClick={onHideObjects}>Hide All</MenuItem>
-        </Menu>
-    );
+   return (
+      <Menu sx={{zIndex: 999}}
+         open = {contextMenu !== null}
+         onClose={handleClose}
+         anchorReference="anchorPosition"
+         anchorPosition={
+               contextMenu !== null
+               ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+               : null            
+         }>
+         <MenuItem onClick={onHideObjects}>Hide All</MenuItem>
+      </Menu>
+   );
 }
 
 export default LegendContextMenu;

@@ -1,0 +1,28 @@
+{
+   "objects": [
+      {
+         "objectType": "node",
+         "attributes": {
+            "id": "1",
+            "x": "0",
+            "y": "0"
+         }
+      },
+      {
+         "objectType": "node",
+         "attributes": {
+            "id": "2",
+            "x": "25",
+            "y": "60"
+         }
+      },
+      {
+         "objectType": "overhead_line",
+         "attributes": {
+            "id": "1-2",
+            "from": "1",
+            "to": "2"
+         }
+      }
+   ]
+}
