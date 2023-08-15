@@ -22,7 +22,7 @@ const appOptions = appConfig.appOptions;
 const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physicsToggle, addGraphOverlay}) => {
 
    const nodes = data;
-   const [node, setNode] = useState("");
+   const [node, setNode] = useState(null);
    const [stats, setStats] = useState(null);
    const [imgUrl, setImgUrl] = useState(null);
    const [checked, setChecked] = useState(false);

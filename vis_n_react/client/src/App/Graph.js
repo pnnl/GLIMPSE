@@ -1,25 +1,27 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef} from "react";
+import axios from "axios";
+import {Network} from "vis-network";
+import { DataSet } from "vis-data";
+import SearchBar from "./SearchBar";
+import NodePopup from "./NodePopup";
+import "../styles/vis-network.css";
 import "../styles/Graph.css";
-import {Network} from 'vis-network';
-import { DataSet } from 'vis-data';
-import SearchBar from './SearchBar';
-import axios from 'axios';
-import NodePopup from './NodePopup';
-import '../styles/vis-network.css';
-import Legend from './Legend';
-import EdgeContextMenu from './EdgeContextMenu';
-import appConfig from '../appConfig/appConfig.json';
-import { nodeOptions, edgeOptions } from './config/objectOptions';
+import Legend from "./Legend";
+import EdgeContextMenu from "./EdgeContextMenu";
+import appConfig from "../appConfig/appConfig.json";
+import { nodeOptions, edgeOptions } from "./config/objectOptions";
 
 const options = appConfig.graphOptions;
 let glmNetwork;
 let counter = -1;
 
+// data object that holds a DataSet for nodes and edges
 const data = {
   nodes: new DataSet(),
   edges: new DataSet()
 };
 
+// used to keep track of the count of each node and edge types
 const objectTypeCount = {
    "nodes": {
       "load": 0,
@@ -45,7 +47,7 @@ const objectTypeCount = {
    }
 };
 
-//These types are considered edges
+//These types are recognized as edges
 const edgeTypes = [
    "overhead_line",
    "switch",
@@ -59,7 +61,7 @@ const edgeTypes = [
    "microgrid_connection"
 ];
 
-//These types are recognized as nodes by electrical engineers.
+//These types are recognized as nodes
 const nodeTypes = [
    "load", 
    "triplex_load",
@@ -76,15 +78,11 @@ const nodeTypes = [
    "microgrid_node"
 ];
 
-//These edges or connections are between parent and child nodes
-const parentChildEdgeTypes = [
-   "capacitor", 
-   "triplex_meter", 
-   "triplex_load", 
-   "meter"
-];
-
-//This functions turns attributes of a node or edge to a string tile that may be displayed
+/**
+ * Converts an object of attributes from a node or edge to a string to be displayed
+ * @param {Object} attributes - an object 
+ * @returns {string}
+*/
 const getTitle = (attributes) => {
 
    let str = "";
@@ -97,14 +95,17 @@ const getTitle = (attributes) => {
    return str;
 }
 
-//This function will retreve all nodes and edges from a glm file that has be converted to json
-const getGraphData= (dataFiles) => {
+/**
+ * Collects all the nodes and edges with their attributes and sets it to the data variable
+ * @param {Object} dataFiles 
+ */
+const setGraphData = (dataFiles) => {
 
    const files = [];
    const keys = ["name", "objectType", "id"];
 
    //this loop splits the json into each file name and their data to an array
-   //each key of the json is the file name along with the file's data
+   //each key of the json is the file name along with the file"s data
    for (const file in dataFiles)
    {
       files.push(dataFiles[file]);
@@ -170,12 +171,12 @@ const getGraphData= (dataFiles) => {
       }
    }
 
-   for (let file of files)
+   for (const file of files)
    {
     
       const objs = file.objects;
 
-      for (let obj of objs)
+      for (const obj of objs)
       {
 
          let name;
@@ -216,20 +217,6 @@ const getGraphData= (dataFiles) => {
             
             objectTypeCount.edges[objectType]++;
          }
-         else if (parentChildEdgeTypes.includes(objectType))
-         {
-            const nodeID = attributes[attributeName];
-            const parent = attributes.parent;
-
-            if(parent !== undefined)
-            {
-               data.edges.add({
-                  "from": parent,
-                  "to": nodeID,
-                  "color": {"inherit": true}
-               });
-            }
-         }
          else if(nodeTypes.includes(objectType))
          {
             const nodeID = attributes[attributeName];
@@ -248,6 +235,10 @@ const getGraphData= (dataFiles) => {
    }
 }
 
+/**
+ * Zooms in on a node
+ * @param {string} nodeID - the ID of a node 
+ */
 const NodeFocus = (nodeID) => {
     
    const options = {
@@ -262,6 +253,9 @@ const NodeFocus = (nodeID) => {
    glmNetwork.focus(nodeID, options)
 }
 
+/**
+ * Reverts all nodes and edges back to their original styles
+ */
 const Reset = () => {
 
    const nodesResetMap = data.nodes.map((node) => {
@@ -271,7 +265,6 @@ const Reset = () => {
       node.hidden = false;
 
       return node;
-
    });
 
    const edgeItems = data.edges.map((e) => {
@@ -302,6 +295,10 @@ const Reset = () => {
    counter = -1;
 }
 
+/**
+ * Turns phyics on or off
+ * @param {bool} toggle - True turns on physics, false turns off physics
+ */
 const TogglePhysics = (toggle) => {
     
    if(toggle)
@@ -315,6 +312,10 @@ const TogglePhysics = (toggle) => {
 
 }
 
+/**
+ * Generates an array of highlighted nodes and focuses on a node 
+ * starting at the end of the array then moves down every function call
+ */
 const Prev = () => {
   
    const options = {
@@ -326,6 +327,7 @@ const Prev = () => {
       }
    };
 
+   // generates an array of the current highlighted nodes
    const prev = data.nodes.get({
       filter: (n) => {
          return (n.size === 15);
@@ -333,18 +335,24 @@ const Prev = () => {
    });
   
    counter--;
+
+   //if the counter ends up less than 0 the counter starts over at the end of the array
    if(counter < 0)
    {
       counter = prev.length - 1;
    }
   
-   try{
+   try {
       glmNetwork.focus(prev[counter].id, options)
-   } catch{
+   } catch {
       alert("There are no highlighted nodes to cycle through...");
    }
 }
 
+/**
+ * Generates an array of highlighted nodes and focuses on a node 
+ * starting at the beginning of the array then moves up by one every function call
+ */
 const Next = () => {
 
    const options = {
@@ -356,13 +364,17 @@ const Next = () => {
       }
    };
 
+   // get the array of all the highlighted nodes
    const next = data.nodes.get({
       filter: (n) => {
          return (n.size === 15);
       }
    });
 
+   // starting counter is -1 so that when adding one is 0 to start at index 0
    counter++;
+
+   // if the counter exceeds the length of the array then the count starts back at 0
    if(counter >= next.length)
    {
       counter = 0;
@@ -374,14 +386,18 @@ const Next = () => {
    }
    else
    {
-      try{
+      try {
          glmNetwork.focus(next[counter].id, options)
-      } catch{
+      } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
    }
 }
 
+/**
+ * Grays out all edges and nodes that dont mach the node type
+ * @param {string} nodeType - The type of nodes to highlight 
+ */
 const HighlightGroup = (nodeType) => {
 
    const nodesMap = data.nodes.map((node) => {
@@ -408,7 +424,7 @@ const HighlightGroup = (nodeType) => {
 
       if(edge.width !== 8)
       {
-         edge.color = 'lightgrey';
+         edge.color = "lightgrey";
       }
 
       return edge;
@@ -419,6 +435,10 @@ const HighlightGroup = (nodeType) => {
    data.edges.update(edgesMap);
 }
 
+/**
+ * Grays out the edges and nodes but the edges that are of the passed edge type
+ * @param {string} edgeType - The type of edges to highlight
+ */
 const HighlightEdges = (edgeType) => {
   
    const nodeItems = data.nodes.map((n) => {
@@ -429,12 +449,11 @@ const HighlightEdges = (edgeType) => {
 
          return n;
       }
-
       return n;
    });
    
    const edgeItems = data.edges.map(( edge ) => {
-      if( edge.id.split(":")[ 0 ] === edgeType )
+      if( edge.id.split(":")[0] === edgeType )
       {
          edge.color = edgeOptions.get( edgeType ).color;
          edge.width = 8;
@@ -446,7 +465,6 @@ const HighlightEdges = (edgeType) => {
          edge.width = 0.15;
          return edge;
       }
-
       return edge;
    });
    
@@ -458,32 +476,20 @@ const HighlightEdges = (edgeType) => {
 const Graph = ({ visFiles }) => {
   
    const jsonFromGlm = visFiles;
-   getGraphData( jsonFromGlm );
+   setGraphData( jsonFromGlm );
 
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
 
-   const closePopUp = () => {
-      
-      document.getElementById( "node-saveButton" ).onclick = null;
-      document.getElementById( "node-closeButton" ).onclick = null;
-      document.getElementById( "node-popUp" ).style.display = "none";
-
-   }
-   
-   const saveEdits = ( selectedNode ) => {
-      
-      selectedNode.title = getTitle( selectedNode.attributes );
-      data.nodes.update( selectedNode );
-      closePopUp();
-      
-   }
-
+   /**
+    * Updates uploaded data with any changes.
+    * Then downloads the data back to the user's computer as a zip folder with glm files
+    */
    const Export = () => {
 
       Object.keys( jsonFromGlm ).forEach(( file ) => {
          
-         jsonFromGlm[file]['objects'].forEach((object) => {
+         jsonFromGlm[file]["objects"].forEach((object) => {
 
             const objType = object.name.includes(":") ? object.name.split(":")[0] : object.name;
             if (nodeTypes.includes(objType))
@@ -495,29 +501,31 @@ const Graph = ({ visFiles }) => {
       });
 
       const axios_instance = axios.create({
-         "baseURL": 'http://localhost:8000',
+         "baseURL": "http://localhost:8000",
          "timeout": 20000,
-         "headers": {'Content-Type': 'application/json'}
+         "headers": {"Content-Type": "application/json"}
       });
 
-      axios_instance.post("/jsontoglm", jsonFromGlm, {responseType: 'blob'}).then(({data: blob}) => {
-            const link = document.createElement( 'a' );
-            const url = URL.createObjectURL( blob ) ;
-            console.log( url );
-            link.href = url;
-            link.download = 'glmOutput.zip';
-            link.click();
-         })
-         .catch(( err ) => console.log( err ))
+      axios_instance.post("/jsontoglm", jsonFromGlm, {responseType: "blob"}).then(({data: blob}) => {
+         const link = document.createElement( "a" );
+         const url = URL.createObjectURL( blob ) ;
+         link.href = url;
+         link.download = "glmOutput.zip";
+         link.click();
+      })
+      .catch(( err ) => console.log( err ))
    }
 
+   /**
+    * Add more nodes and edges to the current network from json data
+    * @param {Object} overlayData 
+    */
    const addOverlay = ( overlayData ) => {
-
-      getGraphData(overlayData);
-
+      setGraphData(overlayData); 
    }
 
    // Update current nodes with update JSON string
+   // This function is used for testing purposes and will not be in the production version
    const updateData = ( updateObj ) => {
 
       console.log(updateObj);
@@ -535,7 +543,7 @@ const Graph = ({ visFiles }) => {
          let node = data.nodes.get(updateObj.id);
          node.hidden = updateObj.styles.hidden;
 
-         if( updateObj.styles.sizeOperation === 'subtract')
+         if( updateObj.styles.sizeOperation === "subtract")
          {
             node.size = options.nodes.size;
             node.size -= updateObj.styles.by;
@@ -551,17 +559,50 @@ const Graph = ({ visFiles }) => {
    }
 
    let setCurrentNode;
-   const onChildMount = (childSetFunc) => {
-      setCurrentNode = childSetFunc;
+   let setOpenNodePopup;
+   /**
+    * Used to send the set state function from the child to the parent
+    * @param {React.Dispatch<React.SetStateAction<{}>>} setChildCurrentNode - The useState function of the NodePopup child component
+    * @param {React.Dispatch<React.SetStateAction<false>>} setOpen - Used to display the node popup form
+    */
+   const onChildMount = (setChildCurrentNode, setOpen) => {
+      setCurrentNode = setChildCurrentNode;
+      setOpenNodePopup = setOpen;
    }
 
    let contextMenuData;
    let setContextMenuData;
+   /**
+    * Takes the state variables of the EdgeContextMenu component so that the parent component may change the state of the child
+    * @param {Object} contextMenuDataState - Null or holds x and y data for placing the context menu on the page with the data of the selected edge
+    * @param {React.Dispatch<React.SetStateAction<*>>} setContextMenuDataState - Sets the state of the child context menu component  
+    */
    const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
       contextMenuData = contextMenuDataState;
       setContextMenuData = setContextMenuDataState;
    }
 
+   /**
+   * Colses the NodePopup component
+   */
+   const closePopUp = () => {
+      setOpenNodePopup(false);
+   }
+
+   /**
+    * Updates the nodes's hover title with the new attributes
+    * @param {Object} selectedNode - The node object that was selected to be edited
+    */
+   const saveEdits = ( selectedNode ) => {
+      selectedNode.title = getTitle( selectedNode.attributes );
+      data.nodes.update( selectedNode );
+      setOpenNodePopup(false);
+   }
+
+   /**
+    * Hide a specific edge
+    * @param {string} edgeID - The ID of an edge to hide 
+    */
    const hideEdge = (edgeID) =>
    {
       const edgeToHide = data.edges.get().map( e => {
@@ -574,7 +615,11 @@ const Graph = ({ visFiles }) => {
       data.edges.update(edgeToHide);
    }
   
-   const hideEdgeType = (edgeType) => {
+   /**
+    * Hide all edges of a certain type
+    * @param {string} edgeType - The type of edges to hide like: "overhead_line" 
+    */
+   const hideEdges = (edgeType) => {
       const edgesToHide = data.edges.get().map(e => {
 
          if(e.id.split(":")[0] === edgeType)
@@ -586,6 +631,10 @@ const Graph = ({ visFiles }) => {
       data.edges.update(edgesToHide);
    }
   
+   /**
+    * Sets the x and y for the context menu component
+    * @param {Event} e 
+    */
    const handleContextmenu = (e) => {
       e.preventDefault();
       if(contextMenuData !== null)
@@ -602,6 +651,11 @@ const Graph = ({ visFiles }) => {
       }
    }
 
+   /**
+    * Hide edges or nodes of certain types
+    * @param {string} objectType - the type of node or edge like "load" or "overhead_line"
+    * @param {string} type - "node" or "edge"
+    */
    const hideObjects = (objectType, type) => {
 
       if (type === "node")
@@ -613,7 +667,7 @@ const Graph = ({ visFiles }) => {
                node.hidden = true;
             }
             return node;
-         })
+         });
          data.nodes.update(nodesToHide);
       }
       else if (type === "edge") 
@@ -625,7 +679,7 @@ const Graph = ({ visFiles }) => {
                edge.hidden = true;
             }
             return edge;
-         })
+         });
          data.edges.update(edgesToHide);
       }
    }
@@ -633,6 +687,10 @@ const Graph = ({ visFiles }) => {
    const container = useRef(null);
    useEffect(() => {
 
+      /*
+      if Nodes and edges have x and y coordinates load the network
+      without displaying the circular progess bar 
+      */
       if(data.nodes.get()[0].x && data.nodes.get()[0].y)
       {
          document.getElementById("circularProgress").style.display = "none";
@@ -646,6 +704,10 @@ const Graph = ({ visFiles }) => {
 
          glmNetwork.on("stabilizationProgress", (params) => {
          
+            /**
+               Math for determining the radius of the circular progress bar 
+               based on the stabilization progress
+            */
             const maxWidth = 360;
             const minWidth = 1;
             const widthFactor = params.iterations / params.total;
@@ -656,10 +718,14 @@ const Graph = ({ visFiles }) => {
          
          glmNetwork.once("stabilizationIterationsDone", () => {
 
+            /**
+               Once stabilization is done the circular progress with display 100% for half a second then hide
+            */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
             document.getElementById("circularProgress").style.opacity = 0.7;
             
+            /* set physics to false for better performance when stabalization is done */
             glmNetwork.setOptions({physics: {enabled: false}})
 
             setTimeout(() => {
@@ -667,7 +733,7 @@ const Graph = ({ visFiles }) => {
             }, 500);
          });
       }
-      
+       
       glmNetwork.on("doubleClick", (params) => {
    
          if(params.nodes[0] === undefined)
@@ -676,27 +742,26 @@ const Graph = ({ visFiles }) => {
          }
          else
          {
+            /** 
+            * Set the state of the NodePopup component for editing of the selected node's attributes
+            */
             setCurrentNode(data.nodes.get(params.nodes[0]));
-            document.getElementById("node-popUp").style.display = "block";
+            setOpenNodePopup(true);
          }
-   
       });
 
+      /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
 
          let edgeID = null;
          if(glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined)
          {
             edgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
-         }
-         
-         if(edgeID !== null)
-         {
-            setContextMenuData({edgeID: edgeID});
+            setContextMenuData({"edgeID": edgeID});
          }
       })
       
-   }, [container, setCurrentNode, setContextMenuData]);
+   }, [container, setCurrentNode, setContextMenuData, setOpenNodePopup]);
 
    return (
       <>
@@ -708,38 +773,38 @@ const Graph = ({ visFiles }) => {
          prev = {Prev}
          next = {Next}
          download = {Export}
-         addGraphOverlay={addOverlay}
-         updateData={updateData}
+         addGraphOverlay = {addOverlay}
+         updateData = {updateData}
          />
 
          <NodePopup 
-         onMount={onChildMount} 
+         onMount = {onChildMount} 
          onSave = {saveEdits} 
          onClose = {closePopUp}
          />
 
          <div id="networks-wrapper">
          <div
-            className='main-network'
+            className="main-network"
             onContextMenu={handleContextmenu}
             ref={container}
          />
 
          <EdgeContextMenu
             onMount = {onContextMenuChildMount} 
-            hideEdge={hideEdge}
-            hideEdgeType={hideEdgeType}
+            hideEdge = {hideEdge}
+            hideEdges = {hideEdges}
          />
 
-         <div id='circularProgress'>
-            <span id='progressValue'>0%</span>
+         <div id="circularProgress">
+            <span id="progressValue">0%</span>
          </div>
 
          <Legend 
             findGroup = {HighlightGroup} 
             findEdges = {HighlightEdges}
             nodeCounts = {objectTypeCount}
-            hideObjects={hideObjects}
+            hideObjects = {hideObjects}
          />
          </div>
       </>

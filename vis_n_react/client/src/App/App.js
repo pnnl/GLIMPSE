@@ -88,6 +88,11 @@ const Home = () => {
             }
          }
          
+         /**
+            Send json data to backend to validate against a json schema.
+            If the response is false then it will allert the user where their json
+            data failed the schema.
+         */
          await axios.post("http://localhost:8000/validate", jsonDataToVis).then((res) => {
          
             if(res.data.isValid)
@@ -99,10 +104,11 @@ const Home = () => {
             {
                alert(res.data.error);
             }
-         })
+         });
       }
    }
 
+   // Display the graph dashboard component if file uploads were succesfully validated
    if(showFileUpload)
    {
       content = <FileUpload fileUpload = {fileUpload} />;

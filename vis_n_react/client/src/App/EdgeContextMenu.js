@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from '@mui/material/MenuItem';
 
-const EdgeContextMenu = ({onMount, hideEdge, hideEdgeType}) => {
+const EdgeContextMenu = ({onMount, hideEdge, hideEdges}) => {
     
    const [contextMenu, setContextMenu] = useState(null);
 
@@ -15,9 +15,9 @@ const EdgeContextMenu = ({onMount, hideEdge, hideEdgeType}) => {
       hideEdge(contextMenu.edgeID);
    }
 
-   const handleHideEdgeType = () => {
+   const handleHideEdges = () => {
       setContextMenu(null);
-      hideEdgeType(contextMenu.edgeID.split(":")[0]);
+      hideEdges(contextMenu.edgeID.split(":")[0]);
    }
 
    const handleClose = () => {
@@ -35,7 +35,7 @@ const EdgeContextMenu = ({onMount, hideEdge, hideEdgeType}) => {
             : null            
          }>
          <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
-         <MenuItem onClick={handleHideEdgeType}>Hide Edges of This Type</MenuItem>
+         <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
       </Menu>
    );
 }

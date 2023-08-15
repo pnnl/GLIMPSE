@@ -95,7 +95,6 @@ const checkIncludes = ( res, jsonData ) => {
       res.end(JSON.stringify(missingIncludesRes));
       return false;
    }
-
 }
 
 const rmFolderPaths = (folderPaths) => {
@@ -123,7 +122,7 @@ app.post("/upload", async (req, res) => {
    const tempFolderPaths = [
       path.join(__dirname, "glmUploads"),
       path.join(__dirname, "item-output"),
-      path.join(__dirname, "emb")
+      // path.join(__dirname, "emb")
    ];
 
    tempFolderPaths.forEach((folderPath) => {

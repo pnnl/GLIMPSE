@@ -11,6 +11,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
    const nodes = [];
    const edges = [];
 
+   // Map of the node options that contains the group each node type belongs too
    const nodeOptions = new Map([
       ["load",{"group": "load"}],
       ["triplex_load", {"group": "triplex_load"}],
@@ -26,7 +27,8 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       ["microgrid_node", {"group": "microgrid_node"}],
       ["communication_node", {"group": "communication_node"}]
    ]);
-                        
+
+   // Map of the options belonging to each edge type
    const edgeOptions = new Map([
       ["overhead_line", {
          "width": 8,
@@ -81,6 +83,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       }]
    ]);
    
+   /*-------- Begining of Top Nodes --------*/
    nodes.push({
       id: "load",
       x: 37, 
@@ -140,8 +143,9 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       label: `capacitor\n[${nodeCounts.nodes.capacitor}]`,
       group: nodeOptions.get("capacitor").group
    });
-
-   //Bottom nodes    
+   /*-------- End of Top Nodes --------*/
+   
+   /*-------- Begining of Bottom Nodes --------*/
    nodes.push({
       id: "triplex_load",
       x: 37, 
@@ -201,8 +205,9 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       label: "End\nPoints",
       group: nodeOptions.get("microgrid_node").group
    });
+   /*-------- End of Bottom Nodes --------*/
    
-   //Edge nodes
+   /*-------- Begining of Empty Nodes --------*/
    nodes.push({
       id:100,
       x: 37,
@@ -382,7 +387,9 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       physics: false,
       color: "black"
    });
+   /*-------- End of Empty Nodes --------*/
    
+   /*-------- Begining of Edges --------*/
    edges.push({
       from: 100,
       to: 101,
@@ -472,6 +479,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       width: edgeOptions.get("mapping").width,
       color: edgeOptions.get("mapping").color
    });
+   /*-------- End of Edges --------*/
    
    const nodesDataSet = new DataSet(nodes);
    const edgesDataSet = new DataSet(edges);

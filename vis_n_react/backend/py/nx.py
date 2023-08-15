@@ -32,13 +32,6 @@ def get_nx_graph_object(file_data):
       'diesel_dg'
    ]
 
-   parent_child_edge_types = [
-      'capacitor',
-      'triplex_meter',
-      'triplex_load',
-      'meter'
-   ]
-
    graph = nx.MultiGraph()
 
    for glm_file in file_data.values():
@@ -65,22 +58,10 @@ def get_nx_graph_object(file_data):
             edge_id = object['name'] if ':' in object['name'] else obj_type + ':' + attributes['name']
 
             graph.add_edge(edge_from, edge_to, id=  edge_id, attributes = attributes)
-
-
-         elif obj_type in parent_child_edge_types:
-            try:
-               parent = attributes['parent']
-               child = attributes['name']
-
-               graph.add_edge(parent, child)
-            except:
-               pass
-
          elif obj_type in node_types:
             try:
                parent = attributes['parent']
                child = attributes['name']
-
                graph.add_edge(parent, child)
             except:
                pass
@@ -120,8 +101,6 @@ def get_avg_betweenness_centrality(graph):
    avg_betweenness_centrality = avg/len(betweenness_centrality_dict)
    
    return avg_betweenness_centrality
-
-
 
 def main():  
    file_path = sys.argv[1]

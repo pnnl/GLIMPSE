@@ -34,7 +34,6 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
       const filename = file.name;
       const reader = new FileReader(); // Create a FileReader object
 
-      
       reader.onload = (e) => {
          const fileContents = e.target.result; // Read the file contents
          const jsonData = JSON.parse(fileContents); // Parse the JSON data

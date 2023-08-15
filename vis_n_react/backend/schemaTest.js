@@ -15,5 +15,3 @@ else
    console.log('The JSON data is NOT valid according to the schema.');
    console.log(errorMessage);
 }
-
-

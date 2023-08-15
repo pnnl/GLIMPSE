@@ -26,9 +26,9 @@ const LegendContextMenu = ({onMount, hideObjects}) => {
          onClose={handleClose}
          anchorReference="anchorPosition"
          anchorPosition={
-               contextMenu !== null
-               ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-               : null            
+            contextMenu !== null
+            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
+            : null            
          }>
          <MenuItem onClick={onHideObjects}>Hide All</MenuItem>
       </Menu>

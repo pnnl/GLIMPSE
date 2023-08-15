@@ -29,7 +29,7 @@ const StatsTableModal = ({show, close, data}) =>
                      </TableRow>
                   </TableHead>
                   <TableBody>
-                     <TableRow key={"stats"} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                     <TableRow key={"stats"} sx={{'&:last-child td, &:last-child th': {border: 0}}}>
                         {Object.entries(data).map(([key, val], index) => {
                            return ( <TableCell key={index}>{val}</TableCell> );
                         })}

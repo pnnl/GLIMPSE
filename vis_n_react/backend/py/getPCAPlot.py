@@ -4,13 +4,16 @@ import sys
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-def plot_emb(fname, titlestr = "2 Component PCA", dataannotation=True):
-   nemb = pd.read_csv(fname, header=None, index_col=0)
-   lbl = list(nemb.index)
-   
+def plot_emb(fname, titlestr = "2 Component PCA", dataannotation=False):
+   nemb = pd.read_csv(fname, header=None)
+   lbl = nemb[0].tolist()
+
    pca = PCA(n_components=2)
    principalComponents = pca.fit_transform(nemb)
    principalDf = pd.DataFrame(data = principalComponents, columns = ['principal component 1', 'principal component 2'])
+
+   # print(principalDf)
+
    fig = plt.figure(figsize = (16,16))
    ax = fig.add_subplot(1,1,1) 
    ax.set_xlabel('Principal Component 1', fontsize = 15)
@@ -20,7 +23,7 @@ def plot_emb(fname, titlestr = "2 Component PCA", dataannotation=True):
    
    if dataannotation:
       for i, txt in enumerate(lbl):
-         ax.annotate(txt, (principalDf['principal component 1'][i]+.02, principalDf['principal component 2'][i]),fontsize=20)
+         ax.annotate(txt, (principalDf['principal component 1'][i]+.02, principalDf['principal component 2'][i]), fontsize=20)
       ax.grid()
    fig.savefig('./figs/plot.png')
 
