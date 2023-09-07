@@ -7,7 +7,7 @@ import {
    TableContainer, 
    TableHead, 
    TableRow, 
-   Paper
+   Dialog
 } from '@mui/material';
 
 const StatsTableModal = ({show, close, data}) =>
@@ -16,10 +16,8 @@ const StatsTableModal = ({show, close, data}) =>
 
    return ReactDom.createPortal(
       <>
-         <div className='modal'>
-         <div className='modal-overlay' onClick={close}>
-         <div className='modal-content'>
-            <TableContainer component={Paper} sx={{margin: "auto", zIndex: 999}}>
+         <Dialog open={show} onClose={close}>
+            <TableContainer sx={{margin: "auto"}}>
                <Table sx={{minWidth: 650}} aria-label='Stats Table'>
                   <TableHead>
                      <TableRow>
@@ -37,9 +35,7 @@ const StatsTableModal = ({show, close, data}) =>
                   </TableBody>
                </Table>
             </TableContainer>
-         </div>
-         </div>
-         </div>
+         </Dialog>
       </>,
       document.getElementById("portal")
    )

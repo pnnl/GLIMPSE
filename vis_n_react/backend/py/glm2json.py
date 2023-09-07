@@ -18,7 +18,7 @@ def getFiles( folder_path ):
 def glmToDict( files, file_path ):
    glm_dicts = {}
    for file in files:
-      glm_dicts[ file.split(".")[ 0 ] + ".json" ] = glm.load( file_path + file )
+      glm_dicts[ file.split(".")[0] + ".json" ] = glm.load(file_path + file)
    return glm_dicts
 
 #Converts glm dict to json
@@ -38,7 +38,7 @@ that will store <node id>, <x>, <y>
 #     for glm_file in glm_dict.values():
 #         for obj in glm_file['objects']:
 
-#             object_type = obj[ 'name' ].split(":")[0]
+#             object_type = obj[ 'name' ]
 
 #             if object_type in node_types:
 #                 try:
@@ -73,31 +73,34 @@ def createMetrics( glm_dict ):
    ]
 
    file = open( "./csv/metrics.csv", "w" )
-   mock_data = {
-      'edges': [],
-      'nodes': []
-   }
+   # mock_data = {
+   #    'edges': [],
+   #    'nodes': []
+   # }
 
    for glm_file in glm_dict.values():
       for obj in glm_file[ 'objects' ]:
-         obj_type = obj['name'].split(":")[0]
+         obj_type = obj['name']
 
          if obj_type in edge_types:
-            edge_from = obj['attributes']['from'].replace(":","")
+            edge_from = obj['attributes']['from']
             edge_from = sum(ord(letter) for letter in edge_from)
 
-            edge_to = obj['attributes' ]['to'].replace(":","")
+            edge_to = obj['attributes' ]['to']
             edge_to = sum(ord(letter) for letter in edge_to)
 
             file.write(",".join([ f"{edge_from}", "0", f"{edge_to}", "1" ]) + "\n")
-            edgeID = obj['name'] if ":" in obj['name'] else obj_type + ":" + obj['attributes']['name']
+            try: 
+               edgeID = obj['attributes']['name']
+            except: 
+               edgeID = obj['attributes']['from'] + "-" + obj['attributes']['to']
 
-            mock_data["edges"].append(edgeID)
+            # mock_data["edges"].append(edgeID)
 
          if obj_type in node_types:
-               mock_data["nodes"].append(obj['attributes']['name'])
+               # mock_data["nodes"].append(obj['attributes']['name'])
                try:
-                  edge_from = obj['attributes']['name'].replace(":","")
+                  edge_from = obj['attributes']['name']
                   edge_from = sum(ord(letter) for letter in edge_from)
 
                   edge_to = obj['attributes']['parent']
@@ -107,8 +110,8 @@ def createMetrics( glm_dict ):
                except:
                   pass
                
-   with open("./mock_Gridlabd_data/data.json", "w") as json_file:
-      json_file.write(json.dumps( mock_data, indent = 3 ))
+   # with open("./mock_Gridlabd_data/data.json", "w") as json_file:
+   #    json_file.write(json.dumps( mock_data, indent = 3 ))
 
 def main():
    folder_dir = sys.argv[1]

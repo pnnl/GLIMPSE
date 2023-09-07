@@ -5,10 +5,10 @@
 
 //////////////////////////////////// Inverter #1 M1/////////////////////////////////////////
 // Actually modelled in hypersim as a grid forming inverter
-object meter:1369 {
+object meter {
      phases "ABCN";
-	 parent 51;
-     name 1369;
+	 parent load_51;
+     name meter_1369;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -35,7 +35,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv;
-	parent 1369;
+	parent meter_1369;
 	rated_power 400 kW;	//
 	flags DELTAMODE;
 	control_mode GRID_FORMING; //GRID_FOLLOWING;
@@ -104,10 +104,10 @@ object inverter_dyn {
 
 
 //////////////////////////////////// Inverter #2 M1/////////////////////////////////////////
-object meter:1370 {
+object meter {
      phases "ABCN";
-	 parent 42;
-     name 1370;
+	 parent load_42;
+     name meter_1370;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -126,7 +126,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv2;
-	parent 1370;
+	parent meter_1370;
 	rated_power 600 kW;	 // 
 	flags DELTAMODE;
 	control_mode GRID_FOLLOWING;
@@ -186,10 +186,10 @@ object inverter_dyn {
 
 
 //////////////////////////////////// Inverter #3 M2 /////////////////////////////////////////
-object meter:1371 {
+object meter {
      phases "ABCN";
-	 parent 101;
-     name 1371;
+	 parent load_101;
+     name meter_1371;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -209,7 +209,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv3;
-	parent 1371;
+	parent meter_1371;
 	rated_power 180 kW;	//  
 	flags DELTAMODE;
 	control_mode GRID_FOLLOWING;
@@ -271,10 +271,10 @@ object inverter_dyn {
 
 //////////////////////////////////// Inverter #4 M2 ///////////////////////////////////////// This is a 600kW battery tag 1
 // Actually modelled in hypersim as a grid forming inverter
-object meter:1372 {
+object meter {
      phases "ABCN";
-	 parent 105;
-     name 1372;
+	 parent node_105;
+     name meter_1372;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -292,7 +292,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv4;
-	parent 1372;
+	parent meter_1372;
 	rated_power 600 kW;	//  
 	flags DELTAMODE;
 	control_mode GRID_FORMING; //GRID_FOLLOWING;
@@ -359,10 +359,10 @@ object inverter_dyn {
 };
 
 //////////////////////////////////// Inverter #5 M3 /////////////////////////////////////////
-object meter:1373 {
+object meter {
      phases "ABCN";
-	 parent 76;
-     name 1373;
+	 parent load_76;
+     name meter_1373;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -382,7 +382,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv5;
-	parent 1373;
+	parent meter_1373;
 	rated_power 120 kW;	//   
 	flags DELTAMODE;
 	control_mode GRID_FOLLOWING;
@@ -442,10 +442,10 @@ object inverter_dyn {
 
 //////////////////////////////////// Inverter #6 M3 /////////////////////////////////////////
 // Actually modelled in hypersim as a grid forming inverter
-object meter:1374 {
+object meter {
      phases "ABCN";
-	 parent 80;
-     name 1374;
+	 parent load_80;
+     name meter_1374;
      flags DELTAMODE;
 	 frequency_measure_type PLL;
      nominal_voltage 2401.7771;
@@ -465,7 +465,7 @@ object recorder {
 
 object inverter_dyn {
 	name trip_shad_inv6;
-	parent 1374;
+	parent meter_1374;
 	rated_power 100 kW;	// 
 	flags DELTAMODE;
 	control_mode GRID_FORMING; //GRID_FOLLOWING;

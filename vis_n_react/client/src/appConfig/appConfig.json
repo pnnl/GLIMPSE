@@ -6,6 +6,7 @@
          "about": "About"
       },
       "buttons": {
+         "filterBtn": "FILTER",
          "exportBtn": "EXPORT W/ CHANGES",
          "plotBtn": "SHOW PLOT",
          "addOverlayBtn": "ATTACH OVERLAY",
@@ -16,7 +17,8 @@
          "previousBtn": "PREV",
          "nextBtn": "NEXT",
          "resetBtn": "RESET"
-      }
+      },
+      "serverUrl": "http://localhost:3010"
    },
    "graphOptions": {
       "edges": {
@@ -103,7 +105,7 @@
             "shape": "image",
             "image": "/imgs/comm.jpg"
          },
-         "microgrid_node": {
+         "microgrid": {
             "color": "#6b9080",
             "size": 15, 
             "shape": "image",
@@ -207,7 +209,7 @@
             "shape": "image",
             "image": "/imgs/comm.jpg"
          },
-         "microgrid_node": {
+         "microgrid": {
             "color": "#6b9080",
             "size": 25,
             "shape": "image",

@@ -4,15 +4,17 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
-import appConfig from '../appConfig/appConfig';
+import appConfig from '../appConfig/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 
 const Home = () => {
    let content;
-   const [showFileUpload, setShowFileUpload] = useState(true);
-   const [dataToVis, setDataToVis] = useState(null);
-
+   const [dataToVisRequest, setDataToVisRequest] = useState({
+      showFileUpload: true,
+      data: null
+   });
+   
    const readJSONFile = async (file) => {
 
       return new Promise((resolve, reject) => {
@@ -56,7 +58,7 @@ const Home = () => {
             }
          };
          
-         await axios.post("http://localhost:8000/upload", formData, header).then((res) => {
+         await axios.post(appOptions.serverUrl + "/upload", formData, header).then((res) => {
    
             const data = res.data;
             
@@ -66,8 +68,10 @@ const Home = () => {
             }
             else
             {
-               setDataToVis(data);
-               setShowFileUpload(false);
+               setDataToVisRequest({
+                  showFileUpload: false,
+                  data: data
+               });
             }
          }).catch((error) => console.log(error.message))
       }
@@ -91,14 +95,16 @@ const Home = () => {
          /**
             Send json data to backend to validate against a json schema.
             If the response is false then it will allert the user where their json
-            data failed the schema.
+            data failed to be validated by the schema.
          */
-         await axios.post("http://localhost:8000/validate", jsonDataToVis).then((res) => {
+         await axios.post(appOptions.serverUrl + "/validate", jsonDataToVis).then((res) => {
          
             if(res.data.isValid)
             {
-               setDataToVis(jsonDataToVis);
-               setShowFileUpload(false);
+               setDataToVisRequest({
+                  showFileUpload: false,
+                  data: jsonDataToVis
+               });
             }
             else
             {
@@ -107,15 +113,17 @@ const Home = () => {
          });
       }
    }
+   
+
 
    // Display the graph dashboard component if file uploads were succesfully validated
-   if(showFileUpload)
+   if(!dataToVisRequest.showFileUpload)
    {
-      content = <FileUpload fileUpload = {fileUpload} />;
+      content = <Graph visFiles = {dataToVisRequest.data} />;
    }
    else
    {
-      content = <Graph visFiles = {dataToVis} />;
+      content = <FileUpload fileUpload = {fileUpload} />;
    }
 
    return (

@@ -24,7 +24,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       ["inverter", {"group": "inverter"}],
       ["inverter_dyn", {"group": "inverter"}],
       ["diesel_dg", {"group": "generator"}],
-      ["microgrid_node", {"group": "microgrid_node"}],
+      ["microgrid", {"group": "microgrid"}],
       ["communication_node", {"group": "communication_node"}]
    ]);
 
@@ -197,13 +197,13 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
    });
 
    nodes.push({
-      id: "microgrid_node",
+      id: "microgrid",
       x: 700, 
       y: 100,
       fixed: false,
       physics: false,
       label: "End\nPoints",
-      group: nodeOptions.get("microgrid_node").group
+      group: nodeOptions.get("microgrid").group
    });
    /*-------- End of Bottom Nodes --------*/
    

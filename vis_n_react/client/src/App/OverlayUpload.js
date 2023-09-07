@@ -37,7 +37,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
       reader.onload = (e) => {
          const fileContents = e.target.result; // Read the file contents
          const jsonData = JSON.parse(fileContents); // Parse the JSON data
-         overlayFunc({[filename]: jsonData});
+         overlayFunc({filename: filename, fileData: jsonData});
       };
 
       reader.readAsText(file);
@@ -55,7 +55,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
       reader.onload = (e) => {
          const fileContents = e.target.result; // Read the file contents
          const jsonData = JSON.parse(fileContents); // Parse the JSON data
-         overlayFunc({[filename]: jsonData});
+         overlayFunc({filename: filename, fileData: jsonData});
       };
 
       reader.readAsText(file);

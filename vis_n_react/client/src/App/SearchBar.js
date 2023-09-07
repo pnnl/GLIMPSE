@@ -3,23 +3,36 @@ import axios from "axios";
 import PlotModal from "./PlotModal";
 import OverlayUpload from "./OverlayUpload";
 import { socket } from "./config/socket";
-import Button from '@mui/material/Button';
+import Button from "@mui/material/Button";
 import { createTheme, ThemeProvider } from "@mui/material";
-import Stack from '@mui/material/Stack';
-import ButtonGroup from '@mui/material/ButtonGroup';
-import TextField from '@mui/material/TextField';
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
-import SearchIcon from '@mui/icons-material/Search';
+import Stack from "@mui/material/Stack";
+import ButtonGroup from "@mui/material/ButtonGroup";
+import TextField from "@mui/material/TextField";
+import FormGroup from "@mui/material/FormGroup";
 import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import appConfig from '../appConfig/appConfig.json';
-import StatsTableModal from '../App/StatsTableModal.js';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Switch from "@mui/material/Switch";
+import SearchIcon from "@mui/icons-material/Search";
+import IconButton from "@mui/material/IconButton";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import Menu from "@mui/material/Menu";
+import appConfig from "../appConfig/appConfig.json";
+import StatsTableModal from "../App/StatsTableModal.js";
 
 const appOptions = appConfig.appOptions;
 
-const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physicsToggle, addGraphOverlay}) => {
+const SearchBar = ({
+   data, 
+   objCounts, 
+   onFind, 
+   download, 
+   reset, 
+   updateData, 
+   prev, 
+   next, 
+   physicsToggle, 
+   addGraphOverlay }) => {
 
    const nodes = data;
    const [node, setNode] = useState(null);
@@ -29,18 +42,35 @@ const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physi
    const [showPlot, setShowPlot] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [showUpload, setShowUpload] = useState(false);
-   
+   const [anchorElement, setAnchorElement] = useState(null);
+   const [edgeCheckboxes, setEdgeCheckboxes] = useState(
+      Object.fromEntries(Object.entries(objCounts.edges).filter(([key, val]) => val > 0).map(obj => [obj[0], true]))
+   );
+   const [nodeCheckboxes, setNodeCheckboxes] = useState(  
+      Object.fromEntries(Object.entries(objCounts.nodes).filter(([key, val]) => val > 0).map(obj => [obj[0], true]))
+   );
+   const [nodesParentChecked, setNodesParentChecked] = useState(true);
+   const [edgesParentChecked, setEdgesParentChecked] = useState(true);
+   const [nodeIndeterminate, setNodeIndeterminate] = useState(false);
+   const [edgeIndeterminate, setEdgeIndeterminate] = useState(false);
+
+   const open = Boolean(anchorElement);
    const theme = createTheme({
       palette: {
          primary: {
-            main: '#333333'
+            main: "#333333"
          },
          secondary: {
-            main: '#b25a00'
+            main: "#b25a00"
          }
       }
-   })
+   });
 
+
+   const handleFilterClick = (e) => {
+      setAnchorElement(e.currentTarget);
+   }
+   
    const handleChange = (e) =>
    {
       setNode(e.target.value);
@@ -95,7 +125,7 @@ const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physi
       
       if(imgUrl === null)
       {
-         await axios.get("http://localhost:8000/getplot", {responseType: 'blob' }).then( ( { data: blob } ) => {
+         await axios.get(appOptions.serverUrl + "/getplot", {responseType: "blob" }).then(({ data: blob }) => {
             let imageUrl = URL.createObjectURL(blob);
             setImgUrl(imageUrl);
             setShowPlot(true);
@@ -113,7 +143,7 @@ const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physi
 
       if(stats === null)
       {
-         await axios.get("http://localhost:8000/getstats").then((res) => {
+         await axios.get(appOptions.serverUrl + "/getstats").then((res) => {
             console.log(res.data);
             setStats(res.data);
             setShowTable(true);
@@ -143,14 +173,128 @@ const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physi
          updateData(msg);
       })
 
-      await axios.get("http://localhost:8000/simdata").catch(( err ) => console.log( err ))
+      await axios.get(appOptions.serverUrl + "/simdata").catch(( err ) => console.log( err ))
    }
+
+   const handleEdgeChecked = (e) => {
+      setEdgeCheckboxes({...edgeCheckboxes, [e.target.value]: e.target.checked});
+   }
+
+   const handleNodeChecked = (e) => {
+      setNodeCheckboxes({...nodeCheckboxes, [e.target.value]: e.target.checked});
+   }
+
+   const handleParentNodesCheck = (e) => {
+      setNodesParentChecked(e.target.checked);
+      Object.keys(nodeCheckboxes).forEach(key => {
+         nodeCheckboxes[key] = e.target.checked;
+      });  
+   }
+
+   const handleParentEdgeCheck = (e) => {
+      setEdgesParentChecked(e.target.checked);
+      Object.keys(edgeCheckboxes).forEach(key => {
+         edgeCheckboxes[key] = e.target.checked;
+      });  
+   }
+
+   const nodesCheckboxes = (
+      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+         {
+            Object.entries(nodeCheckboxes).map(([key, val], index) => {
+               return (
+                  <FormControlLabel
+                     key={index}
+                     label={key}
+                     control={
+                        <Checkbox 
+                           value={key} 
+                           key={index} 
+                           checked={val} 
+                           onChange={handleNodeChecked}
+                        />
+                     }
+                  />
+               );
+            })
+         }
+      </Box>
+   );
+
+   const edgesCheckboxes = (
+      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+         {
+            Object.entries(edgeCheckboxes).map(([key, val], index) => {
+               return (
+                  <FormControlLabel
+                     label={key}
+                     key={index}
+                     control={
+                        <Checkbox 
+                           value={key} 
+                           key={index} 
+                           checked={val} 
+                           onChange={handleEdgeChecked}
+                        />
+                     }
+                  />
+               );
+            })
+         }
+      </Box>
+   );
 
    return (
       <>
       <Box sx={{m: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
+                  <Button
+                     id="filter-button"
+                     aria-controls={open ? "filter-form" : undefined}
+                     aria-haspopup="true"
+                     aria-expanded={open ? "true" : undefined}
+                     variant="contained"
+                     disableElevation
+                     onClick={handleFilterClick}
+                     endIcon={<KeyboardArrowDownIcon />}
+                     >
+                     {appOptions.buttons.filterBtn}
+                  </Button>
+                  <Menu
+                     elevation={0}
+                     anchorOrigin={{vertical: "bottom", horizontal: "right",}}
+                     transformOrigin={{vertical: "top", horizontal: "right"}}
+                     id="filter-form"
+                     MenuListProps={{"aria-labelledby": "filter-button"}}
+                     anchorEl={anchorElement}
+                     open={open}
+                     onClose={() => setAnchorElement(null)}
+                  >
+                  <FormControlLabel
+                  label="Nodes"
+                  control={
+                     <Checkbox
+                        checked={nodesParentChecked}
+                        indeterminate={nodeIndeterminate}
+                        onChange={handleParentNodesCheck}
+                     />
+                  }
+                  />
+                  {nodesCheckboxes}
+                  <FormControlLabel
+                  label="Edges"
+                  control={
+                     <Checkbox
+                        checked={edgesParentChecked}
+                        indeterminate={edgeIndeterminate}
+                        onChange={handleParentEdgeCheck}
+                     />
+                  }
+                  />
+                  {edgesCheckboxes}
+                  </Menu>
+
                   <Button 
                      size="small"
                      variant="outlined"
@@ -206,7 +350,7 @@ const SearchBar = ({data, onFind, download, reset, updateData, prev, next, physi
                   variant="outlined"
                   size="small"
                   onChange={handleChange}
-                  sx={{width: '10rem'}}
+                  sx={{width: "10rem"}}
                />
 
                <Stack direction="row" spacing={2}>

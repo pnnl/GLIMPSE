@@ -1,7 +1,7 @@
 import React, {useEffect, useRef} from "react";
 import axios from "axios";
 import {Network} from "vis-network";
-import { DataSet } from "vis-data";
+import { DataSet, DataView } from "vis-data";
 import SearchBar from "./SearchBar";
 import NodePopup from "./NodePopup";
 import "../styles/vis-network.css";
@@ -12,6 +12,8 @@ import appConfig from "../appConfig/appConfig.json";
 import { nodeOptions, edgeOptions } from "./config/objectOptions";
 
 const options = appConfig.graphOptions;
+let nodesDataview;
+let edgesDataview;
 let glmNetwork;
 let counter = -1;
 
@@ -21,7 +23,7 @@ const data = {
   edges: new DataSet()
 };
 
-// used to keep track of the count of each node and edge types
+// used to keep count of each object type
 const objectTypeCount = {
    "nodes": {
       "load": 0,
@@ -75,7 +77,7 @@ const nodeTypes = [
    "inverter", 
    "diesel_dg", 
    "communication_node", 
-   "microgrid_node"
+   "microgrid"
 ];
 
 /**
@@ -115,7 +117,6 @@ const setGraphData = (dataFiles) => {
    for (const file of files)
    {
       const objs = file.objects;
-
       for (const obj of objs)
       {
 
@@ -128,7 +129,7 @@ const setGraphData = (dataFiles) => {
             }
          })
 
-         const objectType = obj[name].includes(":") ? obj[name].split(":")[0] : obj[name];
+         const objectType = obj[name];
          const attributes = obj.attributes;
          
          if (nodeTypes.includes(objectType))
@@ -143,7 +144,7 @@ const setGraphData = (dataFiles) => {
 
             const nodeID = attributes[name];
 
-            if(attributes.x && attributes.y)
+            if(attributes.x !== undefined && attributes.y !== undefined)
             {
                data.nodes.add({
                   "id": nodeID,
@@ -189,7 +190,7 @@ const setGraphData = (dataFiles) => {
             }
          })
 
-         const objectType = obj[name].includes(":") ? obj[name].split(":")[0] : obj[name];
+         const objectType = obj[name];
          const attributes = obj.attributes;
 
          Object.keys(attributes).forEach(k => {
@@ -201,14 +202,14 @@ const setGraphData = (dataFiles) => {
 
          if (edgeTypes.includes(objectType))
          {
-            const edgeFrom = attributes.from.includes(":") ? attributes.from.split(":")[1] : attributes.from;
-            const edgeTo = attributes.to.includes(":") ? attributes.to.split(":")[1] : attributes.to;
-            const edgeID = obj[name].includes(":") ? obj[name] : objectType + ":" + attributes[attributeName];
+            const edgeFrom = attributes.from;
+            const edgeTo = attributes.to;
+            const edgeID = objectType + ":" + attributes[attributeName];
             
             data.edges.add({
+               "id": edgeID,
                "from": edgeFrom,
                "to": edgeTo,
-               "id": edgeID,
                "color": edgeOptions.get(objectType).color,
                "width": edgeOptions.get(objectType).width,
                "hidden": edgeOptions.get(objectType).hidden,
@@ -230,6 +231,49 @@ const setGraphData = (dataFiles) => {
                   "color": {"inherit": true}
                });
             }
+         }
+      }
+   }
+}
+
+/**
+ * @param {Object} fileData - Should Contain the file's name with extension and the file's data
+ * @param {string} filename - Name of the file
+ * @param {Object} data - the json data of the uploaded file 
+ */
+const setCommunicationNetwork = ({filename, fileData}) => {
+   const microgrids = fileData.microgrid;
+
+   const types = [
+      "node",
+      "load",
+      "switch",
+      "inverter",
+      "capacitor",
+      "regulator",
+      "diesel_dg",
+   ]
+
+   for (const microgrid of microgrids)
+   {
+      data.nodes.add({
+         id: microgrid.name,
+         label: microgrid.name,
+         group: "microgrid"
+      })
+
+      for (const type of Object.keys(microgrid))
+      {
+         if(types.includes(type))
+         {
+            microgrid[type].forEach((nodeID) => {
+               data.edges.add({
+                  from: microgrid.name,
+                  to: nodeID,
+                  color: {inherit: true},
+                  width: 0.15
+               });
+            });
          }
       }
    }
@@ -268,22 +312,26 @@ const Reset = () => {
    });
 
    const edgeItems = data.edges.map((e) => {
+
+      const edgeType = e.id.split(":")[0];
+
       if(e.width === 8)
       {
          e.width = 2;
          e.hidden = false;
          return e;
       }
-      else if(edgeTypes.includes(e.id.split(":")[0]))
+      else if(edgeTypes.includes(edgeType))
       {
-         e.color = edgeOptions.get(e.id.split(":")[0]).color;
-         e.width = edgeOptions.get(e.id.split(":")[0]).width;
+         e.color = edgeOptions.get(edgeType).color;
+         e.width = edgeOptions.get(edgeType).width;
          e.hidden = false;
          return e;
       }
       else
       {
          e.color = {inherit: true};
+         e.width = 2;
          e.hidden = false;
          return e;
       }
@@ -452,14 +500,14 @@ const HighlightEdges = (edgeType) => {
       return n;
    });
    
-   const edgeItems = data.edges.map(( edge ) => {
-      if( edge.id.split(":")[0] === edgeType )
+   const edgeItems = data.edges.map((edge) => {
+      if (edge.id.split(":")[0] === edgeType)
       {
-         edge.color = edgeOptions.get( edgeType ).color;
+         edge.color = edgeOptions.get(edgeType).color;
          edge.width = 8;
          return edge;
       }
-      else if( edge.width !== 8)
+      else if (edge.width !== 8)
       {
          edge.color = "lightgrey";
          edge.width = 0.15;
@@ -474,12 +522,14 @@ const HighlightEdges = (edgeType) => {
 
 /* ------------------------ Component ------------------------ */
 const Graph = ({ visFiles }) => {
-  
-   const jsonFromGlm = visFiles;
-   setGraphData( jsonFromGlm );
 
+   setGraphData( visFiles );
+   
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
+   
+   nodesDataview = new DataView(data.nodes);
+   edgesDataview = new DataView(data.edges);
 
    /**
     * Updates uploaded data with any changes.
@@ -487,11 +537,11 @@ const Graph = ({ visFiles }) => {
     */
    const Export = () => {
 
-      Object.keys( jsonFromGlm ).forEach(( file ) => {
+      Object.keys(visFiles).forEach(( file ) => {
          
-         jsonFromGlm[file]["objects"].forEach((object) => {
+         visFiles[file]["objects"].forEach((object) => {
 
-            const objType = object.name.includes(":") ? object.name.split(":")[0] : object.name;
+            const objType = object.name;
             if (nodeTypes.includes(objType))
             {
                const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
@@ -500,14 +550,14 @@ const Graph = ({ visFiles }) => {
          });
       });
 
-      const axios_instance = axios.create({
-         "baseURL": "http://localhost:8000",
-         "timeout": 20000,
+      const axiosInstance = axios.create({
+         "baseURL": appConfig.appOptions.serverUrl,
+         "timeout": 17500,
          "headers": {"Content-Type": "application/json"}
       });
 
-      axios_instance.post("/jsontoglm", jsonFromGlm, {responseType: "blob"}).then(({data: blob}) => {
-         const link = document.createElement( "a" );
+      axiosInstance.post("/jsontoglm", visFiles, {responseType: "blob"}).then(({data: blob}) => {
+         const link = document.createElement("a");
          const url = URL.createObjectURL( blob ) ;
          link.href = url;
          link.download = "glmOutput.zip";
@@ -517,12 +567,21 @@ const Graph = ({ visFiles }) => {
    }
 
    /**
-    * Add more nodes and edges to the current network from json data
+    * Add more nodes and edges to the current network from JSON data
     * @param {Object} overlayData 
     */
-   const addOverlay = ( overlayData ) => {
-      setGraphData(overlayData); 
-   }
+   // const addOverlay = async (overlayData) => {
+   //    await axios.post("http://localhost:8000/validate", overlayData).then((res) => {
+         
+   //    if(res.data.isValid)
+   //    {
+   //       setGraphData(overlayData);
+   //    }
+   //    else
+   //    {
+   //    }
+   // });
+   // }
 
    // Update current nodes with update JSON string
    // This function is used for testing purposes and will not be in the production version
@@ -622,7 +681,7 @@ const Graph = ({ visFiles }) => {
    const hideEdges = (edgeType) => {
       const edgesToHide = data.edges.get().map(e => {
 
-         if(e.id.split(":")[0] === edgeType)
+         if(e.id === edgeType)
          {
             e.hidden = true;
          }
@@ -694,13 +753,13 @@ const Graph = ({ visFiles }) => {
       if(data.nodes.get()[0].x && data.nodes.get()[0].y)
       {
          document.getElementById("circularProgress").style.display = "none";
-         glmNetwork = new Network(container.current, data, options);
+         glmNetwork = new Network(container.current, {nodes: nodesDataview, edges: edgesDataview}, options);
          glmNetwork.setOptions({physics: {enabled: false}})
       }
       else
       {
          options.physics.stabilization.enabled = true;
-         glmNetwork = new Network(container.current, data, options);
+         glmNetwork = new Network(container.current, {nodes: nodesDataview, edges: edgesDataview}, options);
 
          glmNetwork.on("stabilizationProgress", (params) => {
          
@@ -766,21 +825,22 @@ const Graph = ({ visFiles }) => {
    return (
       <>
          <SearchBar 
-         data = {data.nodes}
-         physicsToggle = {TogglePhysics}
-         reset = {Reset}
-         onFind = {NodeFocus}
-         prev = {Prev}
-         next = {Next}
-         download = {Export}
-         addGraphOverlay = {addOverlay}
-         updateData = {updateData}
+            data = {data.nodes}
+            physicsToggle = {TogglePhysics}
+            reset = {Reset}
+            onFind = {NodeFocus}
+            prev = {Prev}
+            next = {Next}
+            download = {Export}
+            addGraphOverlay = {setCommunicationNetwork}
+            updateData = {updateData}
+            objCounts={objectTypeCount}
          />
 
          <NodePopup 
-         onMount = {onChildMount} 
-         onSave = {saveEdits} 
-         onClose = {closePopUp}
+            onMount = {onChildMount} 
+            onSave = {saveEdits} 
+            onClose = {closePopUp}
          />
 
          <div id="networks-wrapper">

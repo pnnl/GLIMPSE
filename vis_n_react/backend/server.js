@@ -16,7 +16,7 @@ const { execSync, fork } = require('child_process');
 const { logger } = require('./middleware/logEvents');
 const jsonSchema =  require("./upload.schema.json");
 const Ajv = require('ajv');
-const PORT =  process.env.PORT || 8000;
+const PORT =  process.env.PORT || 3010;
 
 app.use(logger);
 app.use(cors(corsOptions));
@@ -104,14 +104,14 @@ const rmFolderPaths = (folderPaths) => {
    });
 }
 
-io.on('connection', (socket) => {
+// io.on('connection', (socket) => {
 
-   console.log('a user connected');
+//    console.log('a user connected');
 
-   socket.on("message", (msg) => {
-      socket.broadcast.emit("message", msg);
-   })
-});
+//    socket.on("message", (msg) => {
+//       socket.broadcast.emit("message", msg);
+//    })
+// });
 
 app.get("/", (req, res) => {
    res.send({"API": "glm_viz"})

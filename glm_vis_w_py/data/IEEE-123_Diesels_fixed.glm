@@ -1,7 +1,7 @@
 // DG #1 
 object diesel_dg {
     flags DELTAMODE;
-	parent 50;
+	parent meter_50;
 	name Gen1;
 	Rated_V 4156; //Line-to-Line value
 	Rated_VA 600000; // Defaults to 10 MVA
@@ -133,7 +133,7 @@ object diesel_dg {
 //////////////////////////////////////////////////////////////////////////////
 object diesel_dg {
     flags DELTAMODE;
-	parent 100;
+	parent load_100;
 	name Gen2;
 	Rated_V 4156; //Line-to-Line value
 	Rated_VA 600000;//3500000; // Defaults to 10 MVA
@@ -246,7 +246,7 @@ object diesel_dg {
 
 object diesel_dg {
     flags DELTAMODE;
-	parent 3001;
+	parent meter_3001;
 	name Gen3;
 	Rated_V 4156; //Line-to-Line value
 	Rated_VA 600000; // Defaults to 10 MVA

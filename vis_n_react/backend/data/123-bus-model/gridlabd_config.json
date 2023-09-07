@@ -1,0 +1,3160 @@
+{
+   "name": "GLD",
+   "loglevel": 1,
+   "coreType": "zmq",
+   "period": 1,
+   "slow_responding": true,
+   "broker": "127.0.0.1:6000",
+   "brokerPort": 6000,
+   "broker_rank":0,
+   "endpoints": [
+      {
+         "name": "mg1_node_36$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_36\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_node_36$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_36\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_node_36$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_36\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_node_40$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_40\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_node_40$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_40\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_node_40$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_40\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_node_44$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_44\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_node_44$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_44\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_node_44$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_44\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_node_135$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_135\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_node_135$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_135\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_node_135$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_135\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_node_151$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_151\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_node_151$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_151\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_node_151$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"node_151\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_35$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_35\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_35$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_35\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_35$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_35\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_37$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_37\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_37$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_37\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_37$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_37\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_38$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_38\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_38$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_38\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_38$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_38\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_39$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_39\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_39$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_39\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_39$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_39\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_41$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_41\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_41$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_41\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_41$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_41\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_42$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_42\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_42$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_42\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_42$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_42\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_43$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_43\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_43$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_43\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_43$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_43\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_45$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_45\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_45$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_45\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_45$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_45\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_46$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_46\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_46$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_46\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_46$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_46\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_47$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_47\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_47$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_47\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_47$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_47\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_48$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_48\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_48$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_48\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_48$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_48\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_49$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_49\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_49$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_49\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_49$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_49\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_50$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_50\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_50$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_50\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_50$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_50\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_load_51$voltage_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_51\": \"voltage_A\"}"
+      },
+      {
+         "name": "mg1_load_51$voltage_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_51\": \"voltage_B\"}"
+      },
+      {
+         "name": "mg1_load_51$voltage_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"load_51\": \"voltage_C\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$status",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"status\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$phase_A_state",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"phase_A_state\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$phase_B_state",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"phase_B_state\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$phase_C_state",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"phase_C_state\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$current_in_A",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"current_in_A\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$current_in_B",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"current_in_B\"}"
+      },
+      {
+         "name": "mg1_microgrid_switch4$current_in_C",
+         "type": "string",
+         "global": false,
+         "info": "{\"microgrid_switch4\": \"current_in_C\"}"
+      },
+  {
+           "name": "mg1_trip_shad_inv1$Qref",
+      "type": "string",
+      "global": false,
+      "info": "{\"trip_shad_inv1\": \"Qref\"}"
+  },
+  {
+           "name": "mg1_trip_shad_inv1$Pref",
+      "type": "string",
+      "global": false,
+      "info": "{\"trip_shad_inv1\": \"Pref\"}"
+  },
+  {
+           "name": "mg1_trip_shad_inv4$Qref",
+      "type": "string",
+      "global": false,
+      "info": "{\"trip_shad_inv4\": \"Qref\"}"
+  },
+  {
+           "name": "mg1_trip_shad_inv4$Pref",
+      "type": "string",
+      "global": false,
+      "info": "{\"trip_shad_inv4\": \"Pref\"}"
+  },
+       {
+           "name": "mg1",
+           "type": "string",
+           "global": false,
+           "destination": "ns3/mg1",
+           "info": "{\"node_36\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_40\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_44\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_135\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_151\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_35\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_37\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_38\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_39\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_41\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_42\": [\"voltage_A\", \"voltage_B\", \"voltage_C\", \"Qref\"], \"load_43\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_45\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_46\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_47\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_48\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_49\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_50\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_51\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"microgrid_switch4\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"trip_shad_inv1\":[\"Qref\", \"Pref\"], \"trip_shad_inv4\":[\"Qref\", \"Pref\"]}"
+       },
+       {
+           "name": "mg2_node_101$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_101\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_101$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_101\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_101$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_101\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_node_105$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_105\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_105$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_105\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_105$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_105\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_node_108$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_108\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_108$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_108\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_108$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_108\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_node_110$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_110\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_110$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_110\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_110$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_110\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_node_197$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_197\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_197$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_197\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_197$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_197\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_node_300$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_300\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_node_300$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_300\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_node_300$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_300\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_102$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_102\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_102$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_102\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_102$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_102\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_103$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_103\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_103$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_103\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_103$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_103\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_104$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_104\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_104$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_104\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_104$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_104\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_106$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_106\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_106$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_106\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_106$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_106\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_107$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_107\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_107$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_107\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_107$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_107\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_109$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_109\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_109$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_109\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_109$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_109\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_111$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_111\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_111$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_111\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_111$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_111\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_112$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_112\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_112$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_112\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_112$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_112\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_113$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_113\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_113$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_113\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_113$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_113\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_load_114$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_114\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg2_load_114$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_114\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg2_load_114$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_114\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"status\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"phase_A_state\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"phase_B_state\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"phase_C_state\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"current_in_A\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"current_in_B\"}"
+       },
+       {
+           "name": "mg2_switch_300-350$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_300-350\": \"current_in_C\"}"
+       },
+  {
+           "name": "mg2_microgrid_switch4$status",
+      "type": "string",
+      "global": false,
+      "info": "{\"microgrid_switch4\": \"status\"}"
+  },
+       {
+           "name": "mg2",
+           "type": "string",
+           "global": false,
+           "destination": "ns3/mg2",
+           "info": "{\"node_101\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_105\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_108\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_110\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_197\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_300\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_102\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_103\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_104\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_106\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_107\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_109\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_111\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_112\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_113\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_114\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"microgrid_switch4\": [\"status\"], \"switch_300-350\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"]}"
+       },
+       {
+           "name": "mg3_node_67$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_67\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_67$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_67\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_67$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_67\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_72$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_72\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_72$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_72\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_72$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_72\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_78$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_78\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_78$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_78\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_78$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_78\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_81$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_81\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_81$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_81\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_81$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_81\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_89$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_89\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_89$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_89\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_89$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_89\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_91$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_91\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_91$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_91\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_91$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_91\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_93$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_93\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_93$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_93\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_93$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_93\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_97$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_97\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_97$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_97\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_97$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_97\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_160$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_160\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_160$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_160\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_160$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_160\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_node_450$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_450\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_node_450$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_450\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_node_450$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_450\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_68$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_68\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_68$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_68\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_68$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_68\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_69$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_69\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_69$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_69\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_69$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_69\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_70$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_70\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_70$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_70\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_70$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_70\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_71$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_71\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_71$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_71\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_71$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_71\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_73$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_73\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_73$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_73\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_73$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_73\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_74$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_74\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_74$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_74\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_74$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_74\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_75$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_75\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_75$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_75\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_75$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_75\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_76$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_76\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_76$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_76\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_76$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_76\": \"voltage_C\"}"
+       },
+  {
+     "name": "mg3_load_761$voltage_A",
+     "type": "string",
+     "global": false,
+     "info": "{\"load_761\": \"voltage_A\"}"
+  },
+  {
+     "name": "mg3_load_761$voltage_B",
+     "type": "string",
+     "global": false,
+     "info": "{\"load_761\": \"voltage_B\"}"
+  },
+  {
+     "name": "mg3_load_761$voltage_C",
+     "type": "string",
+     "global": false,
+     "info": "{\"load_761\": \"voltage_C\"}"
+  },
+       {
+           "name": "mg3_load_77$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_77\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_77$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_77\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_77$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_77\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_79$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_79\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_79$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_79\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_79$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_79\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_80$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_80\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_80$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_80\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_80$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_80\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_82$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_82\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_82$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_82\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_82$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_82\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_83$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_83\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_83$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_83\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_83$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_83\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_84$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_84\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_84$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_84\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_84$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_84\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_85$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_85\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_85$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_85\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_85$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_85\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_86$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_86\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_86$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_86\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_86$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_86\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_87$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_87\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_87$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_87\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_87$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_87\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_88$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_88\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_88$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_88\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_88$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_88\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_90$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_90\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_90$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_90\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_90$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_90\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_92$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_92\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_92$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_92\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_92$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_92\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_94$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_94\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_94$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_94\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_94$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_94\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_95$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_95\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_95$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_95\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_95$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_95\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_96$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_96\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_96$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_96\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_96$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_96\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_98$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_98\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_98$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_98\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_98$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_98\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_99$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_99\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_99$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_99\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_99$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_99\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_load_100$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_100\": \"voltage_A\"}"
+       },
+       {
+           "name": "mg3_load_100$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_100\": \"voltage_B\"}"
+       },
+       {
+           "name": "mg3_load_100$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_100\": \"voltage_C\"}"
+       },
+       {
+           "name": "mg3_cap_83$switchA",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"switchA\"}"
+       },
+       {
+           "name": "mg3_cap_83$switchB",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"switchB\"}"
+       },
+       {
+           "name": "mg3_cap_83$switchC",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"switchC\"}"
+       },
+       {
+           "name": "mg3_cap_83$capacitor_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"capacitor_A\"}"
+       },
+       {
+           "name": "mg3_cap_83$capacitor_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"capacitor_B\"}"
+       },
+       {
+           "name": "mg3_cap_83$capacitor_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_83\": \"capacitor_C\"}"
+       },
+       {
+           "name": "mg3_cap_88$switchA",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"switchA\"}"
+       },
+       {
+           "name": "mg3_cap_88$switchB",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"switchB\"}"
+       },
+       {
+           "name": "mg3_cap_88$switchC",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"switchC\"}"
+       },
+       {
+           "name": "mg3_cap_88$capacitor_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"capacitor_A\"}"
+       },
+       {
+           "name": "mg3_cap_88$capacitor_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"capacitor_B\"}"
+       },
+       {
+           "name": "mg3_cap_88$capacitor_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_88\": \"capacitor_C\"}"
+       },
+       {
+           "name": "mg3_cap_90$switchA",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"switchA\"}"
+       },
+       {
+           "name": "mg3_cap_90$switchB",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"switchB\"}"
+       },
+       {
+           "name": "mg3_cap_90$switchC",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"switchC\"}"
+       },
+       {
+           "name": "mg3_cap_90$capacitor_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"capacitor_A\"}"
+       },
+       {
+           "name": "mg3_cap_90$capacitor_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"capacitor_B\"}"
+       },
+       {
+           "name": "mg3_cap_90$capacitor_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_90\": \"capacitor_C\"}"
+       },
+       {
+           "name": "mg3_cap_92$switchA",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"switchA\"}"
+       },
+       {
+           "name": "mg3_cap_92$switchB",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"switchB\"}"
+       },
+       {
+           "name": "mg3_cap_92$switchC",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"switchC\"}"
+       },
+       {
+           "name": "mg3_cap_92$capacitor_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"capacitor_A\"}"
+       },
+       {
+           "name": "mg3_cap_92$capacitor_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"capacitor_B\"}"
+       },
+       {
+           "name": "mg3_cap_92$capacitor_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"cap_92\": \"capacitor_C\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"status\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"phase_A_state\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"phase_B_state\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"phase_C_state\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"current_in_A\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"current_in_B\"}"
+       },
+       {
+           "name": "mg3_microgrid_switch2$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch2\": \"current_in_C\"}"
+       },
+  {
+     "name": "mg3_microgrid_switch3$status",
+     "type": "string",
+     "global": false,
+     "info": "{\"microgrid_switch3\": \"status\"}"
+  },
+  {
+     "name": "mg3_microgrid_switch3$phase_A_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"microgrid_switch3\": \"phase_A_state\"}"
+  },
+  {
+     "name": "mg3_microgrid_switch3$phase_B_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"microgrid_switch3\": \"phase_B_state\"}"
+  },
+  {
+     "name": "mg3_microgrid_switch3$phase_C_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"microgrid_switch3\": \"phase_C_state\"}"
+  },
+  {
+               "name": "mg3_switch_76-86$status",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_76-86\": \"status\"}"
+  },
+  {
+     "name": "mg3_switch_76-761$status",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_76-761\": \"status\"}"
+  },
+  {
+     "name": "mg3_switch_76-761$phase_A_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_76-761\": \"phase_A_state\"}"
+  },
+  {
+     "name": "mg3_switch_76-761$phase_B_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_76-761\": \"phase_B_state\"}"
+  },
+  {
+     "name": "mg3_switch_76-761$phase_C_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_76-761\": \"phase_C_state\"}"
+  },
+  {
+     "name": "mg3_switch_100-101$status",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_100-101\": \"status\"}"
+  },
+  {
+     "name": "mg3_switch_100-101$phase_A_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_100-101\": \"phase_A_state\"}"
+  },
+  {
+     "name": "mg3_switch_100-101$phase_B_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_100-101\": \"phase_B_state\"}"
+  },
+  {
+     "name": "mg3_switch_100-101$phase_C_state",
+     "type": "string",
+     "global": false,
+     "info": "{\"switch_100-101\": \"phase_C_state\"}"
+  },
+  {
+               "name": "mg3_Gen3$Vset",
+     "type": "string",
+     "global": false,
+     "info": "{\"Gen3\": \"Vset\"}"
+  },
+  {
+               "name": "mg3_Gen3$Qref",
+     "type": "string",
+     "global": false,
+     "info": "{\"Gen3\": \"Qref\"}"
+  },
+  {
+               "name": "mg3_Gen3$Pref",
+     "type": "string",
+     "global": false,
+     "info": "{\"Gen3\": \"Pref\"}"
+  },
+       {
+           "name": "mg3_switch_450-451$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"status\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"phase_A_state\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"phase_B_state\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"phase_C_state\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"current_in_A\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"current_in_B\"}"
+       },
+       {
+           "name": "mg3_switch_450-451$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_450-451\": \"current_in_C\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"status\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"phase_A_state\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"phase_B_state\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"phase_C_state\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"current_in_A\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"current_in_B\"}"
+       },
+       {
+           "name": "mg3_switch_95-195$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_95-195\": \"current_in_C\"}"
+       },
+       {
+           "name": "mg3_regulator_4$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_4\": \"status\"}"
+       },
+       {
+           "name": "mg3_regulator_4$tap_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_4\": \"tap_A\"}"
+       },
+       {
+           "name": "mg3_regulator_4$tap_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_4\": \"tap_B\"}"
+       },
+       {
+           "name": "mg3_regulator_4$tap_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_4\": \"tap_C\"}"
+       },
+       {
+           "name": "mg3",
+           "type": "string",
+           "global": false,
+           "destination": "ns3/mg3",
+           "info": "{\"node_67\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_72\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_78\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_81\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_89\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_91\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_93\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_97\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_160\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_450\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_68\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_69\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_70\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_71\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_73\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_74\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_75\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_76\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_761\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_77\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_79\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_80\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_82\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_83\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_84\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_85\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_86\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_87\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_88\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_90\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_92\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_94\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_95\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_96\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_98\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_99\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_100\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"cap_83\": [\"switchA\", \"switchB\", \"switchC\", \"capacitor_A\", \"capacitor_B\", \"capacitor_C\"], \"cap_88\": [\"switchA\", \"switchB\", \"switchC\", \"capacitor_A\", \"capacitor_B\", \"capacitor_C\"], \"cap_90\": [\"switchA\", \"switchB\", \"switchC\", \"capacitor_A\", \"capacitor_B\", \"capacitor_C\"], \"cap_92\": [\"switchA\", \"switchB\", \"switchC\", \"capacitor_A\", \"capacitor_B\", \"capacitor_C\"], \"microgrid_switch2\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"microgrid_switch3\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\"],\"switch_76-761\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\"], \"switch_76-86\": [\"status\"] , \"switch_100-101\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\"], \"switch_450-451\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"switch_95-195\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"Gen3\": [\"Vset\", \"Qref\", \"Pref\"], \"regulator_4\": [\"status\", \"tap_A\", \"tap_B\", \"tap_C\"]}"
+       },
+       {
+           "name": "substation_node_3$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_3\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_3$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_3\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_3$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_3\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_8$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_8\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_8$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_8\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_8$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_8\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_13$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_13\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_13$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_13\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_13$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_13\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_14$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_14\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_14$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_14\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_14$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_14\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_15$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_15\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_15$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_15\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_15$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_15\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_18$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_18\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_18$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_18\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_18$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_18\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_21$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_21\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_21$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_21\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_21$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_21\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_23$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_23\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_23$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_23\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_23$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_23\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_25$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_25\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_25$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_25\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_25$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_25\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_26$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_26\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_26$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_26\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_26$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_26\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_27$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_27\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_27$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_27\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_27$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_27\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_54$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_54\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_54$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_54\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_54$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_54\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_57$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_57\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_57$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_57\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_57$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_57\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_61$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_61\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_61$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_61\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_61$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_61\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_149$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_149\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_149$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_149\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_149$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_149\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_150$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_150\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_150$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_150\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_150$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_150\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_195$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_195\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_195$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_195\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_195$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_195\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_node_250$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_250\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_node_250$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_250\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_node_250$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"node_250\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_1$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_1\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_1$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_1\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_1$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_1\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_2$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_2\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_2$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_2\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_2$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_2\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_4$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_4\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_4$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_4\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_4$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_4\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_5$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_5\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_5$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_5\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_5$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_5\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_6$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_6\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_6$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_6\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_6$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_6\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_7$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_7\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_7$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_7\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_7$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_7\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_9$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_9\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_9$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_9\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_9$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_9\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_10$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_10\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_10$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_10\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_10$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_10\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_11$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_11\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_11$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_11\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_11$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_11\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_12$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_12\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_12$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_12\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_12$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_12\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_16$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_16\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_16$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_16\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_16$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_16\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_17$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_17\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_17$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_17\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_17$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_17\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_19$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_19\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_19$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_19\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_19$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_19\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_20$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_20\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_20$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_20\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_20$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_20\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_22$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_22\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_22$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_22\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_22$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_22\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_24$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_24\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_24$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_24\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_24$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_24\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_28$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_28\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_28$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_28\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_28$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_28\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_29$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_29\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_29$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_29\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_29$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_29\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_30$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_30\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_30$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_30\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_30$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_30\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_31$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_31\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_31$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_31\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_31$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_31\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_32$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_32\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_32$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_32\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_32$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_32\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_33$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_33\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_33$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_33\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_33$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_33\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_34$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_34\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_34$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_34\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_34$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_34\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_52$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_52\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_52$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_52\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_52$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_52\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_53$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_53\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_53$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_53\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_53$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_53\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_55$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_55\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_55$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_55\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_55$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_55\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_56$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_56\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_56$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_56\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_56$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_56\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_58$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_58\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_58$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_58\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_58$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_58\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_59$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_59\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_59$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_59\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_59$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_59\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_60$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_60\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_60$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_60\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_60$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_60\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_62$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_62\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_62$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_62\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_62$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_62\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_63$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_63\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_63$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_63\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_63$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_63\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_64$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_64\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_64$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_64\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_64$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_64\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_65$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_65\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_65$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_65\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_65$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_65\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_load_66$voltage_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_66\": \"voltage_A\"}"
+       },
+       {
+           "name": "substation_load_66$voltage_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_66\": \"voltage_B\"}"
+       },
+       {
+           "name": "substation_load_66$voltage_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"load_66\": \"voltage_C\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"status\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_microgrid_switch0$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch0\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"status\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_microgrid_switch1$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch1\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"status\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_microgrid_switch3$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"microgrid_switch3\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_switch_13-152$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"status\"}"
+       },
+       {
+           "name": "substation_switch_13-152$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_switch_13-152$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_switch_13-152$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_switch_13-152$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_switch_13-152$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_switch_13-152$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_13-152\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_switch_61-611$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"status\"}"
+       },
+       {
+           "name": "substation_switch_61-611$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_switch_61-611$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_switch_61-611$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_switch_61-611$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_switch_61-611$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_switch_61-611$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_61-611\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_switch_250-251$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"status\"}"
+       },
+       {
+           "name": "substation_switch_250-251$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_switch_250-251$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_switch_250-251$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_switch_250-251$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_switch_250-251$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_switch_250-251$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_250-251\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_switch_54-94$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"status\"}"
+       },
+       {
+           "name": "substation_switch_54-94$phase_A_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"phase_A_state\"}"
+       },
+       {
+           "name": "substation_switch_54-94$phase_B_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"phase_B_state\"}"
+       },
+       {
+           "name": "substation_switch_54-94$phase_C_state",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"phase_C_state\"}"
+       },
+       {
+           "name": "substation_switch_54-94$current_in_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"current_in_A\"}"
+       },
+       {
+           "name": "substation_switch_54-94$current_in_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"current_in_B\"}"
+       },
+       {
+           "name": "substation_switch_54-94$current_in_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"switch_54-94\": \"current_in_C\"}"
+       },
+       {
+           "name": "substation_regulator_1$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_1\": \"status\"}"
+       },
+       {
+           "name": "substation_regulator_1$tap_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_1\": \"tap_A\"}"
+       },
+       {
+           "name": "substation_regulator_1$tap_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_1\": \"tap_B\"}"
+       },
+       {
+           "name": "substation_regulator_1$tap_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_1\": \"tap_C\"}"
+       },
+       {
+           "name": "substation_regulator_2$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_2\": \"status\"}"
+       },
+       {
+           "name": "substation_regulator_2$tap_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_2\": \"tap_A\"}"
+       },
+       {
+           "name": "substation_regulator_2$tap_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_2\": \"tap_B\"}"
+       },
+       {
+           "name": "substation_regulator_2$tap_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_2\": \"tap_C\"}"
+       },
+       {
+           "name": "substation_regulator_3$status",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_3\": \"status\"}"
+       },
+       {
+           "name": "substation_regulator_3$tap_A",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_3\": \"tap_A\"}"
+       },
+       {
+           "name": "substation_regulator_3$tap_B",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_3\": \"tap_B\"}"
+       },
+       {
+           "name": "substation_regulator_3$tap_C",
+           "type": "string",
+           "global": false,
+           "info": "{\"regulator_3\": \"tap_C\"}"
+       },
+       {
+           "name": "substation",
+           "type": "string",
+           "global": false,
+           "destination": "ns3/substation",
+           "info": "{\"node_3\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_8\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_13\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_14\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_15\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_18\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_21\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_23\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_25\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_26\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_27\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_54\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_57\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_61\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_149\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_150\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_195\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"node_250\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_1\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_2\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_4\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_5\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_6\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_7\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_9\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_10\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_11\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_12\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_16\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_17\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_19\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_20\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_22\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_24\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_28\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_29\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_30\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_31\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_32\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_33\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_34\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_52\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_53\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_55\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_56\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_58\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_59\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_60\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_62\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_63\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_64\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_65\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"load_66\": [\"voltage_A\", \"voltage_B\", \"voltage_C\"], \"microgrid_switch0\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"microgrid_switch1\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"microgrid_switch3\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"switch_13-152\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"switch_61-611\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"switch_250-251\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"switch_54-94\": [\"status\", \"phase_A_state\", \"phase_B_state\", \"phase_C_state\", \"current_in_A\", \"current_in_B\", \"current_in_C\"], \"regulator_1\": [\"status\", \"tap_A\", \"tap_B\", \"tap_C\"], \"regulator_2\": [\"status\", \"tap_A\", \"tap_B\", \"tap_C\"], \"regulator_3\": [\"status\", \"tap_A\", \"tap_B\", \"tap_C\"]}"
+       }
+   ]
+}

@@ -11,7 +11,7 @@ export const nodeOptions = new Map([
    ["inverter", {"group": "inverter"}],
    ["inverter_dyn", {"group": "inverter"}],
    ["diesel_dg", {"group": "generator"}],
-   ["microgrid_node", {"group": "microgrid_node"}],
+   ["microgrid", {"group": "microgrid"}],
    ["communication_node", {"group": "communication_node"}]
 ]);
                      
