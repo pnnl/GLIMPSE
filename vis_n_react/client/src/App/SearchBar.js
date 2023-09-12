@@ -51,8 +51,6 @@ const SearchBar = ({
    );
    const [nodesParentChecked, setNodesParentChecked] = useState(true);
    const [edgesParentChecked, setEdgesParentChecked] = useState(true);
-   const [nodeIndeterminate, setNodeIndeterminate] = useState(false);
-   const [edgeIndeterminate, setEdgeIndeterminate] = useState(false);
 
    const open = Boolean(anchorElement);
    const theme = createTheme({

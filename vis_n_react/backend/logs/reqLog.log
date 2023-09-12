@@ -15182,3 +15182,9 @@
 09/06/2023	11:24:35	b4e1b0ad-f805-4317-a8b5-cf50099d3c22	POST	http://localhost:3012	/upload
 09/06/2023	12:10:18	1a27a764-5a10-46f0-b987-024d7a29fa1d	GET	http://localhost:3012	/getstats
 09/06/2023	12:17:36	5f072f03-939a-43c6-9a69-8cf4d105a65b	GET	http://localhost:3012	/getplot
+09/07/2023	12:15:43	1e35bcc5-ca5f-4866-a78b-93884439c62f	POST	http://localhost:3000	/upload
+09/07/2023	12:17:49	a191c1b4-d967-4923-819a-df9e98ef7a30	POST	http://localhost:3012	/upload
+09/07/2023	12:22:47	52219494-d0bb-4842-b7c8-0b541a1a8720	GET	http://localhost:3012	/getstats
+09/07/2023	12:23:00	50bb1cfb-4ac6-47a7-ac00-6ce7afc92474	GET	http://localhost:3012	/getplot
+09/08/2023	11:12:00	32d37374-86aa-470c-ab62-3b23d5b3c985	POST	http://localhost:3012	/upload
+09/08/2023	11:56:25	25c927c2-75cc-4e37-b55a-2d622a2a8205	POST	http://localhost:3012	/upload
