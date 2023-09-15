@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import PlotModal from "./PlotModal";
 import OverlayUpload from "./OverlayUpload";
@@ -32,7 +32,11 @@ const SearchBar = ({
    prev, 
    next, 
    physicsToggle, 
-   addGraphOverlay }) => {
+   addGraphOverlay,
+   updateNodeFilterVals,
+   updateEdgeFilterVals, 
+   edgeCheckboxValues,
+   nodeCheckboxValues }) => {
 
    const nodes = data;
    const [node, setNode] = useState(null);
@@ -43,12 +47,8 @@ const SearchBar = ({
    const [showTable, setShowTable] = useState(false);
    const [showUpload, setShowUpload] = useState(false);
    const [anchorElement, setAnchorElement] = useState(null);
-   const [edgeCheckboxes, setEdgeCheckboxes] = useState(
-      Object.fromEntries(Object.entries(objCounts.edges).filter(([key, val]) => val > 0).map(obj => [obj[0], true]))
-   );
-   const [nodeCheckboxes, setNodeCheckboxes] = useState(  
-      Object.fromEntries(Object.entries(objCounts.nodes).filter(([key, val]) => val > 0).map(obj => [obj[0], true]))
-   );
+   const [nodeCheckboxes, setNodeCheckboxes] = useState(nodeCheckboxValues);
+   const [edgeCheckboxes, setEdgeCheckboxes] = useState(edgeCheckboxValues);
    const [nodesParentChecked, setNodesParentChecked] = useState(true);
    const [edgesParentChecked, setEdgesParentChecked] = useState(true);
 
@@ -64,13 +64,11 @@ const SearchBar = ({
       }
    });
 
-
    const handleFilterClick = (e) => {
       setAnchorElement(e.currentTarget);
    }
    
-   const handleChange = (e) =>
-   {
+   const handleChange = (e) => {
       setNode(e.target.value);
    }
 
@@ -176,24 +174,28 @@ const SearchBar = ({
 
    const handleEdgeChecked = (e) => {
       setEdgeCheckboxes({...edgeCheckboxes, [e.target.value]: e.target.checked});
+      updateEdgeFilterVals({value: e.target.value, checked: e.target.checked});
    }
-
+   
    const handleNodeChecked = (e) => {
       setNodeCheckboxes({...nodeCheckboxes, [e.target.value]: e.target.checked});
+      updateNodeFilterVals({value: e.target.value, checked: e.target.checked});
    }
 
    const handleParentNodesCheck = (e) => {
       setNodesParentChecked(e.target.checked);
       Object.keys(nodeCheckboxes).forEach(key => {
          nodeCheckboxes[key] = e.target.checked;
-      });  
+         updateNodeFilterVals({value: key, checked: e.target.checked});
+      });
    }
 
    const handleParentEdgeCheck = (e) => {
       setEdgesParentChecked(e.target.checked);
       Object.keys(edgeCheckboxes).forEach(key => {
          edgeCheckboxes[key] = e.target.checked;
-      });  
+         updateEdgeFilterVals({value: key, checked: e.target.checked});
+      });
    }
 
    const nodesCheckboxes = (
@@ -274,7 +276,6 @@ const SearchBar = ({
                   control={
                      <Checkbox
                         checked={nodesParentChecked}
-                        indeterminate={nodeIndeterminate}
                         onChange={handleParentNodesCheck}
                      />
                   }
@@ -285,7 +286,6 @@ const SearchBar = ({
                   control={
                      <Checkbox
                         checked={edgesParentChecked}
-                        indeterminate={edgeIndeterminate}
                         onChange={handleParentEdgeCheck}
                      />
                   }

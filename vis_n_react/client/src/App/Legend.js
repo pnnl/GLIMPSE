@@ -21,9 +21,8 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
       ["triplex_meter", {"group": "triplex_meter"}],
       ["node", {"group": "node"}],
       ["meter", {"group": "meter"}],
-      ["inverter", {"group": "inverter"}],
-      ["inverter_dyn", {"group": "inverter"}],
-      ["diesel_dg", {"group": "generator"}],
+      ["inverter_dyn", {"group": "inverter_dyn"}],
+      ["diesel_dg", {"group": "diesel_dg"}],
       ["microgrid", {"group": "microgrid"}],
       ["communication_node", {"group": "communication_node"}]
    ]);
@@ -115,13 +114,13 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
    });
    
    nodes.push({
-      id: "inverter",
+      id: "inverter_dyn",
       x: 424, 
       y: -22,
       fixed: false,
       physics: false,
-      label: `inverter\n[${nodeCounts.nodes.inverter === 0 ? nodeCounts.nodes.inverter_dyn : nodeCounts.nodes.inverter}]`,
-      group: nodeOptions.get("inverter").group
+      label: `inverter_dyn\n[${nodeCounts.nodes.inverter_dyn}]`,
+      group: nodeOptions.get("inverter_dyn").group
    });
    
    nodes.push({
@@ -525,6 +524,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
          if(params.nodes[0])
          {
             let g = data.nodes.get(params.nodes[0]);
+            console.log(g.group)
             findGroup(g.group);
          }
          if(params.edges[0])
@@ -538,7 +538,7 @@ const Legend = ({findGroup, findEdges, nodeCounts, hideObjects}) => {
          if(network.getNodeAt(params.pointer.DOM))
          {
             const ID = network.getNodeAt(params.pointer.DOM);
-            setContextMenuData({object: data.nodes.get(ID).group,type: "node"});
+            setContextMenuData({object: data.nodes.get(ID).group, type: "node"});
          }
          else if (network.getEdgeAt(params.pointer.DOM))
          {

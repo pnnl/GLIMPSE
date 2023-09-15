@@ -8,9 +8,8 @@ export const nodeOptions = new Map([
    ["triplex_meter", {"group": "triplex_meter"}],
    ["node", {"group": "node"}],
    ["meter", {"group": "meter"}],
-   ["inverter", {"group": "inverter"}],
-   ["inverter_dyn", {"group": "inverter"}],
-   ["diesel_dg", {"group": "generator"}],
+   ["inverter_dyn", {"group": "inverter_dyn"}],
+   ["diesel_dg", {"group": "diesel_dg"}],
    ["microgrid", {"group": "microgrid"}],
    ["communication_node", {"group": "communication_node"}]
 ]);
@@ -50,6 +49,11 @@ export const edgeOptions = new Map([
    ["transformer", {
       "width": 2,
       "color": "#00FF00", 
+      "hidden": false
+   }],
+   ["parentChild", {
+      "width": 2,
+      "color": {"inherit": true}, 
       "hidden": false
    }],
    ["mapping", {

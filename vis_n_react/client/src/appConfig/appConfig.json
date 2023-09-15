@@ -87,13 +87,13 @@
             "shape": "circularImage", 
             "image": "/imgs/meter.jpg"
          },
-         "inverter": {
+         "inverter_dyn": {
             "color": "#c8b6ff",
             "size": 15,
             "shape": "circularImage", 
             "image": "/imgs/inverter.png"
          },
-         "generator": {
+         "diesel_dg": {
             "color": "#fee440",
             "size": 15,
             "shape": "circularImage", 
@@ -193,12 +193,12 @@
             "shape": "circularImage",
             "image": "/imgs/meter.jpg"
          },
-         "inverter":{
+         "inverter_dyn":{
             "color": "#c8b6ff",
             "shape": "circularImage",
             "image": "/imgs/inverter.png"
          },
-         "generator":{
+         "diesel_dg":{
             "color": "#fee440",
             "shape": "circularImage",
             "image": "/imgs/generator.jpg"

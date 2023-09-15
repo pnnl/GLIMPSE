@@ -29,7 +29,6 @@ const objectTypeCount = {
       "load": 0,
       "node": 0,
       "meter": 0,
-      "inverter": 0,
       "inverter_dyn": 0,
       "diesel_dg": 0,
       "capacitor": 0,
@@ -45,7 +44,8 @@ const objectTypeCount = {
       "series_reactor": 0,
       "triplex_line": 0,
       "regulator": 0,
-      "transformer": 0
+      "transformer": 0,
+      "parentChild": 0
    }
 };
 
@@ -60,7 +60,8 @@ const edgeTypes = [
    "transformer",
    "mapping",
    "communication",
-   "microgrid_connection"
+   "microgrid_connection",
+   "parentChild"
 ];
 
 //These types are recognized as nodes
@@ -73,8 +74,7 @@ const nodeTypes = [
    "substation", 
    "meter", 
    "triplex_meter", 
-   "inverter_dyn", 
-   "inverter", 
+   "inverter_dyn",  
    "diesel_dg", 
    "communication_node", 
    "microgrid"
@@ -174,7 +174,7 @@ const setGraphData = (dataFiles) => {
 
    for (const file of files)
    {
-    
+   
       const objs = file.objects;
 
       for (const obj of objs)
@@ -226,10 +226,13 @@ const setGraphData = (dataFiles) => {
             if(parent !== undefined)
             {
                data.edges.add({
+                  "id": `parentChild:${parent}-${nodeID}`,
                   "from": parent,
                   "to": nodeID,
                   "color": {"inherit": true}
                });
+
+               objectTypeCount.edges.parentChild++;
             }
          }
       }
@@ -527,14 +530,35 @@ const Graph = ({ visFiles }) => {
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
+
+   let edgeFilterValues = Object.fromEntries(Object.entries(objectTypeCount.edges).filter(([key, val]) => val > 0).map(obj => [obj[0], true]));
+   let nodeFilterValues = Object.fromEntries(Object.entries(objectTypeCount.nodes).filter(([key, val]) => val > 0).map(obj => [obj[0], true]));
+
+   const updateEdgeFilterValues = ({value, checked}) => {
+      edgeFilterValues[value] = checked;
+      edgesDataview.refresh();
+   }
    
-   nodesDataview = new DataView(data.nodes);
-   edgesDataview = new DataView(data.edges);
+   const updateNodeFilterValues = ({value, checked}) => {
+      nodeFilterValues[value] = checked;
+      nodesDataview.refresh();
+   }
+
+   const nodesFilter = (node) => {
+      return nodeFilterValues[node.group];
+   }
+
+   const edgesFilter = (edge) => {
+      return edgeFilterValues[edge.id.split(":")[0]];
+   }
+      
+   nodesDataview = new DataView(data.nodes, {filter: nodesFilter});
+   edgesDataview = new DataView(data.edges, {filter: edgesFilter});
 
    /**
     * Updates uploaded data with any changes.
-    * Then downloads the data back to the user's computer as a zip folder with glm files
-    */
+    * Then downloads the data back to the  user's computer as a zip folder with glm files
+   */
    const Export = () => {
 
       Object.keys(visFiles).forEach(( file ) => {
@@ -835,6 +859,10 @@ const Graph = ({ visFiles }) => {
             addGraphOverlay = {setCommunicationNetwork}
             updateData = {updateData}
             objCounts={objectTypeCount}
+            updateNodeFilterVals={updateNodeFilterValues}
+            updateEdgeFilterVals={updateEdgeFilterValues}
+            edgeCheckboxValues={edgeFilterValues}
+            nodeCheckboxValues={nodeFilterValues}
          />
 
          <NodePopup 
