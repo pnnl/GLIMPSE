@@ -1,0 +1,22 @@
+{
+   "objects":[
+      {
+         "name": "line",
+         "attributes": {
+            "id": "1-2",
+            "from": "load_1",
+            "to": "load_2",
+            "type": "<tag>"
+         }
+      },
+      {
+         "name": "line",
+         "attributes": {
+            "id": "3-4",
+            "from": "node_3",
+            "to": "node_3",
+            "type": "<tag>"
+         }
+      }
+   ]
+}

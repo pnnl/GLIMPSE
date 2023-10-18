@@ -1,0 +1,4176 @@
+clock {
+};
+
+
+
+
+
+
+
+
+object inverter {
+	name inv_pv_pv_6;
+	parent sx2000404a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12140.00;
+	P_Out 9710.00;
+	Q_Out 0.00;
+	x -13069;
+	y -1877;
+	object solar {
+		name pv_pv_6;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9710.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_8;
+	parent sx2000405a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18660.00;
+	P_Out 14930.00;
+	Q_Out 0.00;
+	x -12114;
+	y -2924;
+	object solar {
+		name pv_pv_8;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14930.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_2;
+	parent sx2000402a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -12432;
+	y -1044;
+	object solar {
+		name pv_pv_2;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_4;
+	parent sx2000403a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15700.00;
+	P_Out 12560.00;
+	Q_Out 0.00;
+	x -12019;
+	y -2132;
+	object solar {
+		name pv_pv_4;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12560.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1043;
+	parent sx2804272b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 5740;
+	y 6649;
+	object solar {
+		name pv_pv_1043;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_156;
+	parent sx2001309a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 10310.00;
+	P_Out 8250.00;
+	Q_Out 0.00;
+	x -17294;
+	y -6490;
+	object solar {
+		name pv_pv_156;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1163;
+	parent sx2879078a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 17405;
+	y -7255;
+	object solar {
+		name pv_pv_1163;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1041;
+	parent sx2803199b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 24300.00;
+	P_Out 19450.00;
+	Q_Out 0.00;
+	x -8381;
+	y -9753;
+	object solar {
+		name pv_pv_1041;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 19450.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_158;
+	parent sx2001310a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22680.00;
+	P_Out 18150.00;
+	Q_Out 0.00;
+	x -17272;
+	y -7181;
+	object solar {
+		name pv_pv_158;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 18150.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1161;
+	parent sx2730149c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7700.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x 594;
+	y -5621;
+	object solar {
+		name pv_pv_1161;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_50;
+	parent sx2000712b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14000.00;
+	P_Out 11200.00;
+	Q_Out 0.00;
+	x -19311;
+	y 699;
+	object solar {
+		name pv_pv_50;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11200.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_52;
+	parent sx2000713b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15970.00;
+	P_Out 12780.00;
+	Q_Out 0.00;
+	x -19614;
+	y -589;
+	object solar {
+		name pv_pv_52;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12780.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_54;
+	parent sx2000714b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11320.00;
+	P_Out 9050.00;
+	Q_Out 0.00;
+	x -20082;
+	y -308;
+	object solar {
+		name pv_pv_54;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9050.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1049;
+	parent sx2814529c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 25400.00;
+	P_Out 20340.00;
+	Q_Out 0.00;
+	x 16251;
+	y -10125;
+	object solar {
+		name pv_pv_1049;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 20340.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_150;
+	parent sx2001306a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11840.00;
+	P_Out 9470.00;
+	Q_Out 0.00;
+	x -16908;
+	y -5320;
+	object solar {
+		name pv_pv_150;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9470.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1169;
+	parent sx2673317a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 7617;
+	y -9719;
+	object solar {
+		name pv_pv_1169;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_56;
+	parent sx2000715b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -20368;
+	y 384;
+	object solar {
+		name pv_pv_56;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1047;
+	parent sx3104155c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -1575;
+	y 346;
+	object solar {
+		name pv_pv_1047;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_152;
+	parent sx2001307a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 17480.00;
+	P_Out 13990.00;
+	Q_Out 0.00;
+	x -16980;
+	y -5875;
+	object solar {
+		name pv_pv_152;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13990.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1167;
+	parent sx2897792a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 13500;
+	y -2696;
+	object solar {
+		name pv_pv_1167;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_58;
+	parent sx2000902c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -13203;
+	y 3480;
+	object solar {
+		name pv_pv_58;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1045;
+	parent sx3216347c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -6018;
+	y -2970;
+	object solar {
+		name pv_pv_1045;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_154;
+	parent sx2001308a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18300.00;
+	P_Out 14650.00;
+	Q_Out 0.00;
+	x -15913;
+	y -6794;
+	object solar {
+		name pv_pv_154;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14650.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1165;
+	parent sx3197637c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 5100.00;
+	P_Out 4070.00;
+	Q_Out 0.00;
+	x -5982;
+	y -7873;
+	object solar {
+		name pv_pv_1165;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 4070.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1153;
+	parent sx2748143a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x 3519;
+	y -325;
+	object solar {
+		name pv_pv_1153;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1031;
+	parent sx3178981b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12100.00;
+	P_Out 9730.00;
+	Q_Out 0.00;
+	x -2116;
+	y -10985;
+	object solar {
+		name pv_pv_1031;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9730.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_166;
+	parent sx2001314a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 26810.00;
+	P_Out 21450.00;
+	Q_Out 0.00;
+	x -16902;
+	y -8917;
+	object solar {
+		name pv_pv_166;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 21450.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1151;
+	parent sx3101194c_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 38100.00;
+	P_Out 30520.00;
+	Q_Out 0.00;
+	x -2661;
+	y -8936;
+	object solar {
+		name pv_pv_1151;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 30520.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_168;
+	parent sx2001315a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 24910.00;
+	P_Out 19930.00;
+	Q_Out 0.00;
+	x -16232;
+	y -9301;
+	object solar {
+		name pv_pv_168;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 19930.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_40;
+	parent sx2000707b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12370.00;
+	P_Out 9900.00;
+	Q_Out 0.00;
+	x -17340;
+	y -400;
+	object solar {
+		name pv_pv_40;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9900.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_42;
+	parent sx2000708b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15270.00;
+	P_Out 12220.00;
+	Q_Out 0.00;
+	x -17678;
+	y 781;
+	object solar {
+		name pv_pv_42;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12220.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_44;
+	parent sx2000709b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 10900.00;
+	P_Out 8710.00;
+	Q_Out 0.00;
+	x -18104;
+	y -546;
+	object solar {
+		name pv_pv_44;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8710.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1039;
+	parent sx2766721a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -17710;
+	y 2206;
+	object solar {
+		name pv_pv_1039;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1159;
+	parent sx3104144a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 4400.00;
+	P_Out 3550.00;
+	Q_Out 0.00;
+	x 4126;
+	y 918;
+	object solar {
+		name pv_pv_1159;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 3550.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_46;
+	parent sx2000710b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13070.00;
+	P_Out 10450.00;
+	Q_Out 0.00;
+	x -18512;
+	y 779;
+	object solar {
+		name pv_pv_46;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10450.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1037;
+	parent sx2729428a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 8795;
+	y -9269;
+	object solar {
+		name pv_pv_1037;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_160;
+	parent sx2001311a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 20060.00;
+	P_Out 16040.00;
+	Q_Out 0.00;
+	x -17191;
+	y -7725;
+	object solar {
+		name pv_pv_160;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 16040.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1157;
+	parent sx2710521a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -826;
+	y -14981;
+	object solar {
+		name pv_pv_1157;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_48;
+	parent sx2000711b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 8800.00;
+	P_Out 7040.00;
+	Q_Out 0.00;
+	x -18738;
+	y -703;
+	object solar {
+		name pv_pv_48;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 7040.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1035;
+	parent sx2935551c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -10849;
+	y -1025;
+	object solar {
+		name pv_pv_1035;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_162;
+	parent sx2001312a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18170.00;
+	P_Out 14540.00;
+	Q_Out 0.00;
+	x -16983;
+	y -8252;
+	object solar {
+		name pv_pv_162;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14540.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1155;
+	parent sx3252336b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18300.00;
+	P_Out 14590.00;
+	Q_Out 0.00;
+	x -1661;
+	y -5039;
+	object solar {
+		name pv_pv_1155;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14590.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1033;
+	parent sx2710510c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 5100.00;
+	P_Out 4070.00;
+	Q_Out 0.00;
+	x -3764;
+	y -12489;
+	object solar {
+		name pv_pv_1033;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 4070.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_164;
+	parent sx2001313a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 27960.00;
+	P_Out 22370.00;
+	Q_Out 0.00;
+	x -15742;
+	y -8489;
+	object solar {
+		name pv_pv_164;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 22370.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1019;
+	parent sx2841636b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x -10329;
+	y 11171;
+	object solar {
+		name pv_pv_1019;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1021;
+	parent sx2955005b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 325;
+	y -9191;
+	object solar {
+		name pv_pv_1021;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_134;
+	parent sx2001212c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22350.00;
+	P_Out 17880.00;
+	Q_Out 0.00;
+	x -18786;
+	y -5350;
+	object solar {
+		name pv_pv_134;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17880.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1141;
+	parent sx2766750c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 19100.00;
+	P_Out 15260.00;
+	Q_Out 0.00;
+	x -519;
+	y -1048;
+	object solar {
+		name pv_pv_1141;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 15260.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_136;
+	parent sx2001213c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22600.00;
+	P_Out 18080.00;
+	Q_Out 0.00;
+	x -20130;
+	y -4870;
+	object solar {
+		name pv_pv_136;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 18080.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_138;
+	parent sx2001214c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 21100.00;
+	P_Out 16870.00;
+	Q_Out 0.00;
+	x -20032;
+	y -5579;
+	object solar {
+		name pv_pv_138;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 16870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_30;
+	parent sx2000702b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13160.00;
+	P_Out 10520.00;
+	Q_Out 0.00;
+	x -13942;
+	y -735;
+	object solar {
+		name pv_pv_30;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10520.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1029;
+	parent sx2804252a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -2666;
+	y 11003;
+	object solar {
+		name pv_pv_1029;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1149;
+	parent sx2992657a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -6765;
+	y 1318;
+	object solar {
+		name pv_pv_1149;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_32;
+	parent sx2000703b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11920.00;
+	P_Out 9540.00;
+	Q_Out 0.00;
+	x -14880;
+	y -748;
+	object solar {
+		name pv_pv_32;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9540.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1027;
+	parent sx2674051a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6600.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x -10601;
+	y 6907;
+	object solar {
+		name pv_pv_1027;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1147;
+	parent sx2822867b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 194;
+	y 3077;
+	object solar {
+		name pv_pv_1147;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_34;
+	parent sx2000704b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12780.00;
+	P_Out 10220.00;
+	Q_Out 0.00;
+	x -15555;
+	y -708;
+	object solar {
+		name pv_pv_34;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10220.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1025;
+	parent sx3048965b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18200.00;
+	P_Out 14590.00;
+	Q_Out 0.00;
+	x 1582;
+	y 8272;
+	object solar {
+		name pv_pv_1025;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14590.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_130;
+	parent sx2001210c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16800.00;
+	P_Out 13440.00;
+	Q_Out 0.00;
+	x -19553;
+	y -3826;
+	object solar {
+		name pv_pv_130;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13440.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1145;
+	parent sx3235243c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -6303;
+	y -6537;
+	object solar {
+		name pv_pv_1145;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_36;
+	parent sx2000705b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12090.00;
+	P_Out 9670.00;
+	Q_Out 0.00;
+	x -16127;
+	y -673;
+	object solar {
+		name pv_pv_36;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9670.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1023;
+	parent sx3254214b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12200.00;
+	P_Out 9730.00;
+	Q_Out 0.00;
+	x 750;
+	y 12998;
+	object solar {
+		name pv_pv_1023;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9730.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_132;
+	parent sx2001211c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 29270.00;
+	P_Out 23420.00;
+	Q_Out 0.00;
+	x -19752;
+	y -4177;
+	object solar {
+		name pv_pv_132;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 23420.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1143;
+	parent sx2973148a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x 12314;
+	y 13336;
+	object solar {
+		name pv_pv_1143;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_38;
+	parent sx2000706b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14730.00;
+	P_Out 11790.00;
+	Q_Out 0.00;
+	x -16683;
+	y -621;
+	object solar {
+		name pv_pv_38;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11790.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_18;
+	parent sx2000410a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18120.00;
+	P_Out 14490.00;
+	Q_Out 0.00;
+	x -13427;
+	y -4971;
+	object solar {
+		name pv_pv_18;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14490.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1009;
+	parent sx2691946b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5850.00;
+	Q_Out 0.00;
+	x -6590;
+	y 908;
+	object solar {
+		name pv_pv_1009;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5850.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1129;
+	parent sx3104134c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 2674;
+	y -13532;
+	object solar {
+		name pv_pv_1129;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1131;
+	parent sx2955077c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 88;
+	y 7801;
+	object solar {
+		name pv_pv_1131;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1097;
+	parent sx3067478a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16700.00;
+	P_Out 13300.00;
+	Q_Out 0.00;
+	x 437;
+	y -6212;
+	object solar {
+		name pv_pv_1097;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13300.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_144;
+	parent sx2001303a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16150.00;
+	P_Out 12910.00;
+	Q_Out 0.00;
+	x -16387;
+	y -3898;
+	object solar {
+		name pv_pv_144;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12910.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1095;
+	parent sx2767409b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12100.00;
+	P_Out 9730.00;
+	Q_Out 0.00;
+	x -9544;
+	y 1810;
+	object solar {
+		name pv_pv_1095;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9730.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_146;
+	parent sx2001304a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12030.00;
+	P_Out 9620.00;
+	Q_Out 0.00;
+	x -16610;
+	y -4276;
+	object solar {
+		name pv_pv_146;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9620.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1093;
+	parent sx2936279c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -15581;
+	y 6663;
+	object solar {
+		name pv_pv_1093;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_148;
+	parent sx2001305a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13570.00;
+	P_Out 10860.00;
+	Q_Out 0.00;
+	x -16745;
+	y -4898;
+	object solar {
+		name pv_pv_148;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10860.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_20;
+	parent sx2000411a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12480.00;
+	P_Out 9980.00;
+	Q_Out 0.00;
+	x -13759;
+	y -5331;
+	object solar {
+		name pv_pv_20;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9980.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1091;
+	parent sx3254231a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 4500.00;
+	P_Out 3550.00;
+	Q_Out 0.00;
+	x 14055;
+	y -3809;
+	object solar {
+		name pv_pv_1091;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 3550.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1139;
+	parent sx3011293c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 25400.00;
+	P_Out 20340.00;
+	Q_Out 0.00;
+	x 484;
+	y -2616;
+	object solar {
+		name pv_pv_1139;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 20340.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_22;
+	parent sx2000412a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 24520.00;
+	P_Out 19620.00;
+	Q_Out 0.00;
+	x -14969;
+	y -4928;
+	object solar {
+		name pv_pv_22;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 19620.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1017;
+	parent sx2861197c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -2866;
+	y -3104;
+	object solar {
+		name pv_pv_1017;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1137;
+	parent sx2841616a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -1881;
+	y 5139;
+	object solar {
+		name pv_pv_1137;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_24;
+	parent sx2000413a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13290.00;
+	P_Out 10630.00;
+	Q_Out 0.00;
+	x -13990;
+	y -5989;
+	object solar {
+		name pv_pv_24;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10630.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1015;
+	parent sx3085410b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 8924;
+	y 6284;
+	object solar {
+		name pv_pv_1015;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1135;
+	parent sx2804283a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -4087;
+	y -16235;
+	object solar {
+		name pv_pv_1135;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_26;
+	parent sx2000414a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13240.00;
+	P_Out 10590.00;
+	Q_Out 0.00;
+	x -14516;
+	y -6259;
+	object solar {
+		name pv_pv_26;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10590.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1013;
+	parent sx2710543c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 996;
+	y 3690;
+	object solar {
+		name pv_pv_1013;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_140;
+	parent sx2001215c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 26730.00;
+	P_Out 21390.00;
+	Q_Out 0.00;
+	x -19694;
+	y -6077;
+	object solar {
+		name pv_pv_140;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 21390.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1133;
+	parent sx2954350c_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -8644;
+	y -3445;
+	object solar {
+		name pv_pv_1133;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_28;
+	parent sx2000415a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13460.00;
+	P_Out 10770.00;
+	Q_Out 0.00;
+	x -15135;
+	y -6219;
+	object solar {
+		name pv_pv_28;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10770.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1011;
+	parent sx3010565c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 5100.00;
+	P_Out 4070.00;
+	Q_Out 0.00;
+	x -11996;
+	y -5666;
+	object solar {
+		name pv_pv_1011;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 4070.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1099;
+	parent sx2691945c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -10645;
+	y -4749;
+	object solar {
+		name pv_pv_1099;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_142;
+	parent sx2001302a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11020.00;
+	P_Out 8820.00;
+	Q_Out 0.00;
+	x -16184;
+	y -3382;
+	object solar {
+		name pv_pv_142;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8820.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1119;
+	parent sx2786274c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -13541;
+	y 8119;
+	object solar {
+		name pv_pv_1119;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_108;
+	parent sx2001013b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 21960.00;
+	P_Out 17570.00;
+	Q_Out 0.00;
+	x -9021;
+	y 6879;
+	object solar {
+		name pv_pv_108;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17570.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1087;
+	parent sx3160106a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x 9889;
+	y -7513;
+	object solar {
+		name pv_pv_1087;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_112;
+	parent sx2001015b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 30260.00;
+	P_Out 24220.00;
+	Q_Out 0.00;
+	x -8188;
+	y 7121;
+	object solar {
+		name pv_pv_112;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 24220.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_90;
+	parent sx2001004b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12140.00;
+	P_Out 9710.00;
+	Q_Out 0.00;
+	x -11934;
+	y 3621;
+	object solar {
+		name pv_pv_90;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9710.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1085;
+	parent sx2897772a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6600.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 15413;
+	y -5899;
+	object solar {
+		name pv_pv_1085;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_114;
+	parent sx2001202c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15530.00;
+	P_Out 12430.00;
+	Q_Out 0.00;
+	x -16372;
+	y -2421;
+	object solar {
+		name pv_pv_114;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12430.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_92;
+	parent sx2001005b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13850.00;
+	P_Out 11080.00;
+	Q_Out 0.00;
+	x -11603;
+	y 4135;
+	object solar {
+		name pv_pv_92;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11080.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1083;
+	parent sx3179650b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 3922;
+	y -2078;
+	object solar {
+		name pv_pv_1083;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_116;
+	parent sx2001203c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 20030.00;
+	P_Out 16020.00;
+	Q_Out 0.00;
+	x -17068;
+	y -1325;
+	object solar {
+		name pv_pv_116;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 16020.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_94;
+	parent sx2001006b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12190.00;
+	P_Out 9760.00;
+	Q_Out 0.00;
+	x -10456;
+	y 3988;
+	object solar {
+		name pv_pv_94;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9760.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pvfarm1;
+	parent m1047pv-3_pvmtr;
+	phases ABCN;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 12470.00;
+	rated_power 1500000.00;
+	P_Out 1000000.00;
+	Q_Out 0.00;
+	x 16673;
+	y 227;
+	object solar {
+		name pv_pvfarm1;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 1000000.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1081;
+	parent sx2897767c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 12493;
+	y -7315;
+	object solar {
+		name pv_pv_1081;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_118;
+	parent sx2001204c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16180.00;
+	P_Out 12950.00;
+	Q_Out 0.00;
+	x -17578;
+	y -1789;
+	object solar {
+		name pv_pv_118;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12950.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_96;
+	parent sx2001007b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11710.00;
+	P_Out 9360.00;
+	Q_Out 0.00;
+	x -10939;
+	y 5060;
+	object solar {
+		name pv_pv_96;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9360.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1007;
+	parent sx3104126c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 5100.00;
+	P_Out 4070.00;
+	Q_Out 0.00;
+	x -11158;
+	y -6120;
+	object solar {
+		name pv_pv_1007;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 4070.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_10;
+	parent sx2000406a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15740.00;
+	P_Out 12600.00;
+	Q_Out 0.00;
+	x -12509;
+	y -3347;
+	object solar {
+		name pv_pv_10;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12600.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1127;
+	parent sx2936214a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x 8358;
+	y 1900;
+	object solar {
+		name pv_pv_1127;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_98;
+	parent sx2001008b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15900.00;
+	P_Out 12720.00;
+	Q_Out 0.00;
+	x -10697;
+	y 5470;
+	object solar {
+		name pv_pv_98;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12720.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1005;
+	parent sx3045895c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -17485;
+	y 5842;
+	object solar {
+		name pv_pv_1005;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1125;
+	parent sx3160862c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -2692;
+	y 1249;
+	object solar {
+		name pv_pv_1125;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_12;
+	parent sx2000407a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14900.00;
+	P_Out 11920.00;
+	Q_Out 0.00;
+	x -12772;
+	y -3774;
+	object solar {
+		name pv_pv_12;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11920.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1003;
+	parent sx2673331b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 24300.00;
+	P_Out 19450.00;
+	Q_Out 0.00;
+	x 5219;
+	y 7832;
+	object solar {
+		name pv_pv_1003;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 19450.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1123;
+	parent sx2805036b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 4800.00;
+	P_Out 3890.00;
+	Q_Out 0.00;
+	x -2658;
+	y 3002;
+	object solar {
+		name pv_pv_1123;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 3890.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_14;
+	parent sx2000408a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15550.00;
+	P_Out 12440.00;
+	Q_Out 0.00;
+	x -12894;
+	y -4150;
+	object solar {
+		name pv_pv_14;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12440.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1001;
+	parent sx3216348a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6600.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 4222;
+	y -5603;
+	object solar {
+		name pv_pv_1001;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1089;
+	parent sx3143999a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -5897;
+	y -1871;
+	object solar {
+		name pv_pv_1089;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_110;
+	parent sx2001014b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 35410.00;
+	P_Out 28330.00;
+	Q_Out 0.00;
+	x -8140;
+	y 6643;
+	object solar {
+		name pv_pv_110;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 28330.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1121;
+	parent sx3217064b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12200.00;
+	P_Out 9730.00;
+	Q_Out 0.00;
+	x -10674;
+	y 1322;
+	object solar {
+		name pv_pv_1121;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9730.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_16;
+	parent sx2000409a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16230.00;
+	P_Out 12980.00;
+	Q_Out 0.00;
+	x -13097;
+	y -4534;
+	object solar {
+		name pv_pv_16;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12980.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1109;
+	parent sx3178997c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7700.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -5596;
+	y 958;
+	object solar {
+		name pv_pv_1109;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1107;
+	parent sx3082992a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 3573;
+	y -4909;
+	object solar {
+		name pv_pv_1107;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_80;
+	parent sx2000913c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11572;
+	y 8383;
+	object solar {
+		name pv_pv_80;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1075;
+	parent sx2673319c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x 13090;
+	y -5481;
+	object solar {
+		name pv_pv_1075;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_122;
+	parent sx2001206c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 13170.00;
+	P_Out 10530.00;
+	Q_Out 0.00;
+	x -18330;
+	y -2431;
+	object solar {
+		name pv_pv_122;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10530.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_82;
+	parent sx2000914c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -12068;
+	y 8951;
+	object solar {
+		name pv_pv_82;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1073;
+	parent sx3197641a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 19366;
+	y 549;
+	object solar {
+		name pv_pv_1073;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_124;
+	parent sx2001207c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11060.00;
+	P_Out 8850.00;
+	Q_Out 0.00;
+	x -18638;
+	y -2642;
+	object solar {
+		name pv_pv_124;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8850.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_84;
+	parent sx2000915c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -12753;
+	y 9153;
+	object solar {
+		name pv_pv_84;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1071;
+	parent sx2841627a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 3739;
+	y -6598;
+	object solar {
+		name pv_pv_1071;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_126;
+	parent sx2001208c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14850.00;
+	P_Out 11890.00;
+	Q_Out 0.00;
+	x -18994;
+	y -3053;
+	object solar {
+		name pv_pv_126;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11890.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_86;
+	parent sx2001002b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11411;
+	y 1761;
+	object solar {
+		name pv_pv_86;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_128;
+	parent sx2001209c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 17410.00;
+	P_Out 13930.00;
+	Q_Out 0.00;
+	x -19268;
+	y -3311;
+	object solar {
+		name pv_pv_128;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13930.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1117;
+	parent sx2897768c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12800.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -11429;
+	y -1659;
+	object solar {
+		name pv_pv_1117;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_88;
+	parent sx2001003b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15700.00;
+	P_Out 12560.00;
+	Q_Out 0.00;
+	x -12206;
+	y 3134;
+	object solar {
+		name pv_pv_88;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12560.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1115;
+	parent sx3728043a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 16700.00;
+	P_Out 13300.00;
+	Q_Out 0.00;
+	x 16342;
+	y 5087;
+	object solar {
+		name pv_pv_1115;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13300.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1113;
+	parent sx3215203a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22100.00;
+	P_Out 17740.00;
+	Q_Out 0.00;
+	x -9840;
+	y -7696;
+	object solar {
+		name pv_pv_1113;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17740.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1079;
+	parent sx2891575c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -7781;
+	y 19762;
+	object solar {
+		name pv_pv_1079;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1111;
+	parent sx3233412a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22200.00;
+	P_Out 17740.00;
+	Q_Out 0.00;
+	x -2046;
+	y -5035;
+	object solar {
+		name pv_pv_1111;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17740.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1077;
+	parent sx2991943c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12800.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 7448;
+	y -4175;
+	object solar {
+		name pv_pv_1077;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_120;
+	parent sx2001205c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 10700.00;
+	P_Out 8560.00;
+	Q_Out 0.00;
+	x -17966;
+	y -2116;
+	object solar {
+		name pv_pv_120;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8560.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1065;
+	parent sx2785523c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7700.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -6031;
+	y -3944;
+	object solar {
+		name pv_pv_1065;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1063;
+	parent sx2814529a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22100.00;
+	P_Out 17740.00;
+	Q_Out 0.00;
+	x 15474;
+	y -9877;
+	object solar {
+		name pv_pv_1063;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17740.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1183;
+	parent sx2990098a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 22170.00;
+	P_Out 17740.00;
+	Q_Out 0.00;
+	x -955;
+	y -4500;
+	object solar {
+		name pv_pv_1183;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 17740.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_70;
+	parent sx2000908c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11881;
+	y 6282;
+	object solar {
+		name pv_pv_70;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1061;
+	parent sx2992556a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -6068;
+	y 12014;
+	object solar {
+		name pv_pv_1061;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1181;
+	parent sx2879076c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 5100.00;
+	P_Out 4070.00;
+	Q_Out 0.00;
+	x -8690;
+	y -6242;
+	object solar {
+		name pv_pv_1181;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 4070.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_72;
+	parent sx2000909c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11848;
+	y 6810;
+	object solar {
+		name pv_pv_72;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_74;
+	parent sx2000910c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11769;
+	y 7232;
+	object solar {
+		name pv_pv_74;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_170;
+	parent sx2001400c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 50650.00;
+	P_Out 40520.00;
+	Q_Out 0.00;
+	x -15694;
+	y -1785;
+	object solar {
+		name pv_pv_170;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 40520.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1105;
+	parent sx2785513a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11000.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x -8488;
+	y 4969;
+	object solar {
+		name pv_pv_1105;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_76;
+	parent sx2000911c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -12750;
+	y 7851;
+	object solar {
+		name pv_pv_76;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1103;
+	parent sx2785538a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 11100.00;
+	P_Out 8870.00;
+	Q_Out 0.00;
+	x 11850;
+	y -3017;
+	object solar {
+		name pv_pv_1103;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 8870.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_78;
+	parent sx2000912c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -11517;
+	y 7925;
+	object solar {
+		name pv_pv_78;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1069;
+	parent sx3216368c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7700.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x 16837;
+	y -9021;
+	object solar {
+		name pv_pv_1069;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1101;
+	parent sx3104132a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6600.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x -3963;
+	y 10769;
+	object solar {
+		name pv_pv_1101;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1067;
+	parent sx2841638c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -760;
+	y -13277;
+	object solar {
+		name pv_pv_1067;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1175;
+	parent sx2691951c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x -8314;
+	y -3743;
+	object solar {
+		name pv_pv_1175;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_100;
+	parent sx2001009b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 17460.00;
+	P_Out 13970.00;
+	Q_Out 0.00;
+	x -9474;
+	y 5079;
+	object solar {
+		name pv_pv_100;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13970.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1053;
+	parent sx2710544a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5320.00;
+	Q_Out 0.00;
+	x 1780;
+	y -4946;
+	object solar {
+		name pv_pv_1053;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5320.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1173;
+	parent sx2897789b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7300.00;
+	P_Out 5840.00;
+	Q_Out 0.00;
+	x 13001;
+	y 11806;
+	object solar {
+		name pv_pv_1173;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5840.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_60;
+	parent sx2000903c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 15700.00;
+	P_Out 12560.00;
+	Q_Out 0.00;
+	x -13232;
+	y 4025;
+	object solar {
+		name pv_pv_60;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 12560.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_102;
+	parent sx2001010b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 21120.00;
+	P_Out 16900.00;
+	Q_Out 0.00;
+	x -9248;
+	y 5522;
+	object solar {
+		name pv_pv_102;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 16900.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1051;
+	parent sx3048937c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x -9700;
+	y 20900;
+	object solar {
+		name pv_pv_1051;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1171;
+	parent sx3198347c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 7600.00;
+	P_Out 6100.00;
+	Q_Out 0.00;
+	x 6504;
+	y 1171;
+	object solar {
+		name pv_pv_1171;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 6100.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_62;
+	parent sx2000904c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12140.00;
+	P_Out 9710.00;
+	Q_Out 0.00;
+	x -12310;
+	y 4498;
+	object solar {
+		name pv_pv_62;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9710.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_104;
+	parent sx2001011b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 9350.00;
+	P_Out 7480.00;
+	Q_Out 0.00;
+	x -10139;
+	y 6446;
+	object solar {
+		name pv_pv_104;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 7480.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_64;
+	parent sx2000905c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -13442;
+	y 4850;
+	object solar {
+		name pv_pv_64;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_106;
+	parent sx2001012b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 17200.00;
+	P_Out 13750.00;
+	Q_Out 0.00;
+	x -9774;
+	y 6741;
+	object solar {
+		name pv_pv_106;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 13750.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_66;
+	parent sx2000906c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -13407;
+	y 5327;
+	object solar {
+		name pv_pv_66;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_68;
+	parent sx2000907c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 14060.00;
+	P_Out 11250.00;
+	Q_Out 0.00;
+	x -12855;
+	y 6014;
+	object solar {
+		name pv_pv_68;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 11250.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1059;
+	parent sx2673318c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12700.00;
+	P_Out 10170.00;
+	Q_Out 0.00;
+	x 18159;
+	y 2134;
+	object solar {
+		name pv_pv_1059;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 10170.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1179;
+	parent sx3215203c_pvmtr;
+	phases CS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 25500.00;
+	P_Out 20340.00;
+	Q_Out 0.00;
+	x -10072;
+	y -8048;
+	object solar {
+		name pv_pv_1179;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 20340.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1057;
+	parent sx3160113b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 12100.00;
+	P_Out 9730.00;
+	Q_Out 0.00;
+	x 13166;
+	y 10598;
+	object solar {
+		name pv_pv_1057;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 9730.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1177;
+	parent sx2673308b_pvmtr;
+	phases BS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 18300.00;
+	P_Out 14590.00;
+	Q_Out 0.00;
+	x 8792;
+	y -1536;
+	object solar {
+		name pv_pv_1177;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 14590.00;
+	}
+};
+
+object inverter {
+	name inv_pv_pv_1055;
+	parent sx2839305a_pvmtr;
+	phases AS;
+	generator_status ONLINE;
+	four_quadrant_control_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	inverter_efficiency 1.0;
+	power_factor 1.0;
+	V_base 208.00;
+	rated_power 6700.00;
+	P_Out 5330.00;
+	Q_Out 0.00;
+	x 5803;
+	y 4101;
+	object solar {
+		name pv_pv_1055;
+		panel_type SINGLE_CRYSTAL_SILICON;
+		efficiency 0.2;
+		rated_power 5330.00;
+	}
+};
+
+object inverter {
+	name inv_bat_battery1;
+	parent m2001-ess1_stmtr;
+	phases ABCN;
+	generator_status ONLINE;
+	generator_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	four_quadrant_control_mode CONSTANT_PQ;
+	charge_lockout_time 1;
+	discharge_lockout_time 1;
+	sense_object m2001-ess1_stmtr;
+	charge_on_threshold -5000.00;
+	charge_off_threshold 0.00;
+	discharge_off_threshold 100000.00;
+	discharge_on_threshold 150000.00;
+	inverter_efficiency 0.975;
+	V_base 480.00;
+	rated_power 250000.00;
+	max_charge_rate 250000.00;
+	max_discharge_rate 150000.00;
+	P_Out 0.00;
+	Q_Out 0.00;
+	x -15660;
+	y -2942;
+	object battery {
+		name bat_battery1;
+		nominal_voltage 48;
+		battery_capacity 500000.0;
+		state_of_charge 1.0000;
+		use_internal_battery_model true;
+		battery_type LI_ION;
+		round_trip_efficiency 0.86;
+		rated_power 250000.00;
+	}
+};
+
+object inverter {
+	name inv_bat_battery2;
+	parent m2001-ess2_stmtr;
+	phases ABCN;
+	generator_status ONLINE;
+	generator_mode CONSTANT_PQ;
+	inverter_type FOUR_QUADRANT;
+	four_quadrant_control_mode CONSTANT_PQ;
+	charge_lockout_time 1;
+	discharge_lockout_time 1;
+	sense_object m2001-ess2_stmtr;
+	charge_on_threshold -5000.00;
+	charge_off_threshold 0.00;
+	discharge_off_threshold 100000.00;
+	discharge_on_threshold 150000.00;
+	inverter_efficiency 0.975;
+	V_base 480.00;
+	rated_power 250000.00;
+	max_charge_rate 250000.00;
+	max_discharge_rate 150000.00;
+	P_Out 0.00;
+	Q_Out 0.00;
+	x -15974;
+	y -2677;
+	object battery {
+		name bat_battery2;
+		nominal_voltage 48;
+		battery_capacity 500000.0;
+		state_of_charge 1.0000;
+		use_internal_battery_model true;
+		battery_type LI_ION;
+		round_trip_efficiency 0.86;
+		rated_power 250000.00;
+	}
+};
+
