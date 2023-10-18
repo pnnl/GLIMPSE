@@ -16,4 +16,8 @@ npm run make
 The `make` command will generate an executable for your
 specific system and will be stored in `glmvis/client/out/make/`
 
+
+![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
+
+
 Please reach out if there are any issues creating the executable.
