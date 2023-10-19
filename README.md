@@ -2,8 +2,9 @@
 
 This visualization is a graph-based web application to visualize and update power grid models. The tool allows to search, highlight power grid objects. Additionally, it also supports update attributes and export updated model to integrate with GridLAB-D for future simulations. The application is developed using react.js, node.js, and python. 
 
-## Install Dependencies
+## Clone the repository and innstall dependencies
 ```
+git clone 
 apt-get install npm
 ```
 
