@@ -1,0 +1,90 @@
+{
+   "$schema": "http://json-schema.org/draft-07/schema#",
+   "title": "JSON schema for validating json uploads",
+   "type": "object",
+   "properties": {
+     "objects": {
+         "type": "array",
+         "items": {
+            "type": "object",
+            "properties": {
+               "name": {
+                  "type": "string",
+                  "enum": [
+                     "load", 
+                     "triplex_load",
+                     "capacitor", 
+                     "node", 
+                     "triplex_node",
+                     "substation", 
+                     "meter", 
+                     "triplex_meter", 
+                     "inverter_dyn",  
+                     "diesel_dg", 
+                     "communication_node", 
+                     "microgrid_node",
+                     "overhead_line",
+                     "line",
+                     "switch",
+                     "underground_line",
+                     "series_reactor",
+                     "triplex_line",
+                     "regulator",
+                     "transformer",
+                     "mapping",
+                     "communication",
+                     "microgrid_connection"
+                  ]
+               },
+               "objectType": {
+                  "type": "string",
+                  "enum": [
+                     "load", 
+                     "triplex_load",
+                     "capacitor", 
+                     "node", 
+                     "triplex_node",
+                     "substation", 
+                     "meter", 
+                     "triplex_meter", 
+                     "inverter_dyn",  
+                     "diesel_dg", 
+                     "communication_node", 
+                     "microgrid_node",
+                     "overhead_line",
+                     "line",
+                     "switch",
+                     "underground_line",
+                     "series_reactor",
+                     "triplex_line",
+                     "regulator",
+                     "transformer",
+                     "mapping",
+                     "communication",
+                     "microgrid_connection"
+                  ]
+               },
+               "attributes": {
+                  "type": "object",
+                  "properties": {
+                     "name": {"type": "string"},
+                     "id": {"type": "string"}
+                  },
+                  "oneOf": [
+                     {"required": ["name"]},
+                     {"required": ["id"]}
+                  ],
+                  "additionalProperties": true
+               }
+            },
+            "oneOf": [
+               {"required": ["name"]},
+               {"required": ["objectType"]}
+            ],
+            "additionalProperties": false
+         }
+      }
+   },
+   "required": ["objects"],
+   "additionalProperties": false
+}

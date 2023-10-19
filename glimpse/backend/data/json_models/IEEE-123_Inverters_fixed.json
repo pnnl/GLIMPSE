@@ -1,0 +1,513 @@
+{
+  "clock": {},
+  "includes": [],
+  "objects": [
+    {
+      "name": "meter:1369",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "51",
+        "name": "1369",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "property": "measured_frequency",
+            "interval": "1",
+            "flags": "DELTAMODE",
+            "file": "Inverter_1_frequency.csv"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1369",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#1_MG1.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv",
+        "parent": "1369",
+        "rated_power": "400 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FORMING",
+        "frequency_convergence_criterion": "1e-9",
+        "voltage_convergence_criterion": "1e-3",
+        "Pmax": "1",
+        "Pmin": "0",
+        "Pref": "210000",
+        "Qref": "0.0",
+        "E_max": "1",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "mp": "18.85",
+        "kppmax": "3",
+        "kipmax": "60",
+        "mq": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_1_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_1_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "meter:1370",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "42",
+        "name": "1370",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": []
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1370",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#2_MG1.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv2",
+        "parent": "1370",
+        "rated_power": "600 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FOLLOWING",
+        "grid_following_mode": "POSITIVE_SEQUENCE",
+        "frequency_watt": "true",
+        "volt_var": "true",
+        "Pref_max": "1",
+        "Pref": "420000",
+        "Qref": "0.0",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "kpPLL": "50",
+        "kiPLL": "900",
+        "kpc": "0.05",
+        "kic": "5",
+        "F_current": "0.5",
+        "Tpf": "0.25",
+        "Tff": "0.01",
+        "Rp": "0.05",
+        "Rq": "0.05",
+        "Tqf": "0.2",
+        "Tvf": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_2_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_2_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "meter:1371",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "101",
+        "name": "1371",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": []
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1371",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#3_MG2.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv3",
+        "parent": "1371",
+        "rated_power": "180 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FOLLOWING",
+        "grid_following_mode": "POSITIVE_SEQUENCE",
+        "frequency_watt": "true",
+        "volt_var": "true",
+        "Pref_max": "1",
+        "Pref": "126000",
+        "Qref": "0.0",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "kpPLL": "50",
+        "kiPLL": "900",
+        "kpc": "0.05",
+        "kic": "5",
+        "F_current": "0.5",
+        "Tpf": "0.25",
+        "Tff": "0.01",
+        "Rp": "0.05",
+        "Rq": "0.05",
+        "Tqf": "0.2",
+        "Tvf": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_3_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_3_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "meter:1372",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "105",
+        "name": "1372",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": []
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1372",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#4_MG2.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv4",
+        "parent": "1372",
+        "rated_power": "600 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FORMING",
+        "frequency_convergence_criterion": "1e-9",
+        "voltage_convergence_criterion": "1e-3",
+        "Pmax": "1",
+        "Pmin": "0",
+        "Pref": "300000",
+        "Qref": "0.0",
+        "E_max": "1",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "mp": "18.85",
+        "kppmax": "3",
+        "kipmax": "60",
+        "mq": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_4_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_4_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "meter:1373",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "76",
+        "name": "1373",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": []
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1373",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#5_MG3.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv5",
+        "parent": "1373",
+        "rated_power": "120 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FOLLOWING",
+        "grid_following_mode": "POSITIVE_SEQUENCE",
+        "frequency_watt": "true",
+        "volt_var": "true",
+        "Pref_max": "1",
+        "Pref": "84000",
+        "Qref": "0.0",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "kpPLL": "50",
+        "kiPLL": "900",
+        "kpc": "0.05",
+        "kic": "5",
+        "F_current": "0.5",
+        "Tpf": "0.25",
+        "Tff": "0.01",
+        "Rp": "0.05",
+        "Rq": "0.05",
+        "Tqf": "0.2",
+        "Tvf": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_5_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_5_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "meter:1374",
+      "attributes": {
+        "phases": "ABCN",
+        "parent": "80",
+        "name": "1374",
+        "flags": "DELTAMODE",
+        "frequency_measure_type": "PLL",
+        "nominal_voltage": "2401.7771",
+        "pll_Kp": "50",
+        "pll_Ki": "900"
+      },
+      "children": []
+    },
+    {
+      "name": "recorder",
+      "attributes": {
+        "parent": "1374",
+        "property": "measured_real_power,measured_reactive_power,measured_current_A.real,measured_current_A.imag,measured_current_B.real,measured_current_B.imag,measured_current_C.real,measured_current_C.imag,voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag",
+        "interval": "1",
+        "flags": "DELTAMODE",
+        "file": "Inverter_#6_MG3.csv"
+      },
+      "children": []
+    },
+    {
+      "name": "inverter_dyn",
+      "attributes": {
+        "name": "trip_shad_inv6",
+        "parent": "1374",
+        "rated_power": "100 kW",
+        "flags": "DELTAMODE",
+        "control_mode": "GRID_FORMING",
+        "frequency_convergence_criterion": "1e-9",
+        "voltage_convergence_criterion": "1e-3",
+        "Pmax": "1",
+        "Pmin": "0",
+        "Pref": "70000",
+        "Qref": "0.0",
+        "E_max": "1",
+        "Rfilter": "0.01",
+        "Xfilter": "0.10",
+        "mp": "18.85",
+        "kppmax": "3",
+        "kipmax": "60",
+        "mq": "0.05"
+      },
+      "children": [
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_6_meter.csv",
+            "flags": "DELTAMODE",
+            "property": "power_A.real,power_A.imag,power_A, power_B.real,power_B.imag,power_B, power_C.real,power_C.imag, power_C, VA_Out.real, VA_Out.imag, VA_Out",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "recorder",
+          "attributes": {
+            "file": "Inverter_6_current.csv",
+            "flags": "DELTAMODE",
+            "property": "phaseA_I_Out.real,phaseA_I_Out.imag,phaseB_I_Out.real,phaseB_I_Out.imag,phaseC_I_Out.real,phaseC_I_Out.imag",
+            "interval": "1"
+          },
+          "children": []
+        },
+        {
+          "name": "player",
+          "attributes": {
+            "property": "Vset",
+            "file": "Inv_Vset_droop.player",
+            "flags": "DELTAMODE"
+          },
+          "children": []
+        }
+      ]
+    }
+  ],
+  "modules": [],
+  "directives": [],
+  "definitions": [],
+  "schedules": []
+}
