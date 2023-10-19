@@ -4,7 +4,7 @@ This visualization is a graph-based web application to visualize and update powe
 
 ## Clone the repository and innstall dependencies
 ```
-git clone 
+git clone github.com/pnnl/GLIMPSE .
 apt-get install npm
 ```
 
