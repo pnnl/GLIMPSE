@@ -2,16 +2,15 @@
 
 This visualization is a graph-based web application to visualize and update power grid models. The tool allows to search, highlight power grid objects. Additionally, it also supports update attributes and export updated model to integrate with GridLAB-D for future simulations. The application is developed using react.js, node.js, and python. 
 
-## Clone the repository and innstall dependencies
+## Clone the repository and install [Node.js](https://nodejs.org/en)
 ```
-git clone github.com/pnnl/GLIMPSE .
-apt-get install npm
+git clone github.com/pnnl/GLIMPSE
 ```
 
 ## in `glimpse/backend/` run 
 ```
 npm install
-npm run dev
+npm run start
 ```
 
 ## in `glimpse/client/` run 
