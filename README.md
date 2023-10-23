@@ -4,6 +4,7 @@ This visualization is a graph-based web application to visualize and update powe
 
 ## Clone the repository and install dependencies
 ```
+Install [Node.js](https://nodejs.org/en)
 git clone github.com/pnnl/GLIMPSE
 pip install glm
 ```
