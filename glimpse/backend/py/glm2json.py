@@ -72,7 +72,7 @@ def createMetrics( glm_dict ):
       "diesel_dg" 
    ]
 
-   file = open( "../backend/csv/metrics.csv", "w" )
+   file = open( "./backend/csv/metrics.csv", "w" )
    # mock_data = {
    #    'edges': [],
    #    'nodes': []
@@ -90,10 +90,10 @@ def createMetrics( glm_dict ):
             edge_to = sum(ord(letter) for letter in edge_to)
 
             file.write(",".join([ f"{edge_from}", "0", f"{edge_to}", "1" ]) + "\n")
-            try: 
-               edgeID = obj['attributes']['name']
-            except: 
-               edgeID = obj['attributes']['from'] + "-" + obj['attributes']['to']
+            # try: 
+            #    edgeID = obj['attributes']['name']
+            # except: 
+            #    edgeID = obj['attributes']['from'] + "-" + obj['attributes']['to']
 
             # mock_data["edges"].append(edgeID)
 
@@ -124,7 +124,7 @@ def main():
    # createMapping(glm_dict)
 
    # Writing to glm2json_output.json
-   with open("../backend/json/glm2json_output.json", "w") as json_file:
+   with open("./backend/json/glm2json_output.json", "w") as json_file:
       json_file.write(glm2json(glm_dict))
 
    sys.stdout.flush()

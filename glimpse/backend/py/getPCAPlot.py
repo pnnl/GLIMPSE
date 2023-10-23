@@ -25,7 +25,7 @@ def plot_emb(fname, titlestr = "2 Component PCA", dataannotation=False):
       for i, txt in enumerate(lbl):
          ax.annotate(txt, (principalDf['principal component 1'][i]+.02, principalDf['principal component 2'][i]), fontsize=20)
       ax.grid()
-   fig.savefig('../backend/figs/plot.png')
+   fig.savefig('./backend/figs/plot.png')
 
 
 def main():

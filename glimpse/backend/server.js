@@ -2,17 +2,17 @@ const express = require('express');
 const app = express();
 const http = require('http');
 const server = http.createServer(app);
-const corsOptions = require("../backend/config/corsOptions");
+const corsOptions = require("./config/corsOptions");
 const path = require("path");
 const bodyParser = require('body-parser');
 const fs = require("fs");
 const cors = require("cors");
 const zip = require("express-easy-zip");
 const multer = require('multer');
-const errorHandler = require('../backend/middleware/errorHandler');
+const errorHandler = require('./middleware/errorHandler');
 const { execSync, fork } = require('child_process');
-const { logger } = require('../backend/middleware/logEvents');
-const jsonSchema =  require("../backend/upload.schema.json");
+const { logger } = require('./middleware/logEvents');
+const jsonSchema =  require("./upload.schema.json");
 const Ajv = require('ajv');
 const PORT =  process.env.PORT || 3010;
 
@@ -24,7 +24,7 @@ app.use(zip());
 
 const storage = multer.diskStorage({
    destination: (req, file, callback) => {
-      callback(null, '../backend/glmUploads');
+      callback(null, './backend/glmUploads');
    },
    filename: (req, file, callback) => {
 
@@ -111,7 +111,7 @@ const rmFolderPaths = (folderPaths) => {
 // });
 
 app.get("/", (req, res) => {
-   res.send({"API": "glm_viz"})
+   res.send({"API": "GLIMPSE"})
 })
 
 app.post("/upload", async (req, res) => {
@@ -119,7 +119,7 @@ app.post("/upload", async (req, res) => {
    const tempFolderPaths = [
       path.join(__dirname, "glmUploads"),
       path.join(__dirname, "item-output"),
-      path.join(__dirname, "emb")
+      path.join(__dirname, "emb"),
    ];
 
    tempFolderPaths.forEach((folderPath) => {
@@ -140,7 +140,7 @@ app.post("/upload", async (req, res) => {
 
    try {
       
-      const glm2jsonArgs = `python ../backend/py/glm2json.py ../backend/glmUploads/`;
+      const glm2jsonArgs = `python ./backend/py/glm2json.py ./backend/glmUploads/`;
       execSync(glm2jsonArgs, ( error, stdout, stderr ) => {
    
          if ( error )
@@ -152,12 +152,12 @@ app.post("/upload", async (req, res) => {
          console.log(stderr.toString());
       })
    
-      const jsonData = JSON.parse(fs.readFileSync('../backend/json/glm2json_output.json'));
+      const jsonData = JSON.parse(fs.readFileSync('./backend/json/glm2json_output.json'));
       const carryOn = checkIncludes(res, jsonData);
       
       if(carryOn)
       {
-         const jarArgs = `java -cp ../backend/jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="../backend/item-output/"`;
+         const jarArgs = `java -cp ./backend/jar/uber-STM-1.4-SNAPSHOT.jar gov.pnnl.stm.algorithms.STM_NodeArrivalRateMultiType -input_file="./backend/csv/metrics.csv" -separator="," -sampling=false -valid_etypes=1 -delta_limit=false -k_top=4 -max_cores=1 -base_out_dir="./backend/item-output/"`;
          execSync( jarArgs, ( error, stdout, stderr ) => {
             if ( error )
             {
@@ -169,7 +169,7 @@ app.post("/upload", async (req, res) => {
             console.log(stderr.toString());
          });
       
-         const getEmbeddingArgs = `python ../backend/py/STMGetEmbedding.py ../backend/item-output/ ../backend/emb/`;
+         const getEmbeddingArgs = `python ./backend/py/STMGetEmbedding.py ./backend/item-output/ ./backend/emb/`;
          execSync(getEmbeddingArgs, (error, stdout, stderr) => {
       
             if ( error )
@@ -182,7 +182,7 @@ app.post("/upload", async (req, res) => {
                
          });
       
-         const plotArgs = "python ../backend/py/getPCAPlot.py ../backend/emb/node.emb";
+         const plotArgs = "python ./backend/py/getPCAPlot.py ./backend/emb/node.emb";
          execSync(plotArgs, (error, stdout, stderr) =>
          {
             if( error )
@@ -241,7 +241,7 @@ app.post("/validate", (req, res) => {
 // https://www.youtube.com/watch?v=7cFNTD73N88 fork example
 app.get("/getstats", (req, res) => {
 
-   const child = fork("../backend/processes/getGraphStats.js");
+   const child = fork("./backend/processes/getGraphStats.js");
    child.send("start");
 
    child.on('message', (output) => {
@@ -273,12 +273,12 @@ app.post("/jsontoglm", ( req, res ) => {
 
    Object.keys( jsonGlm ).forEach(( filename ) => {
 
-      fs.writeFileSync( "./json/" + filename, JSON.stringify( jsonGlm[ filename ], null, 3 ), "utf-8" );
+      fs.writeFileSync( "./backend/json/" + filename, JSON.stringify( jsonGlm[ filename ], null, 3 ), "utf-8" );
    })
    
    fs.readdirSync("./json/").forEach(( filename ) => {
 
-      const json2glmArgs = "json2glm.exe --path-to-file ./json/" + filename + " >> ./glmOutput/" + filename.split( "." )[ 0 ] + ".glm";
+      const json2glmArgs = "json2glm.exe --path-to-file ./json/" + filename + " >> ./backend/glmOutput/" + filename.split( "." )[ 0 ] + ".glm";
       execSync(json2glmArgs, ( error, stdout, stderr ) => {
    
          if( error )
@@ -294,7 +294,7 @@ app.post("/jsontoglm", ( req, res ) => {
 
    res.zip({
       files: [{
-         path: "./glmOutput/",
+         path: "./backend/glmOutput/",
          name: 'glmOutput'
       }],
       filename: 'glmOutput.zip'
@@ -312,7 +312,7 @@ app.get("/getplot", (req, res) => {
 
 app.get("/simdata", (req, res) => {
 
-   exec("python ./py/mockGridlabd.py", (error, stdout, stderr) => {
+   exec("python ./backend/py/mockGridlabd.py", (error, stdout, stderr) => {
 
       if ( error )
       {

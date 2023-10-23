@@ -2,7 +2,7 @@ const { spawnSync } = require('child_process');
 
 const getGraphStats = () => {
 
-   const child = spawnSync("python", ["../backend/py/nx.py ", "../backend/json/glm2json_output.json"]);
+   const child = spawnSync("python", ["./backend/py/nx.py ", "./backend/json/glm2json_output.json"]);
    return child.stdout.toString();
 }
 
