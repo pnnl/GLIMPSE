@@ -120,6 +120,7 @@ app.post("/upload", async (req, res) => {
       path.join(__dirname, "glmUploads"),
       path.join(__dirname, "item-output"),
       path.join(__dirname, "emb"),
+      path.join(__dirname, "json")
    ];
 
    tempFolderPaths.forEach((folderPath) => {
