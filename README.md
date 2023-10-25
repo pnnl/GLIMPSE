@@ -6,7 +6,7 @@ This visualization is a graph-based web application to visualize and update powe
 Install [Node.js](https://nodejs.org/en)
 
 ```
-git clone github.com/pnnl/GLIMPSE
+git clone http://github.com/pnnl/GLIMPSE
 pip install glm
 pip install networkx
 ```
