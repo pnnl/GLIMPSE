@@ -258,6 +258,7 @@ const SearchBar = ({
                      disableElevation
                      onClick={handleFilterClick}
                      endIcon={<KeyboardArrowDownIcon />}
+                     disabled
                      >
                      {appOptions.buttons.filterBtn}
                   </Button>

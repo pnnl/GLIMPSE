@@ -18,7 +18,7 @@ const StatsTableModal = ({show, close, data}) =>
       <>
          <Dialog open={show} onClose={close}>
             <TableContainer sx={{margin: "auto"}}>
-               <Table sx={{minWidth: 650}} aria-label='Stats Table'>
+               <Table sx={{width: 500}} aria-label='Stats Table'>
                   <TableHead>
                      <TableRow>
                         {Object.entries(data).map(([key, val], index) => {
