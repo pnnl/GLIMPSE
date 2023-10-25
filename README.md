@@ -8,6 +8,7 @@ Install [Node.js](https://nodejs.org/en)
 ```
 git clone github.com/pnnl/GLIMPSE
 pip install glm
+pip install networkx
 ```
 
 ## in `GLIMPSE/glimpse/` run 
