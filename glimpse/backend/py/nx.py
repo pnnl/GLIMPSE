@@ -117,7 +117,6 @@ def main():
    }
 
    # json_file = open('stats.json', 'w')
-
    # json_file.write(json.dumps(summary_stats))
    print(json.dumps(summary_stats))
    sys.stdout.flush()

@@ -16,5 +16,6 @@ pip install networkx
 npm install
 npm run start
 ```
+## To re-uplaod files after visualization pres `ctrl + R` or click `view` then `reload`
 
 ![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)

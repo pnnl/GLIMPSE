@@ -10,7 +10,7 @@ const cors = require("cors");
 const zip = require("express-easy-zip");
 const multer = require('multer');
 const errorHandler = require('./middleware/errorHandler');
-const { execSync, fork } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const { logger } = require('./middleware/logEvents');
 const jsonSchema =  require("./upload.schema.json");
 const Ajv = require('ajv');
@@ -120,7 +120,7 @@ app.post("/upload", async (req, res) => {
       path.join(__dirname, "glmUploads"),
       path.join(__dirname, "item-output"),
       path.join(__dirname, "emb"),
-      path.join(__dirname, "json")
+      // path.join(__dirname, "json")
    ];
 
    tempFolderPaths.forEach((folderPath) => {
@@ -239,15 +239,11 @@ app.post("/validate", (req, res) => {
    }
 })
 
-// https://www.youtube.com/watch?v=7cFNTD73N88 fork example
 app.get("/getstats", (req, res) => {
 
-   const child = fork("./backend/processes/getGraphStats.js");
-   child.send("start");
+   const child = spawnSync("python", ["./backend/py/nx.py ", "./backend/json/glm2json_output.json"]);
+   res.send(child.stdout.toString());
 
-   child.on('message', (output) => {
-      res.send(output);
-   })
 });
 
 app.post("/jsontoglm", ( req, res ) => {
@@ -284,7 +280,7 @@ app.post("/jsontoglm", ( req, res ) => {
    
          if( error )
          {
-            console.error( `exec error: ${error}` );
+            console.error(`exec error: ${error}`);
             return;
          }
          console.log(stdout.toString());
