@@ -21,7 +21,7 @@
 .env.production.local
 
 /backend/logs
-/backend/python_env
+# /backend/python_env
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

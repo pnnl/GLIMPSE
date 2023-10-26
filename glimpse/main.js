@@ -8,7 +8,7 @@ const makeWindow = () => {
       backgroundColor: "white",
       show: false,
       webPreferences: {
-         nodeIntegration: true,
+         nodeIntegration: false,
          worldSafeExecuteJavaScript: true,
          contextIsolation: true
          // preload: path.join(__dirname, 'preload.js')
@@ -28,7 +28,7 @@ app.on("ready", () => makeWindow());
 utilityProcess.fork(path.join(__dirname, "backend", "server.js"));
 
 app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
+   if (process.platform !== 'darwin') {
       app.quit();
    }
 });
