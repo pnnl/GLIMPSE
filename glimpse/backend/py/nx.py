@@ -109,9 +109,9 @@ def main():
    G = get_nx_graph_object(json_data)
 
    summary_stats = {
-      'numberOfNodes': get_num_nodes(G),
-      'numberOfEdges': get_num_edges(G),
-      'numConnectedComponets': get_num_CCs(G),
+      '#Nodes': get_num_nodes(G),
+      '#Edges': get_num_edges(G),
+      '#ConnectedComponets': get_num_CCs(G),
       'modularity': get_modularity(G),
       'avgBetweennessCentrality': get_avg_betweenness_centrality(G)
    }

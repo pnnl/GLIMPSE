@@ -22,7 +22,7 @@ const StatsTableModal = ({show, close, data}) =>
                <Table >
                <TableHead>
                   <TableRow>
-                     <TableCell align='right' sx={{textDecoration: "bold"}}>Graph Metric</TableCell>
+                     <TableCell sx={{textDecoration: "bold"}}>Graph Metric</TableCell>
                      <TableCell sx={{textDecoration: "bold"}}>Value</TableCell>
                   </TableRow>
                </TableHead>
@@ -30,7 +30,7 @@ const StatsTableModal = ({show, close, data}) =>
                   {Object.entries(data).map(([key, val], index) => {
                      return (
                         <TableRow>
-                           <TableCell align='right'>{key}</TableCell>
+                           <TableCell align='left'>{key}</TableCell>
                            <TableCell align='left'>{val}</TableCell>
                         </TableRow>
                      );
