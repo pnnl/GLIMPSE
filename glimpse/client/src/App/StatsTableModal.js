@@ -2,12 +2,13 @@ import React from 'react';
 import ReactDom from "react-dom";
 import { 
    Table, 
-   TableBody,
    TableCell, 
-   TableContainer, 
-   TableHead, 
+   TableContainer,
    TableRow, 
-   Dialog
+   Dialog,
+   Paper,
+   TableHead,
+   TableBody,
 } from '@mui/material';
 
 const StatsTableModal = ({show, close, data}) =>
@@ -17,22 +18,24 @@ const StatsTableModal = ({show, close, data}) =>
    return ReactDom.createPortal(
       <>
          <Dialog open={show} onClose={close}>
-            <TableContainer sx={{margin: "auto"}}>
-               <Table sx={{width: 500}} aria-label='Stats Table'>
-                  <TableHead>
-                     <TableRow>
-                        {Object.entries(data).map(([key, val], index) => {
-                           return ( <TableCell key={index}>{key}</TableCell> );
-                        })}
-                     </TableRow>
-                  </TableHead>
-                  <TableBody>
-                     <TableRow key={"stats"} sx={{'&:last-child td, &:last-child th': {border: 0}}}>
-                        {Object.entries(data).map(([key, val], index) => {
-                           return ( <TableCell key={index}>{val}</TableCell> );
-                        })}
-                     </TableRow>
-                  </TableBody>
+            <TableContainer component={Paper}>
+               <Table >
+               <TableHead>
+                  <TableRow>
+                     <TableCell align='right' sx={{textDecoration: "bold"}}>Graph Metric</TableCell>
+                     <TableCell sx={{textDecoration: "bold"}}>Value</TableCell>
+                  </TableRow>
+               </TableHead>
+               <TableBody>
+                  {Object.entries(data).map(([key, val], index) => {
+                     return (
+                        <TableRow>
+                           <TableCell align='right'>{key}</TableCell>
+                           <TableCell align='left'>{val}</TableCell>
+                        </TableRow>
+                     );
+                  })}
+               </TableBody>
                </Table>
             </TableContainer>
          </Dialog>

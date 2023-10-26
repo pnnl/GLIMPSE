@@ -1,5 +1,8 @@
 const { app, BrowserWindow, utilityProcess } = require("electron");
 const path = require("path");
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 
 const makeWindow = () => {
    const win = new BrowserWindow({
@@ -19,10 +22,6 @@ const makeWindow = () => {
    win.show()
 }
 
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
-   
 app.on("ready", () => makeWindow());
 
 utilityProcess.fork(path.join(__dirname, "backend", "server.js"));
