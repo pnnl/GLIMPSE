@@ -16,6 +16,12 @@ pip install networkx
 npm install
 npm run start
 ```
+
+### We provide few examples of exploring starndard IEEE bus models using GLIMSES
+```
+From the home page, upload all the ".gml" files from data/123-bus-model
+```
+
 ## To re-uplaod files after visualization pres `ctrl + R` or click `view` then `reload`
 
 ![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
