@@ -1,0 +1,220 @@
+{
+   "appOptions": {
+      "title": "GLIMPSE",
+      "nav": {
+         "home": "Home",
+         "about": "About"
+      },
+      "buttons": {
+         "filterBtn": "FILTER",
+         "exportBtn": "EXPORT W/ CHANGES",
+         "plotBtn": "SHOW PLOT",
+         "addOverlayBtn": "ATTACH OVERLAY",
+         "simBtn": "CONNECT TO SIM",
+         "showStatsBtn": "SHOW STATS",
+         "layoutLbl": "Auto Layout",
+         "searchLbl": "Search by node id",
+         "previousBtn": "PREV",
+         "nextBtn": "NEXT",
+         "resetBtn": "RESET"
+      },
+      "serverUrl": "http://localhost:3010"
+   },
+   "graphOptions": {
+      "edges": {
+         "smooth": {
+            "enabled": true,
+            "type": "continuous"
+         }
+      },
+      "nodes": {
+         "borderWidth": 2,
+         "shapeProperties": {
+            "useBorderWithImage": true
+         },
+         "font": {
+            "color": "#000",
+            "size": 18
+         },
+         "size": 15
+      },
+      "groups":{
+         "load": {
+            "color": "#2a9d8f",
+            "size": 15,
+            "shape": "circularImage",
+            "image": "./imgs/load.png"
+         },
+         "triplex_load": {
+            "color": "#ffea00",
+            "size": 15,
+            "shape": "circularImage",
+            "image": "./imgs/load.png"
+         },
+         "capacitor": {
+            "color": "#283618",
+            "size": 15,
+            "shape": "circularImage",
+            "image": "./imgs/capacitor.jpg"
+         },
+         "triplex_node": {
+            "color": "#003566",
+            "size": 15,
+            "shape": "circularImage",
+            "image": "./imgs/node.png"
+         },
+         "substation": {
+            "color": "#fca311",
+            "size": 15, 
+            "shape": "circularImage",
+            "image": "./imgs/substation.jpg"
+         },
+         "triplex_meter": {
+            "color": "#072ac8",
+            "size": 15, 
+            "shape": "circularImage",
+            "image": "./imgs/meter.jpg"
+         },
+         "node": {
+            "color": "#4361ee",
+            "size": 15,
+            "shape": "circularImage", 
+            "image": "./imgs/node.png"
+         },
+         "meter": {
+            "color": "#d90429",
+            "size": 15,
+            "shape": "circularImage", 
+            "image": "./imgs/meter.jpg"
+         },
+         "inverter_dyn": {
+            "color": "#c8b6ff",
+            "size": 15,
+            "shape": "circularImage", 
+            "image": "./imgs/inverter.png"
+         },
+         "diesel_dg": {
+            "color": "#fee440",
+            "size": 15,
+            "shape": "circularImage", 
+            "image": "./imgs/generator.jpg"
+         },
+         "communication_node": {
+            "color": "#c1121f",
+            "size": 15, 
+            "shape": "image",
+            "image": "./imgs/comm.jpg"
+         },
+         "microgrid": {
+            "color": "#6b9080",
+            "size": 15, 
+            "shape": "image",
+            "image": "./imgs/microgrid.svg"
+         }
+
+      },
+      "interaction": {
+         "hover":true,
+         "hideEdgesOnDrag": false,
+         "hideEdgesOnZoom": false,
+         "navigationButtons": true
+      },
+      "physics": {
+         "barnesHut": {
+            "gravitationalConstant": -10000,
+            "springConstant": 0.20,
+            "springLength": 35
+         },
+         "solver": "barnesHut",
+         "stabilization": {
+            "enabled": false,
+            "iterations": 1000,
+            "updateInterval": 1,
+            "onlyDynamicEdges": false,
+            "fit": true
+         }
+      },
+      "layout": {
+         "improvedLayout": false
+      }
+   },
+   "legendGraphOptions": {
+      "nodes": {
+         "borderWidth": 2,
+         "font": {
+            "color": "#000",
+            "size": 20
+         }
+      },
+      "edges": {
+         "font": {
+            "color": "#000",
+            "size": 30
+         }
+      },
+      "groups":{
+         "load": {
+            "color": "#2a9d8f",
+            "shape": "circularImage",
+            "image": "./imgs/load.png"
+         },
+         "triplex_load":{
+            "color": "#ffea00",
+            "shape": "circularImage",
+            "image": "./imgs/load.png"
+         },
+         "capacitor":{
+            "color": "#283618",
+            "shape": "circularImage",
+            "image": "./imgs/capacitor.jpg"
+         },
+         "triplex_node":{
+            "color": "#003566",
+            "shape": "circularImage",
+            "image": "./imgs/node.png"
+         },
+         "substation":{
+            "color": "#fca311",
+            "shape": "circularImage",
+            "image": "./imgs/substation.jpg"
+         },
+         "triplex_meter":{
+            "color": "#072ac8",
+            "shape": "circularImage",
+            "image": "./imgs/meter.jpg"
+         },
+         "node":{
+            "color": "#4361ee",
+            "shape": "circularImage",
+            "image": "./imgs/node.png"
+         },
+         "meter":{
+            "color": "#d90429",
+            "shape": "circularImage",
+            "image": "./imgs/meter.jpg"
+         },
+         "inverter_dyn":{
+            "color": "#c8b6ff",
+            "shape": "circularImage",
+            "image": "./imgs/inverter.png"
+         },
+         "diesel_dg":{
+            "color": "#fee440",
+            "shape": "circularImage",
+            "image": "./imgs/generator.jpg"
+         },
+         "communication_node": {
+            "color": "#c1121f",
+            "size": 25,
+            "shape": "image",
+            "image": "./imgs/comm.jpg"
+         },
+         "microgrid": {
+            "color": "#6b9080",
+            "size": 25,
+            "shape": "image",
+            "image": "./imgs/microgrid.svg"
+         }
+      }
+   }
+}
