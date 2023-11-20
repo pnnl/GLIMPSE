@@ -1,4 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
+const util = require("util");
+const exec = util.promisify(require("child_process").exec);
 const { execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -71,24 +73,32 @@ const handleFileOpen = async (filePaths) => {
       args += ` ${filePath}`;
    }
 
-   const output = execSync(args, (error, stdout, stderr) => {
-      if (error)
-      {
-         console.log(error);
-         return;
-      }
-      else if (stderr)
-      {
-         console.log(stderr);
-         return;
-      }
+   const {stderr, stdout} = await exec(args);
 
-      return stdout;
-   })
+   // const output = execSync(args, (error, stdout, stderr) => {
+   //    if (error)
+   //    {
+   //       console.log(error);
+   //       return;
+   //    }
+   //    else if (stderr)
+   //    {
+   //       console.log(stderr);
+   //       return;
+   //    }
+
+   //    return stdout;
+   // })
+
+   if(stderr)
+   {
+      console.log(stderr.toString());
+      return;
+   }
 
    // Will return an alert message if include files are missing
    // otherwise it will return the stdout as a string
-   return checkIncludes(JSON.parse(output.toString()));
+   return checkIncludes(JSON.parse(stdout.toString()));
 }
 
 const getGraphStats = async (data) => {
