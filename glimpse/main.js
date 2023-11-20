@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-const isDev = process.env.NODE_ENV !== "development";
+// const isDev = process.env.NODE_ENV !== "development";
 
 // require("electron-reload")(__dirname, {
 //    electron: path.join(__dirname, "node_modules", ".bin", "electron")
@@ -23,9 +23,9 @@ const makeWindow = () => {
       }
    })
 
-   if(isDev) {
-      win.webContents.openDevTools();
-   }
+   // if(isDev) {
+   //    win.webContents.openDevTools();
+   // }
    win.loadFile("./renderer/public/index.html");
    win.show()
 }
@@ -68,7 +68,7 @@ const handleFileOpen = async (filePaths) => {
    let args = `python ./py/glm2json.py`;
    for (const filePath of filePaths)
    {
-      args +=  ` ${filePath}`;
+      args += ` ${filePath}`;
    }
 
    const output = execSync(args, (error, stdout, stderr) => {
@@ -162,7 +162,6 @@ const validateJson = (filePaths) => {
          data[path.basename(filePath)] = fileData;
       }
    }
-
 
    if(!valid)
    {
