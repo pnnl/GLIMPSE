@@ -75,21 +75,6 @@ const handleFileOpen = async (filePaths) => {
 
    const {stderr, stdout} = await exec(args);
 
-   // const output = execSync(args, (error, stdout, stderr) => {
-   //    if (error)
-   //    {
-   //       console.log(error);
-   //       return;
-   //    }
-   //    else if (stderr)
-   //    {
-   //       console.log(stderr);
-   //       return;
-   //    }
-
-   //    return stdout;
-   // })
-
    if(stderr)
    {
       console.log(stderr.toString());
@@ -128,23 +113,16 @@ const getGraphStats = async (data) => {
    });
 
    let args = "python ./py/nx.py " + path.join(__dirname, "glm2jsonData.json"); 
-   const output = execSync(args, (error, stdout, stderr) => {
-      if (error)
-      {
-         console.log(error);
-         return;
-      }
-      else if (stderr)
-      {
-         console.log(stderr);
-         return;
-      }
+   const {stderr, stdout} = await exec(args);
 
-      return stdout;
-   })
+   if (stderr) {
+      console.log(stderr.toString());
+      fs.rmSync(path.join(__dirname, "glm2jsonData.json"));
+      return;
+   }
+
    fs.rmSync(path.join(__dirname, "glm2jsonData.json"));
-
-   return output.toString();
+   return stdout.toString();
 }
 
 const sendPlot = async () => {

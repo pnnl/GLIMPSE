@@ -523,9 +523,14 @@ const HighlightEdges = (edgeType) => {
 /* ------------------------ Component ------------------------ */
 const Graph = ({ dataToVis }) => {
 
-   
-
-   setGraphData( dataToVis );
+   if(data.nodes.length > 0 && data.edges.length > 0) {
+      data.nodes = new DataSet();
+      data.edges = new DataSet();
+      setGraphData( dataToVis );
+   }
+   else {
+      setGraphData(dataToVis);
+   }
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );

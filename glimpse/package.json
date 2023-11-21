@@ -3,20 +3,11 @@
    "version": "0.2.1",
    "description": "A lightweight power grid model visualization tool",
    "authors": "Armando Mendoza Sanchez",
-   "options": {
-      "allowedHosts": [
-         "localhost",
-         ".localhost"
-      ],
-      "proxy": "http://localhost:3010"
-   },
    "main": "main.js",
    "scripts": {
       "test": "echo \"Error: no test specified\" && exit 1",
       "watch": "webpack --config webpack.common.js --watch",
       "electron": "electron .",
-      "backend:dev": "nodemon ./backend/server --ignore ./backend/*",
-      "backend": "node ./backend/server.js",
       "start": "electron-forge start",
       "package": "electron-forge package",
       "make": "electron-forge make"
@@ -26,11 +17,8 @@
    "build": {},
    "dependencies": {
       "ajv": "^8.12.0",
-      "date-fns": "^2.29.3",
-      "express-easy-zip": "^1.1.5",
       "fs": "^0.0.1-security",
       "jsonschema": "^1.4.1",
-      "socket.io": "^4.6.2",
       "@emotion/react": "^11.11.1",
       "@emotion/styled": "^11.11.0",
       "@mui/icons-material": "^5.14.12",

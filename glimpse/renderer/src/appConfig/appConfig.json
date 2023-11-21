@@ -17,8 +17,7 @@
          "previousBtn": "PREV",
          "nextBtn": "NEXT",
          "resetBtn": "RESET"
-      },
-      "serverUrl": "http://localhost:3010"
+      }
    },
    "graphOptions": {
       "edges": {
