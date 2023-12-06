@@ -7,7 +7,7 @@ Install [Node.js](https://nodejs.org/en)
 
 ```
 git clone http://github.com/pnnl/GLIMPSE
-pip install glm
+pip install glm==0.4.3
 pip install networkx
 ```
 Once the GLM parser is installed through pip it will add two cli utilities. One of those is a `json2glm` parser that you will need to locate and rename with the .exe extension: `json2glm` -> `json2glm.exe`. This file is stored in python's scripts in the following windows directory: `\Users\[username]\AppData\Local\Programs\Python\Python310\Scripts`
