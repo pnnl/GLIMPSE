@@ -26,8 +26,7 @@ const ActionBar = ({
    objCounts, 
    onFind, 
    download, 
-   reset, 
-   updateData, 
+   reset,
    prev, 
    next, 
    physicsToggle, 
@@ -282,7 +281,6 @@ const ActionBar = ({
                      size="small"
                      variant="outlined"
                      color="primary"
-                     disabled
                      onClick={handleExport}>
                      {appOptions.buttons.exportBtn}
                   </Button>

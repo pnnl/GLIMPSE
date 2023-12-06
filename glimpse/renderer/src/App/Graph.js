@@ -565,18 +565,18 @@ const Graph = ({ dataToVis }) => {
    */
    const Export = () => {
 
-      // Object.keys(dataToVis).forEach(( file ) => {
+      Object.keys(dataToVis).forEach(( file ) => {
          
-      //    dataToVis[file]["objects"].forEach((object) => {
+         dataToVis[file]["objects"].forEach((object) => {
 
-      //       const objType = object.name;
-      //       if (nodeTypes.includes(objType))
-      //       {
-      //          const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
-      //          object.attributes = newNodeAttributes;
-      //       }
-      //    });
-      // });
+            const objType = object.name;
+            if (nodeTypes.includes(objType))
+            {
+               const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
+               object.attributes = newNodeAttributes;
+            }
+         });
+      });
 
       // const axiosInstance = axios.create({
       //    "baseURL": appConfig.appOptions.serverUrl,
@@ -593,7 +593,8 @@ const Graph = ({ dataToVis }) => {
       // })
       // .catch(( err ) => console.log( err ))
 
-      console.log("Export button clicked...");
+      // this end point will convert the json data back to its original glm files with changesl
+      window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
    }
 
    /**

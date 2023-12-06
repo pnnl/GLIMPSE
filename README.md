@@ -10,6 +10,7 @@ git clone http://github.com/pnnl/GLIMPSE
 pip install glm
 pip install networkx
 ```
+Once the GLM parser is installed through pip it will add two cli utilities. One of those is a `json2glm` parser that you will need to locate and rename with the .exe extension: `json2glm` -> `json2glm.exe`. This file is stored in python's scripts in the following windows directory: `\Users\[username]\AppData\Local\Programs\Python\Python310\Scripts`
 
 ## in `GLIMPSE/glimpse/` run 
 ```
@@ -32,4 +33,4 @@ We provide few examples of exploring starndard IEEE bus models using GLIMPSE. Fr
 * Double Clicking on a node in the visualization will show a form that allows you to edit the nodes attributes.
 * The **Show Plot** button will display a plot created from metrics gathered from the power grid model (Will show a filler plot for now).
 * The **Show Stats** button will display a couple statistics values.
-* If any changes were done to a node's attributes using the tool you can download a copy of the uploaded files with the changes using the **Export** button.
+* If any changes were done to a node's attributes using the tool you can download a copy of the uploaded files to a desired directory with the changes using the **Export** button.
