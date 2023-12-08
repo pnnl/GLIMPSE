@@ -82,7 +82,7 @@ const handleFileOpen = async (filePaths) => {
 }
 
 const writeToJsonFile = (filename, dir, data) => {
-   // Create a new file
+   // Create a new json file
 
    fs.writeFileSync(path.join(dir, filename), data, (err) => {
      if (err) {
@@ -145,25 +145,28 @@ const validateJson = (filePaths) => {
 const json2glm = async (jsonData) => {
 
    const parsedData = JSON.parse(jsonData);
-   // have the user choose where to store the files
-   let dirToSave = await dialog.showOpenDialog({"properties": ["openDirectory"]});
-   if (dirToSave.canceled) return null;
+   let json2glmExe = "json2glm.exe";
+   if (process.platform == "darwin") json2glmExe = "json2glm";
 
-   dirToSave = dirToSave.filePaths[0];
-   console.log(dirToSave);
+   // have the user choose where to store the files
+   let dir2Save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
+   if (dir2Save.canceled) return null;
+   dir2Save = dir2Save.filePaths[0];
+   
+   console.log(dir2Save);
 
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData))
    {
       let newFileName = file.split(".")[0] + ".glm";
-      writeToJsonFile(file, dirToSave, JSON.stringify(parsedData[file]));
-      const { stderr } = await exec(`json2glm.exe --path-to-file ${path.join(dirToSave, file)} >> ${path.join(dirToSave, newFileName)}`);
+      writeToJsonFile(file, dir2Save, JSON.stringify(parsedData[file]));
+      const { stderr } = await exec(`${json2glmExe} --path-to-file ${path.join(dir2Save, file)} >> ${path.join(dir2Save, newFileName)}`);
 
       if (stderr) {
          console.log(stderr.toString());
       }
 
-      fs.rm(path.join(dirToSave, file), (error) => {
+      fs.rm(path.join(dir2Save, file), (error) => {
          if (error) console.log(error);
       });
    }

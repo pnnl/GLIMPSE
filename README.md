@@ -3,13 +3,15 @@
 GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python. It also uses following GLM parser that can be installed using pip: [GLM](https://github.com/NREL/glm) 
 
 ## Clone the repository and install dependencies
-Install [Node.js](https://nodejs.org/en)
+- [Node.js](https://nodejs.org/en)
+- [Nim](https://nim-lang.org/install.html)
 
 ```
 git clone http://github.com/pnnl/GLIMPSE
 pip install glm==0.4.3
 pip install networkx
 ```
+## For Windows only :
 Once the GLM parser is installed through pip it will add two cli utilities. One of those is a `json2glm` parser that you will need to locate and rename with the .exe extension: `json2glm` -> `json2glm.exe`. This file is stored in python's scripts in the following windows directory: `\Users\[username]\AppData\Local\Programs\Python\Python310\Scripts`
 
 ## in `GLIMPSE/glimpse/` run 

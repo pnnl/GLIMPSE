@@ -8,7 +8,7 @@ import "../styles/Graph.css";
 import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "../appConfig/appConfig.json";
-import { nodeOptions, edgeOptions } from "./config/objectOptions";
+import edgeOptions from "./config/objectOptions";
 
 const options = appConfig.graphOptions;
 let nodesDataview;
@@ -143,13 +143,13 @@ const setGraphData = (dataFiles) => {
 
             const nodeID = attributes[name];
 
-            if(attributes.x !== undefined && attributes.y !== undefined)
+            if(Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y"))
             {
                data.nodes.add({
                   "id": nodeID,
                   "label": nodeID,
                   "attributes": attributes,
-                  "group": nodeOptions.get(objectType).group,
+                  "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   "x": parseInt(attributes.x, 10),
                   "y": parseInt(attributes.y, 10)
@@ -161,7 +161,7 @@ const setGraphData = (dataFiles) => {
                   "id": nodeID,
                   "label": nodeID,
                   "attributes": attributes,
-                  "group": nodeOptions.get(objectType).group,
+                  "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                });
             }

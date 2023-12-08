@@ -1,19 +1,3 @@
-
-export const nodeOptions = new Map([
-   ["load",{"group": "load"}],
-   ["triplex_load", {"group": "triplex_load"}],
-   ["capacitor", {"group": "capacitor"}],
-   ["triplex_node", {"group": "triplex_node"}],
-   ["substation", {"group": "substation"}],
-   ["triplex_meter", {"group": "triplex_meter"}],
-   ["node", {"group": "node"}],
-   ["meter", {"group": "meter"}],
-   ["inverter_dyn", {"group": "inverter_dyn"}],
-   ["diesel_dg", {"group": "diesel_dg"}],
-   ["microgrid", {"group": "microgrid"}],
-   ["communication_node", {"group": "communication_node"}]
-]);
-                     
 export const edgeOptions = new Map([
    ["overhead_line", {
       "width": 2,

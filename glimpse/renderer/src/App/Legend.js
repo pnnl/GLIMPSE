@@ -10,22 +10,6 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
   const nodes = [];
   const edges = [];
 
-  // Map of the node options that contains the group each node type belongs too
-  const nodeOptions = new Map([
-    ["load", { group: "load" }],
-    ["triplex_load", { group: "triplex_load" }],
-    ["capacitor", { group: "capacitor" }],
-    ["triplex_node", { group: "triplex_node" }],
-    ["substation", { group: "substation" }],
-    ["triplex_meter", { group: "triplex_meter" }],
-    ["node", { group: "node" }],
-    ["meter", { group: "meter" }],
-    ["inverter_dyn", { group: "inverter_dyn" }],
-    ["diesel_dg", { group: "diesel_dg" }],
-    ["microgrid", { group: "microgrid" }],
-    ["communication_node", { group: "communication_node" }],
-  ]);
-
   // Map of the options belonging to each edge type
   const edgeOptions = new Map([
     [
@@ -107,7 +91,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
         color: "cyan",
         hidden: false,
       },
-    ],
+    ]
   ]);
 
   /*-------- Begining of Top Nodes --------*/
@@ -118,7 +102,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `load\n[${nodeCounts.nodes.load}]`,
-    group: nodeOptions.get("load").group,
+    group: "load"
   });
 
   nodes.push({
@@ -128,7 +112,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `node\n[${nodeCounts.nodes.node}]`,
-    group: nodeOptions.get("node").group,
+    group: "node"
   });
 
   nodes.push({
@@ -138,7 +122,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `meter\n[${nodeCounts.nodes.meter}]`,
-    group: nodeOptions.get("meter").group,
+    group: "meter"
   });
 
   nodes.push({
@@ -148,7 +132,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `inverter_dyn\n[${nodeCounts.nodes.inverter_dyn}]`,
-    group: nodeOptions.get("inverter_dyn").group,
+    group: "inverter_dyn",
   });
 
   nodes.push({
@@ -158,7 +142,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `diesel_dg\n[${nodeCounts.nodes.diesel_dg}]`,
-    group: nodeOptions.get("diesel_dg").group,
+    group: "diesel_dg",
   });
 
   nodes.push({
@@ -168,7 +152,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `capacitor\n[${nodeCounts.nodes.capacitor}]`,
-    group: nodeOptions.get("capacitor").group,
+    group: "capacitor",
   });
   /*-------- End of Top Nodes --------*/
 
@@ -180,7 +164,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `triplex_load\n[${nodeCounts.nodes.triplex_load}]`,
-    group: nodeOptions.get("triplex_load").group,
+    group: "triplex_load",
   });
 
   nodes.push({
@@ -190,7 +174,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `triplex_node\n[${nodeCounts.nodes.triplex_node}]`,
-    group: nodeOptions.get("triplex_node").group,
+    group: "triplex_node",
   });
 
   nodes.push({
@@ -200,7 +184,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `triplex_meter\n[${nodeCounts.nodes.triplex_meter}]`,
-    group: nodeOptions.get("triplex_meter").group,
+    group: "triplex_meter",
   });
 
   nodes.push({
@@ -210,7 +194,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: `substation\n[${nodeCounts.nodes.substation}]`,
-    group: nodeOptions.get("substation").group,
+    group: "substation",
   });
 
   nodes.push({
@@ -220,7 +204,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: "communication\nnode",
-    group: nodeOptions.get("communication_node").group,
+    group: "communication_node",
   });
 
   nodes.push({
@@ -230,7 +214,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     fixed: false,
     physics: false,
     label: "End\nPoints",
-    group: nodeOptions.get("microgrid").group,
+    group: "microgrid",
   });
   /*-------- End of Bottom Nodes --------*/
 
