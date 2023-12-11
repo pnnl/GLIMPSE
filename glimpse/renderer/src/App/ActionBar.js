@@ -23,7 +23,6 @@ const appOptions = appConfig.appOptions;
 const ActionBar = ({
    nodesDataObj,
    graphDataObj, 
-   objCounts, 
    onFind, 
    download, 
    reset,
@@ -150,7 +149,6 @@ const ActionBar = ({
    }
 
    const showOverlay = (e) => {
-
       e.preventDefault();
       setShowUpload(true)
    }
@@ -241,7 +239,6 @@ const ActionBar = ({
                      disableElevation
                      onClick={handleFilterClick}
                      endIcon={<KeyboardArrowDownIcon />}
-                     disabled
                      >
                      {appOptions.buttons.filterBtn}
                   </Button>

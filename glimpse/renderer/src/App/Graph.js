@@ -8,7 +8,7 @@ import "../styles/Graph.css";
 import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "../appConfig/appConfig.json";
-import edgeOptions from "./config/objectOptions";
+import { edgeOptions } from "./config/objectOptions";
 
 const options = appConfig.graphOptions;
 let nodesDataview;
@@ -578,74 +578,8 @@ const Graph = ({ dataToVis }) => {
          });
       });
 
-      // const axiosInstance = axios.create({
-      //    "baseURL": appConfig.appOptions.serverUrl,
-      //    "timeout": 17500,
-      //    "headers": {"Content-Type": "application/json"}
-      // });
-
-      // axiosInstance.post("/jsontoglm", dataToVis, {responseType: "blob"}).then(({data: blob}) => {
-      //    const link = document.createElement("a");
-      //    const url = URL.createObjectURL( blob ) ;
-      //    link.href = url;
-      //    link.download = "glmOutput.zip";
-      //    link.click();
-      // })
-      // .catch(( err ) => console.log( err ))
-
       // this end point will convert the json data back to its original glm files with changesl
       window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
-   }
-
-   /**
-    * Add more nodes and edges to the current network from JSON data
-    * @param {Object} overlayData 
-    */
-   // const addOverlay = async (overlayData) => {
-   //    await axios.post("http://localhost:8000/validate", overlayData).then((res) => {
-         
-   //    if(res.data.isValid)
-   //    {
-   //       setGraphData(overlayData);
-   //    }
-   //    else
-   //    {
-   //    }
-   // });
-   // }
-
-   // Update current nodes with update JSON string
-   // This function is used for testing purposes and will not be in the production version
-   const updateData = ( updateObj ) => {
-
-      console.log(updateObj);
-      
-      if(updateObj.type === "edges")
-      {
-         let edge = data.edges.get(updateObj.id);
-         edge.hidden = updateObj.styles.hidden;
-         edge.width = updateObj.styles.width;
-
-         data.edges.update(edge);
-      }
-      else
-      {
-         let node = data.nodes.get(updateObj.id);
-         node.hidden = updateObj.styles.hidden;
-
-         if( updateObj.styles.sizeOperation === "subtract")
-         {
-            node.size = options.nodes.size;
-            node.size -= updateObj.styles.by;
-         }
-         else
-         {
-            node.size = options.nodes.size;
-            node.size += updateObj.styles.by;
-         }
-
-         data.nodes.update(node);
-      }
    }
 
    let setCurrentNode;
@@ -695,13 +629,8 @@ const Graph = ({ dataToVis }) => {
     */
    const hideEdge = (edgeID) =>
    {
-      const edgeToHide = data.edges.get().map( e => {
-         if(e.id === edgeID)
-         {
-            e.hidden = true;
-         }
-         return e;
-      });
+      const edgeToHide = data.edges.get(edgeID);
+      edgeToHide.hidden = true;
       data.edges.update(edgeToHide);
    }
   
@@ -711,8 +640,7 @@ const Graph = ({ dataToVis }) => {
     */
    const hideEdges = (edgeType) => {
       const edgesToHide = data.edges.get().map(e => {
-
-         if(e.id === edgeType)
+         if (e.id.includes(edgeType))
          {
             e.hidden = true;
          }
@@ -764,7 +692,7 @@ const Graph = ({ dataToVis }) => {
       {
          const edgesToHide = data.edges.get().map( edge => {
 
-            if (edge.id.split(":")[0] === objectType)
+            if (edge.id.includes(objectType))
             {
                edge.hidden = true;
             }
@@ -865,8 +793,6 @@ const Graph = ({ dataToVis }) => {
             next = {Next}
             download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
-            updateData = {updateData}
-            objCounts={objectTypeCount}
             updateNodeFilterVals={updateNodeFilterValues}
             updateEdgeFilterVals={updateEdgeFilterValues}
             edgeCheckboxValues={edgeFilterValues}
