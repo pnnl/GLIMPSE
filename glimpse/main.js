@@ -1,12 +1,11 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
-const util = require("util");
-const exec = util.promisify(require("child_process").exec);
+const { spawnSync, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-const { dir, error } = require("console");
 const isDev = process.env.NODE_ENV !== "development";
+if (require("electron-squirrel-startup")) app.quit();
 
 // require("electron-reload")(__dirname, {
 //    electron: path.join(__dirname, "node_modules", ".bin", "electron")
@@ -14,8 +13,8 @@ const isDev = process.env.NODE_ENV !== "development";
 
 const makeWindow = () => {
    const win = new BrowserWindow({
-      width: 1800,
-      height: 1000,
+      width: 1500,
+      height: 750,
       backgroundColor: "white",
       autoHideMenuBar: true,
       show: false,
@@ -34,9 +33,8 @@ const makeWindow = () => {
 }
 
 const checkIncludes = ( jsonData ) => {
-   let included_files = [];
-   let includeS_files = [];
-   const missingIncludesRes = {"alert": "One or more include files are missing!"};
+   const included_files = [];
+   const includeS_files = [];
 
    Object.keys(jsonData).forEach((fileName) => {
       if (jsonData[fileName]["includes"].length === 0) {
@@ -54,66 +52,62 @@ const checkIncludes = ( jsonData ) => {
       }
    });
 
-   if(included_files.sort().toString() !== includeS_files.sort().toString()) {
-      return missingIncludesRes;
+   if (included_files.sort().toString() !== includeS_files.sort().toString()) {
+      return false;
    }
    else {
-      return JSON.stringify(jsonData);
+      return true;
    }
 }
 
-const handleFileOpen = async (filePaths) => {
+const handleFileOpen = (filePaths) => {
 
-   let args = `python ./py/glm2json.py`;
+   const args = ["./py/glm2json.py"]
    for (const filePath of filePaths) {
-      args += ` ${filePath}`;
+      args.push(filePath);
    }
 
-   const {stderr, stdout} = await exec(args);
+   const {error, stdout} = spawnSync("python", args);
 
-   if(stderr) {
+   if(error) {
       console.log(stderr.toString());
       return;
    }
 
    // Will return an alert message if include files are missing
-   // otherwise it will return the stdout as a string
-   return checkIncludes(JSON.parse(stdout.toString()));
+   // otherwise it will return the output as a string
+   const valid = checkIncludes(JSON.parse(stdout.toString()))
+   if (!valid) return {"alert": "One or more include files are missing!"};
+   else return stdout.toString();
 }
 
-const writeToJsonFile = (filename, dir, data) => {
-   // Create a new json file
-
-   fs.writeFileSync(path.join(dir, filename), data, (err) => {
-     if (err) {
-       console.log(err);
-     } else {
-       console.log('File written successfully.');
-     }
+const createJsonFile = (filename, data) => {
+   fs.writeFileSync(filename, data, (err) => {
+      if (err) {
+         console.log(err);
+      } else {
+         console.log('File written successfully.');
+      }
    });
-   
 }
 
 const getGraphStats = async (data) => {
+   createJsonFile(path.join(__dirname, "glm2jsonData.json"), data);
 
-   writeToJsonFile("glm2jsonData.json", __dirname, data);
+   const args = [path.join(__dirname, "py", "nx.py"), path.join(__dirname, "glm2jsonData.json")];
+   const  { stdout, error } = spawnSync("python", args);
 
-   let args = "python ./py/nx.py " + path.join(__dirname, "glm2jsonData.json"); 
-   const {stderr, stdout} = await exec(args);
-
-   if (stderr) {
-      console.log(stderr.toString());
-      fs.rmSync(path.join(__dirname, "glm2jsonData.json"));
-      return;
+   if (error)
+      console.log(error)
+   else {
+      fs.rmSync(path.join(__dirname, "glm2jsonData.json"))
+      return stdout.toString();
    }
-
-   fs.rmSync(path.join(__dirname, "glm2jsonData.json"));
-   return stdout.toString();
 }
 
-const sendPlot = async () => {
-   const imgBuffer = fs.readFileSync(path.join(__dirname, "figs", "plot.png"));
-   return imgBuffer;
+const sendPlot = () => {
+   // Returns an image buffer
+   return fs.readFileSync(path.join(__dirname, "figs", "plot.png"));
 }
 
 const validateJson = (filePaths) => {
@@ -126,12 +120,8 @@ const validateJson = (filePaths) => {
       const fileData = require(filePath);
       valid = validate(fileData);
 
-      if (!valid) {
-         break;
-      }
-      else {
-         data[path.basename(filePath)] = fileData;
-      }
+      if (!valid) break;
+      else data[path.basename(filePath)] = fileData;
    }
 
    if(!valid) {
@@ -142,33 +132,30 @@ const validateJson = (filePaths) => {
    return JSON.stringify(data);
 }
 
-const json2glm = async (jsonData) => {
+const json2glmFunc = async (jsonData) => {
+   let newFilename;
+   let args;
+   // have the user choose where to store the files
+   let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
+   if (dir2save.canceled) return null;
+   dir2save = dir2save.filePaths[0];
+
+   console.log(dir2save);
 
    const parsedData = JSON.parse(jsonData);
-   let json2glmExe = "json2glm.exe";
-   if (process.platform == "darwin") json2glmExe = "json2glm";
-
-   // have the user choose where to store the files
-   let dir2Save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
-   if (dir2Save.canceled) return null;
-   dir2Save = dir2Save.filePaths[0];
+   const json2glmArg = process.platform == "darwin" ? "json2glm" : "json2glm.exe";
    
-   console.log(dir2Save);
-
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData))
    {
-      let newFileName = file.split(".")[0] + ".glm";
-      writeToJsonFile(file, dir2Save, JSON.stringify(parsedData[file]));
-      const { stderr } = await exec(`${json2glmExe} --path-to-file ${path.join(dir2Save, file)} >> ${path.join(dir2Save, newFileName)}`);
+      newFilename = file.split(".")[0] + ".glm";
+      args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
 
-      if (stderr) {
-         console.log(stderr.toString());
-      }
+      createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
 
-      fs.rm(path.join(dir2Save, file), (error) => {
-         if (error) console.log(error);
-      });
+      execSync(args); 
+
+      fs.rmSync(path.join(dir2save, file));
    }
 }
 
@@ -179,7 +166,7 @@ app.whenReady().then(() => {
    ipcMain.handle("getStats", (event, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
-   ipcMain.on("json2glm", (event, jsonData) => json2glm(jsonData));
+   ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
 
    app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
