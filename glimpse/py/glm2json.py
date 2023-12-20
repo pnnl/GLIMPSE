@@ -1,19 +1,7 @@
 import sys
 import glm
 import ntpath
-# import os
 import json
-# import re
-
-# getFiles function returns a list of glm files in provided folder path
-# def getFiles( folder_path ):
-#    files = []
-
-#    for file in os.listdir(folder_path):
-#       if re.search( ".glm$", file ):
-#          files.append( file )
-
-#    return files
 
 # return the file name only
 def path_leaf(path):
@@ -33,38 +21,6 @@ def glmToDict( files ):
 def glm2json( glm_dict ):
    glm_json = json.dumps( glm_dict, indent = 3 )
    return glm_json
-
-
-'''
-this function will create a csv file named map.csv
-that will store <node id>, <x>, <y>
-'''
-# def createMapping( glm_dict ):
-#    node_types = [
-#       "load",
-#       "triplex_load",
-#       "capacitor",
-#       "node",
-#       "triplex_node",
-#       "substation",
-#       "meter",
-#       "triplex_meter",
-#       "inverter_dyn",
-#       "inverter",
-#       "diesel_dg",
-#       "communication_node",
-#       "microgrid_node"
-#    ]
-#    map_file = open("./mapping/map.csv", "w")
-
-#    for glm_file in glm_dict.values():
-#       for obj in glm_file['objects']:
-#          object_type = obj[ 'name' ]
-#          if object_type in node_types:
-#                try:
-#                   map_file.write(",".join([ obj[ 'attributes' ][ 'name' ], obj[ 'attributes' ][ 'x' ], obj[ 'attributes' ][ 'y' ] ]) + "\n")
-#                except:
-#                   break
 
 #creates metrics file
 def createMetrics( glm_dict ):
@@ -93,10 +49,6 @@ def createMetrics( glm_dict ):
    ]
 
    file = open( "./backend/csv/metrics.csv", "w" )
-   # mock_data = {
-   #    'edges': [],
-   #    'nodes': []
-   # }
 
    for glm_file in glm_dict.values():
       for obj in glm_file[ 'objects' ]:
@@ -110,41 +62,24 @@ def createMetrics( glm_dict ):
             edge_to = sum(ord(letter) for letter in edge_to)
 
             file.write(",".join([ f"{edge_from}", "0", f"{edge_to}", "1" ]) + "\n")
-            # try: 
-            #    edgeID = obj['attributes']['name']
-            # except: 
-            #    edgeID = obj['attributes']['from'] + "-" + obj['attributes']['to']
-
-            # mock_data["edges"].append(edgeID)
 
          if obj_type in node_types:
-               # mock_data["nodes"].append(obj['attributes']['name'])
-               try:
-                  edge_from = obj['attributes']['name']
-                  edge_from = sum(ord(letter) for letter in edge_from)
+            try:
+               edge_from = obj['attributes']['name']
+               edge_from = sum(ord(letter) for letter in edge_from)
 
-                  edge_to = obj['attributes']['parent']
-                  edge_to = sum(ord(letter) for letter in edge_to)
+               edge_to = obj['attributes']['parent']
+               edge_to = sum(ord(letter) for letter in edge_to)
 
-                  file.write(",".join([ f"{edge_from}", "0", f"{edge_to}", "1" ]) + "\n")
-               except:
-                  pass
-               
-   # with open("./mock_Gridlabd_data/data.json", "w") as json_file:
-   #    json_file.write(json.dumps( mock_data, indent = 3 ))
+               file.write(",".join([ f"{edge_from}", "0", f"{edge_to}", "1" ]) + "\n")
+            except:
+               pass
+
 
 def main():
 
    file_names = sys.argv[1:]
    glm_dict = glmToDict(file_names)
-
-   # removeglm_files(folder_dir)
-   # createMetrics(glm_dict)
-   # createMapping(glm_dict)
-
-   # Writing to glm2json_output.json
-   # with open("./backend/json/glm2json_output.json", "w") as json_file:
-      # json_file.write(glm2json(glm_dict))
 
    print(json.dumps(glm_dict))
 

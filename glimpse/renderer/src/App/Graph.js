@@ -6,7 +6,8 @@ import NodePopup from "./NodePopup";
 import "../styles/vis-network.css";
 import "../styles/Graph.css";
 import Legend from "./Legend";
-import EdgeContextMenu from "./EdgeContextMenu";
+import GraphContextMenu from "./GraphContextMenu";
+import NewNodeForm from "./NewNodeForm";
 import appConfig from "../appConfig/appConfig.json";
 import { edgeOptions } from "./config/objectOptions";
 
@@ -34,7 +35,9 @@ const objectTypeCount = {
       "triplex_load": 0, 
       "triplex_node": 0,
       "triplex_meter": 0,
-      "substation": 0
+      "substation": 0,
+      "terminal": 0,
+      "d_node": 0
    },
    "edges": {
       "overhead_line": 0,
@@ -78,12 +81,14 @@ const nodeTypes = [
    "inverter_dyn",  
    "diesel_dg", 
    "communication_node", 
-   "microgrid"
+   "microgrid",
+   "terminal",
+   "d_node",
 ];
 
 /**
  * Converts an object of attributes from a node or edge to a string to be displayed
- * @param {Object} attributes - an object 
+ * @param {Object} attributes - an object of a nodes attributes
  * @returns {string}
 */
 const getTitle = (attributes) => {
@@ -244,16 +249,6 @@ const setGraphData = (dataFiles) => {
 const setCommunicationNetwork = ({filename, fileData}) => {
    const microgrids = fileData.microgrid;
 
-   const types = [
-      "node",
-      "load",
-      "switch",
-      "inverter",
-      "capacitor",
-      "regulator",
-      "diesel_dg",
-   ]
-
    for (const microgrid of microgrids)
    {
       data.nodes.add({
@@ -264,7 +259,7 @@ const setCommunicationNetwork = ({filename, fileData}) => {
 
       for (const type of Object.keys(microgrid))
       {
-         if(types.includes(type))
+         if(nodeTypes.includes(type))
          {
             microgrid[type].forEach((nodeID) => {
                data.edges.add({
@@ -534,6 +529,7 @@ const Graph = ({ dataToVis }) => {
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
+   console.log(objectTypeCount.nodes);
 
    let edgeFilterValues = Object.fromEntries(Object.entries(objectTypeCount.edges).filter(([key, val]) => val > 0).map(obj => [obj[0], true]));
    let nodeFilterValues = Object.fromEntries(Object.entries(objectTypeCount.nodes).filter(([key, val]) => val > 0).map(obj => [obj[0], true]));
@@ -597,13 +593,22 @@ const Graph = ({ dataToVis }) => {
    let contextMenuData;
    let setContextMenuData;
    /**
-    * Takes the state variables of the EdgeContextMenu component so that the parent component may change the state of the child
+    * Takes the state variables of the ContextMenu component so that the parent component may change the state of the child
     * @param {Object} contextMenuDataState - Null or holds x and y data for placing the context menu on the page with the data of the selected edge
     * @param {React.Dispatch<React.SetStateAction<*>>} setContextMenuDataState - Sets the state of the child context menu component  
     */
    const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
       contextMenuData = contextMenuDataState;
       setContextMenuData = setContextMenuDataState;
+   }
+
+   let newNodeFormSetState;
+   const onNewNodeFormMount = (setStateVar) => {
+      newNodeFormSetState = setStateVar;
+   }
+
+   const openNewNodeForm = (openFormBool) => {
+      newNodeFormSetState(openFormBool);
    }
 
    /**
@@ -702,6 +707,35 @@ const Graph = ({ dataToVis }) => {
       }
    }
 
+   const addNewNode = (newNodeObj) => {
+      console.log(newNodeObj);
+
+      const node = newNodeObj.objects[0];
+      const edge = newNodeObj.objects[1];
+
+      data.nodes.add({
+         "id": node.attributes.id,
+         "label": node.attributes.id,
+         "attributes": node.attributes,
+         "group": node.name,
+         "title": "Object Type: " + node.name + "\n" + getTitle(node.attributes),
+      });
+      objectTypeCount.nodes[node.name]++;
+
+      data.edges.add({
+         "id": edge.attributes.id,
+         "from": edge.attributes.from,
+         "to": edge.attributes.to,
+         "color": edgeOptions.get(edge.name).color,
+         "width": edgeOptions.get(edge.name).width,
+         "hidden": edgeOptions.get(edge.name).hidden,
+         "title": "Object Type: " + edge.name + "\n" + getTitle(edge.attributeName)
+      })
+      objectTypeCount.edges[edge.name]++;
+   }
+   
+   
+
    const container = useRef(null);
    useEffect(() => {
 
@@ -760,9 +794,7 @@ const Graph = ({ dataToVis }) => {
          }
          else
          {
-            /** 
-            * Set the state of the NodePopup component for editing of the selected node's attributes
-            */
+            //Set the state of the NodePopup component for editing of the selected node's attributes
             setCurrentNode(data.nodes.get(params.nodes[0]));
             setOpenNodePopup(true);
          }
@@ -771,12 +803,16 @@ const Graph = ({ dataToVis }) => {
       /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
 
-         let edgeID = null;
          if(glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined)
          {
-            edgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
-            setContextMenuData({"edgeID": edgeID});
+            setContextMenuData({"edgeID": glmNetwork.getEdgeAt(params.pointer.DOM)});
          }
+         else if (params.edges.length === 0 && params.nodes.length === 0)
+         {
+            setContextMenuData({});
+            console.log("show the add context menu feature...");
+         }
+         
       })
       
    });
@@ -805,6 +841,12 @@ const Graph = ({ dataToVis }) => {
             onClose = {closePopUp}
          />
 
+         <NewNodeForm
+            onMount={onNewNodeFormMount}
+            nodes={data.nodes.getIds()}
+            addNewNode={addNewNode}
+         />
+
          <div id="networks-wrapper">
          <div
             className="main-network"
@@ -812,10 +854,11 @@ const Graph = ({ dataToVis }) => {
             ref={container}
          />
 
-         <EdgeContextMenu
+         <GraphContextMenu
             onMount = {onContextMenuChildMount} 
             hideEdge = {hideEdge}
             hideEdges = {hideEdges}
+            openNewNodeForm={openNewNodeForm}
          />
 
          <div id="circularProgress">

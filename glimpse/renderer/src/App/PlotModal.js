@@ -7,7 +7,6 @@ const PlotModal = ({plot, show, close}) => {
    if (!show) return null;
 
    return ReactDom.createPortal(
-      <>
          <div className='modal'>
             <div className='modal-overlay' onClick={close}>
                <div className='modal-content'>
@@ -17,8 +16,7 @@ const PlotModal = ({plot, show, close}) => {
 
                </div>
             </div>
-         </div>
-      </>,
+         </div>,
       document.getElementById("portal")
    )
 }

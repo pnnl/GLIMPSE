@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
 import appConfig from '../appConfig/appConfig.json';
-
 const appOptions = appConfig.appOptions;
 
 const Home = () => {
@@ -52,6 +51,13 @@ const Home = () => {
          }
       }
    }
+
+   const setCimData = (data) => {
+      setDataToVisRequest({
+         showFileUpload: false,
+         data: JSON.parse(data)
+      })
+   }
    
    // Display the graph dashboard component if file uploads were succesfully validated
    if(!dataToVisRequest.showFileUpload)
@@ -60,7 +66,7 @@ const Home = () => {
    }
    else
    {
-      content = <FileUpload setFileData = {setFileData} />;
+      content = <FileUpload setFileData = {setFileData} setDataFromCim={setCimData}/>;
    }
 
    

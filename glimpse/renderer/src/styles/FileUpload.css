@@ -1,10 +1,10 @@
 .file-upload-form-container
 {
-  display: flex;
-  height: 100%;
-  align-items: center;
-  justify-content: center;
-  margin: 1rem;
+   height: 100%;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   flex: 1 0 0;
 }
 
 #form-file-upload {
@@ -58,4 +58,12 @@
   right: 0px;
   bottom: 0px;
   left: 0px;
+}
+
+.divider {
+   display: inline-block;
+   width: 2px;
+   background-color: black;
+   margin: 0 10px;
+   height: 10em;
 }

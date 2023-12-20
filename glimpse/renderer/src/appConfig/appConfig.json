@@ -6,6 +6,7 @@
          "about": "About"
       },
       "buttons": {
+         "useCimBtn": "Use CIM Model",
          "filterBtn": "FILTER",
          "exportBtn": "EXPORT W/ CHANGES",
          "plotBtn": "SHOW PLOT",
@@ -33,9 +34,8 @@
          },
          "font": {
             "color": "#000",
-            "size": 18
-         },
-         "size": 15
+            "size": 12
+         }
       },
       "groups":{
          "load": {
@@ -98,6 +98,18 @@
             "shape": "circularImage", 
             "image": "./imgs/generator.jpg"
          },
+         "terminal": {
+            "color": {
+               "border": "grey",
+               "background": "lightgrey"
+            },
+            "size": 5,
+            "shape": "dot"
+         },
+         "d_node": {
+            "size": 15,
+            "shape": "dot"
+         },    
          "communication_node": {
             "color": "#c1121f",
             "size": 15, 

@@ -6,5 +6,6 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    validate: (jsonFilePath) => ipcRenderer.invoke("validate", jsonFilePath), // Working
    getStats: (dataObject) => ipcRenderer.invoke("getStats", dataObject), //Working
    json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData), // in progress
-   getPlot: () => ipcRenderer.invoke("getPlot") //Working
+   getPlot: () => ipcRenderer.invoke("getPlot"), //Working
+   getCIM: () => ipcRenderer.invoke("getCIM") // in progress
 })

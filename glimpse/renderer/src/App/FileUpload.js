@@ -1,8 +1,12 @@
 import React from 'react';
 import '../styles/FileUpload.css';
+import appCofig from "../appConfig/appConfig.json";
 import { useState, useRef } from 'react';
+import { Button, ThemeProvider, createTheme } from '@mui/material';
 
-const GlmFileUpload = ({ setFileData }) => {
+const appOptions = appCofig.appOptions;
+
+const GlmFileUpload = ({ setFileData, setDataFromCim}) => {
    // drag state
    const [dragActive, setDragActive] = useState(false);
    // ref
@@ -66,6 +70,22 @@ const GlmFileUpload = ({ setFileData }) => {
       inputRef.current.click();
    };
 
+   const useCim = async ( ) => {
+      const data = await window.glimpseAPI.getCIM()
+      setDataFromCim(data);
+   }
+
+   const theme = createTheme({
+      palette: {
+         primary: {
+            main: "#333333"
+         },
+         secondary: {
+            main: "#b25a00"
+         }
+      }
+   });
+
    return (
       <div className='file-upload-form-container'>
          <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
@@ -78,7 +98,17 @@ const GlmFileUpload = ({ setFileData }) => {
                </label>
                { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
          </form>
-      </div>    
+         <span className='divider'/>
+         <ThemeProvider theme={theme}>
+         <Button
+            size="large"
+            variant="outlined"
+            onClick={useCim}
+            >
+            {appOptions.buttons.useCimBtn}
+          </Button>
+          </ThemeProvider>
+      </div>
    );
 };
 

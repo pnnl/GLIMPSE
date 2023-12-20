@@ -10,13 +10,22 @@ if (require("electron-squirrel-startup")) app.quit();
 // require("electron-reload")(__dirname, {
 //    electron: path.join(__dirname, "node_modules", ".bin", "electron")
 // });
+let cimGraphData;
+
+// const getCIMgraphData = () => {
+
+//    const args = `python ${path.join(__dirname, "py", "CimGraph.py")} ${path.join(__dirname, "data", "IEEE123.xml")}`;
+//    const output = execSync(args)
+
+//    return output.toString();
+// }
 
 const makeWindow = () => {
    const win = new BrowserWindow({
       width: 1500,
       height: 750,
       backgroundColor: "white",
-      autoHideMenuBar: true,
+      autoHideMenuBar: false,
       show: false,
       webPreferences: {
          nodeIntegration: false,
@@ -24,6 +33,9 @@ const makeWindow = () => {
          preload: path.join(__dirname, 'preload.js')
       }
    })
+
+   // cimGraphData = getCIMgraphData();
+   cimGraphData = JSON.stringify(require("./data/IEEE123.json"));
 
    if(isDev) {
       win.webContents.openDevTools();
@@ -152,11 +164,13 @@ const json2glmFunc = async (jsonData) => {
       args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
 
       createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
-
       execSync(args); 
-
       fs.rmSync(path.join(dir2save, file));
    }
+}
+
+const getCimData = () => {
+   return cimGraphData;
 }
 
 app.whenReady().then(() => {
@@ -167,6 +181,7 @@ app.whenReady().then(() => {
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
+   ipcMain.handle("getCIM", () => getCimData());
 
    app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
