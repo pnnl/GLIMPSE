@@ -148,7 +148,9 @@
       "edges": {
          "font": {
             "color": "#000",
-            "size": 30
+            "size": 30,
+            "strokeWidth": 5,
+            "strkeColor": "white"
          }
       },
       "groups":{

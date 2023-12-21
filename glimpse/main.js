@@ -52,33 +52,24 @@ const checkIncludes = ( jsonData ) => {
       }
    });
 
-   if (included_files.sort().toString() !== includeS_files.sort().toString()) {
-      return false;
-   }
-   else {
-      return true;
-   }
+   
+   if (includeS_files.length === 0) return true; // add this line
+   else if (included_files.sort().toString() !== includeS_files.sort().toString()) return false;
+   else return true;
 }
 
 const handleFileOpen = (filePaths) => {
-
-   const args = ["./py/glm2json.py"]
+   let args = "python ./py/glm2json.py";
    for (const filePath of filePaths) {
-      args.push(filePath);
+      args += ` ${filePath}`;
    }
 
-   const {error, stdout} = spawnSync("python", args);
-
-   if(error) {
-      console.log(stderr.toString());
-      return;
-   }
+   const output = execSync(args, {encoding: "utf8", maxBuffer: 50 * 1024 * 1024});
 
    // Will return an alert message if include files are missing
-   // otherwise it will return the output as a string
-   const valid = checkIncludes(JSON.parse(stdout.toString()))
+   const valid = checkIncludes(JSON.parse(output))
    if (!valid) return {"alert": "One or more include files are missing!"};
-   else return stdout.toString();
+   else return output;
 }
 
 const createJsonFile = (filename, data) => {
