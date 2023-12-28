@@ -9,7 +9,7 @@
       "watch": "webpack --config webpack.common.js --watch",
       "electron": "electron .",
       "start": "electron-forge start",
-      "dev-start": "electron-forge start && python ./py/CimGraph.py ./data/IEEE123.xml >> ./data/IEEE123.json",
+      "dev-start": "rm ./data/IEEE123.json && python ./py/CimGraph.py ./data/IEEE123.xml >> ./data/IEEE123.json && electron-forge start",
       "package": "electron-forge package",
       "make": "electron-forge make"
    },

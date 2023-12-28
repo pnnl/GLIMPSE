@@ -26,7 +26,6 @@ const makeWindow = () => {
       }
    })
 
-   // cimGraphData = getCIMgraphData();
    cimGraphData = JSON.stringify(require("./data/IEEE123.json"));
 
    // if(isDev) {
