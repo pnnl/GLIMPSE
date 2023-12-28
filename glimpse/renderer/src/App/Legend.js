@@ -11,7 +11,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
   const edges = [];
 
   // Map of the options belonging to each edge type
-  const edgeOptions = new Map([
+  const legendEdgeOptions = new Map([
     [
       "overhead_line",
       {
@@ -406,8 +406,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 101,
     id: "overhead_line",
     label: `overhead_line [${nodeCounts.edges.overhead_line}]`,
-    width: edgeOptions.get("overhead_line").width,
-    color: edgeOptions.get("overhead_line").color,
+    width: legendEdgeOptions.get("overhead_line").width,
+    color: legendEdgeOptions.get("overhead_line").color,
   });
 
   edges.push({
@@ -415,8 +415,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 103,
     id: "switch",
     label: `switch [${nodeCounts.edges.switch}]`,
-    width: edgeOptions.get("switch").width,
-    color: edgeOptions.get("switch").color,
+    width: legendEdgeOptions.get("switch").width,
+    color: legendEdgeOptions.get("switch").color,
   });
 
   edges.push({
@@ -424,8 +424,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 105,
     id: "underground_line",
     label: `underground_line [${nodeCounts.edges.underground_line}]`,
-    width: edgeOptions.get("underground_line").width,
-    color: edgeOptions.get("underground_line").color,
+    width: legendEdgeOptions.get("underground_line").width,
+    color: legendEdgeOptions.get("underground_line").color,
   });
 
   edges.push({
@@ -433,8 +433,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 107,
     id: "regulator",
     label: `regulator [${nodeCounts.edges.regulator}]`,
-    width: edgeOptions.get("regulator").width,
-    color: edgeOptions.get("regulator").color,
+    width: legendEdgeOptions.get("regulator").width,
+    color: legendEdgeOptions.get("regulator").color,
   });
 
   edges.push({
@@ -442,8 +442,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 109,
     id: "transformer",
     label: `transformer [${nodeCounts.edges.transformer}]`,
-    width: edgeOptions.get("transformer").width,
-    color: edgeOptions.get("transformer").color,
+    width: legendEdgeOptions.get("transformer").width,
+    color: legendEdgeOptions.get("transformer").color,
   });
 
   edges.push({
@@ -451,8 +451,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 111,
     id: "triplex_line",
     label: `triplex_line [${nodeCounts.edges.triplex_line}]`,
-    width: edgeOptions.get("triplex_line").width,
-    color: edgeOptions.get("triplex_line").color,
+    width: legendEdgeOptions.get("triplex_line").width,
+    color: legendEdgeOptions.get("triplex_line").color,
   });
 
   edges.push({
@@ -460,8 +460,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 113,
     id: "series_reactor",
     label: `series_reactor [${nodeCounts.edges.series_reactor}]`,
-    width: edgeOptions.get("series_reactor").width,
-    color: edgeOptions.get("series_reactor").color,
+    width: legendEdgeOptions.get("series_reactor").width,
+    color: legendEdgeOptions.get("series_reactor").color,
   });
 
   edges.push({
@@ -469,8 +469,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 115,
     id: "communication",
     label: `communication`,
-    width: edgeOptions.get("communication").width,
-    color: edgeOptions.get("communication").color,
+    width: legendEdgeOptions.get("communication").width,
+    color: legendEdgeOptions.get("communication").color,
   });
 
   edges.push({
@@ -478,8 +478,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 117,
     id: "microgrid_connection",
     label: `microgrid_connection`,
-    width: edgeOptions.get("microgrid_connection").width,
-    color: edgeOptions.get("microgrid_connection").color,
+    width: legendEdgeOptions.get("microgrid_connection").width,
+    color: legendEdgeOptions.get("microgrid_connection").color,
   });
 
   edges.push({
@@ -487,14 +487,13 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     to: 119,
     id: "mapping",
     label: `mapping`,
-    width: edgeOptions.get("mapping").width,
-    color: edgeOptions.get("mapping").color,
+    width: legendEdgeOptions.get("mapping").width,
+    color: legendEdgeOptions.get("mapping").color,
   });
   /*-------- End of Edges --------*/
 
   const nodesDataSet = new DataSet(nodes);
   const edgesDataSet = new DataSet(edges);
-
   const options = appConfig.legendGraphOptions;
 
    const data = {

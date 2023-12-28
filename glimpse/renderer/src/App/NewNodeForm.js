@@ -1,5 +1,7 @@
 import React, { useEffect, useState} from "react";
 import ReactDOM from "react-dom";
+import { edgeOptions } from "./config/objectOptions";
+import appConfig from "../appConfig/appConfig.json";
 import {
    Dialog, 
    DialogTitle,
@@ -15,107 +17,80 @@ import {
    Stack,
 } from "@mui/material";
 
-const NewNodeForm = ({onMount, nodes, addNewNode}) => {
+const nodeTypes = appConfig.nodeTypes;
+const edgeTypes = appConfig.edgeTypes
+
+const NewNodeForm = ({onMount, nodes, addNode}) => {
    const [openForm, setOpenForm] = useState(false);
-   const [nodeTypeIndex, setNodeTypeIndex] = useState(0);
-   const [edgeTypeIndex, setEdgeTypeIndex] = useState(0);
 
-   // const [formObj, setFormObj] = useState({
-   //    "o"
-   // })
+   const [formFields, setFormFields] = useState({
+      "nodeType": 0,
+      "nodeID": "",
+      "connectTo": "",
+      "edgeType": 0
+   })
 
-   const newNodeObj = {
-      "objects": [
-         {
-            "name": "",
-            "attributes": {
-               "id": ""
-            }
-         },
-         {
-            "name":"",
-            "attributes": {
-               "id":"",
-               "to": "",
-               "from": ""
-            }
-         }
-      ] 
-   }
    
-   console.log(newNodeObj);
-
-   useEffect(() => {
-      onMount(setOpenForm);
-   }, [setOpenForm]);
-
    const handleClose = () => {
       setOpenForm(false);
    }
-
-   const nodeTypes = [
-      "node",
-      "load", 
-      "meter",
-      "inverter_dyn",  
-      "diesel_dg", 
-      "capacitor", 
-      "triplex_load",
-      "triplex_node",
-      "triplex_meter", 
-      "substation", 
-      "microgrid",
-      "communication_node", 
-   ];
-
-   const edgeTypes = [
-      "overhead_line",
-      "switch",
-      "underground_line",
-      "series_reactor",
-      "triplex_line",
-      "regulator",
-      "transformer",
-      "mapping",
-      "communication",
-      "microgrid_connection",
-      "parentChild",
-      "line"
-   ];
-
-   const handleNodeTypeChange = (e) => {
-      setNodeTypeIndex(e.target.value);
-   }
-
-   const handleEdgeTypeChange = (e) => {
-      setEdgeTypeIndex(e.target.value);
-   }
-
+   
    const createNewNode = (e) => {
       e.preventDefault();
+      const node = {};
+      const edge = {};
 
-      addNewNode(newNodeObj);
+      node["group"] = nodeTypes[formFields.nodeType];
+      node["id"] = `${nodeTypes[formFields.nodeType]}_${formFields.nodeID}`;
+      node["label"] = `${nodeTypes[formFields.nodeType]}_${formFields.nodeID}`;
+      node["attributes"] = {
+         "id": node["id"]
+      };
+
+      edge["id"] = `${formFields.connectTo}-${formFields.nodeID}`;
+      edge["from"] = formFields.connectTo;
+      edge["to"] = node["id"];
+      edge["type"] = edgeTypes[formFields.edgeType];
+      edge["color"] = edgeOptions.get(edgeTypes[formFields.edgeType]).color;
+      edge["width"] = edgeOptions.get(edgeTypes[formFields.edgeType]).width;
+      edge["hidden"] = edgeOptions.get(edgeTypes[formFields.edgeType]).hidden;
+
+      addNode({"node": node, "connection": edge});
       handleClose();
    }
+   
+   const handleChange = (e) => {
+      e.preventDefault();
+      const {name, value} = e.target;
+      setFormFields(formFields => ({
+         ...formFields,
+         [name]: value
+      }));
+   }
+   
+   useEffect(() => {
+      onMount(setOpenForm);
+   });
 
    return ReactDOM.createPortal(
       <>
       <Dialog
-      maxWidth="sm"
       fullWidth
+      maxWidth="sm"
+      scroll= "paper"
       open={openForm}
       onClose={handleClose}
-      scroll= "paper"
       >
          <DialogTitle id="new-node-title">New Node</DialogTitle>
          <DialogContent dividers>
          <FormControl fullWidth>
             <TextField
                select
-               value={nodeTypeIndex}
+               name="nodeType"
                label="Node Type"
                variant="outlined"
-               onChange={handleNodeTypeChange}
+               value={formFields.nodeType}
+               onChange={handleChange}
                >
                {
                   nodeTypes.map((type, index) => {
@@ -125,7 +100,15 @@ const NewNodeForm = ({onMount, nodes, addNewNode}) => {
                   })
                }
             </TextField>
-            <TextField sx={{mt:2}} onChange={(e) => newNodeObj.objects[0].attributes.id = e.target.value} label="ID" variant="outlined"/>
+            <TextField 
+               sx={{mt:2}}
+               name="nodeID"
+               id="node-label"
+               onChange={handleChange}
+               label="ID"
+               value={formFields.nodeID}
+               variant="outlined"
+               />
          </FormControl>
          <Divider sx={{mt: 2}}/>
          <Typography variant="h6">Connections</Typography>
@@ -136,17 +119,21 @@ const NewNodeForm = ({onMount, nodes, addNewNode}) => {
             <FormControl fullWidth>
                <Autocomplete
                   options={nodes}
-                  onChange={(e, value) => newNodeObj.objects[1].attributes.to = value}
-                  renderInput={(params) => <TextField {...params} label="Connected To"/>}
+                  onChange={(e, value) => setFormFields(formFields => ({
+                     ...formFields,
+                     "connectTo": value
+                  }))}
+                  renderInput={(params) => <TextField value={formFields.connectTo} {...params} label="Connected To"/>}
                />
             </FormControl>
             <FormControl fullWidth>
                <TextField
                select
-               value={edgeTypeIndex}
+               value={formFields.edgeType}
+               name="edgeType"
                label="Edge Type"
                variant="outlined"
-               onChange={handleEdgeTypeChange}
+               onChange={handleChange}
                >
                {
                   edgeTypes.map((type, index) => {

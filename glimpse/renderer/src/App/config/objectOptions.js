@@ -2,7 +2,7 @@ export const edgeOptions = new Map([
    ["overhead_line", {
       "width": 2,
       "color": "#000000",
-      "hidden": false
+      "hidden": false,
    }],
    ["switch", {
       "width": 2, 
@@ -58,7 +58,8 @@ export const edgeOptions = new Map([
    ["line", {
       "width": 2, 
       "color": "black", 
-      "hidden": false
+      "hidden": false,
+      "length": 2
    }]
 ]);
 

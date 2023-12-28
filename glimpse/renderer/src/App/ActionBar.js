@@ -231,6 +231,7 @@ const ActionBar = ({
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
                   <Button
+                     disabled
                      id="filter-button"
                      aria-controls={open ? "filter-form" : undefined}
                      aria-haspopup="true"

@@ -44,7 +44,7 @@ switch_types = ['LoadBreakSwitch']
 # IDs = []
 
 for node in network.graph[cim.ConnectivityNode].values():
-   addObject("d_node", {"id": node.mRID})
+   addObject("c_node", {"id": node.mRID})
    for terminal in node.Terminals:
       equipment = terminal.ConductingEquipment
       eq_class_type = equipment.__class__.__name__
@@ -90,7 +90,7 @@ for line in network.graph[cim.ACLineSegment].values():
    addObject("terminal", {"id": line.Terminals[0].mRID})
    addObject("terminal", {"id": line.Terminals[1].mRID}) # black
 
-   addObject("line", {
+   addObject("overhead_line", {
       "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
       "from": line.Terminals[0].mRID,
       "to": line.Terminals[1].mRID

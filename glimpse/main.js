@@ -4,28 +4,20 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-const isDev = process.env.NODE_ENV !== "development";
+// const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 let cimGraphData;
-
-// const getCIMgraphData = () => {
-
-//    const args = `python ${path.join(__dirname, "py", "CimGraph.py")} ${path.join(__dirname, "data", "IEEE123.xml")}`;
-//    const output = execSync(args)
-
-//    return output.toString();
-// }
 
 const makeWindow = () => {
    const win = new BrowserWindow({
       width: 1500,
-      height: 750,
+      height: 900,
       backgroundColor: "white",
-      autoHideMenuBar: false,
+      autoHideMenuBar: true,
       show: false,
       webPreferences: {
          nodeIntegration: false,
@@ -37,9 +29,9 @@ const makeWindow = () => {
    // cimGraphData = getCIMgraphData();
    cimGraphData = JSON.stringify(require("./data/IEEE123.json"));
 
-   if(isDev) {
-      win.webContents.openDevTools();
-   }
+   // if(isDev) {
+   //    win.webContents.openDevTools();
+   // }
    win.loadFile("./renderer/public/index.html");
    win.show()
 }
@@ -64,33 +56,24 @@ const checkIncludes = ( jsonData ) => {
       }
    });
 
-   if (included_files.sort().toString() !== includeS_files.sort().toString()) {
-      return false;
-   }
-   else {
-      return true;
-   }
+   
+   if (includeS_files.length === 0) return true; // add this line
+   else if (included_files.sort().toString() !== includeS_files.sort().toString()) return false;
+   else return true;
 }
 
 const handleFileOpen = (filePaths) => {
-
-   const args = ["./py/glm2json.py"]
+   let args = "python ./py/glm2json.py";
    for (const filePath of filePaths) {
-      args.push(filePath);
+      args += ` ${filePath}`;
    }
 
-   const {error, stdout} = spawnSync("python", args);
-
-   if(error) {
-      console.log(stderr.toString());
-      return;
-   }
+   const output = execSync(args, {encoding: "utf8", maxBuffer: 50 * 1024 * 1024});
 
    // Will return an alert message if include files are missing
-   // otherwise it will return the output as a string
-   const valid = checkIncludes(JSON.parse(stdout.toString()))
+   const valid = checkIncludes(JSON.parse(output))
    if (!valid) return {"alert": "One or more include files are missing!"};
-   else return stdout.toString();
+   else return output;
 }
 
 const createJsonFile = (filename, data) => {

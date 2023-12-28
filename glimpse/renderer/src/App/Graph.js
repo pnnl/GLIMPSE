@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from "react";
-import {Network} from "vis-network";
+import { Network } from "vis-network";
 import { DataSet, DataView } from "vis-data";
 import ActionBar from "./ActionBar";
 import NodePopup from "./NodePopup";
@@ -12,8 +12,8 @@ import appConfig from "../appConfig/appConfig.json";
 import { edgeOptions } from "./config/objectOptions";
 
 const options = appConfig.graphOptions;
-let nodesDataview;
-let edgesDataview;
+let nodes_dataView;
+let edges_dataView;
 let glmNetwork;
 let counter = -1;
 
@@ -37,7 +37,7 @@ const objectTypeCount = {
       "triplex_meter": 0,
       "substation": 0,
       "terminal": 0,
-      "d_node": 0
+      "c_node": 0
    },
    "edges": {
       "overhead_line": 0,
@@ -52,39 +52,8 @@ const objectTypeCount = {
    }
 };
 
-//These types are recognized as edges
-const edgeTypes = [
-   "overhead_line",
-   "switch",
-   "underground_line",
-   "series_reactor",
-   "triplex_line",
-   "regulator",
-   "transformer",
-   "mapping",
-   "communication",
-   "microgrid_connection",
-   "parentChild",
-   "line"
-];
-
-//These types are recognized as nodes
-const nodeTypes = [
-   "load", 
-   "triplex_load",
-   "capacitor", 
-   "node", 
-   "triplex_node",
-   "substation", 
-   "meter", 
-   "triplex_meter", 
-   "inverter_dyn",  
-   "diesel_dg", 
-   "communication_node", 
-   "microgrid",
-   "terminal",
-   "d_node",
-];
+const nodeTypes = appConfig.nodeTypes; //These types are recognized as nodes
+const edgeTypes = appConfig.edgeTypes; //These types are recognized as edges
 
 /**
  * Converts an object of attributes from a node or edge to a string to be displayed
@@ -134,11 +103,9 @@ const setGraphData = (dataFiles) => {
          })
 
          const objectType = obj[name];
-         const attributes = obj.attributes;
-         
+         const attributes = obj.attributes;;
          if (nodeTypes.includes(objectType))
          {
-
             Object.keys(attributes).forEach((k) => {
                if(keys.includes(k))
                {
@@ -152,7 +119,6 @@ const setGraphData = (dataFiles) => {
             {
                data.nodes.add({
                   "id": nodeID,
-                  "label": nodeID,
                   "attributes": attributes,
                   "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -164,7 +130,6 @@ const setGraphData = (dataFiles) => {
             {
                data.nodes.add({
                   "id": nodeID,
-                  "label": nodeID,
                   "attributes": attributes,
                   "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -212,6 +177,7 @@ const setGraphData = (dataFiles) => {
                "id": edgeID,
                "from": edgeFrom,
                "to": edgeTo,
+               "length": Object.keys(edgeOptions.get(objectType)).includes("length") ? edgeOptions.get(objectType).length : undefined,
                "color": edgeOptions.get(objectType).color,
                "width": edgeOptions.get(objectType).width,
                "hidden": edgeOptions.get(objectType).hidden,
@@ -343,16 +309,8 @@ const Reset = () => {
  * @param {bool} toggle - True turns on physics, false turns off physics
  */
 const TogglePhysics = (toggle) => {
-    
-   if(toggle)
-   {
-      glmNetwork.setOptions({physics: {enabled: true}})
-   }
-   else
-   {
-      glmNetwork.setOptions({physics: {enabled: false}})
-   }
-
+   if (toggle) glmNetwork.setOptions({physics: {enabled: true}});
+   else glmNetwork.setOptions({physics: {enabled: false}});
 }
 
 /**
@@ -360,7 +318,6 @@ const TogglePhysics = (toggle) => {
  * starting at the end of the array then moves down every function call
  */
 const Prev = () => {
-  
    const options = {
       "scale": 3,
       "locked": true,
@@ -380,10 +337,7 @@ const Prev = () => {
    counter--;
 
    //if the counter ends up less than 0 the counter starts over at the end of the array
-   if(counter < 0)
-   {
-      counter = prev.length - 1;
-   }
+   if (counter < 0) counter = prev.length - 1;
   
    try {
       glmNetwork.focus(prev[counter].id, options)
@@ -397,7 +351,6 @@ const Prev = () => {
  * starting at the beginning of the array then moves up by one every function call
  */
 const Next = () => {
-
    const options = {
       "scale": 3,
       "locked": true,
@@ -464,14 +417,8 @@ const HighlightGroup = (nodeType) => {
    });
    
    const edgesMap = data.edges.map((edge) => {
-
-      if(edge.width !== 8)
-      {
-         edge.color = "lightgrey";
-      }
-
+      if (edge.width !== 8) edge.color = "lightgrey";
       return edge;
-      
    });
 
    data.nodes.update(nodesMap);
@@ -518,7 +465,7 @@ const HighlightEdges = (edgeType) => {
 /* ------------------------ Component ------------------------ */
 const Graph = ({ dataToVis }) => {
 
-   if(data.nodes.length > 0 && data.edges.length > 0) {
+   if (data.nodes.length > 0 && data.edges.length > 0) {
       data.nodes = new DataSet();
       data.edges = new DataSet();
       setGraphData( dataToVis );
@@ -536,12 +483,12 @@ const Graph = ({ dataToVis }) => {
 
    const updateEdgeFilterValues = ({value, checked}) => {
       edgeFilterValues[value] = checked;
-      edgesDataview.refresh();
+      edges_dataView.refresh();
    }
    
    const updateNodeFilterValues = ({value, checked}) => {
       nodeFilterValues[value] = checked;
-      nodesDataview.refresh();
+      nodes_dataView.refresh();
    }
 
    const nodesFilter = (node) => {
@@ -552,8 +499,19 @@ const Graph = ({ dataToVis }) => {
       return edgeFilterValues[edge.id.split(":")[0]];
    }
       
-   nodesDataview = new DataView(data.nodes, {filter: nodesFilter});
-   edgesDataview = new DataView(data.edges, {filter: edgesFilter});
+   // nodes_dataView = new DataView(data.nodes, {"filter": nodesFilter});
+   // edges_dataView = new DataView(data.edges, {"filter": edgesFilter});
+
+   // nodes_dataView.on("*", (event, properties, senderId) => {
+   //    console.log('event', event, properties);
+   //    console.log("senderID: ", senderId)
+   // })
+
+   // edges_dataView.on("*", (event, properties, senderId) => {
+   //    console.log('event', event, properties);
+   //    console.log("senderID: ", senderId)
+   // })
+
 
    /**
     * Updates uploaded data with any changes.
@@ -562,7 +520,6 @@ const Graph = ({ dataToVis }) => {
    const Export = () => {
 
       Object.keys(dataToVis).forEach(( file ) => {
-         
          dataToVis[file]["objects"].forEach((object) => {
 
             const objType = object.name;
@@ -603,8 +560,8 @@ const Graph = ({ dataToVis }) => {
    }
 
    let newNodeFormSetState;
-   const onNewNodeFormMount = (setStateVar) => {
-      newNodeFormSetState = setStateVar;
+   const onNewNodeFormMount = (setOpenNewNodeForm) => {
+      newNodeFormSetState = setOpenNewNodeForm;
    }
 
    const openNewNodeForm = (openFormBool) => {
@@ -707,34 +664,16 @@ const Graph = ({ dataToVis }) => {
       }
    }
 
-   const addNewNode = (newNodeObj) => {
-      console.log(newNodeObj);
+   const addNewNode = ({node, connection}) => {
+      node["title"] = getTitle(node['attributes']);
+      data.nodes.add(node); // add node to data set
+      objectTypeCount.nodes[node.group]++; // increase counter for the new node's type
 
-      const node = newNodeObj.objects[0];
-      const edge = newNodeObj.objects[1];
-
-      data.nodes.add({
-         "id": node.attributes.id,
-         "label": node.attributes.id,
-         "attributes": node.attributes,
-         "group": node.name,
-         "title": "Object Type: " + node.name + "\n" + getTitle(node.attributes),
-      });
-      objectTypeCount.nodes[node.name]++;
-
-      data.edges.add({
-         "id": edge.attributes.id,
-         "from": edge.attributes.from,
-         "to": edge.attributes.to,
-         "color": edgeOptions.get(edge.name).color,
-         "width": edgeOptions.get(edge.name).width,
-         "hidden": edgeOptions.get(edge.name).hidden,
-         "title": "Object Type: " + edge.name + "\n" + getTitle(edge.attributeName)
-      })
-      objectTypeCount.edges[edge.name]++;
+      connection["title"] = getTitle(connection);
+      data.edges.add(connection);
+      objectTypeCount.edges[connection.type]++;
    }
-   
-   
+
 
    const container = useRef(null);
    useEffect(() => {
@@ -746,20 +685,20 @@ const Graph = ({ dataToVis }) => {
       if(Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y"))
       {
          document.getElementById("circularProgress").style.display = "none";
-         glmNetwork = new Network(container.current, {nodes: nodesDataview, edges: edgesDataview}, options);
+         // glmNetwork = new Network(container.current, {"nodes": nodes_dataView, "edges": edges_dataView}, options);
+         glmNetwork = new Network(container.current, data, options);
          glmNetwork.setOptions({physics: {enabled: false}})
       }
       else
       {
          options.physics.stabilization.enabled = true;
-         glmNetwork = new Network(container.current, {nodes: nodesDataview, edges: edgesDataview}, options);
+         // glmNetwork = new Network(container.current, {"nodes": nodes_dataView, "edges": edges_dataView}, options);
+         glmNetwork = new Network(container.current, data, options);
 
          glmNetwork.on("stabilizationProgress", (params) => {
          
-            /**
-               Math for determining the radius of the circular progress bar 
-               based on the stabilization progress
-            */
+            // math for determining the angle of the circular progress bar 
+            // based on the stabilization progress
             const maxWidth = 360;
             const minWidth = 1;
             const widthFactor = params.iterations / params.total;
@@ -767,12 +706,9 @@ const Graph = ({ dataToVis }) => {
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
             document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
          });
-         
-         glmNetwork.once("stabilizationIterationsDone", () => {
 
-            /**
-               Once stabilization is done the circular progress with display 100% for half a second then hide
-            */
+         glmNetwork.once("stabilizationIterationsDone", () => {
+            //Once stabilization is done the circular progress with display 100% for half a second then hide
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
             document.getElementById("circularProgress").style.opacity = 0.7;
@@ -785,13 +721,23 @@ const Graph = ({ dataToVis }) => {
             }, 500);
          });
       }
+
+      glmNetwork.on("hoverNode", ({node}) => {
+         const currNode = data.nodes.get(node);
+         currNode.label = node;
+         data.nodes.update(currNode);
+      });
+
+      glmNetwork.on("blurNode", ({ node }) => {
+         const currNode = data.nodes.get(node);
+         currNode.label = "";
+         data.nodes.update(currNode);
+      });
        
       glmNetwork.on("doubleClick", (params) => {
    
          if(params.nodes[0] === undefined)
-         {
             alert("Double click on a node to edit.");
-         }
          else
          {
             //Set the state of the NodePopup component for editing of the selected node's attributes
@@ -802,25 +748,18 @@ const Graph = ({ dataToVis }) => {
 
       /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
-
          if(glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined)
-         {
             setContextMenuData({"edgeID": glmNetwork.getEdgeAt(params.pointer.DOM)});
-         }
          else if (params.edges.length === 0 && params.nodes.length === 0)
-         {
             setContextMenuData({});
-            console.log("show the add context menu feature...");
-         }
-         
-      })
+      });
       
    });
 
    return (
       <>
          <ActionBar
-            graphDataObj={dataToVis}
+            graphDataObj = {dataToVis}
             nodesDataObj = {data.nodes}
             physicsToggle = {TogglePhysics}
             reset = {Reset}
@@ -829,10 +768,10 @@ const Graph = ({ dataToVis }) => {
             next = {Next}
             download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
-            updateNodeFilterVals={updateNodeFilterValues}
-            updateEdgeFilterVals={updateEdgeFilterValues}
-            edgeCheckboxValues={edgeFilterValues}
-            nodeCheckboxValues={nodeFilterValues}
+            updateNodeFilterVals = {updateNodeFilterValues}
+            updateEdgeFilterVals = {updateEdgeFilterValues}
+            edgeCheckboxValues = {edgeFilterValues}
+            nodeCheckboxValues = {nodeFilterValues}
          />
 
          <NodePopup 
@@ -844,7 +783,7 @@ const Graph = ({ dataToVis }) => {
          <NewNodeForm
             onMount={onNewNodeFormMount}
             nodes={data.nodes.getIds()}
-            addNewNode={addNewNode}
+            addNode = {addNewNode}
          />
 
          <div id="networks-wrapper">

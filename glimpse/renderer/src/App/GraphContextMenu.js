@@ -48,7 +48,7 @@ const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm}) => {
          anchorPosition={
             contextMenu !== null
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : null            
+            : { top: null, left: null }  
          }>
          {  contextMenu.edgeID
             ? <EdgeMenuItems/>
