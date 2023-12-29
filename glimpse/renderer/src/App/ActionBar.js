@@ -8,15 +8,13 @@ import ButtonGroup from "@mui/material/ButtonGroup";
 import TextField from "@mui/material/TextField";
 import FormGroup from "@mui/material/FormGroup";
 import Box from '@mui/material/Box';
-import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from "@mui/material/Switch";
 import SearchIcon from "@mui/icons-material/Search";
 import IconButton from "@mui/material/IconButton";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
-import Menu from "@mui/material/Menu";
-import appConfig from "../appConfig/appConfig.json";
+import appConfig from "./config/appConfig.json";
 import StatsTableModal from "./StatsTableModal.js";
+import Autocomplete from "@mui/material/Autocomplete";
 
 const appOptions = appConfig.appOptions;
 
@@ -30,10 +28,8 @@ const ActionBar = ({
    next, 
    physicsToggle, 
    addGraphOverlay,
-   updateNodeFilterVals,
-   updateEdgeFilterVals, 
-   edgeCheckboxValues,
-   nodeCheckboxValues }) => {
+   nodeIDs
+}) => {
 
    const nodes = nodesDataObj;
    const [node, setNode] = useState(null);
@@ -43,13 +39,6 @@ const ActionBar = ({
    const [showPlot, setShowPlot] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [showUpload, setShowUpload] = useState(false);
-   const [anchorElement, setAnchorElement] = useState(null);
-   const [nodeCheckboxes, setNodeCheckboxes] = useState(nodeCheckboxValues);
-   const [edgeCheckboxes, setEdgeCheckboxes] = useState(edgeCheckboxValues);
-   const [nodesParentChecked, setNodesParentChecked] = useState(true);
-   const [edgesParentChecked, setEdgesParentChecked] = useState(true);
-
-   const open = Boolean(anchorElement);
    const theme = createTheme({
       palette: {
          primary: {
@@ -61,59 +50,42 @@ const ActionBar = ({
       }
    });
 
-   const handleFilterClick = (e) => {
-      setAnchorElement(e.currentTarget);
-   }
-   
-   const handleChange = (e) => {
-      setNode(e.target.value);
+   const handleChange = (nodeID) => {
+      setNode(nodeID);
    }
 
-   const handleSubmit = (e) =>
-   {
+   const handleSubmit = (e) => {
       e.preventDefault();
       
-      if (nodes.get(node))
-      {
-         onFind(node);
-      }
-      else
-      {
-         alert(`${node} is not in the graph.`)
-      }
+      if (nodes.get(node)) onFind(node);
+      else alert(`${node} is not in the graph.`)
    }
-
    const handleExport = (e) => {
       e.preventDefault()
       download();
    }
 
-   const handleReset = (e) =>
-   {
+   const handleReset = (e) => {
       e.preventDefault();
       reset();
    }
 
-   const handlePrev = (e) => 
-   {
+   const handlePrev = (e) =>  {
       e.preventDefault();
       prev();
    }
 
-   const handleNext = (e) =>
-   {
+   const handleNext = (e) => {
       e.preventDefault();
       next();
    }
 
-   const autoLayout = (e) =>
-   {
+   const autoLayout = (e) => {
       physicsToggle(e.target.checked);
       setChecked(e.target.checked)
    }
 
-   const plot = async (e) => 
-   {
+   const plot = async (e) => {
       e.preventDefault();
       
       if(imgUrl === null)
@@ -127,8 +99,7 @@ const ActionBar = ({
          setImgUrl(imgUrl);
          setShowPlot(true);
       }
-      else
-      {
+      else {
          setShowPlot(true);
       }
    }
@@ -136,14 +107,12 @@ const ActionBar = ({
    const showStats = async (e) => {
       e.preventDefault();
 
-      if(stats === null)
-      {
+      if (stats === null) {
          const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
          setStats(JSON.parse(statsObj));
          setShowTable(true);
       }
-      else
-      {
+      else {
          setShowTable(true);
       }
    }
@@ -153,127 +122,11 @@ const ActionBar = ({
       setShowUpload(true)
    }
 
-   const handleEdgeChecked = (e) => {
-      setEdgeCheckboxes({...edgeCheckboxes, [e.target.value]: e.target.checked});
-      updateEdgeFilterVals({value: e.target.value, checked: e.target.checked});
-   }
-   
-   const handleNodeChecked = (e) => {
-      setNodeCheckboxes({...nodeCheckboxes, [e.target.value]: e.target.checked});
-      updateNodeFilterVals({value: e.target.value, checked: e.target.checked});
-   }
-
-   const handleParentNodesCheck = (e) => {
-      setNodesParentChecked(e.target.checked);
-      Object.keys(nodeCheckboxes).forEach(key => {
-         nodeCheckboxes[key] = e.target.checked;
-         updateNodeFilterVals({value: key, checked: e.target.checked});
-      });
-   }
-
-   const handleParentEdgeCheck = (e) => {
-      setEdgesParentChecked(e.target.checked);
-      Object.keys(edgeCheckboxes).forEach(key => {
-         edgeCheckboxes[key] = e.target.checked;
-         updateEdgeFilterVals({value: key, checked: e.target.checked});
-      });
-   }
-
-   const nodesCheckboxes = (
-      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
-         {
-            Object.entries(nodeCheckboxes).map(([key, val], index) => {
-               return (
-                  <FormControlLabel
-                     key={index}
-                     label={key}
-                     control={
-                        <Checkbox 
-                           value={key} 
-                           key={index} 
-                           checked={val} 
-                           onChange={handleNodeChecked}
-                        />
-                     }
-                  />
-               );
-            })
-         }
-      </Box>
-   );
-
-   const edgesCheckboxes = (
-      <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
-         {
-            Object.entries(edgeCheckboxes).map(([key, val], index) => {
-               return (
-                  <FormControlLabel
-                     label={key}
-                     key={index}
-                     control={
-                        <Checkbox 
-                           value={key} 
-                           key={index} 
-                           checked={val} 
-                           onChange={handleEdgeChecked}
-                        />
-                     }
-                  />
-               );
-            })
-         }
-      </Box>
-   );
-
    return (
       <>
       <Box sx={{m: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
-                  <Button
-                     id="filter-button"
-                     aria-controls={open ? "filter-form" : undefined}
-                     aria-haspopup="true"
-                     aria-expanded={open ? "true" : undefined}
-                     variant="contained"
-                     disableElevation
-                     onClick={handleFilterClick}
-                     endIcon={<KeyboardArrowDownIcon />}
-                     >
-                     {appOptions.buttons.filterBtn}
-                  </Button>
-                  <Menu
-                     elevation={0}
-                     anchorOrigin={{vertical: "bottom", horizontal: "right",}}
-                     transformOrigin={{vertical: "top", horizontal: "right"}}
-                     id="filter-form"
-                     MenuListProps={{"aria-labelledby": "filter-button"}}
-                     anchorEl={anchorElement}
-                     open={open}
-                     onClose={() => setAnchorElement(null)}
-                  >
-                  <FormControlLabel
-                  label="Nodes"
-                  control={
-                     <Checkbox
-                        checked={nodesParentChecked}
-                        onChange={handleParentNodesCheck}
-                     />
-                  }
-                  />
-                  {nodesCheckboxes}
-                  <FormControlLabel
-                  label="Edges"
-                  control={
-                     <Checkbox
-                        checked={edgesParentChecked}
-                        onChange={handleParentEdgeCheck}
-                     />
-                  }
-                  />
-                  {edgesCheckboxes}
-                  </Menu>
-
                   <Button 
                      size="small"
                      variant="outlined"
@@ -314,13 +167,20 @@ const ActionBar = ({
                      />
                </FormGroup>
 
-               <TextField 
-                  id="outlined-basic" 
-                  label={appOptions.buttons.searchLbl} 
-                  variant="outlined"
+               <Autocomplete sx={{width: 200}}
                   size="small"
-                  onChange={handleChange}
-                  sx={{width: "10rem"}}
+                  id="autocomplete-nodeID-search"
+                  options = {nodeIDs}
+                  onChange={(even, ID) => {
+                     handleChange(ID)
+                  }}
+                  renderInput={(params) =>
+                  <TextField
+                     variant="outlined"
+                     {...params} 
+                     label={appOptions.buttons.searchLbl}
+                     />
+                  }
                />
 
                <Stack direction="row" spacing={2}>

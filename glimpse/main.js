@@ -7,14 +7,14 @@ const jsonSchema = require("./upload.schema.json");
 const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 
 const makeWindow = () => {
    const win = new BrowserWindow({
       width: 1500,
-      height: 750,
+      height: 900,
       backgroundColor: "white",
       autoHideMenuBar: true,
       show: false,

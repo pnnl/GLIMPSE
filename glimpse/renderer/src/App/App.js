@@ -3,7 +3,7 @@ import '../styles/App.css';
 import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
-import appConfig from '../appConfig/appConfig.json';
+import appConfig from './config/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 
