@@ -25,7 +25,7 @@ const makeWindow = () => {
       }
    })
 
-   if(isDev) {
+   if (isDev) {
       win.webContents.openDevTools();
    }
    win.loadFile("./renderer/public/index.html");

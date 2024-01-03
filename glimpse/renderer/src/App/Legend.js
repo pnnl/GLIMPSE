@@ -64,13 +64,16 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
       }
    }
 
+   const addEdgeLegend = (type, count) => {
+
+   }
 
   /*-------- Begining of Top Nodes --------*/
   nodes.push({
     id: "load",
     x: 37,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `load\n[${nodeCounts.nodes.load}]`,
     group: "load"
@@ -80,7 +83,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "node",
     x: 166,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `node\n[${nodeCounts.nodes.node}]`,
     group: "node"
@@ -90,7 +93,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "meter",
     x: 297,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `meter\n[${nodeCounts.nodes.meter}]`,
     group: "meter"
@@ -100,7 +103,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "inverter_dyn",
     x: 424,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `inverter_dyn\n[${nodeCounts.nodes.inverter_dyn}]`,
     group: "inverter_dyn",
@@ -110,7 +113,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "diesel_dg",
     x: 562,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `diesel_dg\n[${nodeCounts.nodes.diesel_dg}]`,
     group: "diesel_dg",
@@ -120,7 +123,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 6,
     x: 700,
     y: -22,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `capacitor\n[${nodeCounts.nodes.capacitor}]`,
     group: "capacitor",
@@ -132,7 +135,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "triplex_load",
     x: 37,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `triplex_load\n[${nodeCounts.nodes.triplex_load}]`,
     group: "triplex_load",
@@ -142,7 +145,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "triplex_node",
     x: 166,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `triplex_node\n[${nodeCounts.nodes.triplex_node}]`,
     group: "triplex_node",
@@ -152,7 +155,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "triplex_meter",
     x: 297,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `triplex_meter\n[${nodeCounts.nodes.triplex_meter}]`,
     group: "triplex_meter",
@@ -162,7 +165,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "substation",
     x: 424,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: `substation\n[${nodeCounts.nodes.substation}]`,
     group: "substation",
@@ -172,7 +175,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "communication_node",
     x: 562,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: "communication\nnode",
     group: "communication_node",
@@ -182,7 +185,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: "microgrid",
     x: 700,
     y: 100,
-    fixed: false,
+    fixed: true,
     physics: false,
     label: "End\nPoints",
     group: "microgrid",
@@ -194,7 +197,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 100,
     x: 37,
     y: 250,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -203,7 +206,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 101,
     x: 700,
     y: 250,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -212,7 +215,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 102,
     x: 37,
     y: 325,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -221,7 +224,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 103,
     x: 700,
     y: 325,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -230,7 +233,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 104,
     x: 37,
     y: 400,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -239,7 +242,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 105,
     x: 700,
     y: 400,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -248,7 +251,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 106,
     x: 37,
     y: 475,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -257,7 +260,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 107,
     x: 700,
     y: 475,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -266,7 +269,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 108,
     x: 37,
     y: 550,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -275,7 +278,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 109,
     x: 700,
     y: 550,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -284,7 +287,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 110,
     x: 37,
     y: 625,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -293,7 +296,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 111,
     x: 700,
     y: 625,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -302,7 +305,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 112,
     x: 37,
     y: 700,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -311,7 +314,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 113,
     x: 700,
     y: 700,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -320,7 +323,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 114,
     x: 37,
     y: 775,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -329,7 +332,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 115,
     x: 700,
     y: 775,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -338,7 +341,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 116,
     x: 37,
     y: 850,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -347,7 +350,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 117,
     x: 700,
     y: 850,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -356,7 +359,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 118,
     x: 37,
     y: 925,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -365,7 +368,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
     id: 119,
     x: 700,
     y: 925,
-    fixed: false,
+    fixed: true,
     physics: false,
     color: "black",
   });
@@ -491,7 +494,8 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
             mouseX: e.pageX + 2,
             mouseY: e.pageY + 6,
          });
-      } else {
+      }
+      else {
          setContextMenuData(null);
       }
    };
@@ -511,13 +515,11 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
       });
 
       network.on("oncontext", (params) => {
-         if (network.getNodeAt(params.pointer.DOM)) 
-         {
+         if (network.getNodeAt(params.pointer.DOM)) {
             const ID = network.getNodeAt(params.pointer.DOM);
             setContextMenuData({ object: data.nodes.get(ID).group, type: "node" });
          } 
-         else if (network.getEdgeAt(params.pointer.DOM)) 
-         {
+         else if (network.getEdgeAt(params.pointer.DOM)) {
             const ID = network.getEdgeAt(params.pointer.DOM);
             setContextMenuData({ object: data.edges.get(ID).id, type: "edge" });
          }

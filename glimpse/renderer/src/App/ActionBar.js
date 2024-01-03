@@ -20,17 +20,16 @@ const appOptions = appConfig.appOptions;
 
 const ActionBar = ({
    nodesDataObj,
-   graphDataObj, 
-   onFind, 
-   download, 
+   graphDataObj,
+   onFind,
+   download,
    reset,
-   prev, 
-   next, 
-   physicsToggle, 
+   prev,
+   next,
+   physicsToggle,
    addGraphOverlay,
    nodeIDs
 }) => {
-
    const nodes = nodesDataObj;
    const [node, setNode] = useState(null);
    const [stats, setStats] = useState(null);
@@ -88,8 +87,7 @@ const ActionBar = ({
    const plot = async (e) => {
       e.preventDefault();
       
-      if(imgUrl === null)
-      {
+      if (imgUrl === null) {
          // getPlot returns a Uint8Array of the png
          const plot = await window.glimpseAPI.getPlot();
          const imgUrl = URL.createObjectURL(
@@ -175,10 +173,10 @@ const ActionBar = ({
                      handleChange(ID)
                   }}
                   renderInput={(params) =>
-                  <TextField
-                     variant="outlined"
-                     {...params} 
-                     label={appOptions.buttons.searchLbl}
+                     <TextField
+                        variant="outlined"
+                        {...params} 
+                        label={appOptions.buttons.searchLbl}
                      />
                   }
                />
@@ -221,9 +219,21 @@ const ActionBar = ({
                </Stack>
          </ThemeProvider>
       </Box>
-      <StatsTableModal show = {showTable} data = {stats} close={() => setShowTable(false)}/>
-      <OverlayUpload show = {showUpload} overlayFunc = {addGraphOverlay} close={() => setShowUpload(false)}/>
-      <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)}/>
+      <StatsTableModal
+         show = {showTable}
+         data = {stats}
+         close={() => setShowTable(false)}
+      />
+      <OverlayUpload
+         show = {showUpload}
+         overlayFunc = {addGraphOverlay}
+         close={() => setShowUpload(false)}
+      />
+      <PlotModal
+         plot={imgUrl}
+         show={showPlot}
+         close={() => setShowPlot(false)}
+      />
       </>
    );
 }

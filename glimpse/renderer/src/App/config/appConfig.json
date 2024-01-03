@@ -115,7 +115,8 @@
          "smooth": {
             "enabled": true,
             "type": "continuous"
-         }
+         },
+         "hidden": true
       },
       "nodes": {
          "borderWidth": 2,
@@ -205,14 +206,14 @@
       },
       "interaction": {
          "hover":true,
-         "hideEdgesOnDrag": false,
+         "hideEdgesOnDrag": true,
          "hideEdgesOnZoom": false,
          "navigationButtons": true
       },
       "physics": {
          "barnesHut": {
             "gravitationalConstant": -10000,
-            "springConstant": 0.20,
+            "springConstant": 0.2,
             "springLength": 35
          },
          "solver": "barnesHut",

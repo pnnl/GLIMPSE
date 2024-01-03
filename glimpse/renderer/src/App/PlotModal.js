@@ -20,7 +20,7 @@ const PlotModal = ({plot, show, close}) => {
          </div>
       </>,
       document.getElementById("portal")
-   )
+   );
 }
 
 export default PlotModal

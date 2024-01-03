@@ -149,8 +149,7 @@ const setGraphData = (dataFiles) => {
          let attributeName;
 
          Object.keys(obj).forEach((k) => {
-            if(keys.includes(k))
-            {
+            if(keys.includes(k)) {
                name = k;
             }
          })
@@ -183,13 +182,12 @@ const setGraphData = (dataFiles) => {
             
             objectTypeCount.edges[objectType]++;
          }
-         else if(nodeTypes.includes(objectType)) // some nodes have a parent attribute
+         else if (nodeTypes.includes(objectType)) // some nodes have a parent attribute
          {
             const nodeID = attributes[attributeName];
             const parent = attributes.parent;
             
-            if(parent !== undefined)
-            {
+            if (parent !== undefined) {
                data.edges.add({
                   "id": `parentChild:${parent}-${nodeID}`,
                   "from": parent,
@@ -277,26 +275,22 @@ const Reset = () => {
    });
 
    const edgeItems = data.edges.map((e) => {
-
       const edgeType = e.id.split(":")[0];
 
-      if(e.width === 8)
-      {
+      if (e.width === 8) {
          e.width = 2;
          e.hidden = false;
          return e;
       }
-      else if(edgeTypes.includes(edgeType))
-      {
+      else if (edgeTypes.includes(edgeType)) {
          e.color = edgeOptions[edgeType].color;
          e.width = edgeOptions[edgeType].width;
          e.hidden = false;
          return e;
       }
-      else
-      {
+      else {
          e.color = {inherit: true};
-         e.width = 2;
+         e.width = 0.15;
          e.hidden = false;
          return e;
       }
@@ -484,7 +478,7 @@ const HighlightEdges = (edgeType) => {
 /* ------------------------ Component ------------------------ */
 const Graph = ({ dataToVis }) => {
 
-   if(data.nodes.length > 0 && data.edges.length > 0) {
+   if (data.nodes.length > 0 && data.edges.length > 0) {
       data.nodes = new DataSet();
       data.edges = new DataSet();
       setGraphData( dataToVis );
@@ -612,9 +606,7 @@ const Graph = ({ dataToVis }) => {
     * @param {string} type - "node" or "edge"
     */
    const hideObjects = (objectType, type) => {
-
-      if (type === "node")
-      {
+      if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
 
             if (node.group === objectType)
@@ -625,12 +617,9 @@ const Graph = ({ dataToVis }) => {
          });
          data.nodes.update(nodesToHide);
       }
-      else if (type === "edge") 
-      {
+      else if (type === "edge") {
          const edgesToHide = data.edges.get().map( edge => {
-
-            if (edge.id.includes(objectType))
-            {
+            if (edge.id.includes(objectType)) {
                edge.hidden = true;
             }
             return edge;
@@ -644,14 +633,19 @@ const Graph = ({ dataToVis }) => {
 
       //if Nodes and edges have x and y coordinates load the network
       //without displaying the circular progess bar 
-      if (Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y"))
-      {
+      if (Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y")) {
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, options);
          glmNetwork.setOptions({physics: {enabled: false}})
       }
-      else
-      {
+      else {
+         if (data.nodes.length > 200)
+         {
+            options.physics.barnesHut.gravitationalConstant = -50000;
+            options.physics.barnesHut.springConstant = 0.5;
+            options.physics.barnesHut.springLength = 100;
+         }
+
          options.physics.stabilization.enabled = true;
          glmNetwork = new Network(container.current, data, options);
 
@@ -667,7 +661,7 @@ const Graph = ({ dataToVis }) => {
          });
          
          glmNetwork.once("stabilizationIterationsDone", () => {
-
+            glmNetwork.setOptions({"edges": {"hidden": false}})
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
@@ -684,12 +678,10 @@ const Graph = ({ dataToVis }) => {
        
       glmNetwork.on("doubleClick", (params) => {
    
-         if(params.nodes[0] === undefined)
-         {
+         if (params.nodes[0] === undefined) {
             alert("Double click on a node to edit.");
          }
-         else
-         {
+         else {
             /* Set the state of the NodePopup component for editing of the selected node's attributes */
             setCurrentNode(data.nodes.get(params.nodes[0]));
             setOpenNodePopup(true);
@@ -698,10 +690,8 @@ const Graph = ({ dataToVis }) => {
 
       /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
-
          let edgeID = null;
-         if(glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined)
-         {
+         if (glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined) {
             edgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
             setContextMenuData({"edgeID": edgeID});
          }

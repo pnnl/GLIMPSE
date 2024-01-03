@@ -16,35 +16,28 @@ const Home = () => {
    
    const setFileData = async (paths) => {
       
-      if(paths[0].split(".")[1] === "json")
-      {
+      if(paths[0].split(".")[1] === "json") {
          const validFileData = await window.glimpseAPI.validate(paths);
 
-         if (Object.keys(validFileData).includes("error"))
-         {
+         if (Object.keys(validFileData).includes("error")) {
             alert(validFileData.error);
          }
-         else
-         {
+         else {
             setDataToVisRequest({
                showFileUpload: false,
                data: JSON.parse(validFileData)
             });
          }
       }
-      else
-      {
+      else {
          const data = await window.glimpseAPI.getJsonData(paths);
-         if(data === undefined)
-         {
+         if (data === undefined) {
             console.log("Something went wrong...");
          }
-         else if (Object.keys(data)[0] === "alert") 
-         {
+         else if (Object.keys(data)[0] === "alert") {
             alert(data.alert);
          }
-         else
-         {
+         else {
             setDataToVisRequest({
                showFileUpload: false,
                data: JSON.parse(data)
@@ -54,12 +47,10 @@ const Home = () => {
    }
    
    // Display the graph dashboard component if file uploads were succesfully validated
-   if(!dataToVisRequest.showFileUpload)
-   {
+   if (!dataToVisRequest.showFileUpload) {
       content = <Graph dataToVis = {dataToVisRequest.data} />;
    }
-   else
-   {
+   else {
       content = <FileUpload setFileData = {setFileData} />;
    }
 

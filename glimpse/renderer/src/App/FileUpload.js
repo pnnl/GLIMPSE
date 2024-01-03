@@ -12,12 +12,10 @@ const GlmFileUpload = ({ setFileData }) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.type === "dragenter" || e.type === "dragover") 
-      {
+      if (e.type === "dragenter" || e.type === "dragover") {
          setDragActive(true);
       } 
-      else if (e.type === "dragleave") 
-      {
+      else if (e.type === "dragleave") {
          setDragActive(false);
       }
    };
@@ -28,13 +26,11 @@ const GlmFileUpload = ({ setFileData }) => {
       e.stopPropagation();
       setDragActive(false);
 
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) 
-      {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
          const paths = [];
          const files = e.dataTransfer.files;
          
-         for (const file of files)
-         {
+         for (const file of files) {
             paths.push(file.path);
          }
 
@@ -47,13 +43,11 @@ const GlmFileUpload = ({ setFileData }) => {
       e.preventDefault();
       // console.log(JSON.parse(await window.glimpseAPI.getJsonData()))
 
-      if (e.target.files && e.target.files[0]) 
-      {
+      if (e.target.files && e.target.files[0]) {
          const paths = [];
          const files = e.target.files;
          
-         for (const file of files)
-         {
+         for (const file of files) {
             paths.push(file.path);
          }
 
@@ -66,7 +60,7 @@ const GlmFileUpload = ({ setFileData }) => {
       inputRef.current.click();
    };
 
-   return (
+   return ReactDOM.createPortal(
       <div className='file-upload-form-container'>
          <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
                <input ref={inputRef} type="file" accept='.glm,.json' id="input-file-upload" multiple={true} onChange={handleChange} />
@@ -78,7 +72,8 @@ const GlmFileUpload = ({ setFileData }) => {
                </label>
                { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
          </form>
-      </div>    
+      </div>,
+      document.getElementById("protal") 
    );
 };
 

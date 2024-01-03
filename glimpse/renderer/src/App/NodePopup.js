@@ -23,7 +23,7 @@ const NodePopup = ({onMount, onSave, onClose}) => {
       onClose();
    }
 
-   return (
+   return ReactDOM.createPortal(
       <Dialog
       open={open}
       onClose={onClose}
@@ -47,7 +47,8 @@ const NodePopup = ({onMount, onSave, onClose}) => {
             <Button onClick={saveChanges}>Save</Button>
             <Button onClick={closePopup}>Close</Button>
          </DialogActions>
-      </Dialog>
+      </Dialog>,
+      document.getElementById("portal")
    );
 }
 
