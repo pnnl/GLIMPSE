@@ -12,7 +12,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from "@mui/material/Switch";
 import SearchIcon from "@mui/icons-material/Search";
 import IconButton from "@mui/material/IconButton";
-import appConfig from "./config/appConfig.json";
+import appConfig from "./App/config/appConfig.json";
 import StatsTableModal from "./StatsTableModal.js";
 import Autocomplete from "@mui/material/Autocomplete";
 

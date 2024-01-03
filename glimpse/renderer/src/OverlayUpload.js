@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDom from 'react-dom';
-import '../styles/OverlayUpload.css';
+import './styles/OverlayUpload.css';
 import { useState, useRef } from 'react';
 
 const OverlayUpload = ({show, overlayFunc, close}) => {

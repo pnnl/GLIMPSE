@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/FileUpload.css';
+import './styles/FileUpload.css';
 import { useState, useRef } from 'react';
 
 const GlmFileUpload = ({ setFileData }) => {

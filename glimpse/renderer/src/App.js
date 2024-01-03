@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import '../styles/App.css';
+import './styles/App.css';
 import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
-import appConfig from './config/appConfig.json';
+import appConfig from './App/config/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 
