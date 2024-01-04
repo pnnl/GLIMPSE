@@ -1,4 +1,5 @@
 {
+   "docs": "",
    "appOptions": {
       "title": "GLIMPSE",
       "nav": {
@@ -31,7 +32,11 @@
       "inverter_dyn",  
       "diesel_dg", 
       "communication_node", 
-      "microgrid"
+      "microgrid",
+      "technique",
+      "capec",
+      "cwe",
+      "cve"
    ],
    "edgeTypes": [
       "overhead_line",
@@ -106,7 +111,7 @@
       },
       "line": {
          "width": 2, 
-         "color": "black", 
+         "color": {"inherit": true}, 
          "hidden": false
       }
    },
@@ -201,8 +206,27 @@
             "size": 15, 
             "shape": "image",
             "image": "./imgs/microgrid.svg"
+         },
+         "technique": {
+            "color": "black",
+            "size": 15,
+            "shape": "dot"
+         },
+         "capec": {
+            "color": "red",
+            "size": 15,
+            "shape": "dot"
+         },
+         "cwe": {
+            "color": "violet",
+            "size": 15,
+            "shape": "dot"
+         },
+         "cve": {
+            "color": "#228B22",
+            "size": 15,
+            "shape": "dot"
          }
-
       },
       "interaction": {
          "hover":true,
@@ -218,7 +242,7 @@
          },
          "solver": "barnesHut",
          "stabilization": {
-            "enabled": false,
+            "enabled": true,
             "iterations": 1000,
             "updateInterval": 1,
             "onlyDynamicEdges": false,
@@ -226,7 +250,11 @@
          }
       },
       "layout": {
-         "improvedLayout": false
+         "improvedLayout": false,
+         "hierarchical": {
+            "enabled": false,
+            "direction": "LR"
+         }
       }
    },
    "legendGraphOptions": {

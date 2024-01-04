@@ -60,7 +60,7 @@ const GlmFileUpload = ({ setFileData }) => {
       inputRef.current.click();
    };
 
-   return ReactDOM.createPortal(
+   return (
       <div className='file-upload-form-container'>
          <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
                <input ref={inputRef} type="file" accept='.glm,.json' id="input-file-upload" multiple={true} onChange={handleChange} />
@@ -72,8 +72,7 @@ const GlmFileUpload = ({ setFileData }) => {
                </label>
                { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
          </form>
-      </div>,
-      document.getElementById("protal") 
+      </div>
    );
 };
 

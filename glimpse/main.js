@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-// const isDev = process.env.NODE_ENV !== "development";
+const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
 require("electron-reload")(__dirname, {
@@ -25,9 +25,9 @@ const makeWindow = () => {
       }
    })
 
-   // if (isDev) {
-   //    win.webContents.openDevTools();
-   // }
+   if (isDev) {
+      win.webContents.openDevTools();
+   }
    win.loadFile("./renderer/public/index.html");
    win.show()
 }
@@ -43,15 +43,12 @@ const checkIncludes = ( jsonData ) => {
    });
 
    Object.keys(jsonData).forEach((fileName) => {
-
-      if (jsonData[fileName]["includes"].length > 0) 
-      {
+      if (jsonData[fileName]["includes"].length > 0) {
          jsonData[fileName]["includes"].forEach((include) => {
             includeS_files.push(include.value.split(".")[0] + ".json");
          });
       }
    });
-
    
    if (includeS_files.length === 0) return true; // add this line
    else if (included_files.sort().toString() !== includeS_files.sort().toString()) return false;
@@ -166,8 +163,8 @@ app.whenReady().then(() => {
    });
    
    app.on('activate', () => {
-   // On macOS it's common to re-create a window in the app when the
-   // dock icon is clicked and there are no other windows open.
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
       if (BrowserWindow.getAllWindows().length === 0) {
          createWindow();
       }

@@ -3,7 +3,7 @@ import { Network } from "vis-network";
 import { DataSet } from "vis-data";
 import "./styles/vis-network.css";
 import "./styles/Legend.css";
-import appConfig from "./App/config/appConfig.json";
+import appConfig from "./config/appConfig.json";
 import LegendContextMenu from "./LegendContextMenu";
 
 const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {

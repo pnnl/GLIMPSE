@@ -11,6 +11,10 @@
                "name": {
                   "type": "string",
                   "enum": [
+                     "technique",
+                     "capec",
+                     "cwe",
+                     "cve",
                      "load", 
                      "triplex_load",
                      "capacitor", 
@@ -39,6 +43,10 @@
                "objectType": {
                   "type": "string",
                   "enum": [
+                     "technique",
+                     "capec",
+                     "cwe",
+                     "cve",
                      "load", 
                      "triplex_load",
                      "capacitor", 

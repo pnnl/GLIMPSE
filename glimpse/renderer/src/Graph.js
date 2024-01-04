@@ -122,8 +122,27 @@ const setGraphData = (dataFiles) => {
                   "y": parseInt(attributes.y, 10)
                });
             }
-            else
+            else if (Object.keys(attributes).includes("level"))
             {
+               if (!options.layout.hierarchical.enabled)
+                  options.layout.hierarchical.enabled = true;
+
+               data.nodes.add({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "level": attributes.level,
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+               });
+            }
+            else {
+
+               if (options.layout.hierarchical.enabled) {
+                  options.layout.hierarchical.enabled = false;
+                  options.physics.solver = "barnesHut";
+               }
+
                data.nodes.add({
                   "id": nodeID,
                   "label": nodeID,
@@ -634,11 +653,12 @@ const Graph = ({ dataToVis }) => {
       //if Nodes and edges have x and y coordinates load the network
       //without displaying the circular progess bar 
       if (Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y")) {
+         options.physics.stabilization.enabled = false;
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, options);
          glmNetwork.setOptions({physics: {enabled: false}})
       }
-      else {
+      else { 
          if (data.nodes.length > 200)
          {
             options.physics.barnesHut.gravitationalConstant = -50000;
@@ -646,11 +666,9 @@ const Graph = ({ dataToVis }) => {
             options.physics.barnesHut.springLength = 100;
          }
 
-         options.physics.stabilization.enabled = true;
          glmNetwork = new Network(container.current, data, options);
 
          glmNetwork.on("stabilizationProgress", (params) => {
-         
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
             const maxWidth = 360;
             const minWidth = 1;
