@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-const isDev = process.env.NODE_ENV !== "development";
+// const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
 require("electron-reload")(__dirname, {
@@ -25,9 +25,9 @@ const makeWindow = () => {
       }
    })
 
-   if (isDev) {
-      win.webContents.openDevTools();
-   }
+   // if (isDev) {
+   //    win.webContents.openDevTools();
+   // }
    win.loadFile("./renderer/public/index.html");
    win.show()
 }
