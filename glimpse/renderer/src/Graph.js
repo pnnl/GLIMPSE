@@ -67,6 +67,12 @@ const getTitle = (attributes) => {
    return str;
 }
 
+const getHtmlLabel = (id, attributes) => {
+   return (
+      `\t<b>${id}</b>\n\n` + getTitle(attributes) + "\n"
+   )
+}
+
 /**
  * Collects all the nodes and edges with their attributes and sets it to the data variable
  * @param {Object} dataFiles 
@@ -168,7 +174,7 @@ const setGraphData = (dataFiles) => {
          let attributeName;
 
          Object.keys(obj).forEach((k) => {
-            if(keys.includes(k)) {
+            if (keys.includes(k)) {
                name = k;
             }
          })
@@ -177,8 +183,7 @@ const setGraphData = (dataFiles) => {
          const attributes = obj.attributes;
 
          Object.keys(attributes).forEach(k => {
-            if(keys.includes(k))
-            {
+            if (keys.includes(k)) {
                attributeName = k;
             }
          })
@@ -188,11 +193,12 @@ const setGraphData = (dataFiles) => {
             const edgeFrom = attributes.from;
             const edgeTo = attributes.to;
             const edgeID = objectType + ":" + attributes[attributeName];
-            
+
             data.edges.add({
                "id": edgeID,
                "from": edgeFrom,
                "to": edgeTo,
+               "attributes": attributes,
                "color": edgeOptions[objectType].color,
                "width": edgeOptions[objectType].width,
                "hidden": edgeOptions[objectType].hidden,
@@ -211,6 +217,7 @@ const setGraphData = (dataFiles) => {
                   "id": `parentChild:${parent}-${nodeID}`,
                   "from": parent,
                   "to": nodeID,
+                  "attributes": {"to": parent, "from": nodeID},
                   "color": {"inherit": true}
                });
 
@@ -359,8 +366,7 @@ const Prev = () => {
    counter--;
 
    //if the counter ends up less than 0 the counter starts over at the end of the array
-   if(counter < 0)
-   {
+   if (counter < 0) {
       counter = prev.length - 1;
    }
   
@@ -397,8 +403,7 @@ const Next = () => {
    counter++;
 
    // if the counter matches the length of the array then the count starts back at 0
-   if(counter === next.length)
-   {
+   if (counter === next.length) {
       counter = 0;
       try{
          glmNetwork.focus(next[counter].id, options)
@@ -406,8 +411,7 @@ const Next = () => {
          alert("There are no highlighted nodes to cycle through...");
       }
    }
-   else
-   {
+   else {
       try {
          glmNetwork.focus(next[counter].id, options)
       } catch {
@@ -421,7 +425,6 @@ const Next = () => {
  * @param {string} nodeType - The type of nodes to highlight 
  */
 const HighlightGroup = (nodeType) => {
-
    const nodesMap = data.nodes.map((node) => {
 
       if (node.group === nodeType || node.size === 15)
@@ -647,6 +650,33 @@ const Graph = ({ dataToVis }) => {
       }
    }
 
+   const showAttributes = (show) => {
+      if (!show) {
+         data.nodes.update(data.nodes.map((node) => {
+            node.label = node.id;
+            return node;
+         }));
+
+         data.edges.update(data.edges.map((edge) => {
+            edge.label = " ";
+            return edge;
+         }));
+      }
+      else {
+         data.nodes.update(data.nodes.map((node) => {
+            node.label = getHtmlLabel(node.id, node.attributes);
+            return node;
+         }));
+
+         data.edges.update(data.edges.map((edge) => {
+            edge.label = getHtmlLabel(edge.id, edge.attributes);
+            return edge;
+         }));
+      }
+   }
+
+   window.glimpseAPI.onShowAttributes(showAttributes);
+
    const container = useRef(null);
    useEffect(() => {
 
@@ -693,7 +723,7 @@ const Graph = ({ dataToVis }) => {
             }, 500);
          });
       }
-       
+
       glmNetwork.on("doubleClick", (params) => {
    
          if (params.nodes[0] === undefined) {
@@ -714,7 +744,6 @@ const Graph = ({ dataToVis }) => {
             setContextMenuData({"edgeID": edgeID});
          }
       })
-      
    });
 
    return (
