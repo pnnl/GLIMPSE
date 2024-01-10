@@ -330,15 +330,29 @@
          },
          "communication_node": {
             "color": "#c1121f",
-            "size": 25,
             "shape": "image",
             "image": "./imgs/comm.jpg"
          },
          "microgrid": {
             "color": "#6b9080",
-            "size": 25,
             "shape": "image",
             "image": "./imgs/microgrid.svg"
+         },
+         "technique": {
+            "color": "black",
+            "shape": "dot"
+         },
+         "capec": {
+            "color": "red",
+            "shape": "dot"
+         },
+         "cwe": {
+            "color": "violet",
+            "shape": "dot"
+         },
+         "cve": {
+            "color": "#228B22",
+            "shape": "dot"
          }
       }
    }

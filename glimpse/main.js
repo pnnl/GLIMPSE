@@ -3,12 +3,9 @@ const {
    BrowserWindow,
    ipcMain,
    dialog,
-   Menu
+   Menu,
 } = require("electron");
-const {
-   spawnSync,
-   execSync
-} = require("child_process");
+const { spawnSync, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
@@ -32,6 +29,7 @@ const makeWindow = () => {
       webPreferences: {
          nodeIntegration: false,
          contextIsolation: true,
+         enableRemoteModule: false,
          preload: path.join(__dirname, 'preload.js')
       }
    });
@@ -45,6 +43,36 @@ const makeWindow = () => {
          label: "File",
          "submenu": [
             isMac ? {role: "close"} : {role: "quit"}
+         ]
+      },
+      {
+         label: 'Window',
+         submenu: [
+           { role: 'minimize' },
+           { role: 'zoom' },
+           ...(isMac ? [
+               { type: 'separator' },
+               { role: 'front' },
+               { type: 'separator' },
+               { role: 'window' }
+            ]
+            : [
+               { role: 'close' }
+            ])
+         ]
+      },
+      {
+         label: 'View',
+         submenu: [
+           { role: 'reload' },
+           { role: 'forceReload' },
+           { role: 'toggleDevTools' },
+           { type: 'separator' },
+           { role: 'resetZoom' },
+           { role: 'zoomIn' },
+           { role: 'zoomOut' },
+           { type: 'separator' },
+           { role: 'togglefullscreen' }
          ]
       },
       {
@@ -169,15 +197,11 @@ const json2glmFunc = async (jsonData) => {
    const json2glmArg = process.platform == "darwin" ? "json2glm" : "json2glm.exe";
    
    // for each json file data, make a json file and turn it to a glm file
-   for (const file of Object.keys(parsedData))
-   {
+   for (const file of Object.keys(parsedData)) {
       newFilename = file.split(".")[0] + ".glm";
       args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
-
       createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
-
       execSync(args); 
-
       fs.rmSync(path.join(dir2save, file));
    }
 }

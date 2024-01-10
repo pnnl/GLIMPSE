@@ -6,12 +6,8 @@ import "./styles/Legend.css";
 import appConfig from "./config/appConfig.json";
 import LegendContextMenu from "./LegendContextMenu";
 
-const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
-  const nodes = [];
-  const edges = [];
-
-  // Map of the options belonging to each edge type
-   const edgeOptions ={
+const Legend = ({ findGroup, findEdges, typeCounts, hideObjects }) => {
+   const edgeOptions = {
       "overhead_line": {
          width: 8,
          color: "#000000",
@@ -49,434 +45,131 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
       },
       "mapping": {
          width: 8,
-         color: { inherit: true },
+         color: "#283618",
          hidden: false,
       },
       "communication": {
          width: 8,
-         color: { inherit: false },
+         color: "grey",
          hidden: false,
       },
       "microgrid_connection": {
          width: 8,
          color: "cyan",
          hidden: false,
+      },
+      "parentChild": {
+         width: 8,
+         color: "#15616d",
+         hidden: false
+      },
+      "line": {
+         width: 8,
+         color: "black",
+         hidden: false
       }
    }
 
-   const addEdgeLegend = (type, count) => {
-
+   const options = appConfig.legendGraphOptions;
+   const currentNodeTypes = [];
+   const currentEdgeTypes = [];
+   const data = {
+      nodes: new DataSet(),
+      edges: new DataSet()   
    }
 
-  /*-------- Begining of Top Nodes --------*/
-  nodes.push({
-    id: "load",
-    x: 37,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `load\n[${nodeCounts.nodes.load}]`,
-    group: "load"
-  });
+   /*
+      x: 0 - 663, y: 100 for first row of nodes
+      x: 0 - 663, y: 0 for second row if needed
+   */
+   Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
+      if (count > 0) currentNodeTypes.push(type);
+   });
 
-  nodes.push({
-    id: "node",
-    x: 166,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `node\n[${nodeCounts.nodes.node}]`,
-    group: "node"
-  });
+   Object.entries(typeCounts.edges).forEach(([type, count], i) => {
+      if (count > 0) currentEdgeTypes.push(type);
+   });
+   
+   const x_increment = 1250 / currentNodeTypes.length;
+   let farthest_x = 0;
+   let current_x = 0;
+   let current_y = 0;
+   let rowNodeCount = 0;
 
-  nodes.push({
-    id: "meter",
-    x: 297,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `meter\n[${nodeCounts.nodes.meter}]`,
-    group: "meter"
-  });
+   for (let nodeType of currentNodeTypes) {
+      
+      if (data.nodes.length === 0) {
+         data.nodes.add({
+            id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+            label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+            group: nodeType,
+            x: current_x,
+            y: current_y,
+            physics: false,
+            fixed: true
+         });
 
-  nodes.push({
-    id: "inverter_dyn",
-    x: 424,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `inverter_dyn\n[${nodeCounts.nodes.inverter_dyn}]`,
-    group: "inverter_dyn",
-  });
+         rowNodeCount++;
+         continue;
+      }
 
-  nodes.push({
-    id: "diesel_dg",
-    x: 562,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `diesel_dg\n[${nodeCounts.nodes.diesel_dg}]`,
-    group: "diesel_dg",
-  });
+      if (rowNodeCount === 6) {
+         farthest_x = current_x;
+         rowNodeCount = 0;
+         current_x = 0;
+         current_y -= 125;
+      }
+      else {
+         current_x += x_increment;
+      }
 
-  nodes.push({
-    id: 6,
-    x: 700,
-    y: -22,
-    fixed: true,
-    physics: false,
-    label: `capacitor\n[${nodeCounts.nodes.capacitor}]`,
-    group: "capacitor",
-  });
-  /*-------- End of Top Nodes --------*/
+      data.nodes.add({
+         id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+         label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+         group: nodeType,
+         x: current_x,
+         y: current_y,
+         physics: false,
+         fixed: true
+      });
 
-  /*-------- Begining of Bottom Nodes --------*/
-  nodes.push({
-    id: "triplex_load",
-    x: 37,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: `triplex_load\n[${nodeCounts.nodes.triplex_load}]`,
-    group: "triplex_load",
-  });
+      rowNodeCount++;
+   }
 
-  nodes.push({
-    id: "triplex_node",
-    x: 166,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: `triplex_node\n[${nodeCounts.nodes.triplex_node}]`,
-    group: "triplex_node",
-  });
+   current_y = 125;
+   currentEdgeTypes.forEach((type, index) => {
 
-  nodes.push({
-    id: "triplex_meter",
-    x: 297,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: `triplex_meter\n[${nodeCounts.nodes.triplex_meter}]`,
-    group: "triplex_meter",
-  });
+      data.nodes.add({
+         id: `${type}:${index}`,
+         x: 0,
+         y: current_y,
+         fixed: true,
+         physcis: false,
+         color: "black"
+      });
 
-  nodes.push({
-    id: "substation",
-    x: 424,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: `substation\n[${nodeCounts.nodes.substation}]`,
-    group: "substation",
-  });
+      data.nodes.add({
+         id: `${type}:${index + 1}`,
+         x: farthest_x === 0 ? current_x : farthest_x,
+         y: current_y,
+         fixed: true,
+         physcis: false,
+         color: "black"
+      })
 
-  nodes.push({
-    id: "communication_node",
-    x: 562,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: "communication\nnode",
-    group: "communication_node",
-  });
+      data.edges.add({
+         id: type,
+         from: `${type}:${index}`,
+         to: `${type}:${index + 1}`,
+         label: `${type} [${typeCounts.edges[type]}]`,
+         width: edgeOptions[type].width,
+         color: edgeOptions[type].color
+      });
 
-  nodes.push({
-    id: "microgrid",
-    x: 700,
-    y: 100,
-    fixed: true,
-    physics: false,
-    label: "End\nPoints",
-    group: "microgrid",
-  });
-  /*-------- End of Bottom Nodes --------*/
+      current_y += 65;
+   });
 
-  /*-------- Begining of Empty Nodes --------*/
-  nodes.push({
-    id: 100,
-    x: 37,
-    y: 250,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 101,
-    x: 700,
-    y: 250,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 102,
-    x: 37,
-    y: 325,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 103,
-    x: 700,
-    y: 325,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 104,
-    x: 37,
-    y: 400,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 105,
-    x: 700,
-    y: 400,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 106,
-    x: 37,
-    y: 475,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 107,
-    x: 700,
-    y: 475,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 108,
-    x: 37,
-    y: 550,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 109,
-    x: 700,
-    y: 550,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 110,
-    x: 37,
-    y: 625,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 111,
-    x: 700,
-    y: 625,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 112,
-    x: 37,
-    y: 700,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 113,
-    x: 700,
-    y: 700,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 114,
-    x: 37,
-    y: 775,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 115,
-    x: 700,
-    y: 775,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 116,
-    x: 37,
-    y: 850,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 117,
-    x: 700,
-    y: 850,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 118,
-    x: 37,
-    y: 925,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-
-  nodes.push({
-    id: 119,
-    x: 700,
-    y: 925,
-    fixed: true,
-    physics: false,
-    color: "black",
-  });
-  /*-------- End of Empty Nodes --------*/
-
-  /*-------- Begining of Edges --------*/
-  edges.push({
-    from: 100,
-    to: 101,
-    id: "overhead_line",
-    label: `overhead_line [${nodeCounts.edges.overhead_line}]`,
-    width: edgeOptions.overhead_line.width,
-    color: edgeOptions.overhead_line.color,
-  });
-
-  edges.push({
-    from: 102,
-    to: 103,
-    id: "switch",
-    label: `switch [${nodeCounts.edges.switch}]`,
-    width: edgeOptions.switch.width,
-    color: edgeOptions.switch.color,
-  });
-
-  edges.push({
-    from: 104,
-    to: 105,
-    id: "underground_line",
-    label: `underground_line [${nodeCounts.edges.underground_line}]`,
-    width: edgeOptions.underground_line.width,
-    color: edgeOptions.underground_line.color,
-  });
-
-  edges.push({
-    from: 106,
-    to: 107,
-    id: "regulator",
-    label: `regulator [${nodeCounts.edges.regulator}]`,
-    width: edgeOptions.regulator.width,
-    color: edgeOptions.regulator.color,
-  });
-
-  edges.push({
-    from: 108,
-    to: 109,
-    id: "transformer",
-    label: `transformer [${nodeCounts.edges.transformer}]`,
-    width: edgeOptions.transformer.width,
-    color: edgeOptions.transformer.color,
-  });
-
-  edges.push({
-    from: 110,
-    to: 111,
-    id: "triplex_line",
-    label: `triplex_line [${nodeCounts.edges.triplex_line}]`,
-    width: edgeOptions.triplex_line.width,
-    color: edgeOptions.triplex_line.color,
-  });
-
-  edges.push({
-    from: 112,
-    to: 113,
-    id: "series_reactor",
-    label: `series_reactor [${nodeCounts.edges.series_reactor}]`,
-    width: edgeOptions.series_reactor.width,
-    color: edgeOptions.series_reactor.color,
-  });
-
-  edges.push({
-    from: 114,
-    to: 115,
-    id: "communication",
-    label: `communication`,
-    width: edgeOptions.communication.width,
-    color: edgeOptions.communication.color,
-  });
-
-  edges.push({
-    from: 116,
-    to: 117,
-    id: "microgrid_connection",
-    label: `microgrid_connection`,
-    width: edgeOptions.microgrid_connection.width,
-    color: edgeOptions.microgrid_connection.color,
-  });
-
-  edges.push({
-    from: 118,
-    to: 119,
-    id: "mapping",
-    label: `mapping`,
-    width: edgeOptions.mapping.width,
-    color: edgeOptions.mapping.color,
-  });
-  /*-------- End of Edges --------*/
-
-  const nodesDataSet = new DataSet(nodes);
-  const edgesDataSet = new DataSet(edges);
-
-  const options = appConfig.legendGraphOptions;
-
-   const data = {
-      nodes: nodesDataSet,
-      edges: edgesDataSet,
-   };
-
-  const container = useRef(null);
+   const container = useRef(null);
 
    let contextMenuData;
    let setContextMenuData;
@@ -502,6 +195,7 @@ const Legend = ({ findGroup, findEdges, nodeCounts, hideObjects }) => {
 
    useEffect(() => {
       const network = new Network(container.current, data, options);
+      network.fit();
 
       network.on("doubleClick", function (params) {
          if (params.nodes[0]) {

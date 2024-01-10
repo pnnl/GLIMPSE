@@ -7,5 +7,5 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    getStats: (dataObject) => ipcRenderer.invoke("getStats", dataObject), // Working
    json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData), // working
    getPlot: () => ipcRenderer.invoke("getPlot"), // Working
-   onShowAttributes: (callback) => ipcRenderer.on("show-attributes", (_event, value) => callback(value))
+   onShowAttributes: (callback) => ipcRenderer.on("show-attributes", (_event, value) => callback(value)) // working
 });

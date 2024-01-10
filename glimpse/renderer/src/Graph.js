@@ -32,7 +32,11 @@ const objectTypeCount = {
       "triplex_load": 0, 
       "triplex_node": 0,
       "triplex_meter": 0,
-      "substation": 0
+      "substation": 0,
+      "technique": 0,
+      "capec": 0,
+      "cwe": 0,
+      "cve": 0
    },
    "edges": {
       "overhead_line": 0,
@@ -96,7 +100,7 @@ const setGraphData = (dataFiles) => {
       {
          let name;
          Object.keys(obj).forEach((k) => {
-            if(keys.includes(k)) {
+            if (keys.includes(k)) {
                name = k;
             }
          });
@@ -631,8 +635,7 @@ const Graph = ({ dataToVis }) => {
       if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
 
-            if (node.group === objectType)
-            {
+            if (node.group === objectType) {
                node.hidden = true;
             }
             return node;
@@ -696,6 +699,7 @@ const Graph = ({ dataToVis }) => {
             options.physics.barnesHut.springLength = 100;
          }
 
+         // create network
          glmNetwork = new Network(container.current, data, options);
 
          glmNetwork.on("stabilizationProgress", (params) => {
@@ -787,7 +791,7 @@ const Graph = ({ dataToVis }) => {
          <Legend 
             findGroup = {HighlightGroup} 
             findEdges = {HighlightEdges}
-            nodeCounts = {objectTypeCount}
+            typeCounts = {objectTypeCount}
             hideObjects = {hideObjects}
          />
          </div>
