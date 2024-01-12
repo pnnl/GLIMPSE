@@ -115,6 +115,68 @@
          "hidden": false
       }
    },
+   "legendEdgeOptions": {
+      "overhead_line": {
+         "width": 8,
+         "color": "#000000",
+         "hidden": false
+      },
+      "switch": {
+         "width": 8,
+         "color": "#3a0ca3",
+         "hidden": false
+      },
+      "series_reactor": {
+         "width": 8,
+         "color": "#3c1642",
+         "hidden": false
+      },
+      "triplex_line": {
+         "width": 8,
+         "color": "#c86bfa",
+         "hidden": false
+      },
+      "underground_line": {
+         "width": 8,
+         "color": "#FFFF00",
+         "hidden": false
+      },
+      "regulator": {
+         "width": 8,
+         "color": "#ff447d",
+         "hidden": false
+      },
+      "transformer": {
+         "width": 8,
+         "color": "#00FF00",
+         "hidden": false
+      },
+      "mapping": {
+         "width": 8,
+         "color": "#283618",
+         "hidden": false
+      },
+      "communication": {
+         "width": 8,
+         "color": "grey",
+         "hidden": false
+      },
+      "microgrid_connection": {
+         "width": 8,
+         "color": "cyan",
+         "hidden": false
+      },
+      "parentChild": {
+         "width": 8,
+         "color": "#15616d",
+         "hidden": false
+      },
+      "line": {
+         "width": 8,
+         "color": "black",
+         "hidden": false
+      }
+   },
    "graphOptions": {
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
