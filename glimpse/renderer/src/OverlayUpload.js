@@ -67,20 +67,20 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
 
    return ReactDom.createPortal (
       <div className='upload-modal'>
-      <div className='upload-overlay' onDoubleClick={close} >
-      <div className='file-upload-form-container'>
-         <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
-               <input ref={inputRef} type="file" accept='.json' id="input-file-upload" multiple={true} onChange={handleChange} />
-               <label id="label-file-upload" htmlFor="input-file-upload" className={dragActive ? "drag-active" : "" }>
-               <div>
-                  <p>Drag and drop your json file here or</p>
-                  <button className="upload-button" onClick={onButtonClick}>Upload file</button>
-               </div>
-               </label>
-               { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
-         </form>
-      </div>
-      </div>
+         <div className='upload-overlay' onDoubleClick={close} >
+            <div className='file-upload-form-container'>
+               <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
+                     <input ref={inputRef} type="file" accept='.json' id="input-file-upload" multiple={true} onChange={handleChange} />
+                     <label id="label-file-upload" htmlFor="input-file-upload" className={dragActive ? "drag-active" : "" }>
+                     <div>
+                        <p>Drag and drop your json file here or</p>
+                        <button className="upload-button" onClick={onButtonClick}>Upload file</button>
+                     </div>
+                     </label>
+                     { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
+               </form>
+            </div>
+         </div>
       </div>,
       document.getElementById("portal")
    );

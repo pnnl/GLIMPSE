@@ -7,13 +7,13 @@ import appConfig from './config/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 
-const Home = () => {
+export const Home = () => {
    let content;
    const [dataToVisRequest, setDataToVisRequest] = useState({
       showFileUpload: true,
       data: null
    });
-   
+
    const setFileData = async (paths) => {
       
       if(paths[0].split(".")[1] === "json") {
@@ -58,7 +58,7 @@ const Home = () => {
    return (
       <>
          <header>
-            <h1 className="title">{appOptions.title}</h1>
+            <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
             <nav>
             <ul className="nav-links">
                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
@@ -66,16 +66,16 @@ const Home = () => {
             </ul>
             </nav>
          </header>
-         <main>{content}</main>
+         {content}
       </>
    );
 }
 
 export const About = () => {
    return (
-      <div>
+      <>
          <header>
-         <h1 className="title">{appOptions.title}</h1>
+         <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
          <nav>
             <ul className="nav-links">
                <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
@@ -84,12 +84,6 @@ export const About = () => {
          </nav>
          </header>
          <h1>About The tool</h1>
-      </div>
-   );
-}
-
-export const App = () => {
-   return (
-      <Home />
+      </>
    );
 }

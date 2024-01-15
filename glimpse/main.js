@@ -23,6 +23,8 @@ const makeWindow = () => {
    const win = new BrowserWindow({
       width: 1500,
       height: 900,
+      minWidth: 1090,
+      minHeight: 665,
       backgroundColor: "white",
       autoHideMenuBar: false,
       show: false,

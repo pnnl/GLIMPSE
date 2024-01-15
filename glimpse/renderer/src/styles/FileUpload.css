@@ -1,10 +1,9 @@
 .file-upload-form-container
 {
   display: flex;
-  height: 100%;
+  height: calc(100vh - 4rem);
   align-items: center;
   justify-content: center;
-  margin: 1rem;
 }
 
 #form-file-upload {

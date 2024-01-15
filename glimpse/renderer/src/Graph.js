@@ -27,8 +27,13 @@ const getLegendData = (typeCounts) => {
    Object.entries(typeCounts.edges).forEach(([type, count], i) => {
       if (count > 0) currentEdgeTypes.push(type);
    });
-   
-   const x_increment = 1250 / currentNodeTypes.length;
+
+   let x_increment;
+   if (currentNodeTypes.length < 6)
+      x_increment = 800 / currentNodeTypes.length;
+   else 
+      x_increment = 1000 / currentNodeTypes.length;
+
    let farthest_x = 0;
    let current_x = 0;
    let current_y = 0;
@@ -110,6 +115,27 @@ const getLegendData = (typeCounts) => {
    return legendData;
 }
 
+/**
+* Converts an object of attributes from a node or edge to a string to be displayed
+* @param {Object} attributes - an object 
+* @returns {string}
+*/
+const getTitle = (attributes) => {
+   let str = "";
+
+   for (let [key, val] of Object.entries(attributes)) {
+      str += key + ": " + val + "\n";
+   }
+
+   return str;
+}
+
+const getHtmlLabel = (id, attributes) => {
+   return (
+      `\t<b>${id}</b>\n\n` + getTitle(attributes)
+   )
+}
+
 const Graph = ({ dataToVis }) => {
    const options = appConfig.graphOptions; // get the options for the graph visualization
    const edgeOptions = appConfig.edgeOptions;
@@ -159,27 +185,6 @@ const Graph = ({ dataToVis }) => {
    const nodeTypes = appConfig.nodeTypes;
    //These types are recognized as edges
    const edgeTypes = appConfig.edgeTypes;
-
-   /**
-   * Converts an object of attributes from a node or edge to a string to be displayed
-   * @param {Object} attributes - an object 
-   * @returns {string}
-   */
-   const getTitle = (attributes) => {
-      let str = "";
-
-      for (let [key, val] of Object.entries(attributes)) {
-         str += key + ": " + val + "\n";
-      }
-
-      return str;
-   }
-
-   const getHtmlLabel = (id, attributes) => {
-      return (
-         `\t<b>${id}</b>\n\n` + getTitle(attributes)
-      )
-   }
 
    let setLegendData;
    const legendMount = (legendSetFunc) => {

@@ -122,7 +122,7 @@ const ActionBar = ({
 
    return (
       <>
-      <Box sx={{m: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
+      <Box sx={{padding: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
                   <Button 

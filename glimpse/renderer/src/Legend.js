@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState} from "react";
 import { Network } from "vis-network";
-// import { DataSet } from "vis-data";
 import "./styles/vis-network.css";
 import "./styles/Legend.css";
 import appConfig from "./config/appConfig.json";
