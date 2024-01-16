@@ -17,7 +17,8 @@
          "searchLbl": "Node ID",
          "previousBtn": "PREV",
          "nextBtn": "NEXT",
-         "resetBtn": "RESET"
+         "resetBtn": "RESET",
+         "toggleLegendBtn": "TOGGLE LEGEND"
       }
    },
    "nodeTypes": [

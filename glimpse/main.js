@@ -10,7 +10,6 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
 require("electron-reload")(__dirname, {
@@ -35,10 +34,6 @@ const makeWindow = () => {
          preload: path.join(__dirname, 'preload.js')
       }
    });
-
-   // if (isDev) {
-   //    win.webContents.openDevTools();
-   // }
    
    const menu = Menu.buildFromTemplate([
       {

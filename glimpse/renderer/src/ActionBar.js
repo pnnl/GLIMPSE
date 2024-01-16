@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PlotModal from "./PlotModal.js";
 import OverlayUpload from "./OverlayUpload.js";
 import Button from "@mui/material/Button";
@@ -28,7 +28,9 @@ const ActionBar = ({
    next,
    physicsToggle,
    addGraphOverlay,
-   nodeIDs
+   nodeIDs,
+   toggleLegendRef,
+   showLegendStateRef
 }) => {
    const nodes = nodesDataObj;
    const [node, setNode] = useState(null);
@@ -48,6 +50,19 @@ const ActionBar = ({
          }
       }
    });
+
+   const toggleLegend = (e) => {
+      e.preventDefault();
+
+      if (showLegendStateRef.current) {
+         document.getElementById("graph").style.width = "100%";
+         toggleLegendRef.current?.(false);
+      }
+      else {
+         document.getElementById("graph").style.width = "70%";
+         toggleLegendRef.current?.(true);
+      }
+   }
 
    const handleChange = (nodeID) => {
       setNode(nodeID);
@@ -215,6 +230,15 @@ const ActionBar = ({
                      onClick={handleReset}
                      >
                      {appOptions.buttons.resetBtn}
+                  </Button>
+
+                  <Button 
+                     size="small"
+                     variant="outlined"
+                     color="primary"
+                     onClick={toggleLegend}
+                     >
+                  {appOptions.buttons.toggleLegendBtn}
                   </Button>
                </Stack>
          </ThemeProvider>

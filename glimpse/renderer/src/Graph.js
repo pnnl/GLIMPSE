@@ -649,8 +649,7 @@ const Graph = ({ dataToVis }) => {
     * Hide a specific edge
     * @param {string} edgeID - The ID of an edge to hide 
    */
-   const hideEdge = (edgeID) =>
-   {
+   const hideEdge = (edgeID) => {
       const edgeToHide = data.edges.get(edgeID);
       edgeToHide.hidden = true;
       data.edges.update(edgeToHide);
@@ -793,6 +792,8 @@ const Graph = ({ dataToVis }) => {
    window.glimpseAPI.onShowAttributes(showAttributes);
 
    const container = useRef(null);
+   const toggleLegendRef = useRef(null);
+   const showLegendStateRef = useRef(null);
    useEffect(() => {
 
       //if Nodes and edges have x and y coordinates load the network
@@ -875,6 +876,8 @@ const Graph = ({ dataToVis }) => {
             download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
             nodeIDs={data.nodes.getIds()}
+            toggleLegendRef={toggleLegendRef}
+            showLegendStateRef={showLegendStateRef}
          />
 
          <NodePopup 
@@ -885,6 +888,7 @@ const Graph = ({ dataToVis }) => {
 
          <div id="networks-wrapper">
          <div
+            id="graph"
             className="main-network"
             onContextMenu={handleContextmenu}
             ref={container}
@@ -906,6 +910,8 @@ const Graph = ({ dataToVis }) => {
             hideObjects = {hideObjects}
             legendData = {getLegendData(objectTypeCount)}
             onMount={legendMount}
+            setShowLegendRef={toggleLegendRef}
+            legendStateRef={showLegendStateRef}
          />
          </div>
       </>
