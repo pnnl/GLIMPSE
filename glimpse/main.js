@@ -1,36 +1,95 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const {
+   app,
+   BrowserWindow,
+   ipcMain,
+   dialog,
+   Menu,
+} = require("electron");
 const { spawnSync, execSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-// const isDev = process.env.NODE_ENV !== "development";
 if (require("electron-squirrel-startup")) app.quit();
 
 require("electron-reload")(__dirname, {
    electron: path.join(__dirname, "node_modules", ".bin", "electron")
 });
+
+const isMac = process.platform === "darwin";
 let cimGraphData;
 
 const makeWindow = () => {
    const win = new BrowserWindow({
       width: 1500,
       height: 900,
+      minWidth: 1250,
+      minHeight: 750,
       backgroundColor: "white",
-      autoHideMenuBar: true,
+      autoHideMenuBar: false,
       show: false,
       webPreferences: {
          nodeIntegration: false,
          contextIsolation: true,
+         enableRemoteModule: false,
          preload: path.join(__dirname, 'preload.js')
       }
-   })
+   });
 
-   cimGraphData = JSON.stringify(require("./data/IEEE123.json"));
+   const menu = Menu.buildFromTemplate([
+      {
+         label: "File",
+         "submenu": [
+            isMac ? {role: "close"} : {role: "quit"}
+         ]
+      },
+      {
+         label: 'Window',
+         submenu: [
+           { role: 'minimize' },
+           { role: 'zoom' },
+           ...(isMac ? [
+               { type: 'separator' },
+               { role: 'front' },
+               { type: 'separator' },
+               { role: 'window' }
+            ]
+            : [
+               { role: 'close' }
+            ])
+         ]
+      },
+      {
+         label: 'View',
+         submenu: [
+           { role: 'reload' },
+           { role: 'forceReload' },
+           { role: 'toggleDevTools' },
+           { type: 'separator' },
+           { role: 'resetZoom' },
+           { role: 'zoomIn' },
+           { role: 'zoomOut' },
+           { type: 'separator' },
+           { role: 'togglefullscreen' }
+         ]
+      },
+      {
+         label: "Graph View",
+         submenu: [
+            {
+               label: "show attributes",
+               click: () => win.webContents.send("show-attributes", true)
+            },
+            {
+               label: "hide attributes",
+               click: () => win.webContents.send("show-attributes", false)
+            }
+         ]
+      }
+   ]);
+   Menu.setApplicationMenu(menu);
 
-   // if(isDev) {
-   //    win.webContents.openDevTools();
-   // }
+   cimGraphData = JSON.stringify(require("./data/CIM/IEEE123.json"));
    win.loadFile("./renderer/public/index.html");
    win.show()
 }

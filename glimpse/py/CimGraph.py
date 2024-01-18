@@ -38,9 +38,6 @@ inv_types = ['PowerElectronicsConnection']
 trans_types = ["PowerTransformer"]
 switch_types = ['LoadBreakSwitch']
 
-'''Possible Types
-'''
-
 # IDs = []
 
 for node in network.graph[cim.ConnectivityNode].values():
@@ -54,26 +51,18 @@ for node in network.graph[cim.ConnectivityNode].values():
       if eq_class_type in load_types:
          addObject("load", {"id": terminal.mRID, "eq_class_type": eq_class_type})
          addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
-         # addObject("load", terminal.mRID, eq_class_type)
-         # load_nodes.append({terminal.mRID:{'eq_class_type': eq_class_type}})
 
       if eq_class_type in gen_types:
          addObject("diesel_dg", {"id": terminal.mRID, "eq_class_type": eq_class_type})
          addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
-         # addObject("diesel_dg", terminal.mRID, eq_class_type)
-         # gen_nodes.append({terminal.mRID:{'eq_class_type': eq_class_type}})
 
       if eq_class_type in cap_types:
          addObject("capacitor", {"id": terminal.mRID, "eq_class_type": eq_class_type})
          addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
-         # addObject("capacitor", terminal.mRID, eq_class_type)
-         # cap_nodes.append({terminal.mRID:{'eq_class_type': eq_class_type}})
 
       if eq_class_type in inv_types:
          addObject("inverter_dyn", {"id": terminal.mRID, "eq_class_type": eq_class_type})
          addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
-         # addObject("inverter_dyn", terminal.mRID, eq_class_type)
-         # inv_nodes.append({terminal.mRID:{'eq_class_type': eq_class_type}})
       
       if eq_class_type in trans_types: 
          addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
