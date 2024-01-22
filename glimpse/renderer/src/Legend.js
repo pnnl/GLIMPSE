@@ -6,23 +6,31 @@ import appConfig from "./config/appConfig.json";
 import LegendContextMenu from "./LegendContextMenu";
 const options = appConfig.legendGraphOptions;
 
-const Legend = ({ findGroup, findEdges, hideObjects, onMount, legendData, setShowLegendRef, legendStateRef}) => {
-   
-   const container = useRef(null);
+const Legend = ({
+   findGroup,
+   findEdges,
+   hideObjects,
+   onMount,
+   legendData,
+   setShowLegendRef,
+   legendStateRef
+}) => {
+
    const [data, setData] = useState(legendData);
    const [showLegend, setShowLegend] = useState(true);
+   const container = useRef(null);
 
+   // set the current state as refs from the Graph component
    useEffect(() => {
       setShowLegendRef.current = setShowLegend;
       legendStateRef.current = showLegend;
-   })
+   }, []);
 
    useEffect(() => {
       onMount(setData);  
-   });
-      
-   console.log(data, showLegend);
+   }, []);
    
+   // Getting the state and set state variables from the legend context menu component
    let contextMenuData;
    let setContextMenuData;
    const onContextMenuChildMount = (contextMenuDataState,setContextMenuDataState) => {
@@ -61,6 +69,7 @@ const Legend = ({ findGroup, findEdges, hideObjects, onMount, legendData, setSho
             }
          });
          
+         // set the context menu data with either a node or edge ID so that type can be hidden in the main network
          network.on("oncontext", (params) => {
             if (network.getNodeAt(params.pointer.DOM)) {
                const ID = network.getNodeAt(params.pointer.DOM);

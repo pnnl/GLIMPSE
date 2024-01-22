@@ -12,6 +12,7 @@ const NodePopup = ({onMount, onSave, onClose}) => {
    const [open, setOpen] = useState(false);
    const [selectedNode, setSelectedNode] = useState({});
 
+   // send the state back up to the Grpah(parent) component
    useEffect(() => {
       onMount(setSelectedNode, setOpen);
    }, [onMount, selectedNode]);

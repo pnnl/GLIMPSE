@@ -41,7 +41,6 @@ const GlmFileUpload = ({ setFileData }) => {
    // triggers when file is selected with click
    const handleChange = async (e) => {
       e.preventDefault();
-      // console.log(JSON.parse(await window.glimpseAPI.getJsonData()))
 
       if (e.target.files && e.target.files[0]) {
          const paths = [];

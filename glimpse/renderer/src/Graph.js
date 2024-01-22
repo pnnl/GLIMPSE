@@ -10,6 +10,13 @@ import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "./config/appConfig.json";
 const edgeOptions = appConfig.legendEdgeOptions;
 
+
+/**
+ * Create nodes and edges based on the object type being visualized in the main 
+   network
+ * @param {Object} typeCounts - containes the counts of node and edge types
+ * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
+ */
 const getLegendData = (typeCounts) => {
 
    const legendData = {
@@ -151,32 +158,32 @@ const Graph = ({ dataToVis }) => {
    // used to keep count of each object type
    const objectTypeCount = {
       "nodes": {
-         "load": 0,
-         "node": 0,
-         "meter": 0,
+         "communication_node": 0,
+         "triplex_meter": 0,
          "inverter_dyn": 0,
+         "triplex_node": 0,
+         "triplex_load": 0, 
+         "substation": 0,
          "diesel_dg": 0,
          "capacitor": 0,
-         "triplex_load": 0, 
-         "triplex_node": 0,
-         "triplex_meter": 0,
-         "substation": 0,
          "technique": 0,
+         "microgrid": 0,
+         "meter": 0,
          "capec": 0,
+         "load": 0,
+         "node": 0,
          "cwe": 0,
          "cve": 0,
-         "microgrid": 0,
-         "communication_node": 0
       },
       "edges": {
-         "overhead_line": 0,
-         "switch": 0, 
          "underground_line": 0,
          "series_reactor": 0,
+         "overhead_line": 0,
          "triplex_line": 0,
-         "regulator": 0,
          "transformer": 0,
          "parentChild": 0,
+         "regulator": 0,
+         "switch": 0, 
          "line": 0
       }
    };
@@ -676,16 +683,14 @@ const Graph = ({ dataToVis }) => {
     */
    const handleContextmenu = (e) => {
       e.preventDefault();
-      if(contextMenuData !== null)
-      {
+      if (contextMenuData !== null) {
          setContextMenuData({
             ...contextMenuData,
             "mouseX": e.pageX + 2,
             "mouseY": e.pageY + 6
          });
       }
-      else
-      {
+      else {
          setContextMenuData(null);
       }
    }
@@ -792,6 +797,10 @@ const Graph = ({ dataToVis }) => {
    window.glimpseAPI.onShowAttributes(showAttributes);
 
    const container = useRef(null);
+
+/* These Refs containe the state and set state of the legend
+   this allows the ActionBar component to change the state of the legend component 
+   without having to rerender this Graph componenet */
    const toggleLegendRef = useRef(null);
    const showLegendStateRef = useRef(null);
    useEffect(() => {
@@ -805,8 +814,7 @@ const Graph = ({ dataToVis }) => {
          glmNetwork.setOptions({physics: {enabled: false}})
       }
       else { 
-         if (data.nodes.length > 200)
-         {
+         if (data.nodes.length > 200) {
             options.physics.barnesHut.gravitationalConstant = -50000;
             options.physics.barnesHut.springConstant = 0.5;
             options.physics.barnesHut.springLength = 100;

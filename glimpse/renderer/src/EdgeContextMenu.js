@@ -11,13 +11,13 @@ const EdgeContextMenu = ({onMount, hideEdge, hideEdges}) => {
    }, [onMount, contextMenu])
 
    const handleHideEdge = () => {
-      setContextMenu(null);
       hideEdge(contextMenu.edgeID);
+      setContextMenu(null);
    }
 
    const handleHideEdges = () => {
-      setContextMenu(null);
       hideEdges(contextMenu.edgeID.split(":")[0]);
+      setContextMenu(null);
    }
 
    const handleClose = () => {

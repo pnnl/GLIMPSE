@@ -29,7 +29,7 @@ module reliability {
 
 #include "Rotating_Machines.glm";
 #include "Inverters.glm";
-//#include "Recorders.glm";
+#include "Recorders.glm";
 
 
 //Fault check option, this is included becasue there are multiple PQ nodes on the system to support the various scenarios. 

@@ -10,11 +10,11 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-if (require("electron-squirrel-startup")) app.quit();
+// if (require("electron-squirrel-startup")) app.quit();
 
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 
 const isMac = process.platform === "darwin";
 
@@ -116,9 +116,9 @@ const checkIncludes = ( jsonData ) => {
 }
 
 const handleFileOpen = (filePaths) => {
-   let args = "python ./py/glm2json.py";
-   for (const filePath of filePaths) {
-      args += ` ${filePath}`;
+   let args = "python " + path.join(__dirname, "py", "glm2json.py");
+   for (const path of filePaths) {
+      args += ` ${path}`;
    }
 
    const output = execSync(args, {encoding: "utf8", maxBuffer: 50 * 1024 * 1024});
@@ -212,17 +212,18 @@ app.whenReady().then(() => {
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
 
-   app.on('window-all-closed', () => {
-      if (process.platform !== 'darwin') {
-         app.quit();
-      }
-   });
-   
-   app.on('activate', () => {
-      // On macOS it's common to re-create a window in the app when the
-      // dock icon is clicked and there are no other windows open.
-      if (BrowserWindow.getAllWindows().length === 0) {
-         createWindow();
-      }
-   });
+});
+
+app.on('window-all-closed', () => {
+   if (process.platform !== 'darwin') {
+      app.quit();
+   }
+});
+
+app.on('activate', () => {
+   // On macOS it's common to re-create a window in the app when the
+   // dock icon is clicked and there are no other windows open.
+   if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+   }
 });

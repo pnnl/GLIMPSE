@@ -14,9 +14,15 @@ export const Home = () => {
       data: null
    });
 
+   /**
+    * This function will get the paths of the uploaded files and send them to the 
+      main process to then read the files, parse them, and evalute them.
+    * @param {Array} paths - An array of paths from the uploaded files
+    */
    const setFileData = async (paths) => {
       
-      if(paths[0].split(".")[1] === "json") {
+      // validate the file if it is a json file
+      if (paths[0].split(".")[1] === "json") {
          const validFileData = await window.glimpseAPI.validate(paths);
 
          if (Object.keys(validFileData).includes("error")) {
