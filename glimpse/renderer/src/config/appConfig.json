@@ -23,109 +23,96 @@
       }
    },
    "nodeTypes": [
-      "load", 
-      "triplex_load",
-      "capacitor", 
-      "node", 
-      "triplex_node",
-      "substation", 
-      "meter", 
+      "communication_node",
       "triplex_meter", 
+      "triplex_load",
+      "triplex_node",
       "inverter_dyn",  
+      "substation", 
+      "capacitor", 
       "diesel_dg", 
-      "communication_node", 
       "microgrid",
       "technique",
-      "capec",
-      "cwe",
-      "cve",
+      "terminal",
       "c_node",
-      "terminal"
+      "capec",
+      "meter", 
+      "load", 
+      "node", 
+      "cwe",
+      "cve"
    ],
    "edgeTypes": [
-      "overhead_line",
-      "switch",
+      "microgrid_connection",
       "underground_line",
       "series_reactor",
-      "triplex_line",
-      "regulator",
-      "transformer",
-      "mapping",
+      "overhead_line",
       "communication",
-      "microgrid_connection",
+      "triplex_line",
+      "transformer",
       "parentChild",
+      "regulator",
+      "mapping",
+      "switch",
       "line"
    ],
    "edgeOptions": {
       "overhead_line": {
          "width": 2,
-         "color": "#000000",
-         "hidden": false
+         "color": "#000000"
       },
       "switch": {
          "width": 2, 
-         "color": "#3a0ca3", 
-         "hidden": false
+         "color": "#3a0ca3"
       },
       "series_reactor": {
          "width": 2, 
          "color": 
-         "#3c1642", 
-         "hidden": false
+         "#3c1642"
       },
       "triplex_line": {
          "width": 2, 
-         "color": "#c86bfa", 
-         "hidden": false
+         "color": "#c86bfa"
       },
       "underground_line": {
          "width": 2, 
-         "color": "#FFFF00", 
-         "hidden": false
+         "color": "#FFFF00"
       },
       "regulator": {
          "width": 2, 
-         "color": "#ff447d", 
-         "hidden": false
+         "color": "#ff447d"
       },
       "transformer": {
          "width": 2,
-         "color": "#00FF00", 
-         "hidden": false
+         "color": "#00FF00"
       },
       "parentChild": {
          "width": 2,
-         "color": {"inherit": true}, 
-         "hidden": false
+         "color": {"inherit": true}
       },
       "mapping": {
          "width": 0.15, 
-         "color": "lightgrey", 
-         "hidden": false
+         "color": "lightgrey"
       },
       "communication": {
          "width": 1, 
-         "color": {"inherit": false},
-         "hidden": false
+         "color": {"inherit": false}
       },
       "microgrid_connection": {
          "width": 1, 
-         "color": "cyan", 
-         "hidden": false
+         "color": "cyan"
       },
       "line": {
          "width": 2,
-         "color": {"inherit": true}, 
-         "hidden": false
+         "color": {"inherit": true}
       }
    },
    "graphOptions": {
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
-            "enabled": false,
-            "type": "continuous",
-            "roundness": 0
+            "enabled": true,
+            "type": "continuous"
          },
          "hidden": true
       },
@@ -274,8 +261,7 @@
             "gravitationalConstant": -10000,
             "springConstant": 0.2,
             "springLength": 2,
-            "avoidOverlap": 0.5,
-            "damping": 1
+            "avoidOverlap": 0.5
          },
          "solver": "barnesHut",
          "stabilization": {

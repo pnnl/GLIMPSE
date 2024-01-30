@@ -38,7 +38,7 @@ inv_types = ['PowerElectronicsConnection']
 trans_types = ["PowerTransformer"]
 switch_types = ['LoadBreakSwitch']
 
-# IDs = []
+dupe_ids = []
 
 for node in network.graph[cim.ConnectivityNode].values():
    addObject("c_node", {"id": node.mRID})
@@ -66,11 +66,12 @@ for node in network.graph[cim.ConnectivityNode].values():
       
       if eq_class_type in trans_types: 
          addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+         dupe_ids.append(terminal.mRID)
          addObject("transformer", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
 
-      if eq_class_type in switch_types:
-         addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
-         addObject("switch", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+      # if eq_class_type in switch_types:
+      #    addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+      #    addObject("switch", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
 
    # print(f"------------end of {node.mRID} terminals------------")
 
@@ -96,6 +97,66 @@ for line in network.graph[cim.ACLineSegment].values():
       "from": line.Terminals[1].mRID,
       "to": line.Terminals[1].ConnectivityNode.mRID
    })
+   
    # topo_edges.append([line.Terminals[0].mRID, line.Terminals[1].mRID])
+   
+for line in network.graph[cim.PowerTransformer].values() :
 
+   #    addObject("terminal", {"id": line.Terminals[0].mRID})
+   #    addObject("terminal", {"id": line.Terminals[1].mRID})
+
+   addObject("transformer", {
+      "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
+      "from": line.Terminals[0].mRID,
+      "to": line.Terminals[1].mRID
+   })
+
+   addObject("line", {
+      "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
+      "from": line.Terminals[0].mRID,
+      "to": line.Terminals[0].ConnectivityNode.mRID
+   })
+
+   addObject("line",{
+      "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
+      "from": line.Terminals[1].mRID,
+      "to": line.Terminals[1].ConnectivityNode.mRID
+   })
+
+cim_switch_types = [
+   cim.Breaker, 
+   cim.Fuse, 
+   cim.Switch, 
+   cim.Sectionaliser, 
+   cim.LoadBreakSwitch, 
+   cim.Disconnector, 
+   cim.Recloser
+]
+
+for cim_type in cim_switch_types:
+   if cim_type in network.graph:
+      for line in network.graph[cim_type].values():
+            addObject("terminal", {"id": line.Terminals[0].mRID})
+            addObject("terminal", {"id": line.Terminals[1].mRID}) # black
+
+            addObject("switch", {
+               "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
+               "from": line.Terminals[0].mRID,
+               "to": line.Terminals[1].mRID
+            })
+
+            addObject("line", {
+               "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
+               "from": line.Terminals[0].mRID,
+               "to": line.Terminals[0].ConnectivityNode.mRID
+            })
+
+            addObject("line",{
+               "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
+               "from": line.Terminals[1].mRID,
+               "to": line.Terminals[1].ConnectivityNode.mRID
+            })
+            
+            
+            
 print(json.dumps(graphObj))

@@ -56,10 +56,12 @@ const ActionBar = ({
 
       if (showLegendStateRef.current) {
          document.getElementById("graph").style.width = "100%";
+         document.getElementById("circularProgress").style.left = "50%"
          toggleLegendRef.current?.(false);
       }
       else {
          document.getElementById("graph").style.width = "70%";
+         document.getElementById("circularProgress").style.left = "30%"
          toggleLegendRef.current?.(true);
       }
    }

@@ -5,8 +5,9 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    getJsonData: (paths) => ipcRenderer.invoke("openPaths", paths), //working
    validate: (jsonFilePath) => ipcRenderer.invoke("validate", jsonFilePath), // Working
    getStats: (dataObject) => ipcRenderer.invoke("getStats", dataObject), //Working
-   json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData), // in progress
+   json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData), // working
    getPlot: () => ipcRenderer.invoke("getPlot"), //Working
    onShowAttributes: (callback) => ipcRenderer.on("show-attributes", (_event, value) => callback(value)), // working
-   getCIM: () => ipcRenderer.invoke("getCIM") // in progress
+   getCIM: () => ipcRenderer.invoke("getCIM"), // working
+   add2CIM: (newObjs) => ipcRenderer.send("add2CIM", newObjs)
 })

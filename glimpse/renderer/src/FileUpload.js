@@ -6,7 +6,7 @@ import { Button, ThemeProvider, createTheme } from '@mui/material';
 
 const appOptions = appCofig.appOptions;
 
-const GlmFileUpload = ({ setFileData, setDataFromCim}) => {
+const FileUpload = ({ setFileData, setDataFromCim}) => {
    // drag state
    const [dragActive, setDragActive] = useState(false);
    // ref
@@ -110,4 +110,4 @@ const GlmFileUpload = ({ setFileData, setDataFromCim}) => {
    );
 };
 
-export default GlmFileUpload
+export default FileUpload

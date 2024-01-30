@@ -16,19 +16,21 @@ import {
    Autocomplete,
    Stack,
 } from "@mui/material";
+import { DataSet } from "vis-data";
 
 const nodeTypes = appConfig.nodeTypes;
 const edgeTypes = appConfig.edgeTypes
 
+const newNodes = new DataSet();
+
 const NewNodeForm = ({onMount, nodes, addNode}) => {
    const [openForm, setOpenForm] = useState(false);
-
    const [formFields, setFormFields] = useState({
       "nodeType": 0,
       "nodeID": "",
       "connectTo": "",
       "edgeType": 0
-   })
+   });
 
    
    const handleClose = () => {
@@ -36,32 +38,15 @@ const NewNodeForm = ({onMount, nodes, addNode}) => {
    }
    
    const createNewNode = (e) => {
-      e.preventDefault();
-      const node = {};
-      const edge = {};
-
-      node["group"] = nodeTypes[formFields.nodeType];
-      node["id"] = `${nodeTypes[formFields.nodeType]}_${formFields.nodeID}`;
-      node["label"] = `${nodeTypes[formFields.nodeType]}_${formFields.nodeID}`;
-      node["attributes"] = {
-         "id": node["id"]
-      };
-
-      edge["id"] = `${formFields.connectTo}-${formFields.nodeID}`;
-      edge["from"] = formFields.connectTo;
-      edge["to"] = node["id"];
-      edge["type"] = edgeTypes[formFields.edgeType];
-      edge["color"] = edgeOptions[edgeTypes[formFields.edgeType]].color;
-      edge["width"] = edgeOptions[edgeTypes[formFields.edgeType]].width;
-      edge["hidden"] = edgeOptions[edgeTypes[formFields.edgeType]].hidden;
-
-      addNode({"node": node, "connection": edge});
-      handleClose();
+      addNode(formFields);
+      setOpenForm(false);
    }
    
    const handleChange = (e) => {
       e.preventDefault();
+
       const {name, value} = e.target;
+
       setFormFields(formFields => ({
          ...formFields,
          [name]: value

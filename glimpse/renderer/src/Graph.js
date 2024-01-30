@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
+import { v4 } from "uuid";
 import ActionBar from "./ActionBar";
 import NodePopup from "./NodePopup";
 import "./styles/vis-network.css";
@@ -31,6 +32,7 @@ const getLegendData = (typeCounts) => {
    });
 
    let x_increment;
+
    if (currentNodeTypes.length < 6)
       x_increment = 800 / currentNodeTypes.length;
    else 
@@ -138,15 +140,20 @@ const getHtmlLabel = (id, attributes) => {
    )
 }
 
-const Graph = ({ dataToVis }) => {
+const Graph = (props) => {
    const options = appConfig.graphOptions; // get the options for the graph visualization
    let glmNetwork; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
 
    // data object that holds a DataSet for nodes and edges
    const data = {
-      nodes: new DataSet(),
-      edges: new DataSet()
+      "nodes": new DataSet(),
+      "edges": new DataSet()
+   };
+
+   const newObjs = {
+      "nodes": [],
+      "edges": []
    };
 
    // used to keep count of each object type
@@ -197,7 +204,6 @@ const Graph = ({ dataToVis }) => {
    * @param {Object} dataFiles 
    */
    const setGraphData = (dataFiles) => {
-
       const files = [];
       const keys = ["name", "objectType", "id"]; // the first key of each object must have one of these key names
 
@@ -208,11 +214,11 @@ const Graph = ({ dataToVis }) => {
       }
 
       //For each file gather all of the nodes that matches the types
-      for (const file of files)
-      {
+      for (const file of files) {
+
          const objs = file.objects;
-         for (const obj of objs)
-         {
+
+         for (const obj of objs) {
             let name;
             Object.keys(obj).forEach((k) => {
                if (keys.includes(k)) {
@@ -223,20 +229,17 @@ const Graph = ({ dataToVis }) => {
             const objectType = obj[name]; // the object type is the first key of each object
             const attributes = obj.attributes; // get the atributes of each object
             
-            if (nodeTypes.includes(objectType)) // if the object is of a node type then it is added as a node
-            {
+            if (nodeTypes.includes(objectType)) { // if the object is of a node type then it is added as a node
                Object.keys(attributes).forEach((k) => {
-                  if(keys.includes(k))
-                  {
+                  if (keys.includes(k)) {
                      name = k;
                   }
-               })
+               });
 
                const nodeID = attributes[name]; // the ID of each object is in the atributes js Object
 
                // if the object has x and y coordinates they will be added to the node's object datastructure
-               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y"))
-               {
+               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
                   data.nodes.add({
                      "id": nodeID,
                      "label": nodeID,
@@ -247,8 +250,7 @@ const Graph = ({ dataToVis }) => {
                      "y": parseInt(attributes.y, 10)
                   });
                }
-               else if (Object.keys(attributes).includes("level"))
-               {
+               else if (Object.keys(attributes).includes("level")) {
                   if (!options.layout.hierarchical.enabled)
                      options.layout.hierarchical.enabled = true;
 
@@ -262,7 +264,6 @@ const Graph = ({ dataToVis }) => {
                   });
                }
                else {
-
                   if (options.layout.hierarchical.enabled) {
                      options.layout.hierarchical.enabled = false;
                      options.physics.solver = "barnesHut";
@@ -283,12 +284,10 @@ const Graph = ({ dataToVis }) => {
       }
 
       // for each file gather all of the edge types and create edges between nodes
-      for (const file of files)
-      {
+      for (const file of files) {
          const objs = file.objects;
 
-         for (const obj of objs)
-         {
+         for (const obj of objs) {
             let name;
             let attributeName;
 
@@ -307,8 +306,7 @@ const Graph = ({ dataToVis }) => {
                }
             })
 
-            if (edgeTypes.includes(objectType))
-            {
+            if (edgeTypes.includes(objectType)) {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
                const edgeID = objectType + ":" + attributes[attributeName];
@@ -320,14 +318,12 @@ const Graph = ({ dataToVis }) => {
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
-                  "hidden": edgeOptions[objectType].hidden,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
                });
                
                objectTypeCount.edges[objectType]++;
             }
-            else if (nodeTypes.includes(objectType)) // some nodes have a parent attribute
-            {
+            else if (nodeTypes.includes(objectType)) {// some nodes have a parent attribute
                const nodeID = attributes[attributeName];
                const parent = attributes.parent;
                
@@ -501,17 +497,14 @@ const Graph = ({ dataToVis }) => {
    * @param {string} nodeType - The type of nodes to highlight 
    */
    const HighlightGroup = (nodeType) => {
-
       const nodesMap = data.nodes.map((node) => {
 
-         if (node.group === nodeType || node.size === 15)
-         {
+         if (node.group === nodeType || node.size === 15) {
             delete node.color;
             node.size = 15;
             return node;
          }
-         else if (node.group === nodeType && node.size === 15)
-         {
+         else if (node.group === nodeType && node.size === 15) {
             node.size = 1;
             node.color = "lightgrey";
             return node;
@@ -537,19 +530,19 @@ const Graph = ({ dataToVis }) => {
    * @param {string} edgeType - The type of edges to highlight
    */
    const HighlightEdges = (edgeType) => {
-   
-      const nodeItems = data.nodes.map((n) => {
-         if (n.size !== 15) {
-            n.color = "lightgrey";
-            n.size = 1;
+      const nodeItems = data.nodes.map((node) => {
+         if (node.size !== 15) {
+            node.color = "lightgrey";
+            node.size = 1;
 
-            return n;
+            return node;
          }
-         return n;
+         return node;
       });
       
       const edgeItems = data.edges.map((edge) => {
          if (edge.id.split(":")[0] === edgeType) {
+            console.log(edge)
             edge.color = edgeOptions[edgeType].color;
             edge.width = 8;
             return edge;
@@ -568,7 +561,7 @@ const Graph = ({ dataToVis }) => {
 
    /* ------------------------ Estabilsh Network ------------------------ */
 
-   setGraphData(dataToVis);
+   setGraphData(props.dataToVis);
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
@@ -579,20 +572,23 @@ const Graph = ({ dataToVis }) => {
    */
    const Export = () => {
 
-      Object.keys(dataToVis).forEach(( file ) => {
-         dataToVis[file]["objects"].forEach((object) => {
+      if (!props.cim) {
+         Object.keys(props.dataToVis).forEach(( file ) => {
+            props.dataToVis[file]["objects"].forEach((object) => {
 
-            const objType = object.name;
-            if (nodeTypes.includes(objType))
-            {
-               const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
-               object.attributes = newNodeAttributes;
-            }
+               const objType = object.name;
+               if (nodeTypes.includes(objType)) {
+                  const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
+                  object.attributes = newNodeAttributes;
+               }
+            });
          });
-      });
 
-      // this end point will convert the json data back to its original glm files with changesl
-      window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
+         // this end point will convert the json data back to its original glm files with changesl
+         window.glimpseAPI.json2glm(JSON.stringify(props.dataToVis));
+      }
+
+      window.glimpseAPI.add2CIM(JSON.stringify(newObjs));
    }
 
    let setCurrentNode;
@@ -649,8 +645,7 @@ const Graph = ({ dataToVis }) => {
     * Hide a specific edge
     * @param {string} edgeID - The ID of an edge to hide 
     */
-   const hideEdge = (edgeID) =>
-   {
+   const hideEdge = (edgeID) => {
       const edgeToHide = data.edges.get(edgeID);
       edgeToHide.hidden = true;
       data.edges.update(edgeToHide);
@@ -661,13 +656,13 @@ const Graph = ({ dataToVis }) => {
     * @param {string} edgeType - The type of edges to hide like: "overhead_line" 
     */
    const hideEdges = (edgeType) => {
-      const edgesToHide = data.edges.get().map(e => {
-         if (e.id.includes(edgeType))
-         {
-            e.hidden = true;
+      const edgesToHide = data.edges.get().map((edge) => {
+         if (edge.id.includes(edgeType)) {
+            edge.hidden = true;
          }
-         return e;
+         return edge;
       });
+
       data.edges.update(edgesToHide);
    }
   
@@ -677,16 +672,14 @@ const Graph = ({ dataToVis }) => {
     */
    const handleContextmenu = (e) => {
       e.preventDefault();
-      if(contextMenuData !== null)
-      {
+      if (contextMenuData !== null) {
          setContextMenuData({
             ...contextMenuData,
             "mouseX": e.pageX + 2,
             "mouseY": e.pageY + 6
          });
       }
-      else
-      {
+      else {
          setContextMenuData(null);
       }
    }
@@ -698,28 +691,25 @@ const Graph = ({ dataToVis }) => {
     */
    const hideObjects = (objectType, type) => {
 
-      if (type === "node")
-      {
-         const nodesToHide = data.nodes.get().map( node => {
-
-            if (node.group === objectType)
-            {
+      if (type === "node"){
+         const nodesToHide = data.nodes.get().map((node) => {
+            if (node.group === objectType) {
                node.hidden = true;
             }
             return node;
          });
+
          data.nodes.update(nodesToHide);
       }
-      else if (type === "edge") 
-      {
-         const edgesToHide = data.edges.get().map( edge => {
+      else if (type === "edge") {
+         const edgesToHide = data.edges.get().map((edge) => {
 
-            if (edge.id.includes(objectType))
-            {
+            if (edge.id.includes(objectType)) {
                edge.hidden = true;
             }
             return edge;
          });
+
          data.edges.update(edgesToHide);
       }
    }
@@ -796,14 +786,166 @@ const Graph = ({ dataToVis }) => {
       setLegendData(getLegendData(objectTypeCount));
    }
 
-   const addNewNode = ({node, connection}) => {
-      node["title"] = getTitle(node['attributes']);
-      data.nodes.add(node); // add node to data set
-      objectTypeCount.nodes[node.group]++; // increase counter for the new node's type
+   /**
+    * Create and visualize a new node in either CIM or GLM model
+    * @param {Object} newNodeObj - contains the new values from each field in the new node form 
+    * @param {number} newNodeObj.nodeType - The index of the node type in the nodeTypes list
+    * @param {string} newNodeObj.nodeID - The ID for the new node
+    * @param {string} newNodeObj.connectTo - The ID of an existing Node to connect the new node
+    * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
+    */
+   const addNewNode = ({nodeType, nodeID, connectTo, edgeType}) => {
+      if (props.cim) {
+         const NEW_C_NODE_ID = v4(); // new node for new terminal
+         const NEW_NODE_ID = v4(); // new terminal with type
+         const TERMINAL_1_ID = v4(); // connected to the new connectivity node
+         const TERMINAL_2_ID = v4(); // connected to existing connectivity node
+   
+         // Connectivity Node
+         data.nodes.add({
+            id: NEW_C_NODE_ID,
+            mRID: NEW_C_NODE_ID,
+            name: `c_node:${NEW_C_NODE_ID}`,
+            terminals: [TERMINAL_1_ID, NEW_NODE_ID],
+            group: "c_node"
+         });
+         let addedNode = data.nodes.get(NEW_C_NODE_ID);
+         let {id, ...rest} = addedNode;
+         addedNode.title = `Object Type: c_node\n${getTitle(rest)}`;
+         data.nodes.update(addedNode);
+         newObjs.nodes.push(data.nodes.get(NEW_C_NODE_ID));
+         
+         // new node
+         data.nodes.add({
+            id: NEW_NODE_ID,
+            mRID: NEW_NODE_ID,
+            name: `terminal:${nodeID}`,
+            group: nodeTypes[nodeType],
+            parent: NEW_C_NODE_ID
+         });
+         addedNode = data.nodes.get(NEW_NODE_ID);
+         ({id, ...rest} = addedNode);
+         addedNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(rest)}`;
+         data.nodes.update(addedNode);
+         newObjs.nodes.push(data.nodes.get(NEW_NODE_ID));
+         
+         // connect new connectivity node with new node
+         let color, width;
+         data.edges.add({
+            id: `line:${NEW_C_NODE_ID}-${NEW_NODE_ID}`,
+            from: NEW_C_NODE_ID,
+            to: NEW_NODE_ID,
+            color: edgeOptions.line.color,
+            width: edgeOptions.line.width
+         });
+         let addedEdge = data.edges.get(`line:${NEW_C_NODE_ID}-${NEW_NODE_ID}`);
+         ({color, width, ...rest} = addedEdge)
+         addedEdge.title = `Object Type: line\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
+         
+         // create plain terminal #1
+         data.nodes.add({
+            id: TERMINAL_1_ID,
+            mRID: TERMINAL_1_ID,
+            name: `terminal:${TERMINAL_1_ID}`,
+            group: "terminal",
+            parent: NEW_C_NODE_ID
+         });
+         addedNode = data.nodes.get(TERMINAL_1_ID);
+         ({id, ...rest} = addedNode);
+         addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
+         data.nodes.update(addedNode);
+         newObjs.nodes.push(data.nodes.get(TERMINAL_1_ID));
+         
+         // connect terminal 1 with new connectivity node
+         data.edges.add({
+            id: `line:${NEW_C_NODE_ID}-${TERMINAL_1_ID}`,
+            from: NEW_C_NODE_ID,
+            to: TERMINAL_1_ID,
+            color: edgeOptions.line.color,
+            width: edgeOptions.line.width
+         });
+         addedEdge = data.edges.get(`line:${NEW_C_NODE_ID}-${TERMINAL_1_ID}`);
+         ({color, width, ...rest} = addedEdge);
+         addedEdge.title = `Object Type: line\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
+         
+         // terminal #2
+         data.nodes.add({
+            id: TERMINAL_2_ID,
+            mRID: TERMINAL_2_ID,
+            name: `terminal:${TERMINAL_2_ID}`,
+            group: "terminal",
+            parent: connectTo
+         });
+         addedNode = data.nodes.get(TERMINAL_2_ID);
+         ({id, ...rest} = addedNode);
+         addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
+         data.nodes.update(addedNode);
+         newObjs.nodes.push(data.nodes.get(TERMINAL_2_ID));
+         
+         // connect terminal #2 to existing connectivity node
+         data.edges.add({
+            id: `line:${connectTo}-${TERMINAL_2_ID}`,
+            from: connectTo,
+            to: TERMINAL_2_ID,
+            color: edgeOptions.line.color,
+            width: edgeOptions.line.width
+         });
+         addedEdge = data.edges.get(`line:${connectTo}-${TERMINAL_2_ID}`);
+         ({color, width, ...rest} = addedEdge);
+         addedEdge.title = `Object Type: line\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
+   
+         // connect terminal #2 to terminal #1 as selected edge type
+         data.edges.add({
+            "id": `${edgeTypes[edgeType]}:${TERMINAL_2_ID}-${TERMINAL_1_ID}`,
+            "from": TERMINAL_2_ID,
+            "to": TERMINAL_1_ID,
+            "color": edgeOptions[edgeTypes[edgeType]].color,
+            "width": edgeOptions[edgeTypes[edgeType]].width
+         });
+         addedEdge = data.edges.get(`${edgeTypes[edgeType]}:${TERMINAL_2_ID}-${TERMINAL_1_ID}`);
+         ({color, width, ...rest} = addedEdge);
+         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
 
-      connection["title"] = getTitle(connection);
-      data.edges.add(connection);
-      objectTypeCount.edges[connection.type]++;
+         newObjs.edges.push(data.edges.get(`${edgeTypes[edgeType]}:${TERMINAL_2_ID}-${TERMINAL_1_ID}`));
+      }
+      else {
+         const [addedNodeID] = data.nodes.add({
+            "id": `${nodeTypes[nodeType]}_${nodeID}`,
+            "group": nodeTypes[nodeType]
+         });
+
+         const title = getTitle(data.nodes.get(addedNodeID));
+         const addedNode = data.nodes.get(addedNodeID);
+         addedNode.title = title;
+         data.nodes.update(addedNode);
+
+         const [addedEdgeID] = data.edges.add({
+            "id": `${edgeTypes[edgeType]}:${connectTo}-${addedNodeID}`,
+            "from": connectTo,
+            "to": addedNodeID,
+            "color": edgeOptions[edgeTypes[edgeType]].color,
+            "width": edgeOptions[edgeTypes[edgeType]].width
+         });
+
+         const {color, width, ...rest} = data.edges.get(addedEdgeID);
+         const addedEdge = data.edges.get(addedEdgeID);
+         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
+      }
+   }
+
+   const getConnectivityNodes = () => {
+      const c_nodes = data.nodes.getIds({
+         filter: (node) => {
+            return (node.group === "c_node");
+         }
+      });
+      
+      return c_nodes;
    }
 
    window.glimpseAPI.onShowAttributes(showAttributes);
@@ -823,8 +965,7 @@ const Graph = ({ dataToVis }) => {
          glmNetwork.setOptions({physics: {enabled: false}})
       }
       else { 
-         if (data.nodes.length > 200)
-         {
+         if (data.nodes.length > 200) {
             options.physics.barnesHut.gravitationalConstant = -50000;
             options.physics.barnesHut.springConstant = 0.5;
             options.physics.barnesHut.springLength = 100;
@@ -844,7 +985,8 @@ const Graph = ({ dataToVis }) => {
          });
          
          glmNetwork.once("stabilizationIterationsDone", () => {
-            glmNetwork.setOptions({"edges": {"hidden": false}, "physics": {"enabled": false}})
+            glmNetwork.setOptions({"edges": {"hidden": false}, "physics": {"enabled": false}});
+
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
@@ -893,7 +1035,7 @@ const Graph = ({ dataToVis }) => {
    return (
       <>
          <ActionBar
-            graphDataObj={dataToVis}
+            graphDataObj={props.dataToVis}
             nodesDataObj = {data.nodes}
             physicsToggle = {TogglePhysics}
             reset = {Reset}
@@ -915,7 +1057,7 @@ const Graph = ({ dataToVis }) => {
 
          <NewNodeForm
             onMount={onNewNodeFormMount}
-            nodes={data.nodes.getIds()}
+            nodes={props.cim ? getConnectivityNodes() : data.nodes.getIds()}
             addNode = {addNewNode}
          />
 

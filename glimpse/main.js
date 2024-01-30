@@ -10,7 +10,6 @@ const path = require("path");
 const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
-if (require("electron-squirrel-startup")) app.quit();
 
 require("electron-reload")(__dirname, {
    electron: path.join(__dirname, "node_modules", ".bin", "electron")
@@ -214,6 +213,10 @@ const getCimData = () => {
    return cimGraphData;
 }
 
+const add2cim = (newObjs) => {
+   createJsonFile(path.join(__dirname, "data", "newObjs.json"), newObjs);
+}
+
 app.whenReady().then(() => {
    makeWindow();
 
@@ -223,6 +226,7 @@ app.whenReady().then(() => {
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
    ipcMain.handle("getCIM", () => getCimData());
+   ipcMain.on("add2CIM", (event, newObjs) => add2cim(newObjs));
 
    app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {

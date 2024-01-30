@@ -24,7 +24,8 @@ export const Home = () => {
          else {
             setDataToVisRequest({
                showFileUpload: false,
-               data: JSON.parse(validFileData)
+               data: JSON.parse(validFileData),
+               isCIM: false
             });
          }
       }
@@ -39,7 +40,8 @@ export const Home = () => {
          else {
             setDataToVisRequest({
                showFileUpload: false,
-               data: JSON.parse(data)
+               data: JSON.parse(data),
+               isCIM: false
             });   
          }
       }
@@ -48,13 +50,14 @@ export const Home = () => {
    const setCimData = (data) => {
       setDataToVisRequest({
          showFileUpload: false,
-         data: JSON.parse(data)
-      })
+         data: JSON.parse(data),
+         isCIM: true
+      });
    }
    
    // Display the graph dashboard component if file uploads were succesfully validated
    if (!dataToVisRequest.showFileUpload) {
-      content = <Graph dataToVis = {dataToVisRequest.data} />;
+      content = <Graph dataToVis = {dataToVisRequest.data} cim={dataToVisRequest.isCIM}/>;
    }
    else {
       content = <FileUpload setFileData = {setFileData} setDataFromCim={setCimData}/>;
