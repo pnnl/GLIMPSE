@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from '@mui/material/MenuItem';
 
-const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm}) => {
+const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm, deleteNode}) => {
     
    const [contextMenu, setContextMenu] = useState(null);
 
@@ -31,11 +31,16 @@ const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm}) => {
       setContextMenu(null);
    }
 
+   const handleDeleteNode = () => {
+      deleteNode(contextMenu.nodeID);
+      setContextMenu(null);
+   }
+
    const EdgeMenuItems = () => {
       return (
          <>
-         <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
-         <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
+            <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
+            <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
          </>
       );
    }
@@ -48,10 +53,13 @@ const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm}) => {
          anchorPosition={
             contextMenu !== null
             ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : { top: null, left: null }  
+            : { top: 0, left: 0 }
          }>
-         {  contextMenu.edgeID
+         {  
+            contextMenu.edgeID
             ? <EdgeMenuItems/>
+            : contextMenu.nodeID 
+            ? <MenuItem onClick={handleDeleteNode}>Delete Node</MenuItem>
             : <MenuItem onClick={handleNewNode}>New Node</MenuItem>
          }
       </Menu>

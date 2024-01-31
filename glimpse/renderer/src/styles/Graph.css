@@ -13,14 +13,14 @@
 }
 
 #circularProgress {
-  position: absolute;
+   position: absolute;
   height: 125px;
   width: 125px;
+  top: 50%;
+  left: 35%;
   border-radius: 50%;
   background: conic-gradient(#b25a00 1deg, #333 0deg);
   display: flex;
-  left: 30%;
-  top: 50%;
   align-items: center;
   justify-content: center;
 }

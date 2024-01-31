@@ -61,7 +61,7 @@ const ActionBar = ({
       }
       else {
          document.getElementById("graph").style.width = "70%";
-         document.getElementById("circularProgress").style.left = "30%"
+         document.getElementById("circularProgress").style.left = "35%"
          toggleLegendRef.current?.(true);
       }
    }

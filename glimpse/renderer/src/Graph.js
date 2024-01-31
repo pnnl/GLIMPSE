@@ -810,8 +810,9 @@ const Graph = (props) => {
             group: "c_node"
          });
          let addedNode = data.nodes.get(NEW_C_NODE_ID);
-         let {id, ...rest} = addedNode;
+         let {id, group, ...rest} = addedNode;
          addedNode.title = `Object Type: c_node\n${getTitle(rest)}`;
+         addedNode.attributes = rest;
          data.nodes.update(addedNode);
          newObjs.nodes.push(data.nodes.get(NEW_C_NODE_ID));
          
@@ -824,13 +825,14 @@ const Graph = (props) => {
             parent: NEW_C_NODE_ID
          });
          addedNode = data.nodes.get(NEW_NODE_ID);
-         ({id, ...rest} = addedNode);
+         ({id, group, ...rest} = addedNode);
          addedNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(rest)}`;
+         addedNode.attributes = rest;
          data.nodes.update(addedNode);
          newObjs.nodes.push(data.nodes.get(NEW_NODE_ID));
          
          // connect new connectivity node with new node
-         let color, width;
+         let color, width = null;
          data.edges.add({
             id: `line:${NEW_C_NODE_ID}-${NEW_NODE_ID}`,
             from: NEW_C_NODE_ID,
@@ -852,8 +854,9 @@ const Graph = (props) => {
             parent: NEW_C_NODE_ID
          });
          addedNode = data.nodes.get(TERMINAL_1_ID);
-         ({id, ...rest} = addedNode);
+         ({id, group, ...rest} = addedNode);
          addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
+         addedNode.attributes = rest;
          data.nodes.update(addedNode);
          newObjs.nodes.push(data.nodes.get(TERMINAL_1_ID));
          
@@ -875,12 +878,13 @@ const Graph = (props) => {
             id: TERMINAL_2_ID,
             mRID: TERMINAL_2_ID,
             name: `terminal:${TERMINAL_2_ID}`,
-            group: "terminal",
-            parent: connectTo
+            parent: connectTo,
+            group: "terminal"
          });
          addedNode = data.nodes.get(TERMINAL_2_ID);
-         ({id, ...rest} = addedNode);
+         ({id, group, ...rest} = addedNode);
          addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
+         addedNode.attributes = rest;
          data.nodes.update(addedNode);
          newObjs.nodes.push(data.nodes.get(TERMINAL_2_ID));
          
@@ -909,7 +913,6 @@ const Graph = (props) => {
          ({color, width, ...rest} = addedEdge);
          addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
          data.edges.update(addedEdge);
-
          newObjs.edges.push(data.edges.get(`${edgeTypes[edgeType]}:${TERMINAL_2_ID}-${TERMINAL_1_ID}`));
       }
       else {
@@ -936,6 +939,20 @@ const Graph = (props) => {
          addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
          data.edges.update(addedEdge);
       }
+   }
+
+   const deleteNode = (nodeID) => {
+      data.nodes.remove(nodeID);
+      
+      const edgesToDelete = [];
+      for (let edge of data.edges.get()) {
+         if (edge.from === nodeID || edge.to === nodeID)
+            edgesToDelete.push(edge.id);
+      }
+      
+      data.edges.remove(edgesToDelete);
+
+      console.log(data.edges.length);
    }
 
    const getConnectivityNodes = () => {
@@ -1006,12 +1023,13 @@ const Graph = (props) => {
 
       glmNetwork.on("blurNode", ({ node }) => {
          const currNode = data.nodes.get(node);
-         currNode.label = "";
-         data.nodes.update(currNode);
+         if (currNode) {
+            currNode.label = "";
+            data.nodes.update(currNode);
+         }
       });
        
       glmNetwork.on("doubleClick", (params) => {
-   
          if (params.nodes[0] === undefined) {
             alert("Double click on a node to edit.");
          }
@@ -1022,14 +1040,18 @@ const Graph = (props) => {
          }
       });
 
-      /* Display the child Context menu component to hide an edge or edge types */
+      /* Display the child Context menu component */
       glmNetwork.on("oncontext", (params) => {
-         if(glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined)
+         if (glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined && glmNetwork.getNodeAt(params.pointer.DOM) === undefined) {
             setContextMenuData({"edgeID": glmNetwork.getEdgeAt(params.pointer.DOM)});
-         else if (params.edges.length === 0 && params.nodes.length === 0)
+         }
+         else if (glmNetwork.getNodeAt(params.pointer.DOM) !== undefined) {
+            setContextMenuData({"nodeID": glmNetwork.getNodeAt(params.pointer.DOM)});
+         }
+         else {
             setContextMenuData({});
+         }
       });
-      
    });
 
    return (
@@ -1069,16 +1091,17 @@ const Graph = (props) => {
             ref={container}
          />
 
+         <div id="circularProgress">
+            <span id="progressValue">0%</span>
+         </div>
+
          <GraphContextMenu
             onMount = {onContextMenuChildMount} 
             hideEdge = {hideEdge}
             hideEdges = {hideEdges}
             openNewNodeForm={openNewNodeForm}
+            deleteNode={deleteNode}
          />
-
-         <div id="circularProgress">
-            <span id="progressValue">0%</span>
-         </div>
 
          <Legend 
             findGroup = {HighlightGroup} 
