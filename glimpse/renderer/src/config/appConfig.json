@@ -320,7 +320,9 @@
          "improvedLayout": false,
          "hierarchical": {
             "enabled": false,
-            "direction": "LR"
+            "direction": "LR",
+            "levelSeperation": 150,
+            "nodeSpacing": 100
          }
       }
    },
