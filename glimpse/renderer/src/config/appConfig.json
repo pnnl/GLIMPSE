@@ -321,7 +321,7 @@
          "hierarchical": {
             "enabled": false,
             "direction": "LR",
-            "levelSeperation": 150,
+            "levelSeparation": 150,
             "nodeSpacing": 100
          }
       }
