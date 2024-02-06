@@ -797,10 +797,6 @@ const Graph = ({ dataToVis }) => {
    window.glimpseAPI.onShowAttributes(showAttributes);
 
    const container = useRef(null);
-
-/* These Refs containe the state and set state of the legend
-   this allows the ActionBar component to change the state of the legend component 
-   without having to rerender this Graph componenet */
    const toggleLegendRef = useRef(null);
    const showLegendStateRef = useRef(null);
    useEffect(() => {
@@ -815,9 +811,9 @@ const Graph = ({ dataToVis }) => {
       }
       else { 
          if (data.nodes.length > 200) {
-            options.physics.barnesHut.gravitationalConstant = -50000;
+            options.physics.barnesHut.gravitationalConstant = -100000;
             options.physics.barnesHut.springConstant = 0.5;
-            options.physics.barnesHut.springLength = 100;
+            options.physics.barnesHut.springLength = 50;
          }
 
          // create network

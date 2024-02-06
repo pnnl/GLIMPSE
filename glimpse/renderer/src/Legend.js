@@ -16,19 +16,19 @@ const Legend = ({
    legendStateRef
 }) => {
 
+   const container = useRef(null);
    const [data, setData] = useState(legendData);
    const [showLegend, setShowLegend] = useState(true);
-   const container = useRef(null);
 
    // set the current state as refs from the Graph component
    useEffect(() => {
       setShowLegendRef.current = setShowLegend;
       legendStateRef.current = showLegend;
-   }, []);
+   })
 
    useEffect(() => {
       onMount(setData);  
-   }, []);
+   });
    
    // Getting the state and set state variables from the legend context menu component
    let contextMenuData;
