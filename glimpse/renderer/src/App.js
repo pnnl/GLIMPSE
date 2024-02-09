@@ -30,7 +30,7 @@ export const Home = () => {
          }
       }
       else {
-         const data = await window.glimpseAPI.getJsonData(paths);
+         const data = await window.glimpseAPI.getData(paths);
          if (data === undefined) {
             console.log("Something went wrong...");
          }
@@ -40,7 +40,7 @@ export const Home = () => {
          else {
             setDataToVisRequest({
                showFileUpload: false,
-               data: JSON.parse(data),
+               data: data,
                isCIM: false
             });   
          }

@@ -1,0 +1,67 @@
+{
+   "objects":[
+      {
+         "name": "load",
+         "attributes": {
+            "id": "load_1",
+            "phases": "AN",
+            "flags": "DELTMODE",
+            "nominal_voltage": "241.7771"
+         }
+      },
+      {
+         "name": "load",
+         "attributes": {
+            "id": "load_2",
+            "phases": "AN",
+            "flags": "DELTAMOE",
+            "nominal_voltage": "2401.771"
+         }
+      },
+      {
+         "name": "node",
+         "attributes": {
+            "id": "node_3",
+            "phases": "AN",
+            "flags": "DLTAMODE",
+            "nominal_voltage": "2401.777"
+         }
+      },
+      {
+         "name": "node",
+         "attributes": {
+            "id": "node_4",
+            "phases": "AN",
+            "flags": "DELTAMODE",
+            "nominal_voltage": "2401.771"
+         }
+      },
+      {
+         "name": "line",
+         "attributes": {
+            "id": "1-2",
+            "from": "load_1",
+            "to": "load_2",
+            "type": "<tag>"
+         }
+      },
+      {
+         "name": "line",
+         "attributes": {
+            "id": "3-4",
+            "from": "node_3",
+            "to": "node_4",
+            "type": "<tag>"
+         }
+      },
+      {
+         "name": "line",
+         "attributes": {
+            "id": "4-1",
+            "from": "node_4",
+            "to": "load_1",
+            "type": "<tag>"
+         }
+      }
+   ]
+}

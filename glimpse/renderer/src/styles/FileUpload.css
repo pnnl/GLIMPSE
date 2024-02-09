@@ -1,5 +1,4 @@
-.file-upload-form-container
-{
+.file-upload-form-container {
    height: calc(100vh - 4rem);
    display: flex;
    align-items: center;
@@ -58,12 +57,4 @@
   right: 0px;
   bottom: 0px;
   left: 0px;
-}
-
-.divider {
-   display: inline-block;
-   width: 2px;
-   background-color: black;
-   margin: 0 10px;
-   height: 10em;
 }

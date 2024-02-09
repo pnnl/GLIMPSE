@@ -51,12 +51,16 @@ const ActionBar = ({
       }
    });
 
+   /**
+    * Hide/Show the Legend Component
+    * @param {Event} e 
+   */
    const toggleLegend = (e) => {
       e.preventDefault();
 
       if (showLegendStateRef.current) {
          document.getElementById("graph").style.width = "100%";
-         document.getElementById("circularProgress").style.left = "50%"
+         document.getElementById("circularProgress").style.left = "45%"
          toggleLegendRef.current?.(false);
       }
       else {
@@ -124,7 +128,7 @@ const ActionBar = ({
 
       if (stats === null) {
          const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
-         setStats(JSON.parse(statsObj));
+         setStats(statsObj);
          setShowTable(true);
       }
       else {

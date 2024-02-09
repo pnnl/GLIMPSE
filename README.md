@@ -8,12 +8,24 @@ GLIMPSE is a graph-based web application to visualize and update GridLAB-D power
 
 ```
 git clone http://github.com/pnnl/GLIMPSE
-pip install glm==0.4.3
-pip install networkx
-```
-## For Windows only :
-Once the GLM parser is installed through pip it will add two cli utilities. One of those is a `json2glm` parser that you will need to locate and rename with the .exe extension: `json2glm` -> `json2glm.exe`. This file is stored in python's scripts in the following windows directory: `\Users\[username]\AppData\Local\Programs\Python\Python310\Scripts`
 
+cd /GLIMPSE/glimpse/local-server/
+
+python -m venv venv
+
+pip install -r requirements.txt
+```
+### If on `Windows` go to `/venv/Scripts/` and rename **json2glm** to **json2glm.exe**
+
+### In `/GLIMPSE/glimpse/local-server/` Activate Virtual Environment using the following command for your system
+| Platform | Shell      | Command to activate virtual environment |
+| :------: | :--------- | :-------------------------------------- |
+| POSIX    | bash/zsh   | `$ source <venv>/bin/activate`          |
+|    -     | fish       | `$ source <venv>/bin/activate.fish`     |
+|    -     | csh/tcsh   | `$ source <venv>/bin/activate.csh`      |
+|    -     | PowerShell | `$ <venv>/bin/Activate.ps1`             |
+| Windows  | cmd.exe    | `C:\> <venv>\Scripts\activate.bat`      |
+|    -     | PowerShell | `PS C:\> <venv>\Scripts\Activate.ps1`   |
 ## in `GLIMPSE/glimpse/` run 
 ```
 npm install

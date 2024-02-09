@@ -14,7 +14,6 @@ const legendEdgeOptions = appConfig.legendEdgeOptions;
 const edgeOptions = appConfig.edgeOptions;
 
 const getLegendData = (typeCounts) => {
-
    const legendData = {
       "nodes": new DataSet(),
       "edges": new DataSet()
@@ -151,10 +150,7 @@ const Graph = (props) => {
       "edges": new DataSet()
    };
 
-   const newObjs = {
-      "nodes": [],
-      "edges": []
-   };
+   const newCIMobjs = [];
 
    // used to keep count of each object type
    const objectTypeCount = {
@@ -170,7 +166,9 @@ const Graph = (props) => {
          "technique": 0,
          "microgrid": 0,
          "terminal": 0,
+         "location": 0,
          "c_node": 0,
+         "person": 0,
          "capec": 0,
          "meter": 0,
          "load": 0,
@@ -186,7 +184,9 @@ const Graph = (props) => {
          "transformer": 0,
          "parentChild": 0,
          "regulator": 0,
-         "switch": 0, 
+         "traveling": 0,
+         "switch": 0,
+         "friend": 0, 
          "line": 0
       }
    };
@@ -254,6 +254,7 @@ const Graph = (props) => {
                   if (!options.layout.hierarchical.enabled)
                      options.layout.hierarchical.enabled = true;
 
+                  options.edges.smooth.roundness = 0;
                   data.nodes.add({
                      "id": nodeID,
                      "label": nodeID,
@@ -271,7 +272,7 @@ const Graph = (props) => {
 
                   data.nodes.add({
                      "id": nodeID,
-                     "label": "",
+                     "label": nodeID.length > 15 ? "" : nodeID,
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -571,7 +572,6 @@ const Graph = (props) => {
     * Then downloads the data back to the  user's computer as a zip folder with glm files
    */
    const Export = () => {
-
       if (!props.cim) {
          Object.keys(props.dataToVis).forEach(( file ) => {
             props.dataToVis[file]["objects"].forEach((object) => {
@@ -588,7 +588,7 @@ const Graph = (props) => {
          window.glimpseAPI.json2glm(JSON.stringify(props.dataToVis));
       }
 
-      window.glimpseAPI.add2CIM(JSON.stringify(newObjs));
+      window.glimpseAPI.export2CIM(JSON.stringify(newCIMobjs));
    }
 
    let setCurrentNode;
@@ -800,22 +800,8 @@ const Graph = (props) => {
          const NEW_NODE_ID = v4(); // new terminal with type
          const TERMINAL_1_ID = v4(); // connected to the new connectivity node
          const TERMINAL_2_ID = v4(); // connected to existing connectivity node
-   
-         // Connectivity Node
-         data.nodes.add({
-            id: NEW_C_NODE_ID,
-            mRID: NEW_C_NODE_ID,
-            name: `c_node:${NEW_C_NODE_ID}`,
-            terminals: [TERMINAL_1_ID, NEW_NODE_ID],
-            group: "c_node"
-         });
-         let addedNode = data.nodes.get(NEW_C_NODE_ID);
-         let {id, group, ...rest} = addedNode;
-         addedNode.title = `Object Type: c_node\n${getTitle(rest)}`;
-         addedNode.attributes = rest;
-         data.nodes.update(addedNode);
-         newObjs.nodes.push(data.nodes.get(NEW_C_NODE_ID));
-         
+         const newObjs = [];
+
          // new node
          data.nodes.add({
             id: NEW_NODE_ID,
@@ -829,8 +815,24 @@ const Graph = (props) => {
          addedNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(rest)}`;
          addedNode.attributes = rest;
          data.nodes.update(addedNode);
-         newObjs.nodes.push(data.nodes.get(NEW_NODE_ID));
+         newObjs.push(addedNode);
          
+         
+         // Connectivity Node
+         data.nodes.add({
+            id: NEW_C_NODE_ID,
+            mRID: NEW_C_NODE_ID,
+            name: `c_node:${NEW_C_NODE_ID}`,
+            terminals: [TERMINAL_1_ID, NEW_NODE_ID],
+            group: "c_node"
+         });
+         let addedNode = data.nodes.get(NEW_C_NODE_ID);
+         let {id, group, ...rest} = addedNode;
+         addedNode.title = `Object Type: c_node\n${getTitle(rest)}`;
+         addedNode.attributes = rest;
+         data.nodes.update(addedNode);
+         newObjs.push(addedNode);
+
          // connect new connectivity node with new node
          let color, width = null;
          data.edges.add({
@@ -858,7 +860,7 @@ const Graph = (props) => {
          addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
          addedNode.attributes = rest;
          data.nodes.update(addedNode);
-         newObjs.nodes.push(data.nodes.get(TERMINAL_1_ID));
+         newObjs.push(addedNode);
          
          // connect terminal 1 with new connectivity node
          data.edges.add({
@@ -886,7 +888,7 @@ const Graph = (props) => {
          addedNode.title = `Object Type: terminal\n${getTitle(rest)}`;
          addedNode.attributes = rest;
          data.nodes.update(addedNode);
-         newObjs.nodes.push(data.nodes.get(TERMINAL_2_ID));
+         newObjs.push(addedNode);
          
          // connect terminal #2 to existing connectivity node
          data.edges.add({
@@ -913,7 +915,10 @@ const Graph = (props) => {
          ({color, width, ...rest} = addedEdge);
          addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
          data.edges.update(addedEdge);
-         newObjs.edges.push(data.edges.get(`${edgeTypes[edgeType]}:${TERMINAL_2_ID}-${TERMINAL_1_ID}`));
+         newObjs.push(addedEdge);
+
+         newCIMobjs.push(newObjs);
+         console.log(newCIMobjs);
       }
       else {
          const [addedNodeID] = data.nodes.add({
@@ -983,9 +988,9 @@ const Graph = (props) => {
       }
       else { 
          if (data.nodes.length > 200) {
-            options.physics.barnesHut.gravitationalConstant = -50000;
+            options.physics.barnesHut.gravitationalConstant = -100000;
             options.physics.barnesHut.springConstant = 0.5;
-            options.physics.barnesHut.springLength = 100;
+            // options.physics.barnesHut.springLength = 3;
          }
 
          // create network

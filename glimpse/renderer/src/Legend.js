@@ -6,7 +6,15 @@ import appConfig from "./config/appConfig.json";
 import LegendContextMenu from "./LegendContextMenu";
 const options = appConfig.legendGraphOptions;
 
-const Legend = ({ findGroup, findEdges, hideObjects, onMount, legendData, setShowLegendRef, legendStateRef}) => {
+const Legend = ({ 
+   findGroup, 
+   findEdges, 
+   hideObjects, 
+   onMount, 
+   legendData, 
+   setShowLegendRef, 
+   legendStateRef
+}) => {
    
    const container = useRef(null);
    const [data, setData] = useState(legendData);

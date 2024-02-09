@@ -2,7 +2,7 @@ import React from 'react';
 import './styles/FileUpload.css';
 import appCofig from "./config/appConfig.json";
 import { useState, useRef } from 'react';
-import { Button, ThemeProvider, createTheme } from '@mui/material';
+import { Button, ThemeProvider, createTheme, Stack, Divider} from '@mui/material';
 
 const appOptions = appCofig.appOptions;
 
@@ -86,6 +86,14 @@ const FileUpload = ({ setFileData, setDataFromCim}) => {
 
    return (
       <div className='file-upload-form-container'>
+      <ThemeProvider theme={theme}>
+      <Stack
+         direction="row"
+         justifyContent="center"
+         alignItems="center"
+         divider={<Divider orientation="vertical" flexItem/>}
+         spacing={1.5}
+      >
          <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
                <input ref={inputRef} type="file" accept='.glm,.json' id="input-file-upload" multiple={true} onChange={handleChange} />
                <label id="label-file-upload" htmlFor="input-file-upload" className={dragActive ? "drag-active" : "" }>
@@ -96,8 +104,6 @@ const FileUpload = ({ setFileData, setDataFromCim}) => {
                </label>
                { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
          </form>
-         <span className='divider'/>
-         <ThemeProvider theme={theme}>
          <Button
             size="large"
             variant="outlined"
@@ -105,7 +111,8 @@ const FileUpload = ({ setFileData, setDataFromCim}) => {
             >
             {appOptions.buttons.useCimBtn}
           </Button>
-          </ThemeProvider>
+      </Stack>
+      </ThemeProvider>
       </div>
    );
 };
