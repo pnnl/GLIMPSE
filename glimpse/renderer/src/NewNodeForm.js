@@ -59,83 +59,83 @@ const NewNodeForm = ({onMount, nodes, addNode}) => {
 
    return ReactDOM.createPortal(
       <>
-      <Dialog
-      fullWidth
-      maxWidth="sm"
-      scroll= "paper"
-      open={openForm}
-      onClose={handleClose}
-      >
-         <DialogTitle id="new-node-title">New Node</DialogTitle>
-         <DialogContent dividers>
-         <FormControl fullWidth>
-            <TextField
-               select
-               name="nodeType"
-               label="Node Type"
-               variant="outlined"
-               value={formFields.nodeType}
-               onChange={handleChange}
-               >
-               {
-                  nodeTypes.map((type, index) => {
-                     return (
-                        <MenuItem key={index} value={index}>{type}</MenuItem>
-                     );
-                  })
-               }
-            </TextField>
-            <TextField 
-               sx={{mt:2}}
-               name="nodeID"
-               id="node-label"
-               onChange={handleChange}
-               label="ID"
-               value={formFields.nodeID}
-               variant="outlined"
-               />
-         </FormControl>
-         <Divider sx={{mt: 2}}/>
-         <Typography variant="h6">Connections</Typography>
-         <Stack 
-            direction="row"
-            spacing={2}
-            >
-            <FormControl fullWidth>
-               <Autocomplete
-                  options={nodes}
-                  onChange={(e, value) => setFormFields(formFields => ({
-                     ...formFields,
-                     "connectTo": value
-                  }))}
-                  renderInput={(params) => <TextField value={formFields.connectTo} {...params} label="Connected To"/>}
-               />
-            </FormControl>
+         <Dialog
+         fullWidth
+         maxWidth="sm"
+         scroll= "paper"
+         open={openForm}
+         onClose={handleClose}
+         >
+            <DialogTitle id="new-node-title">New Node</DialogTitle>
+            <DialogContent dividers>
             <FormControl fullWidth>
                <TextField
-               select
-               value={formFields.edgeType}
-               name="edgeType"
-               label="Edge Type"
-               variant="outlined"
-               onChange={handleChange}
-               >
-               {
-                  edgeTypes.map((type, index) => {
-                     return (
-                        <MenuItem key={index} value={index}>{type}</MenuItem>
-                     )
-                  })
-               }
+                  select
+                  name="nodeType"
+                  label="Node Type"
+                  variant="outlined"
+                  value={formFields.nodeType}
+                  onChange={handleChange}
+                  >
+                  {
+                     nodeTypes.map((type, index) => {
+                        return (
+                           <MenuItem key={index} value={index}>{type}</MenuItem>
+                        );
+                     })
+                  }
                </TextField>
+               <TextField 
+                  sx={{mt:2}}
+                  name="nodeID"
+                  id="node-label"
+                  onChange={handleChange}
+                  label="ID"
+                  value={formFields.nodeID}
+                  variant="outlined"
+                  />
             </FormControl>
-         </Stack>
-         </DialogContent>
-         <DialogActions>
-            <Button onClick={createNewNode}>Create Node</Button>
-            <Button onClick={handleClose}>Cancel</Button>
-         </DialogActions>
-      </Dialog>
+            <Divider sx={{mt: 2}}/>
+            <Typography variant="h6">Connections</Typography>
+            <Stack 
+               direction="row"
+               spacing={2}
+               >
+               <FormControl fullWidth>
+                  <Autocomplete
+                     options={nodes}
+                     onChange={(e, value) => setFormFields(formFields => ({
+                        ...formFields,
+                        "connectTo": value
+                     }))}
+                     renderInput={(params) => <TextField value={formFields.connectTo} {...params} label="Connected To"/>}
+                  />
+               </FormControl>
+               <FormControl fullWidth>
+                  <TextField
+                  select
+                  value={formFields.edgeType}
+                  name="edgeType"
+                  label="Edge Type"
+                  variant="outlined"
+                  onChange={handleChange}
+                  >
+                  {
+                     edgeTypes.map((type, index) => {
+                        return (
+                           <MenuItem key={index} value={index}>{type}</MenuItem>
+                        )
+                     })
+                  }
+                  </TextField>
+               </FormControl>
+            </Stack>
+            </DialogContent>
+            <DialogActions>
+               <Button onClick={createNewNode}>Create Node</Button>
+               <Button onClick={handleClose}>Cancel</Button>
+            </DialogActions>
+         </Dialog>
       </>,
       document.getElementById("portal")
    );

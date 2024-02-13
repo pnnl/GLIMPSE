@@ -500,12 +500,12 @@ const Graph = (props) => {
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
 
-         if (node.group === nodeType || node.size === 15) {
+         if (node.group === nodeType || node.size === 15){
             delete node.color;
             node.size = 15;
             return node;
          }
-         else if (node.group === nodeType && node.size === 15) {
+         else if (node.group === nodeType && node.size === 15){
             node.size = 1;
             node.color = "lightgrey";
             return node;
@@ -517,7 +517,11 @@ const Graph = (props) => {
       });
       
       const edgesMap = data.edges.map((edge) => {
-         if (edge.width !== 8) edge.color = "lightgrey";
+         if(edge.width !== 8)
+         {
+            edge.color = "lightgrey";
+         }
+
          return edge;
       });
 
@@ -531,19 +535,18 @@ const Graph = (props) => {
    * @param {string} edgeType - The type of edges to highlight
    */
    const HighlightEdges = (edgeType) => {
-      const nodeItems = data.nodes.map((node) => {
-         if (node.size !== 15) {
-            node.color = "lightgrey";
-            node.size = 1;
+      const nodeItems = data.nodes.map((n) => {
+         if (n.size !== 15) {
+            n.color = "lightgrey";
+            n.size = 1;
 
-            return node;
+            return n;
          }
-         return node;
+         return n;
       });
       
       const edgeItems = data.edges.map((edge) => {
          if (edge.id.split(":")[0] === edgeType) {
-            console.log(edge)
             edge.color = edgeOptions[edgeType].color;
             edge.width = 8;
             return edge;
@@ -575,11 +578,10 @@ const Graph = (props) => {
       if (!props.cim) {
          Object.keys(props.dataToVis).forEach(( file ) => {
             props.dataToVis[file]["objects"].forEach((object) => {
-
                const objType = object.name;
+
                if (nodeTypes.includes(objType)) {
-                  const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
-                  object.attributes = newNodeAttributes;
+                  object.attributes = data.nodes.get(object.attributes.name).attributes;
                }
             });
          });
@@ -656,13 +658,12 @@ const Graph = (props) => {
     * @param {string} edgeType - The type of edges to hide like: "overhead_line" 
     */
    const hideEdges = (edgeType) => {
-      const edgesToHide = data.edges.get().map((edge) => {
-         if (edge.id.includes(edgeType)) {
-            edge.hidden = true;
+      const edgesToHide = data.edges.get().map(e => {
+         if (e.id.includes(edgeType)) {
+            e.hidden = true;
          }
-         return edge;
+         return e;
       });
-
       data.edges.update(edgesToHide);
    }
   
@@ -690,26 +691,22 @@ const Graph = (props) => {
     * @param {string} type - "node" or "edge"
     */
    const hideObjects = (objectType, type) => {
-
-      if (type === "node"){
-         const nodesToHide = data.nodes.get().map((node) => {
+      if (type === "node") {
+         const nodesToHide = data.nodes.get().map( node => {
             if (node.group === objectType) {
                node.hidden = true;
             }
             return node;
          });
-
          data.nodes.update(nodesToHide);
       }
       else if (type === "edge") {
-         const edgesToHide = data.edges.get().map((edge) => {
-
+         const edgesToHide = data.edges.get().map( edge => {
             if (edge.id.includes(objectType)) {
                edge.hidden = true;
             }
             return edge;
          });
-
          data.edges.update(edgesToHide);
       }
    }
@@ -767,7 +764,7 @@ const Graph = (props) => {
          objectTypeCount.nodes.microgrid++;
 
          for (const type of Object.keys(microgrid)) {
-            if(types.includes(type)) {
+            if (types.includes(type)) {
                microgrid[type].forEach((nodeID) => {
                   data.edges.add({
                      id: `parentChild:${microgrid.name}-${nodeID}`,
@@ -990,7 +987,7 @@ const Graph = (props) => {
          if (data.nodes.length > 200) {
             options.physics.barnesHut.gravitationalConstant = -100000;
             options.physics.barnesHut.springConstant = 0.5;
-            // options.physics.barnesHut.springLength = 3;
+            options.physics.barnesHut.springLength = 50;
          }
 
          // create network

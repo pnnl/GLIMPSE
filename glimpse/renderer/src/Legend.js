@@ -23,7 +23,7 @@ const Legend = ({
    useEffect(() => {
       setShowLegendRef.current = setShowLegend;
       legendStateRef.current = showLegend;
-   })
+   });
 
    useEffect(() => {
       onMount(setData);  

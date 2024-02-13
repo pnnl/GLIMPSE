@@ -37,8 +37,7 @@ const FileUpload = ({ setFileData, setDataFromCim}) => {
          const paths = [];
          const files = e.dataTransfer.files;
          
-         for (const file of files)
-         {
+         for (const file of files) {
             paths.push(file.path);
          }
 

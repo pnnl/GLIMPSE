@@ -56,9 +56,9 @@ const GraphContextMenu = ({onMount, hideEdge, hideEdges, openNewNodeForm, delete
             : { top: 0, left: 0 }
          }>
          {  
-            contextMenu.edgeID
+            Object.keys(contextMenu).includes("edgeID")
             ? <EdgeMenuItems/>
-            : contextMenu.nodeID 
+            : Object.keys(contextMenu).includes("nodeID") 
             ? <MenuItem onClick={handleDeleteNode}>Delete Node</MenuItem>
             : <MenuItem onClick={handleNewNode}>New Node</MenuItem>
          }

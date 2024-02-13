@@ -13,7 +13,7 @@ import {
 
 const StatsTableModal = ({show, close, data}) =>
 {
-   if(!show) return null;
+   if (!show) return null;
 
    return ReactDom.createPortal(
       <>

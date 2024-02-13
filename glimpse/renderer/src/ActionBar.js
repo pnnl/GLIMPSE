@@ -70,31 +70,49 @@ const ActionBar = ({
       }
    }
 
-   const handleChange = (nodeID) => {
-      setNode(nodeID);
-   }
-
+   /**
+    * Trigger the find function from the Graph component to focus on the selected node ID
+    * @param {Event} e 
+    */
    const handleSubmit = (e) => {
       e.preventDefault();
       
       if (nodes.get(node)) onFind(node);
       else alert(`${node} is not in the graph.`)
    }
+
+   /**
+    * Call the export/download function from the graph component to download back
+    * all files upload with any changes done with the UI
+    * @param {Event} e 
+    */
    const handleExport = (e) => {
       e.preventDefault()
       download();
    }
 
+   /**
+    * Call the reset function from the Graph component to revert to original styles
+    * @param {Event} e 
+    */
    const handleReset = (e) => {
       e.preventDefault();
       reset();
    }
 
+   /**
+    * Call the Prev function from the Graph component to focus on a previously focused node
+    * @param {Event} e 
+    */   
    const handlePrev = (e) =>  {
       e.preventDefault();
       prev();
    }
 
+   /**
+    * Call the Next function from the Graph component to focus on the next highlighted node
+    * @param {Event} e 
+    */
    const handleNext = (e) => {
       e.preventDefault();
       next();
@@ -105,6 +123,10 @@ const ActionBar = ({
       setChecked(e.target.checked)
    }
 
+   /**
+    * Communicate With the main process to get a buffer of the plot and display it
+    * @param {Event} e 
+    */
    const plot = async (e) => {
       e.preventDefault();
       
@@ -123,6 +145,10 @@ const ActionBar = ({
       }
    }
 
+   /**
+    * Send the entire graph data object to the main process and extract statistic using networkx
+    * @param {Event} e 
+    */
    const showStats = async (e) => {
       e.preventDefault();
 
@@ -136,6 +162,10 @@ const ActionBar = ({
       }
    }
 
+   /**
+    * show the overlay upload component
+    * @param {Event} e 
+    */
    const showOverlay = (e) => {
       e.preventDefault();
       setShowUpload(true)
@@ -191,7 +221,7 @@ const ActionBar = ({
                   id="autocomplete-nodeID-search"
                   options = {nodeIDs}
                   onChange={(even, ID) => {
-                     handleChange(ID)
+                     setNode(ID)
                   }}
                   renderInput={(params) =>
                      <TextField
