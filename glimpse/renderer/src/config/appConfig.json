@@ -11,7 +11,6 @@
          "exportBtn": "EXPORT W/ CHANGES",
          "plotBtn": "SHOW PLOT",
          "addOverlayBtn": "ATTACH OVERLAY",
-         "simBtn": "CONNECT TO SIM",
          "showStatsBtn": "SHOW STATS",
          "layoutLbl": "Auto Layout",
          "searchLbl": "Node ID",
@@ -22,35 +21,41 @@
       }
    },
    "nodeTypes": [
-      "load", 
-      "triplex_load",
-      "capacitor", 
-      "node", 
-      "triplex_node",
-      "substation", 
-      "meter", 
+      "communication_node",
       "triplex_meter", 
+      "triplex_load",
+      "triplex_node",
       "inverter_dyn",  
+      "substation", 
+      "capacitor", 
       "diesel_dg", 
-      "communication_node", 
       "microgrid",
       "technique",
+      "location",
+      "terminal",
+      "c_node",
+      "person",
       "capec",
+      "meter", 
+      "load",
+      "node", 
       "cwe",
       "cve"
    ],
    "edgeTypes": [
-      "overhead_line",
-      "switch",
+      "microgrid_connection",
       "underground_line",
       "series_reactor",
-      "triplex_line",
-      "regulator",
-      "transformer",
-      "mapping",
+      "overhead_line",
       "communication",
-      "microgrid_connection",
+      "triplex_line",
+      "transformer",
       "parentChild",
+      "regulator",
+      "traveling",
+      "mapping",
+      "friend",
+      "switch",
       "line"
    ],
    "edgeOptions": {
@@ -66,8 +71,7 @@
       },
       "series_reactor": {
          "width": 2, 
-         "color": 
-         "#3c1642", 
+         "color": "#3c1642", 
          "hidden": false
       },
       "triplex_line": {
@@ -114,67 +118,15 @@
          "width": 2, 
          "color": {"inherit": true}, 
          "hidden": false
-      }
-   },
-   "legendEdgeOptions": {
-      "overhead_line": {
-         "width": 8,
-         "color": "#000000",
+      },
+      "traveling": {
+         "width": 2,
+         "color": "#848484",
          "hidden": false
       },
-      "switch": {
-         "width": 8,
-         "color": "#3a0ca3",
-         "hidden": false
-      },
-      "series_reactor": {
-         "width": 8,
-         "color": "#3c1642",
-         "hidden": false
-      },
-      "triplex_line": {
-         "width": 8,
-         "color": "#c86bfa",
-         "hidden": false
-      },
-      "underground_line": {
-         "width": 8,
-         "color": "#FFFF00",
-         "hidden": false
-      },
-      "regulator": {
-         "width": 8,
-         "color": "#ff447d",
-         "hidden": false
-      },
-      "transformer": {
-         "width": 8,
-         "color": "#00FF00",
-         "hidden": false
-      },
-      "mapping": {
-         "width": 8,
-         "color": "#283618",
-         "hidden": false
-      },
-      "communication": {
-         "width": 8,
-         "color": "grey",
-         "hidden": false
-      },
-      "microgrid_connection": {
-         "width": 8,
-         "color": "cyan",
-         "hidden": false
-      },
-      "parentChild": {
-         "width": 8,
-         "color": "#15616d",
-         "hidden": false
-      },
-      "line": {
-         "width": 8,
-         "color": "black",
+      "friend": {
+         "width": 2,
+         "color": "#058c42",
          "hidden": false
       }
    },
@@ -274,6 +226,16 @@
             "shape": "image",
             "image": "./imgs/microgrid.svg"
          },
+         "person": {
+            "image": "./imgs/person.svg",
+            "shape": "image",
+            "size": 15
+         },
+         "location": {
+            "image": "./imgs/location.svg",
+            "shape": "image",
+            "size": 15
+         },
          "technique": {
             "color": "black",
             "size": 15,
@@ -298,14 +260,15 @@
       "interaction": {
          "hover": true,
          "hideEdgesOnDrag": true,
-         "hideEdgesOnZoom": false,
+         "hideEdgesOnZoom": true,
          "navigationButtons": true
       },
       "physics": {
          "barnesHut": {
             "gravitationalConstant": -10000,
             "springConstant": 0.2,
-            "springLength": 35
+            "springLength": 35,
+            "avoidOverlap": 0.5
          },
          "solver": "barnesHut",
          "stabilization": {
@@ -324,6 +287,78 @@
             "levelSeparation": 150,
             "nodeSpacing": 100
          }
+      }
+   },
+   "legendEdgeOptions": {
+      "overhead_line": {
+         "width": 8,
+         "color": "#000000",
+         "hidden": false
+      },
+      "switch": {
+         "width": 8,
+         "color": "#3a0ca3",
+         "hidden": false
+      },
+      "series_reactor": {
+         "width": 8,
+         "color": "#3c1642",
+         "hidden": false
+      },
+      "triplex_line": {
+         "width": 8,
+         "color": "#c86bfa",
+         "hidden": false
+      },
+      "underground_line": {
+         "width": 8,
+         "color": "#FFFF00",
+         "hidden": false
+      },
+      "regulator": {
+         "width": 8,
+         "color": "#ff447d",
+         "hidden": false
+      },
+      "transformer": {
+         "width": 8,
+         "color": "#00FF00",
+         "hidden": false
+      },
+      "mapping": {
+         "width": 8,
+         "color": "#283618",
+         "hidden": false
+      },
+      "communication": {
+         "width": 8,
+         "color": "grey",
+         "hidden": false
+      },
+      "microgrid_connection": {
+         "width": 8,
+         "color": "cyan",
+         "hidden": false
+      },
+      "parentChild": {
+         "width": 8,
+         "color": "#15616d",
+         "hidden": false
+      },
+      "line": {
+         "width": 8,
+         "color": "black",
+         "hidden": false
+      },
+      "traveling": {
+         "width": 8,
+         "color": "#848484",
+         "hidden": false
+      },
+      "friend": {
+         "width": 8,
+         "color": "#058c42",
+         "hidden": false
       }
    },
    "legendGraphOptions": {
@@ -402,6 +437,14 @@
             "color": "#6b9080",
             "shape": "image",
             "image": "./imgs/microgrid.svg"
+         },
+         "person": {
+            "image": "./imgs/person.svg",
+            "shape": "image"
+         },
+         "location": {
+            "image": "./imgs/location.svg",
+            "shape": "image"
          },
          "technique": {
             "color": "black",

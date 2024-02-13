@@ -83,7 +83,7 @@ const ActionBar = ({
 
    /**
     * Call the export/download function from the graph component to download back
-      all files upload with any changes done with the UI
+    * all files upload with any changes done with the UI
     * @param {Event} e 
     */
    const handleExport = (e) => {
@@ -154,7 +154,7 @@ const ActionBar = ({
 
       if (stats === null) {
          const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
-         setStats(JSON.parse(statsObj));
+         setStats(statsObj);
          setShowTable(true);
       }
       else {

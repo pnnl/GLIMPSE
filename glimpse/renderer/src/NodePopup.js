@@ -36,11 +36,9 @@ const NodePopup = ({onMount, onSave, onClose}) => {
          {
             Object.entries(selectedNode.attributes === undefined ? {} : selectedNode.attributes).map(([key, val], index) => {
                return(
-                  <>
                   <TextField sx={{mt: 1, ml: 5.5}} key={index} label={key} defaultValue={val} onChange={(e) => { 
                      setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}}) 
                   }}/>
-                  </>
                );
             }) 
          }

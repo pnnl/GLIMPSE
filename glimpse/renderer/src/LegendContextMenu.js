@@ -8,7 +8,7 @@ const LegendContextMenu = ({onMount, hideObjects}) => {
 
    useEffect(() => {
       onMount(contextMenu, setContextMenu);
-   }, [onMount, contextMenu])
+   }, [onMount, contextMenu]);
 
    const onHideObjects = () => {
       setContextMenu(null);

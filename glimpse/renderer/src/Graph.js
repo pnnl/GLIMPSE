@@ -12,8 +12,7 @@ const edgeOptions = appConfig.legendEdgeOptions;
 
 
 /**
- * Create nodes and edges based on the object type being visualized in the main 
-   network
+ * Create nodes and edges based on the object type being visualized in the main network
  * @param {Object} typeCounts - containes the counts of node and edge types
  * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
  */
@@ -161,15 +160,19 @@ const Graph = ({ dataToVis }) => {
          "communication_node": 0,
          "triplex_meter": 0,
          "inverter_dyn": 0,
-         "triplex_node": 0,
          "triplex_load": 0, 
+         "triplex_node": 0,
          "substation": 0,
          "diesel_dg": 0,
          "capacitor": 0,
          "technique": 0,
          "microgrid": 0,
-         "meter": 0,
+         "terminal": 0,
+         "location": 0,
+         "c_node": 0,
+         "person": 0,
          "capec": 0,
+         "meter": 0,
          "load": 0,
          "node": 0,
          "cwe": 0,
@@ -183,15 +186,15 @@ const Graph = ({ dataToVis }) => {
          "transformer": 0,
          "parentChild": 0,
          "regulator": 0,
-         "switch": 0, 
+         "traveling": 0,
+         "switch": 0,
+         "friend": 0, 
          "line": 0
       }
    };
 
-   //These types are recognized as nodes
-   const nodeTypes = appConfig.nodeTypes;
-   //These types are recognized as edges
-   const edgeTypes = appConfig.edgeTypes;
+   const nodeTypes = appConfig.nodeTypes; //These types are recognized as nodes
+   const edgeTypes = appConfig.edgeTypes; //These types are recognized as edges
 
    let setLegendData;
    const legendMount = (legendSetFunc) => {
@@ -232,8 +235,7 @@ const Graph = ({ dataToVis }) => {
             if (nodeTypes.includes(objectType)) // if the object is of a node type then it is added as a node
             {
                Object.keys(attributes).forEach((k) => {
-                  if(keys.includes(k))
-                  {
+                  if (keys.includes(k)) {
                      name = k;
                   }
                })
@@ -276,7 +278,7 @@ const Graph = ({ dataToVis }) => {
 
                   data.nodes.add({
                      "id": nodeID,
-                     "label": nodeID,
+                     "label": nodeID.length > 15 ? "" : nodeID,
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -372,9 +374,7 @@ const Graph = ({ dataToVis }) => {
 
    //Reverts all nodes and edges back to their original styles
    const Reset = () => {
-
       const nodesResetMap = data.nodes.map((node) => {
-
          delete node.color;
          delete node.size;
          node.hidden = false;
@@ -415,12 +415,10 @@ const Graph = ({ dataToVis }) => {
    * @param {bool} toggle - True turns on physics, false turns off physics
    */
    const TogglePhysics = (toggle) => {
-      
       if (toggle) 
          glmNetwork.setOptions({physics: {enabled: true}});
       else
          glmNetwork.setOptions({physics: {enabled: false}});
-
    }
 
    /**
@@ -428,7 +426,6 @@ const Graph = ({ dataToVis }) => {
    * starting at the end of the array then moves down every function call
    */
    const Prev = () => {
-   
       const options = {
          "scale": 3,
          "locked": true,
@@ -464,7 +461,6 @@ const Graph = ({ dataToVis }) => {
    * starting at the beginning of the array then moves up by one every function call
    */
    const Next = () => {
-
       const options = {
          "scale": 3,
          "locked": true,
@@ -487,7 +483,7 @@ const Graph = ({ dataToVis }) => {
       // if the counter matches the length of the array then the count starts back at 0
       if (counter === next.length) {
          counter = 0;
-         try{
+         try {
             glmNetwork.focus(next[counter].id, options)
          } catch {
             alert("There are no highlighted nodes to cycle through...");
@@ -510,14 +506,12 @@ const Graph = ({ dataToVis }) => {
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
 
-         if (node.group === nodeType || node.size === 15)
-         {
+         if (node.group === nodeType || node.size === 15){
             delete node.color;
             node.size = 15;
             return node;
          }
-         else if (node.group === nodeType && node.size === 15)
-         {
+         else if (node.group === nodeType && node.size === 15){
             node.size = 1;
             node.color = "lightgrey";
             return node;
@@ -529,14 +523,12 @@ const Graph = ({ dataToVis }) => {
       });
       
       const edgesMap = data.edges.map((edge) => {
-
          if(edge.width !== 8)
          {
             edge.color = "lightgrey";
          }
 
          return edge;
-         
       });
 
       data.nodes.update(nodesMap);
@@ -549,10 +541,8 @@ const Graph = ({ dataToVis }) => {
    * @param {string} edgeType - The type of edges to highlight
    */
    const HighlightEdges = (edgeType) => {
-   
       const nodeItems = data.nodes.map((n) => {
-         if (n.size !== 15)
-         {
+         if (n.size !== 15) {
             n.color = "lightgrey";
             n.size = 1;
 
@@ -562,14 +552,12 @@ const Graph = ({ dataToVis }) => {
       });
       
       const edgeItems = data.edges.map((edge) => {
-         if (edge.id.split(":")[0] === edgeType)
-         {
+         if (edge.id.split(":")[0] === edgeType) {
             edge.color = edgeOptions[edgeType].color;
             edge.width = 8;
             return edge;
          }
-         else if (edge.width !== 8)
-         {
+         else if (edge.width !== 8) {
             edge.color = "lightgrey";
             edge.width = 0.15;
             return edge;
@@ -593,16 +581,11 @@ const Graph = ({ dataToVis }) => {
     * Then downloads the data back to the user's computer
    */
    const Export = () => {
-
       Object.keys(dataToVis).forEach(( file ) => {
-         
          dataToVis[file]["objects"].forEach((object) => {
-
             const objType = object.name;
-            if (nodeTypes.includes(objType))
-            {
-               const newNodeAttributes = data.nodes.get(object.attributes.name).attributes;
-               object.attributes = newNodeAttributes;
+            if (nodeTypes.includes(objType)) {
+               object.attributes = data.nodes.get(object.attributes.name).attributes;
             }
          });
       });
@@ -668,8 +651,7 @@ const Graph = ({ dataToVis }) => {
     */
    const hideEdges = (edgeType) => {
       const edgesToHide = data.edges.get().map(e => {
-         if (e.id.includes(edgeType))
-         {
+         if (e.id.includes(edgeType)) {
             e.hidden = true;
          }
          return e;
@@ -703,7 +685,6 @@ const Graph = ({ dataToVis }) => {
    const hideObjects = (objectType, type) => {
       if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
-
             if (node.group === objectType) {
                node.hidden = true;
             }
@@ -775,7 +756,7 @@ const Graph = ({ dataToVis }) => {
          objectTypeCount.nodes.microgrid++;
 
          for (const type of Object.keys(microgrid)) {
-            if(types.includes(type)) {
+            if (types.includes(type)) {
                microgrid[type].forEach((nodeID) => {
                   data.edges.add({
                      id: `parentChild:${microgrid.name}-${nodeID}`,

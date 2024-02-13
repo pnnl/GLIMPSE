@@ -7,6 +7,20 @@ import appConfig from './config/appConfig.json';
 
 const appOptions = appConfig.appOptions;
 
+const Nav = () => {
+   return (
+      <header>
+         <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
+         <nav>
+            <ul className="nav-links">
+               <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
+               <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
+            </ul>
+         </nav>
+      </header>
+   )
+}
+
 export const Home = () => {
    let content;
    const [dataToVisRequest, setDataToVisRequest] = useState({
@@ -16,7 +30,7 @@ export const Home = () => {
 
    /**
     * This function will get the paths of the uploaded files and send them to the 
-      main process to then read the files, parse them, and evalute them.
+    * main process to then read the files, parse them, and evalute them.
     * @param {Array} paths - An array of paths from the uploaded files
     */
    const setFileData = async (paths) => {
@@ -40,13 +54,13 @@ export const Home = () => {
          if (data === undefined) {
             console.log("Something went wrong...");
          }
-         else if (Object.keys(data)[0] === "alert") {
+         else if (Object.keys(data).includes("alert")) {
             alert(data.alert);
          }
          else {
             setDataToVisRequest({
                showFileUpload: false,
-               data: JSON.parse(data)
+               data: data
             });   
          }
       }
@@ -59,19 +73,10 @@ export const Home = () => {
    else {
       content = <FileUpload setFileData = {setFileData} />;
    }
-
    
    return (
       <>
-         <header>
-            <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
-            <nav>
-            <ul className="nav-links">
-               <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
-               <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
-            </ul>
-            </nav>
-         </header>
+         <Nav />
          {content}
       </>
    );
@@ -80,15 +85,7 @@ export const Home = () => {
 export const About = () => {
    return (
       <>
-         <header>
-         <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
-         <nav>
-            <ul className="nav-links">
-               <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
-               <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
-            </ul>
-         </nav>
-         </header>
+         <Nav />
          <h1>About The tool</h1>
       </>
    );
