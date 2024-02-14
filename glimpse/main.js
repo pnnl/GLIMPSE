@@ -11,9 +11,9 @@ const fs = require("fs");
 const Ajv = require("ajv");
 const jsonSchema = require("./upload.schema.json");
 
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 
 const isMac = process.platform === "darwin";
 let cimGraphData;
@@ -119,7 +119,7 @@ const validateJson = (filePaths) => {
       else data[path.basename(filePath)] = fileData;
    }
 
-   if(!valid) {
+   if (!valid) {
       const errorMessage = ajv.errorsText(validate.errors, { dataVar: 'jsonData' });
       return {"error": errorMessage};
    }

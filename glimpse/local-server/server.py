@@ -11,7 +11,7 @@ import glm
 import ntpath
 import json
 
-params = ConnectionParameters(filename="../data/CIM/IEEE123.xml", cim_profile="rc4_2021", iec61970_301=7)
+params = ConnectionParameters(filename="./data/CIM/IEEE123.xml", cim_profile="rc4_2021", iec61970_301=7)
 rdf = RDFlibConnection(connection_params=params)
 feeder = cim.Feeder(mRID="_C1C3E687-6FFD-C753-582B-632A27E28507")
 
@@ -131,11 +131,11 @@ def add_to_cim(objs: list):
    network = FeederModel(connection=rdf, container=feeder, distributed=False)
     
    for nodes in objs:
-      c_node = cim.ConnectivityNode(mRID=nodes[1]['mRID'], name=nodes[1]['name'])
-      new_terminal = cim.Terminal(mRID=nodes[0]['mRID'], name=nodes[0]['name'])
-      terminal_1 = cim.Terminal(mRID=nodes[2]['mRID'], name=nodes[2]['name'])
-      terminal_2 = cim.Terminal(mRID=nodes[3]['mRID'], name=nodes[3]['name'])
-      ACLine = cim.ACLineSegment(mRID=nodes[4]['id'], name=f"l:{nodes[4]['id'].split(':')[1]}")
+      c_node = cim.ConnectivityNode(mRID="_" + nodes[1]['mRID'].upper(), name=nodes[1]['name'])
+      new_terminal = cim.Terminal(mRID="_" + nodes[0]['mRID'].upper(), name=nodes[0]['name'])
+      terminal_1 = cim.Terminal(mRID="_" + nodes[2]['mRID'].upper(), name=nodes[2]['name'])
+      terminal_2 = cim.Terminal(mRID="_" + nodes[3]['mRID'].upper(), name=nodes[3]['name'])
+      ACLine = cim.ACLineSegment(mRID=f"_{str(uuid4()).upper()}", name=f"l:{nodes[4]['id'].split(':')[1]}")
       parent_c_node = network.graph[cim.ConnectivityNode][nodes[3]['parent']]
       
       new_terminal.ConnectivityNode = c_node
@@ -146,10 +146,10 @@ def add_to_cim(objs: list):
       terminal_2.ConductingEquipment = ACLine
       
       if nodes[0]['group'] == "diesel_dg":
-         energy_source = cim.EnergySource(mRID=str(uuid4()), name=f"source:{rand.randint(1,999)}")
+         energy_source = cim.EnergySource(mRID=f"_{str(uuid4()).upper()}", name=f"source:{rand.randint(1,999)}")
          new_terminal.ConductingEquipment = energy_source
       if nodes[0]['group'] == "load":
-         energy_consumer = cim.EnergyConsumer(mRID=str(uuid4()), name=f"consumer:{rand.randint(1,999)}")
+         energy_consumer = cim.EnergyConsumer(mRID=f"_{str(uuid4()).upper()}", name=f"consumer:{rand.randint(1,999)}")
          new_terminal.ConductingEquipment = energy_consumer
          
       # c_node.Terminals = [new_terminal, terminal_1]
@@ -160,7 +160,7 @@ def add_to_cim(objs: list):
    network.add_to_graph(terminal_2)
    network.add_to_graph(c_node)
    
-   cim_utils.write_xml(network, "../data/CIM/IEEE123Output.xml")
+   cim_utils.write_xml(network, "./data/CIM/IEEE123Output.xml")
         
 #------------------------------ Server ------------------------------#
 app = Flask(__name__)

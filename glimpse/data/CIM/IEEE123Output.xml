@@ -394,9 +394,9 @@
 <cim:ConnectivityNode rdf:ID="_A55B5117-B0D6-4959-9EE7-04BA019A6D34">
   <cim:IdentifiedObject.mRID>_A55B5117-B0D6-4959-9EE7-04BA019A6D34</cim:IdentifiedObject.mRID>
 </cim:ConnectivityNode>
-<cim:ConnectivityNode rdf:ID="9726375f-7385-472f-ad24-494ed895e2ab">
-  <cim:IdentifiedObject.mRID>9726375f-7385-472f-ad24-494ed895e2ab</cim:IdentifiedObject.mRID>
-  <cim:IdentifiedObject.name>c_node:9726375f-7385-472f-ad24-494ed895e2ab</cim:IdentifiedObject.name>
+<cim:ConnectivityNode rdf:ID="_245087D6-FE2C-43CB-8B9F-9E8AEADF8C33">
+  <cim:IdentifiedObject.mRID>_245087D6-FE2C-43CB-8B9F-9E8AEADF8C33</cim:IdentifiedObject.mRID>
+  <cim:IdentifiedObject.name>c_node:245087d6-fe2c-43cb-8b9f-9e8aeadf8c33</cim:IdentifiedObject.name>
 </cim:ConnectivityNode>
 <cim:Terminal rdf:ID="_FA737DE5-35F0-477C-BC00-A0DA65DB277B">
   <cim:Terminal.ConductingEquipment rdf:resource="#_C3037C54-F57F-4CA5-84A1-06186EA573C0"/>
@@ -2218,23 +2218,23 @@
   <cim:Terminal.ConnectivityNode rdf:resource="#_FA043421-48D9-4660-9A4B-E8DB124A1D1F"/>
   <cim:IdentifiedObject.mRID>_617336FC-556E-4843-81FA-D651AC3A89AE</cim:IdentifiedObject.mRID>
 </cim:Terminal>
-<cim:Terminal rdf:ID="61ca86b4-2eef-441d-9f67-8b10bb535a27">
-  <cim:Terminal.ConductingEquipment rdf:resource="#38e66638-a22c-4b21-b8bb-757d78f32f3f"/>
-  <cim:Terminal.ConnectivityNode rdf:resource="#9726375f-7385-472f-ad24-494ed895e2ab"/>
-  <cim:IdentifiedObject.mRID>61ca86b4-2eef-441d-9f67-8b10bb535a27</cim:IdentifiedObject.mRID>
-  <cim:IdentifiedObject.name>terminal:28</cim:IdentifiedObject.name>
+<cim:Terminal rdf:ID="_313D2559-BBBC-4BB6-BCCE-B36B16173B66">
+  <cim:Terminal.ConductingEquipment rdf:resource="#_6ACC3F91-7D3F-4198-BD63-4DD4947142F9"/>
+  <cim:Terminal.ConnectivityNode rdf:resource="#_245087D6-FE2C-43CB-8B9F-9E8AEADF8C33"/>
+  <cim:IdentifiedObject.mRID>_313D2559-BBBC-4BB6-BCCE-B36B16173B66</cim:IdentifiedObject.mRID>
+  <cim:IdentifiedObject.name>terminal:66</cim:IdentifiedObject.name>
 </cim:Terminal>
-<cim:Terminal rdf:ID="47b3c9c2-a7ad-43e3-a649-d372558e2ea8">
-  <cim:Terminal.ConductingEquipment rdf:resource="#overhead_line:2b53bb04-33e0-49d9-90c4-2cd08503f26e-47b3c9c2-a7ad-43e3-a649-d372558e2ea8"/>
-  <cim:Terminal.ConnectivityNode rdf:resource="#9726375f-7385-472f-ad24-494ed895e2ab"/>
-  <cim:IdentifiedObject.mRID>47b3c9c2-a7ad-43e3-a649-d372558e2ea8</cim:IdentifiedObject.mRID>
-  <cim:IdentifiedObject.name>terminal:47b3c9c2-a7ad-43e3-a649-d372558e2ea8</cim:IdentifiedObject.name>
+<cim:Terminal rdf:ID="_ADE0EEA3-425F-4EA2-97B2-3FF56CC468CC">
+  <cim:Terminal.ConductingEquipment rdf:resource="#_E9ED1EAA-A244-4EB3-BA9D-FDD64366BEA3"/>
+  <cim:Terminal.ConnectivityNode rdf:resource="#_245087D6-FE2C-43CB-8B9F-9E8AEADF8C33"/>
+  <cim:IdentifiedObject.mRID>_ADE0EEA3-425F-4EA2-97B2-3FF56CC468CC</cim:IdentifiedObject.mRID>
+  <cim:IdentifiedObject.name>terminal:ade0eea3-425f-4ea2-97b2-3ff56cc468cc</cim:IdentifiedObject.name>
 </cim:Terminal>
-<cim:Terminal rdf:ID="2b53bb04-33e0-49d9-90c4-2cd08503f26e">
-  <cim:Terminal.ConductingEquipment rdf:resource="#overhead_line:2b53bb04-33e0-49d9-90c4-2cd08503f26e-47b3c9c2-a7ad-43e3-a649-d372558e2ea8"/>
-  <cim:Terminal.ConnectivityNode rdf:resource="#_379D0F7C-8F31-4C6A-AA0B-DBAA476CE29A"/>
-  <cim:IdentifiedObject.mRID>2b53bb04-33e0-49d9-90c4-2cd08503f26e</cim:IdentifiedObject.mRID>
-  <cim:IdentifiedObject.name>terminal:2b53bb04-33e0-49d9-90c4-2cd08503f26e</cim:IdentifiedObject.name>
+<cim:Terminal rdf:ID="_14ED6033-C9C2-49DE-8AA8-47A1251644D4">
+  <cim:Terminal.ConductingEquipment rdf:resource="#_E9ED1EAA-A244-4EB3-BA9D-FDD64366BEA3"/>
+  <cim:Terminal.ConnectivityNode rdf:resource="#_0851CDCF-748F-474E-B299-70081171336D"/>
+  <cim:IdentifiedObject.mRID>_14ED6033-C9C2-49DE-8AA8-47A1251644D4</cim:IdentifiedObject.mRID>
+  <cim:IdentifiedObject.name>terminal:14ed6033-c9c2-49de-8aa8-47a1251644d4</cim:IdentifiedObject.name>
 </cim:Terminal>
 <cim:EnergyConsumer rdf:ID="_C3037C54-F57F-4CA5-84A1-06186EA573C0">
   <cim:IdentifiedObject.mRID>_C3037C54-F57F-4CA5-84A1-06186EA573C0</cim:IdentifiedObject.mRID>
@@ -2863,9 +2863,9 @@
 <cim:ACLineSegment rdf:ID="_85D8841B-69D6-4392-BA78-2749C65C0240">
   <cim:IdentifiedObject.mRID>_85D8841B-69D6-4392-BA78-2749C65C0240</cim:IdentifiedObject.mRID>
 </cim:ACLineSegment>
-<cim:ACLineSegment rdf:ID="overhead_line:2b53bb04-33e0-49d9-90c4-2cd08503f26e-47b3c9c2-a7ad-43e3-a649-d372558e2ea8">
-  <cim:IdentifiedObject.mRID>overhead_line:2b53bb04-33e0-49d9-90c4-2cd08503f26e-47b3c9c2-a7ad-43e3-a649-d372558e2ea8</cim:IdentifiedObject.mRID>
-  <cim:IdentifiedObject.name>l:2b53bb04-33e0-49d9-90c4-2cd08503f26e-47b3c9c2-a7ad-43e3-a649-d372558e2ea8</cim:IdentifiedObject.name>
+<cim:ACLineSegment rdf:ID="_E9ED1EAA-A244-4EB3-BA9D-FDD64366BEA3">
+  <cim:IdentifiedObject.mRID>_E9ED1EAA-A244-4EB3-BA9D-FDD64366BEA3</cim:IdentifiedObject.mRID>
+  <cim:IdentifiedObject.name>l:14ed6033-c9c2-49de-8aa8-47a1251644d4-ade0eea3-425f-4ea2-97b2-3ff56cc468cc</cim:IdentifiedObject.name>
 </cim:ACLineSegment>
 <cim:PowerTransformer rdf:ID="_9DA10945-2EDC-43C9-A748-B079D826B0DB">
   <cim:IdentifiedObject.mRID>_9DA10945-2EDC-43C9-A748-B079D826B0DB</cim:IdentifiedObject.mRID>

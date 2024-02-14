@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from '@mui/material/MenuItem';
 
-const LegendContextMenu = ({onMount, hideObjects}) => {
+const LegendContextMenu = ({onMount, hideNodes}) => {
     
    const [contextMenu, setContextMenu] = useState(null);
 
@@ -13,7 +13,7 @@ const LegendContextMenu = ({onMount, hideObjects}) => {
    const onHideObjects = () => {
       setContextMenu(null);
 
-      hideObjects(contextMenu.object, contextMenu.type);
+      hideNodes(contextMenu.object, contextMenu.type);
    }
 
    const handleClose = () => {

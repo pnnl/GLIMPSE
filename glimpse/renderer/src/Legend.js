@@ -9,7 +9,7 @@ const options = appConfig.legendGraphOptions;
 const Legend = ({ 
    findGroup, 
    findEdges, 
-   hideObjects, 
+   hideNodes, 
    onMount, 
    legendData, 
    setShowLegendRef, 
@@ -92,7 +92,7 @@ const Legend = ({
 
          <LegendContextMenu
             onMount={onContextMenuChildMount}
-            hideObjects={hideObjects}
+            hideNodes={hideNodes}
          />
       </>
    );

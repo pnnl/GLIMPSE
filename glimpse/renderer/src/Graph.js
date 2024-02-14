@@ -143,6 +143,7 @@ const Graph = (props) => {
    const options = appConfig.graphOptions; // get the options for the graph visualization
    let glmNetwork; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
+   const highlightedNodes = [];
 
    // data object that holds a DataSet for nodes and edges
    const data = {
@@ -365,6 +366,8 @@ const Graph = (props) => {
    * Reverts all nodes and edges back to their original styles
    */
    const Reset = () => {
+      highlightedNodes.length = 0;
+
       const nodesResetMap = data.nodes.map((node) => {
          delete node.color;
          delete node.size;
@@ -373,29 +376,30 @@ const Graph = (props) => {
          return node;
       });
 
-      const edgeItems = data.edges.map((e) => {
-         const edgeType = e.id.split(":")[0];
+      const edgeItems = data.edges.map((edge) => {
+         const edgeType = edge.id.split(":")[0];
 
-         if (e.width === 8) {
-            e.width = 2;
-            e.hidden = false;
-            return e;
+         if (edge.width === 8) {
+            edge.width = 2;
+            edge.hidden = false;
+            return edge;
          }
          else if (edgeTypes.includes(edgeType)) {
-            e.color = edgeOptions[edgeType].color;
-            e.width = edgeOptions[edgeType].width;
-            e.hidden = false;
-            return e;
+            edge.color = edgeOptions[edgeType].color;
+            edge.width = edgeOptions[edgeType].width;
+            edge.hidden = false;
+            return edge;
          }
          else {
-            e.color = {inherit: true};
-            e.width = 0.15;
-            e.hidden = false;
-            return e;
+            edge.color = {inherit: true};
+            edge.width = 0.15;
+            edge.hidden = false;
+            return edge;
          }
       });
 
       data.nodes.update(nodesResetMap);
+      console.log("check");
       data.edges.update(edgeItems);
       glmNetwork.fit();
       counter = -1;
@@ -417,31 +421,19 @@ const Graph = (props) => {
    * starting at the end of the array then moves down every function call
    */
    const Prev = () => {
-      const options = {
-         "scale": 3,
-         "locked": true,
-         "animation": {
-            "duration": 1500,
-            "easing": "easeInOutQuart"
-         }
-      };
 
-      // generates an array of the current highlighted nodes
-      const prev = data.nodes.get({
-         filter: (n) => {
-            return (n.size === 15);
-         }
-      });
-   
       counter--;
 
       //if the counter ends up less than 0 the counter starts over at the end of the array
       if (counter < 0) {
-         counter = prev.length - 1;
+         counter = highlightedNodes.length - 1;
       }
    
       try {
-         glmNetwork.focus(prev[counter].id, options)
+         glmNetwork.focus(highlightedNodes[counter], {
+            "scale": 3,
+            "animation": true
+         });
       }
       catch {
          alert("There are no highlighted nodes to cycle through...");
@@ -453,42 +445,23 @@ const Graph = (props) => {
    * starting at the beginning of the array then moves up by one every function call
    */
    const Next = () => {
-      const options = {
-         "scale": 3,
-         "locked": true,
-         "animation": {
-            "duration": 1500,
-            "easing": "easeInOutQuart"
-         }
-      };
-
-      // get the array of all the highlighted nodes
-      const next = data.nodes.get({
-         filter: (n) => {
-            return (n.size === 15);
-         }
-      });
 
       // starting counter is -1 so that when adding one is 0 to start at index 0
       counter++;
 
       // if the counter matches the length of the array then the count starts back at 0
-      if (counter === next.length) {
+      if (counter === highlightedNodes.length) {
          counter = 0;
-         try {
-            glmNetwork.focus(next[counter].id, options)
-         }
-         catch {
-            alert("There are no highlighted nodes to cycle through...");
-         }
       }
-      else {
-         try {
-            glmNetwork.focus(next[counter].id, options)
-         }
-         catch {
-            alert("There are no highlighted nodes to cycle through...");
-         }
+
+      try {
+         glmNetwork.focus(highlightedNodes[counter], {
+            "scale": 3,
+            "animation": true
+         });
+      }
+      catch {
+         alert("There are no highlighted nodes to cycle through...");
       }
    }
 
@@ -503,6 +476,8 @@ const Graph = (props) => {
          if (node.group === nodeType || node.size === 15){
             delete node.color;
             node.size = 15;
+            highlightedNodes.push(node.id);
+
             return node;
          }
          else if (node.group === nodeType && node.size === 15){
@@ -517,8 +492,7 @@ const Graph = (props) => {
       });
       
       const edgesMap = data.edges.map((edge) => {
-         if(edge.width !== 8)
-         {
+         if (edge.width !== 8) {
             edge.color = "lightgrey";
          }
 
@@ -690,7 +664,7 @@ const Graph = (props) => {
     * @param {string} objectType - the type of node or edge like "load" or "overhead_line"
     * @param {string} type - "node" or "edge"
     */
-   const hideObjects = (objectType, type) => {
+   const hideNodes = (objectType, type) => {
       if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
             if (node.group === objectType) {
@@ -915,7 +889,6 @@ const Graph = (props) => {
          newObjs.push(addedEdge);
 
          newCIMobjs.push(newObjs);
-         console.log(newCIMobjs);
       }
       else {
          const [addedNodeID] = data.nodes.add({
@@ -1108,7 +1081,7 @@ const Graph = (props) => {
          <Legend 
             findGroup = {HighlightGroup} 
             findEdges = {HighlightEdges}
-            hideObjects = {hideObjects}
+            hideNodes = {hideNodes}
             legendData = {getLegendData(objectTypeCount)}
             onMount={legendMount}
             setShowLegendRef={toggleLegendRef}
