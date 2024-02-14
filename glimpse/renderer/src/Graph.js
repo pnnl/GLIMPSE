@@ -147,6 +147,7 @@ const Graph = ({ dataToVis }) => {
    const edgeOptions = appConfig.edgeOptions;
    let glmNetwork; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
+   const highlightedNodes = [];
 
    // data object that holds a DataSet for nodes and edges
    const data = {
@@ -374,6 +375,8 @@ const Graph = ({ dataToVis }) => {
 
    //Reverts all nodes and edges back to their original styles
    const Reset = () => {
+      highlightedNodes.length = 0;
+
       const nodesResetMap = data.nodes.map((node) => {
          delete node.color;
          delete node.size;
@@ -426,31 +429,15 @@ const Graph = ({ dataToVis }) => {
    * starting at the end of the array then moves down every function call
    */
    const Prev = () => {
-      const options = {
-         "scale": 3,
-         "locked": true,
-         "animation": {
-            "duration": 1500,
-            "easing": "easeInOutQuart"
-         }
-      };
-
-      // generates an array of the current highlighted nodes
-      const prev = data.nodes.get({
-         filter: (n) => {
-            return (n.size === 15);
-         }
-      });
-   
       counter--;
 
       //if the counter ends up less than 0 the counter starts over at the end of the array
       if (counter < 0) {
-         counter = prev.length - 1;
+         counter = highlightedNodes.length - 1;
       }
    
       try {
-         glmNetwork.focus(prev[counter].id, options)
+         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
       } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
@@ -461,40 +448,18 @@ const Graph = ({ dataToVis }) => {
    * starting at the beginning of the array then moves up by one every function call
    */
    const Next = () => {
-      const options = {
-         "scale": 3,
-         "locked": true,
-         "animation": {
-            "duration": 1500,
-            "easing": "easeInOutQuart"
-         }
-      };
-
-      // get the array of all the highlighted nodes
-      const next = data.nodes.get({
-         filter: (n) => {
-            return (n.size === 15);
-         }
-      });
-
       // starting counter is -1 so that when adding one is 0 to start at index 0
       counter++;
 
       // if the counter matches the length of the array then the count starts back at 0
-      if (counter === next.length) {
+      if (counter === highlightedNodes.length) {
          counter = 0;
-         try {
-            glmNetwork.focus(next[counter].id, options)
-         } catch {
-            alert("There are no highlighted nodes to cycle through...");
-         }
       }
-      else {
-         try {
-            glmNetwork.focus(next[counter].id, options)
-         } catch {
-            alert("There are no highlighted nodes to cycle through...");
-         }
+
+      try {
+         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
+      } catch {
+         alert("There are no highlighted nodes to cycle through...");
       }
    }
 
@@ -506,12 +471,14 @@ const Graph = ({ dataToVis }) => {
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
 
-         if (node.group === nodeType || node.size === 15){
+         if (node.group === nodeType || node.size === 15) {
             delete node.color;
             node.size = 15;
+            highlightedNodes.push(node.id);
+
             return node;
          }
-         else if (node.group === nodeType && node.size === 15){
+         else if (node.group === nodeType && node.size === 15) {
             node.size = 1;
             node.color = "lightgrey";
             return node;
@@ -523,8 +490,7 @@ const Graph = ({ dataToVis }) => {
       });
       
       const edgesMap = data.edges.map((edge) => {
-         if(edge.width !== 8)
-         {
+         if (edge.width !== 8) {
             edge.color = "lightgrey";
          }
 
