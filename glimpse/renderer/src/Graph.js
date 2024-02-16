@@ -90,7 +90,7 @@ const getLegendData = (typeCounts) => {
 
       legendData.nodes.add({
          id: `${type}:${index}`,
-         x: 0,
+         x: current_x === farthest_x ? -250 : 0,
          y: current_y,
          fixed: true,
          physcis: false,
@@ -99,7 +99,7 @@ const getLegendData = (typeCounts) => {
 
       legendData.nodes.add({
          id: `${type}:${index + 1}`,
-         x: farthest_x === 0 ? current_x : farthest_x,
+         x: farthest_x === current_x ? 250 : farthest_x === 0 ? current_x : farthest_x,
          y: current_y,
          fixed: true,
          physcis: false,
@@ -159,6 +159,7 @@ const Graph = ({ dataToVis }) => {
    const objectTypeCount = {
       "nodes": {
          "communication_node": 0,
+         "FishingCompany": 0,
          "triplex_meter": 0,
          "inverter_dyn": 0,
          "triplex_load": 0, 

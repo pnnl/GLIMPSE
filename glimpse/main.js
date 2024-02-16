@@ -94,19 +94,44 @@ const validateJson = (filePaths) => {
    const ajv = new Ajv();
    const validate = ajv.compile(jsonSchema);
    const data = {};
+   const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
 
    for (const filePath of filePaths) {
       const fileData = require(filePath);
-      valid = validate(fileData);
+      
+      if (nodeLinkDataKeys.every(key => key in fileData)) {
+         data[path.basename(filePath)] = {
+            "objects": []
+         };
 
-      if (!valid) break;
-      else data[path.basename(filePath)] = fileData;
-   }
+         for (const node of fileData.nodes) {
+            data[path.basename(filePath)].objects.push({
+               "objectType": "node",
+               "attributes": node
+            });
+         }
 
-   if(!valid) {
-      const errorMessage = ajv.errorsText(validate.errors, { dataVar: 'jsonData' });
-      return {"error": errorMessage};
+         for (const edge of fileData.edges) {
+            const {source, target, key, ...rest} = edge;
+
+            data[path.basename(filePath)].objects.push({
+               "objectType": "line",
+               "attributes":{
+                  "id": `${source}-${target}-${key}`,
+                  "from": source,
+                  "to": target,
+                  ...rest
+               }
+            });
+         }
+      }
+      else {
+         valid = validate(fileData);
+         
+         if (!valid) break;
+         else data[path.basename(filePath)] = fileData;
+      }
    }
 
    return JSON.stringify(data);

@@ -22,6 +22,7 @@
    },
    "nodeTypes": [
       "communication_node",
+      "FishingCompany",
       "triplex_meter", 
       "triplex_load",
       "triplex_node",
@@ -115,8 +116,7 @@
          "hidden": false
       },
       "line": {
-         "width": 2, 
-         "color": {"inherit": true}, 
+         "width": 0.5,  
          "hidden": false
       },
       "traveling": {
@@ -135,8 +135,8 @@
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
             "enabled": true,
-            "type": "continuous",
-            "roundness": 0
+            "type": "dynamic",
+            "roundness": 0.5
          },
          "hidden": true
       },
@@ -255,6 +255,11 @@
             "color": "#228B22",
             "size": 15,
             "shape": "dot"
+         },
+         "FishingCompany": {
+            "image": "./imgs/FishingCompany.svg",
+            "shape": "image",
+            "size": 15
          }
       },
       "interaction": {
@@ -461,6 +466,10 @@
          "cve": {
             "color": "#228B22",
             "shape": "dot"
+         },
+         "FishingCompany": {
+            "image": "./imgs/FishingCompany.svg",
+            "shape": "image"
          }
       }
    }
