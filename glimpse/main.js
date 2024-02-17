@@ -107,7 +107,7 @@ const validateJson = (filePaths) => {
 
          for (const node of fileData.nodes) {
             data[path.basename(filePath)].objects.push({
-               "objectType": "node",
+               "objectType": node._type,
                "attributes": node
             });
          }
@@ -116,7 +116,7 @@ const validateJson = (filePaths) => {
             const {source, target, key, ...rest} = edge;
 
             data[path.basename(filePath)].objects.push({
-               "objectType": "line",
+               "objectType": edge._type,
                "attributes":{
                   "id": `${source}-${target}-${key}`,
                   "from": source,

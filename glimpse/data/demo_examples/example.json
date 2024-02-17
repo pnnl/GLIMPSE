@@ -51,7 +51,7 @@
          }
       },
       {
-         "objectType": "location",
+         "objectType": "Location",
          "attributes":{
             "id": "LVIII",
             "event": "Super Bowl",
@@ -59,7 +59,7 @@
          }
       },
       {
-         "objectType": "location",
+         "objectType": "Location",
          "attributes":{
             "id": "PNNL1965",
             "location": "Richland WA",

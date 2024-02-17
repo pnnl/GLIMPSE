@@ -32,13 +32,13 @@
       "diesel_dg", 
       "microgrid",
       "technique",
-      "location",
+      "Location",
       "terminal",
-      "c_node",
       "person",
       "capec",
       "meter", 
       "load",
+      "City",
       "node", 
       "cwe",
       "cve"
@@ -55,6 +55,8 @@
       "regulator",
       "traveling",
       "mapping",
+      "Fishing",
+      "Summons",
       "friend",
       "switch",
       "line"
@@ -128,6 +130,16 @@
          "width": 2,
          "color": "#058c42",
          "hidden": false
+      },
+      "Fishing": {
+         "width": 0.5,
+         "color": "#6a994e",
+         "hidden": false
+      },
+      "Summons": {
+         "width": 0.5,
+         "color": "#1b4965",
+         "hidden": false
       }
    },
    "graphOptions": {
@@ -143,15 +155,14 @@
       "nodes": {
          "borderWidth": 2,
          "shapeProperties": {
-            "useBorderWithImage": true
+            "useBorderWithImage": false
          },
          "font": {
             "color": "#000",
             "size": 12,
             "multi": true,
             "align": "left"
-         },
-         "size": 15
+         }
       },
       "groups":{
          "load": {
@@ -231,8 +242,13 @@
             "shape": "image",
             "size": 15
          },
-         "location": {
+         "Location": {
             "image": "./imgs/location.svg",
+            "shape": "image",
+            "size": 15
+         },
+         "City": {
+            "image": "./imgs/city.svg",
             "shape": "image",
             "size": 15
          },
@@ -272,7 +288,7 @@
          "barnesHut": {
             "gravitationalConstant": -10000,
             "springConstant": 0.2,
-            "springLength": 35,
+            "springLength": 100,
             "avoidOverlap": 0.5
          },
          "solver": "barnesHut",
@@ -364,6 +380,16 @@
          "width": 8,
          "color": "#058c42",
          "hidden": false
+      },
+      "Fishing": {
+         "width": 8,
+         "color": "#6a994e",
+         "hidden": false
+      },
+      "Summons": {
+         "width": 8,
+         "color": "#1b4965",
+         "hidden": false
       }
    },
    "legendGraphOptions": {
@@ -447,7 +473,7 @@
             "image": "./imgs/person.svg",
             "shape": "image"
          },
-         "location": {
+         "Location": {
             "image": "./imgs/location.svg",
             "shape": "image"
          },
@@ -469,6 +495,10 @@
          },
          "FishingCompany": {
             "image": "./imgs/FishingCompany.svg",
+            "shape": "image"
+         },
+         "City": {
+            "image": "./imgs/city.svg",
             "shape": "image"
          }
       }

@@ -170,15 +170,15 @@ const Graph = ({ dataToVis }) => {
          "technique": 0,
          "microgrid": 0,
          "terminal": 0,
-         "location": 0,
-         "c_node": 0,
+         "Location": 0,
          "person": 0,
          "capec": 0,
          "meter": 0,
          "load": 0,
          "node": 0,
+         "City": 0,
          "cwe": 0,
-         "cve": 0,
+         "cve": 0
       },
       "edges": {
          "underground_line": 0,
@@ -189,6 +189,8 @@ const Graph = ({ dataToVis }) => {
          "parentChild": 0,
          "regulator": 0,
          "traveling": 0,
+         "Summons": 0,
+         "Fishing": 0,
          "switch": 0,
          "friend": 0, 
          "line": 0
@@ -233,9 +235,7 @@ const Graph = ({ dataToVis }) => {
 
             const objectType = obj[name]; // the object type is the first key of each object
             const attributes = obj.attributes; // get the atributes of each object
-            
-            if (nodeTypes.includes(objectType)) // if the object is of a node type then it is added as a node
-            {
+            if (nodeTypes.includes(objectType)) {// if the object is of a node type then it is added as a node
                Object.keys(attributes).forEach((k) => {
                   if (keys.includes(k)) {
                      name = k;
@@ -245,8 +245,7 @@ const Graph = ({ dataToVis }) => {
                const nodeID = attributes[name]; // the ID of each object is in the atributes js Object
 
                // if the object has x and y coordinates they will be added to the node's object datastructure
-               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y"))
-               {
+               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
                   data.nodes.add({
                      "id": nodeID,
                      "label": nodeID,
@@ -272,7 +271,6 @@ const Graph = ({ dataToVis }) => {
                   });
                }
                else {
-
                   if (options.layout.hierarchical.enabled) {
                      options.layout.hierarchical.enabled = false;
                      options.physics.solver = "barnesHut";
