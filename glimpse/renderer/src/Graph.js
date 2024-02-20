@@ -8,7 +8,8 @@ import "./styles/Graph.css";
 import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "./config/appConfig.json";
-const edgeOptions = appConfig.legendEdgeOptions;
+const options = appConfig.graphOptions;
+const edgeOptions = appConfig.edgeOptions;
 
 
 /**
@@ -51,6 +52,10 @@ const getLegendData = (typeCounts) => {
          legendData.nodes.add({
             id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
             label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+            size: 25,
+            color: options.groups[nodeType].color,
+            shape: options.groups[nodeType].shape,
+            image: options.groups[nodeType].image,
             group: nodeType,
             x: current_x,
             y: current_y,
@@ -75,6 +80,10 @@ const getLegendData = (typeCounts) => {
       legendData.nodes.add({
          id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
          label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+         size: 25,
+         color: options.groups[nodeType].color,
+         shape: options.groups[nodeType].shape,
+         image: options.groups[nodeType].image,
          group: nodeType,
          x: current_x,
          y: current_y,
@@ -94,7 +103,7 @@ const getLegendData = (typeCounts) => {
          y: current_y,
          fixed: true,
          physcis: false,
-         color: "black"
+         color: "#000"
       });
 
       legendData.nodes.add({
@@ -103,7 +112,7 @@ const getLegendData = (typeCounts) => {
          y: current_y,
          fixed: true,
          physcis: false,
-         color: "black"
+         color: "#000"
       })
 
       legendData.edges.add({
@@ -111,7 +120,7 @@ const getLegendData = (typeCounts) => {
          from: `${type}:${index}`,
          to: `${type}:${index + 1}`,
          label: `${type} [${typeCounts.edges[type]}]`,
-         width: edgeOptions[type].width,
+         width: 8,
          color: edgeOptions[type].color
       });
 
@@ -143,8 +152,6 @@ const getHtmlLabel = (id, attributes) => {
 }
 
 const Graph = ({ dataToVis }) => {
-   const options = appConfig.graphOptions; // get the options for the graph visualization
-   const edgeOptions = appConfig.edgeOptions;
    let glmNetwork; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
    const highlightedNodes = [];
@@ -221,11 +228,12 @@ const Graph = ({ dataToVis }) => {
       }
 
       //For each file gather all of the nodes that matches the types
-      for (const file of files)
-      {
+      for (const file of files) {
+
          const objs = file.objects;
-         for (const obj of objs)
-         {
+
+         for (const obj of objs) {
+         
             let name;
             Object.keys(obj).forEach((k) => {
                if (keys.includes(k)) {
@@ -256,8 +264,7 @@ const Graph = ({ dataToVis }) => {
                      "y": parseInt(attributes.y, 10)
                   });
                }
-               else if (Object.keys(attributes).includes("level"))
-               {
+               else if (Object.keys(attributes).includes("level")) {
                   if (!options.layout.hierarchical.enabled)
                      options.layout.hierarchical.enabled = true;
 
@@ -291,12 +298,10 @@ const Graph = ({ dataToVis }) => {
       }
 
       // for each file gather all of the edge types and create edges between nodes
-      for (const file of files)
-      {
+      for (const file of files) {
          const objs = file.objects;
 
-         for (const obj of objs)
-         {
+         for (const obj of objs) {
             let name;
             let attributeName;
 
@@ -315,8 +320,7 @@ const Graph = ({ dataToVis }) => {
                }
             })
 
-            if (edgeTypes.includes(objectType))
-            {
+            if (edgeTypes.includes(objectType)) {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
                const edgeID = objectType + ":" + attributes[attributeName];
@@ -328,14 +332,12 @@ const Graph = ({ dataToVis }) => {
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
-                  "hidden": edgeOptions[objectType].hidden,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
                });
                
                objectTypeCount.edges[objectType]++;
             }
-            else if (nodeTypes.includes(objectType)) // some nodes have a parent attribute
-            {
+            else if (nodeTypes.includes(objectType)) {// some nodes have a parent attribute
                const nodeID = attributes[attributeName];
                const parent = attributes.parent;
                
@@ -757,9 +759,9 @@ const Graph = ({ dataToVis }) => {
       }
       else { 
          if (data.nodes.length > 200) {
-            options.physics.barnesHut.gravitationalConstant = -100000;
-            options.physics.barnesHut.springConstant = 0.5;
-            options.physics.barnesHut.springLength = 50;
+            options.physics.barnesHut.gravitationalConstant = -80000;
+            options.physics.barnesHut.springConstant = 0.35;
+            options.physics.barnesHut.springLength = 250;
          }
 
          // create network

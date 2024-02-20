@@ -5,6 +5,7 @@ import "./styles/Legend.css";
 import appConfig from "./config/appConfig.json";
 import LegendContextMenu from "./LegendContextMenu";
 const options = appConfig.legendGraphOptions;
+// const groups = appConfig.graphOptions.groups;
 
 const Legend = ({
    findGroup,
