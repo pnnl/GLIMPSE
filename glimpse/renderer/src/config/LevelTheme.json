@@ -1,0 +1,30 @@
+{
+   "groups": {
+      "technique": {
+         "size": 15,
+         "color": "black",
+         "shape": "dot"
+      },
+      "capec": {
+         "size": 15,
+         "color": "red",
+         "shape": "dot"
+      },
+      "cwe": {
+         "size": 15,
+         "color": "violet",
+         "shape": "dot"
+      },
+      "cve": {
+         "size": 15,
+         "color": "#228B22",
+         "shape": "dot"
+      }
+   },
+   "edgeOptions": {
+      "line": {
+         "width": 0.5,
+         "color": {"inherit": true}
+      }
+   }
+}

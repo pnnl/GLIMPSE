@@ -9,126 +9,6 @@ import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "./config/appConfig.json";
 const options = appConfig.graphOptions;
-const edgeOptions = appConfig.edgeOptions;
-
-
-/**
- * Create nodes and edges based on the object type being visualized in the main network
- * @param {Object} typeCounts - containes the counts of node and edge types
- * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
- */
-const getLegendData = (typeCounts) => {
-
-   const legendData = {
-      "nodes": new DataSet(),
-      "edges": new DataSet()
-   };
-   
-   const currentNodeTypes = [];
-   const currentEdgeTypes = [];
-
-   Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
-      if (count > 0) currentNodeTypes.push(type);
-   });
-
-   Object.entries(typeCounts.edges).forEach(([type, count], i) => {
-      if (count > 0) currentEdgeTypes.push(type);
-   });
-
-   let x_increment;
-   if (currentNodeTypes.length < 6)
-      x_increment = 800 / currentNodeTypes.length;
-   else 
-      x_increment = 1000 / currentNodeTypes.length;
-
-   let farthest_x = 0;
-   let current_x = 0;
-   let current_y = 0;
-   let rowNodeCount = 0;
-
-   for (let nodeType of currentNodeTypes) {
-      
-      if (legendData.nodes.length === 0) {
-         legendData.nodes.add({
-            id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
-            label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
-            size: 25,
-            color: options.groups[nodeType].color,
-            shape: options.groups[nodeType].shape,
-            image: options.groups[nodeType].image,
-            group: nodeType,
-            x: current_x,
-            y: current_y,
-            physics: false,
-            fixed: true
-         });
-
-         rowNodeCount++;
-         continue;
-      }
-
-      if (rowNodeCount === 6) {
-         farthest_x = current_x;
-         rowNodeCount = 0;
-         current_x = 0;
-         current_y -= 125;
-      }
-      else {
-         current_x += x_increment;
-      }
-
-      legendData.nodes.add({
-         id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
-         label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
-         size: 25,
-         color: options.groups[nodeType].color,
-         shape: options.groups[nodeType].shape,
-         image: options.groups[nodeType].image,
-         group: nodeType,
-         x: current_x,
-         y: current_y,
-         physics: false,
-         fixed: true
-      });
-
-      rowNodeCount++;
-   }
-
-   current_y = 125;
-   currentEdgeTypes.forEach((type, index) => {
-
-      legendData.nodes.add({
-         id: `${type}:${index}`,
-         x: current_x === farthest_x ? -250 : 0,
-         y: current_y,
-         fixed: true,
-         physcis: false,
-         color: "#000"
-      });
-
-      legendData.nodes.add({
-         id: `${type}:${index + 1}`,
-         x: farthest_x === current_x ? 250 : farthest_x === 0 ? current_x : farthest_x,
-         y: current_y,
-         fixed: true,
-         physcis: false,
-         color: "#000"
-      })
-
-      legendData.edges.add({
-         id: type,
-         from: `${type}:${index}`,
-         to: `${type}:${index + 1}`,
-         label: `${type} [${typeCounts.edges[type]}]`,
-         width: 8,
-         color: edgeOptions[type].color
-      });
-
-      current_y += 65;
-   });
-
-   return legendData;
-}
 
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
@@ -151,10 +31,130 @@ const getHtmlLabel = (id, attributes) => {
    )
 }
 
-const Graph = ({ dataToVis }) => {
+const Graph = ({ dataToVis, theme }) => {
+   const nodeTypes = Object.keys(theme.groups);
+   const edgeTypes = Object.keys(theme.edgeOptions);
+   const edgeOptions = theme.edgeOptions;
    let glmNetwork; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
    const highlightedNodes = [];
+
+   /**
+   * Create nodes and edges based on the object type being visualized in the main network
+   * @param {Object} typeCounts - containes the counts of node and edge types
+   * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
+   */
+   const getLegendData = (typeCounts) => {
+
+      const legendData = {
+         "nodes": new DataSet(),
+         "edges": new DataSet()
+      };
+      
+      const currentNodeTypes = [];
+      const currentEdgeTypes = [];
+
+      Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
+         if (count > 0) currentNodeTypes.push(type);
+      });
+
+      Object.entries(typeCounts.edges).forEach(([type, count], i) => {
+         if (count > 0) currentEdgeTypes.push(type);
+      });
+
+      let x_increment;
+      if (currentNodeTypes.length < 6)
+         x_increment = 800 / currentNodeTypes.length;
+      else 
+         x_increment = 1000 / currentNodeTypes.length;
+
+      let farthest_x = 0;
+      let current_x = 0;
+      let current_y = 0;
+      let rowNodeCount = 0;
+
+      for (let nodeType of currentNodeTypes) {
+         if (legendData.nodes.length === 0) {
+            legendData.nodes.add({
+               id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+               label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+               size: 25,
+               color: theme.groups[nodeType].color,
+               shape: theme.groups[nodeType].shape,
+               image: theme.groups[nodeType].image,
+               group: nodeType,
+               x: current_x,
+               y: current_y,
+               physics: false,
+               fixed: true
+            });
+
+            rowNodeCount++;
+            continue;
+         }
+
+         if (rowNodeCount === 6) {
+            farthest_x = current_x;
+            rowNodeCount = 0;
+            current_x = 0;
+            current_y -= 125;
+         }
+         else {
+            current_x += x_increment;
+         }
+
+         legendData.nodes.add({
+            id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+            label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+            size: 25,
+            color: theme.groups[nodeType].color,
+            shape: theme.groups[nodeType].shape,
+            image: theme.groups[nodeType].image,
+            group: nodeType,
+            x: current_x,
+            y: current_y,
+            physics: false,
+            fixed: true
+         });
+
+         rowNodeCount++;
+      }
+
+      current_y = 125;
+      currentEdgeTypes.forEach((type, index) => {
+
+         legendData.nodes.add({
+            id: `${type}:${index}`,
+            x: current_x === farthest_x ? -250 : 0,
+            y: current_y,
+            fixed: true,
+            physcis: false,
+            color: "#000"
+         });
+
+         legendData.nodes.add({
+            id: `${type}:${index + 1}`,
+            x: farthest_x === current_x ? 250 : farthest_x === 0 ? current_x : farthest_x,
+            y: current_y,
+            fixed: true,
+            physcis: false,
+            color: "#000"
+         })
+
+         legendData.edges.add({
+            id: type,
+            from: `${type}:${index}`,
+            to: `${type}:${index + 1}`,
+            label: `${type} [${typeCounts.edges[type]}]`,
+            width: 8,
+            color: edgeOptions[type].color
+         });
+
+         current_y += 65;
+      });
+
+      return legendData;
+   }
 
    // data object that holds a DataSet for nodes and edges
    const data = {
@@ -164,48 +164,9 @@ const Graph = ({ dataToVis }) => {
 
    // used to keep count of each object type
    const objectTypeCount = {
-      "nodes": {
-         "communication_node": 0,
-         "FishingCompany": 0,
-         "triplex_meter": 0,
-         "inverter_dyn": 0,
-         "triplex_load": 0, 
-         "triplex_node": 0,
-         "substation": 0,
-         "diesel_dg": 0,
-         "capacitor": 0,
-         "technique": 0,
-         "microgrid": 0,
-         "terminal": 0,
-         "Location": 0,
-         "person": 0,
-         "capec": 0,
-         "meter": 0,
-         "load": 0,
-         "node": 0,
-         "City": 0,
-         "cwe": 0,
-         "cve": 0
-      },
-      "edges": {
-         "underground_line": 0,
-         "series_reactor": 0,
-         "overhead_line": 0,
-         "triplex_line": 0,
-         "transformer": 0,
-         "parentChild": 0,
-         "regulator": 0,
-         "traveling": 0,
-         "Summons": 0,
-         "Fishing": 0,
-         "switch": 0,
-         "friend": 0, 
-         "line": 0
-      }
+      "nodes": Object.keys(theme.groups).reduce((o, key) => ({...o, [key]: 0}), {}),
+      "edges": Object.keys(theme.edgeOptions).reduce((o, key) => ({...o, [key]: 0}), {})
    };
-
-   const nodeTypes = appConfig.nodeTypes; //These types are recognized as nodes
-   const edgeTypes = appConfig.edgeTypes; //These types are recognized as edges
 
    let setLegendData;
    const legendMount = (legendSetFunc) => {
@@ -229,7 +190,6 @@ const Graph = ({ dataToVis }) => {
 
       //For each file gather all of the nodes that matches the types
       for (const file of files) {
-
          const objs = file.objects;
 
          for (const obj of objs) {
@@ -285,7 +245,7 @@ const Graph = ({ dataToVis }) => {
 
                   data.nodes.add({
                      "id": nodeID,
-                     "label": nodeID.length > 15 ? "" : nodeID,
+                     "label": nodeID,
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -755,7 +715,8 @@ const Graph = ({ dataToVis }) => {
          options.physics.stabilization.enabled = false;
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, options);
-         glmNetwork.setOptions({physics: {enabled: false}})
+         glmNetwork.setOptions({groups: theme.groups});
+         glmNetwork.setOptions({physics: {enabled: false}});
       }
       else { 
          if (data.nodes.length > 200) {
@@ -766,6 +727,7 @@ const Graph = ({ dataToVis }) => {
 
          // create network
          glmNetwork = new Network(container.current, data, options);
+         glmNetwork.setOptions({groups: theme.groups});
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -794,7 +756,6 @@ const Graph = ({ dataToVis }) => {
       }
 
       glmNetwork.on("doubleClick", (params) => {
-   
          if (params.nodes[0] === undefined) {
             alert("Double click on a node to edit.");
          }

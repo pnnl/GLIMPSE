@@ -1,5 +1,4 @@
-.file-upload-form-container
-{
+.file-upload-form-container {
   display: flex;
   height: calc(100vh - 4rem);
   align-items: center;
@@ -8,8 +7,8 @@
 
 #form-file-upload {
   z-index: 9999;
-  height: 16rem;
-  width: 28rem;
+  height: 14rem;
+  width: 24rem;
   max-width: 100%;
   text-align: center;
   position: relative;

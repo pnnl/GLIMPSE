@@ -1,0 +1,29 @@
+{
+   "groups": {
+      "Location": {
+         "size": 15,
+         "image": "./imgs/location.svg",
+         "shape": "image"
+      },
+      "City": {
+         "size": 15,
+         "image": "./imgs/city.svg",
+         "shape": "image"
+      },
+      "FishingCompany": {
+         "size": 15,
+         "image": "./imgs/FishingCompany.svg",
+         "shape": "image"
+      }
+   },
+   "edgeOptions": {
+      "Fishing": {
+         "width": 0.5,
+         "color": "#6a994e"
+      },
+      "Summons": {
+         "width": 0.5,
+         "color": "#1b4965"
+      }
+   }
+}

@@ -20,119 +20,12 @@
          "toggleLegendBtn": "TOGGLE LEGEND"
       }
    },
-   "nodeTypes": [
-      "communication_node",
-      "FishingCompany",
-      "triplex_meter", 
-      "triplex_load",
-      "triplex_node",
-      "inverter_dyn",  
-      "substation", 
-      "capacitor", 
-      "diesel_dg", 
-      "microgrid",
-      "technique",
-      "Location",
-      "terminal",
-      "person",
-      "capec",
-      "meter", 
-      "load",
-      "City",
-      "node", 
-      "cwe",
-      "cve"
-   ],
-   "edgeTypes": [
-      "microgrid_connection",
-      "underground_line",
-      "series_reactor",
-      "overhead_line",
-      "communication",
-      "triplex_line",
-      "transformer",
-      "parentChild",
-      "regulator",
-      "traveling",
-      "mapping",
-      "Fishing",
-      "Summons",
-      "friend",
-      "switch",
-      "line"
-   ],
-   "edgeOptions": {
-      "overhead_line": {
-         "width": 2,
-         "color": "#000000"
-      },
-      "switch": {
-         "width": 2, 
-         "color": "#3a0ca3"
-      },
-      "series_reactor": {
-         "width": 2, 
-         "color": "#3c1642"
-      },
-      "triplex_line": {
-         "width": 2, 
-         "color": "#c86bfa"
-      },
-      "underground_line": {
-         "width": 2, 
-         "color": "#FFFF00"
-      },
-      "regulator": {
-         "width": 2, 
-         "color": "#ff447d"
-      },
-      "transformer": {
-         "width": 2,
-         "color": "#00FF00"
-      },
-      "parentChild": {
-         "width": 2,
-         "color": {"inherit": true}
-      },
-      "mapping": {
-         "width": 0.15, 
-         "color": "lightgrey"
-      },
-      "communication": {
-         "width": 1, 
-         "color": {"inherit": false}
-      },
-      "microgrid_connection": {
-         "width": 1, 
-         "color": "cyan"
-      },
-      "line": {
-         "width": 0.5,
-         "color": {"inherit": true}
-      },
-      "traveling": {
-         "width": 2,
-         "color": "#848484"
-      },
-      "friend": {
-         "width": 2,
-         "color": "#058c42"
-      },
-      "Fishing": {
-         "width": 0.5,
-         "color": "#6a994e"
-      },
-      "Summons": {
-         "width": 0.5,
-         "color": "#1b4965"
-      }
-   },
    "graphOptions": {
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
             "enabled": true,
-            "type": "continuous",
+            "type": "dynamic",
             "roundness": 0
          },
          "hidden": true
@@ -150,120 +43,6 @@
          },
          "size": 15
       },
-      "groups":{
-         "load": {
-            "size": 15,
-            "color": "#2a9d8f",
-            "shape": "circularImage",
-            "image": "./imgs/load.png"
-         },
-         "triplex_load": {
-            "size": 15,
-            "color": "#ffea00",
-            "shape": "circularImage",
-            "image": "./imgs/load.png"
-         },
-         "capacitor": {
-            "size": 15,
-            "color": "#283618",
-            "shape": "circularImage",
-            "image": "./imgs/capacitor.jpg"
-         },
-         "triplex_node": {
-            "size": 15,
-            "color": "#003566",
-            "shape": "circularImage",
-            "image": "./imgs/node.png"
-         },
-         "substation": {
-            "size": 15,
-            "color": "#fca311",
-            "shape": "circularImage",
-            "image": "./imgs/substation.jpg"
-         },
-         "triplex_meter": {
-            "size": 15,
-            "color": "#072ac8",
-            "shape": "circularImage",
-            "image": "./imgs/meter.jpg"
-         },
-         "node": {
-            "size": 15,
-            "color": "#4361ee",
-            "shape": "circularImage", 
-            "image": "./imgs/node.png"
-         },
-         "meter": {
-            "size": 15,
-            "color": "#d90429",
-            "shape": "circularImage", 
-            "image": "./imgs/meter.jpg"
-         },
-         "inverter_dyn": {
-            "size": 15,
-            "color": "#c8b6ff",
-            "shape": "circularImage", 
-            "image": "./imgs/inverter.png"
-         },
-         "diesel_dg": {
-            "size": 15,
-            "color": "#fee440",
-            "shape": "circularImage", 
-            "image": "./imgs/generator.jpg"
-         },
-         "communication_node": {
-            "size": 15,
-            "color": "#c1121f",
-            "shape": "image",
-            "image": "./imgs/comm.jpg"
-         },
-         "microgrid": {
-            "size": 15,
-            "color": "#6b9080",
-            "shape": "image",
-            "image": "./imgs/microgrid.svg"
-         },
-         "person": {
-            "size": 15,
-            "image": "./imgs/person.svg",
-            "shape": "image"
-         },
-         "Location": {
-            "size": 15,
-            "image": "./imgs/location.svg",
-            "shape": "image"
-         },
-         "City": {
-            "size": 15,
-            "image": "./imgs/city.svg",
-            "shape": "image"
-         },
-         "technique": {
-            "size": 15,
-            "color": "black",
-            "shape": "dot"
-         },
-         "capec": {
-            "size": 15,
-            "color": "red",
-            "shape": "dot"
-         },
-         "cwe": {
-            "size": 15,
-            "color": "violet",
-            "shape": "dot"
-         },
-         "cve": {
-            "size": 15,
-            "color": "#228B22",
-            "shape": "dot"
-         },
-         "FishingCompany": {
-            "size": 15,
-            "image": "./imgs/FishingCompany.svg",
-            "shape": "image"
-         }
-      },
       "interaction": {
          "hover": true,
          "hideEdgesOnDrag": true,
@@ -274,7 +53,7 @@
          "barnesHut": {
             "gravitationalConstant": -10000,
             "springConstant": 0.3,
-            "springLength": 25
+            "springLength": 100
          },
          "solver": "barnesHut",
          "stabilization": {

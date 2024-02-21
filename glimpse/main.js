@@ -128,10 +128,16 @@ const validateJson = (filePaths) => {
       }
       else {
          valid = validate(fileData);
-         
-         if (!valid) break;
-         else data[path.basename(filePath)] = fileData;
+         if (!valid)
+            break;
+         else
+            data[path.basename(filePath)] = fileData;
       }
+   }
+
+   if (!valid) {
+      const errorMessage = ajv.errorsText(validate.errors, { dataVar: 'jsonData' });
+      return {"error": errorMessage};
    }
 
    return JSON.stringify(data);

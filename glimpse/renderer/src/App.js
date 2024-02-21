@@ -22,7 +22,7 @@ const Nav = () => {
 }
 
 export const Home = () => {
-   let content;
+   let content = null;
    const [dataToVisRequest, setDataToVisRequest] = useState({
       showFileUpload: true,
       data: null
@@ -33,42 +33,62 @@ export const Home = () => {
     * main process to then read the files, parse them, and evalute them.
     * @param {Array} paths - An array of paths from the uploaded files
     */
-   const setFileData = async (paths) => {
-      
-      // validate the file if it is a json file
-      if (paths[0].split(".")[1] === "json") {
-         const validFileData = await window.glimpseAPI.validate(paths);
-
-         if (Object.keys(validFileData).includes("error")) {
-            alert(validFileData.error);
-         }
-         else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: JSON.parse(validFileData)
-            });
-         }
+   const setFileData = async (paths, selectedTheme) => {
+      let theme = null;
+      //["Power Grid [default]", "Social", "Fishing", "Layout"]
+      switch (selectedTheme) {
+         case "Social":
+            theme = require("./config/DefaultTheme.json");
+            break;
+         case "Fishing":
+            theme = require("./config/FishingTheme.json");
+            break;
+         case "Layout": 
+            theme = require("./config/LevelTheme.json");
+            break;
+         default:
+            theme = require("./config/PowerGridTheme.json");
+            break;
       }
-      else {
-         const data = await window.glimpseAPI.getJsonData(paths);
-         if (data === undefined) {
-            console.log("Something went wrong...");
-         }
-         else if (Object.keys(data).includes("alert")) {
-            alert(data.alert);
+      
+      if (theme) {
+         // validate the file if it is a json file
+         if (paths[0].split(".")[1] === "json") {
+            const validFileData = await window.glimpseAPI.validate(paths);
+   
+            if (Object.keys(validFileData).includes("error")) {
+               alert(validFileData.error);
+            }
+            else {
+               setDataToVisRequest({
+                  showFileUpload: false,
+                  data: JSON.parse(validFileData),
+                  theme: theme
+               });
+            }
          }
          else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: data
-            });   
+            const data = await window.glimpseAPI.getJsonData(paths);
+            if (data === undefined) {
+               console.log("Something went wrong...");
+            }
+            else if (Object.keys(data).includes("alert")) {
+               alert(data.alert);
+            }
+            else {
+               setDataToVisRequest({
+                  showFileUpload: false,
+                  data: data,
+                  theme: theme
+               });   
+            }
          }
       }
    }
    
    // Display the graph dashboard component if file uploads were succesfully validated
    if (!dataToVisRequest.showFileUpload) {
-      content = <Graph dataToVis = {dataToVisRequest.data} />;
+      content = <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} />;
    }
    else {
       content = <FileUpload setFileData = {setFileData} />;
