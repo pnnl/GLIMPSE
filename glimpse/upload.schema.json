@@ -8,42 +8,7 @@
          "items": {
             "type": "object",
             "patternProperties": {
-               "name|objectType": {
-                  "type": "string",
-                  "enum": [
-                     "technique",
-                     "capec",
-                     "cwe",
-                     "cve",
-                     "load", 
-                     "triplex_load",
-                     "capacitor", 
-                     "node", 
-                     "triplex_node",
-                     "substation", 
-                     "meter", 
-                     "triplex_meter", 
-                     "inverter_dyn",  
-                     "diesel_dg", 
-                     "communication_node", 
-                     "microgrid_node",
-                     "overhead_line",
-                     "line",
-                     "switch",
-                     "underground_line",
-                     "series_reactor",
-                     "triplex_line",
-                     "regulator",
-                     "transformer",
-                     "mapping",
-                     "communication",
-                     "microgrid_connection",
-                     "friend",
-                     "person",
-                     "traveling",
-                     "location"
-                  ]
-               },
+               "name|objectType": {"type": "string"},
                "attributes": {
                   "type": "object",
                   "patternProperties": {

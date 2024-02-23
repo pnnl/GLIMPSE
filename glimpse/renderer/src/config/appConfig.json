@@ -26,7 +26,7 @@
          "smooth": {
             "enabled": true,
             "type": "dynamic",
-            "roundness": 0
+            "roundness": 0.5
          },
          "hidden": true
       },
@@ -51,7 +51,7 @@
       },
       "physics": {
          "barnesHut": {
-            "gravitationalConstant": -10000,
+            "gravitationalConstant": -2000,
             "springConstant": 0.3,
             "springLength": 100
          },

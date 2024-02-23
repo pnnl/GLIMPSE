@@ -31,6 +31,16 @@ const getHtmlLabel = (id, attributes) => {
    )
 }
 
+const getRandColor = () => {
+   const letters = "0123456789ABCDEF";
+   let color = "#";
+
+   while (color.length < 7)
+      color += letters[Math.floor(Math.random() * 16)];
+   
+   return color;
+}
+
 const Graph = ({ dataToVis, theme }) => {
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
@@ -45,7 +55,6 @@ const Graph = ({ dataToVis, theme }) => {
    * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
    */
    const getLegendData = (typeCounts) => {
-
       const legendData = {
          "nodes": new DataSet(),
          "edges": new DataSet()
@@ -66,7 +75,7 @@ const Graph = ({ dataToVis, theme }) => {
       if (currentNodeTypes.length < 6)
          x_increment = 800 / currentNodeTypes.length;
       else 
-         x_increment = 1000 / currentNodeTypes.length;
+         x_increment = 1500 / currentNodeTypes.length;
 
       let farthest_x = 0;
       let current_x = 0;
@@ -75,6 +84,51 @@ const Graph = ({ dataToVis, theme }) => {
 
       for (let nodeType of currentNodeTypes) {
          if (legendData.nodes.length === 0) {
+
+            if (Object.keys(theme.groups).includes(nodeType)) {
+               legendData.nodes.add({
+                  id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+                  label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+                  size: 25,
+                  color: theme.groups[nodeType].color,
+                  shape: theme.groups[nodeType].shape,
+                  image: theme.groups[nodeType].image,
+                  group: nodeType,
+                  x: current_x,
+                  y: current_y,
+                  physics: false,
+                  fixed: true
+               });
+               rowNodeCount++;
+               continue;
+            }
+
+            legendData.nodes.add({
+               id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+               label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+               size: 25,
+               shape: "dot",
+               groups: nodeType,
+               x: current_x,
+               y: current_y,
+               physics: false,
+               fixed: true
+            });
+            rowNodeCount++;
+            continue;
+         }
+
+         if (rowNodeCount === 6) {
+            farthest_x = current_x;
+            rowNodeCount = 0;
+            current_x = 0;
+            current_y -= 125;
+         }
+         else {
+            current_x += x_increment;
+         }
+
+         if (Object.keys(theme.groups).includes(nodeType)) {
             legendData.nodes.add({
                id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
                label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
@@ -92,31 +146,18 @@ const Graph = ({ dataToVis, theme }) => {
             rowNodeCount++;
             continue;
          }
-
-         if (rowNodeCount === 6) {
-            farthest_x = current_x;
-            rowNodeCount = 0;
-            current_x = 0;
-            current_y -= 125;
-         }
-         else {
-            current_x += x_increment;
-         }
-
+         
          legendData.nodes.add({
             id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
             label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
             size: 25,
-            color: theme.groups[nodeType].color,
-            shape: theme.groups[nodeType].shape,
-            image: theme.groups[nodeType].image,
+            shape: "dot",
             group: nodeType,
             x: current_x,
             y: current_y,
             physics: false,
             fixed: true
          });
-
          rowNodeCount++;
       }
 
@@ -141,14 +182,25 @@ const Graph = ({ dataToVis, theme }) => {
             color: "#000"
          })
 
-         legendData.edges.add({
-            id: type,
-            from: `${type}:${index}`,
-            to: `${type}:${index + 1}`,
-            label: `${type} [${typeCounts.edges[type]}]`,
-            width: 8,
-            color: edgeOptions[type].color
-         });
+         if (Object.keys(edgeOptions).includes(type)) {
+            legendData.edges.add({
+               id: type,
+               from: `${type}:${index}`,
+               to: `${type}:${index + 1}`,
+               label: `${type} [${typeCounts.edges[type]}]`,
+               width: 8,
+               color: edgeOptions[type].color
+            });
+         }
+         else {
+            legendData.edges.add({
+               id: type,
+               from: `${type}:${index}`,
+               to: `${type}:${index + 1}`,
+               label: `${type} [${typeCounts.edges[type]}]`,
+               width: 8,
+            });
+         }
 
          current_y += 65;
       });
@@ -194,23 +246,25 @@ const Graph = ({ dataToVis, theme }) => {
 
          for (const obj of objs) {
          
-            let name;
+            let name = null;
+            let attributeName = null;
             Object.keys(obj).forEach((k) => {
                if (keys.includes(k)) {
                   name = k;
                }
             });
 
-            const objectType = obj[name]; // the object type is the first key of each object
-            const attributes = obj.attributes; // get the atributes of each object
-            if (nodeTypes.includes(objectType)) {// if the object is of a node type then it is added as a node
-               Object.keys(attributes).forEach((k) => {
-                  if (keys.includes(k)) {
-                     name = k;
-                  }
-               })
+            const objectType = obj[name];
+            const attributes = obj.attributes;
 
-               const nodeID = attributes[name]; // the ID of each object is in the atributes js Object
+            Object.keys(attributes).forEach((k) => {
+               if (keys.includes(k)) {
+                  attributeName = k;
+               }
+            })
+
+            if (nodeTypes.includes(objectType)) {
+               const nodeID = attributes[attributeName];
 
                // if the object has x and y coordinates they will be added to the node's object datastructure
                if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
@@ -254,6 +308,36 @@ const Graph = ({ dataToVis, theme }) => {
                
                objectTypeCount.nodes[objectType]++;
             }
+            else if (Object.keys(obj).includes("elementType") && obj.elementType === "node") {
+               if (options.layout.hierarchical.enabled) {
+                  options.layout.hierarchical.enabled = false;
+                  options.physics.solver = "barnesHut";
+               }
+
+               theme.groups[objectType] = {
+                  "color": getRandColor(),
+                  "shape": "dot"
+               };
+               nodeTypes.push(objectType);
+
+               const nodeID = attributes[attributeName];
+               data.nodes.add({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "size": 15,
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+                  "shape": "dot"
+               });
+
+               if (Object.keys(objectTypeCount.nodes).includes(objectType)) {
+                  objectTypeCount.nodes[objectType]++;
+               }
+               else {
+                  objectTypeCount.nodes[objectType] = 1;
+               }
+            }
          }
       }
 
@@ -262,8 +346,8 @@ const Graph = ({ dataToVis, theme }) => {
          const objs = file.objects;
 
          for (const obj of objs) {
-            let name;
-            let attributeName;
+            let name = null;
+            let attributeName = null;
 
             Object.keys(obj).forEach((k) => {
                if (keys.includes(k)) {
@@ -306,11 +390,44 @@ const Graph = ({ dataToVis, theme }) => {
                      "id": `parentChild:${parent}-${nodeID}`,
                      "from": parent,
                      "to": nodeID,
+                     "width": 2,
                      "attributes": {"to": parent, "from": nodeID},
                      "color": {"inherit": true}
                   });
 
                   objectTypeCount.edges.parentChild++;
+               }
+            }
+            else if (Object.keys(obj).includes("elementType") && obj.elementType === "edge") {
+               const edgeFrom = attributes.from;
+               const edgeTo = attributes.to;
+               const edgeID = objectType + ":" + attributes[attributeName];
+
+               // edgeOptions[objectType] = {
+               //    "color": theme.groups[data.nodes.get(edgeFrom).group].color
+               // };
+
+               if (!Object.keys(edgeOptions).includes(objectType)) {
+                  edgeOptions[objectType] = {
+                     "color": getRandColor()
+                  };
+               }
+               
+               data.edges.add({
+                  "id": edgeID,
+                  "from": edgeFrom,
+                  "to": edgeTo,
+                  "attributes": attributes,
+                  "color": edgeOptions[objectType].color,
+                  "width": 2,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
+               });
+               
+               if (Object.keys(objectTypeCount.edges).includes(objectType)) {
+                  objectTypeCount.edges[objectType]++;
+               }
+               else {
+                  objectTypeCount.edges[objectType] = 1;
                }
             }
          }
@@ -337,10 +454,8 @@ const Graph = ({ dataToVis, theme }) => {
    //Reverts all nodes and edges back to their original styles
    const Reset = () => {
       highlightedNodes.length = 0;
-
       const nodesResetMap = data.nodes.map((node) => {
-         delete node.color;
-         delete node.size;
+         node.size = 15;
          node.hidden = false;
 
          return node;
@@ -352,18 +467,19 @@ const Graph = ({ dataToVis, theme }) => {
          if (e.width === 8) {
             e.width = 2;
             e.hidden = false;
+
             return e;
          }
          else if (edgeTypes.includes(edgeType)) {
-            e.color = edgeOptions[edgeType].color;
             e.width = edgeOptions[edgeType].width;
             e.hidden = false;
+
             return e;
          }
          else {
-            e.color = {inherit: true};
-            e.width = 0.15;
+            e.width = 2;
             e.hidden = false;
+
             return e;
          }
       });
@@ -431,28 +547,23 @@ const Graph = ({ dataToVis, theme }) => {
    */
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
-
-         if (node.group === nodeType || node.size === 15) {
-            delete node.color;
-            node.size = 15;
-            highlightedNodes.push(node.id);
-
+         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 1)) {
             return node;
          }
-         else if (node.group === nodeType && node.size === 15) {
+         else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
             node.size = 1;
-            node.color = "lightgrey";
             return node;
          }
-      
-         node.size = 1;
-         node.color = "lightgrey";
-         return node;
+         else if (node.group === nodeType && !highlightedNodes.includes(node.id)) {
+            if (node.size === 1) node.size = 15;
+            highlightedNodes.push(node.id);
+            return node;
+         }
       });
       
       const edgesMap = data.edges.map((edge) => {
          if (edge.width !== 8) {
-            edge.color = "lightgrey";
+            edge.width = 0.01;
          }
 
          return edge;
@@ -468,31 +579,27 @@ const Graph = ({ dataToVis, theme }) => {
    * @param {string} edgeType - The type of edges to highlight
    */
    const HighlightEdges = (edgeType) => {
-      const nodeItems = data.nodes.map((n) => {
-         if (n.size !== 15) {
-            n.color = "lightgrey";
-            n.size = 1;
+      if (highlightedNodes.length === 0) {
+         const nodeItems = data.nodes.map((node) => {
+            node.size = 1;
+            return node;
+         });
 
-            return n;
-         }
-         return n;
-      });
+         data.nodes.update( nodeItems );
+      }
       
       const edgeItems = data.edges.map((edge) => {
          if (edge.id.split(":")[0] === edgeType) {
-            edge.color = edgeOptions[edgeType].color;
             edge.width = 8;
             return edge;
          }
          else if (edge.width !== 8) {
-            edge.color = "lightgrey";
-            edge.width = 0.15;
+            edge.width = 0.001;
             return edge;
          }
          return edge;
       });
       
-      data.nodes.update( nodeItems );
       data.edges.update( edgeItems );
    }
 
@@ -719,7 +826,8 @@ const Graph = ({ dataToVis, theme }) => {
          glmNetwork.setOptions({physics: {enabled: false}});
       }
       else { 
-         if (data.nodes.length > 200) {
+         if (data.nodes.length > 151) {
+            options.edges.smooth.type = "continuous";
             options.physics.barnesHut.gravitationalConstant = -80000;
             options.physics.barnesHut.springConstant = 0.35;
             options.physics.barnesHut.springLength = 250;
@@ -735,7 +843,7 @@ const Graph = ({ dataToVis, theme }) => {
             const minWidth = 1;
             const widthFactor = params.iterations / params.total;
             const width = Math.max(minWidth, maxWidth * widthFactor);
-            document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
+            document.getElementById("circularProgress").style.background = `conic-gradient(#b25a00 ${width}deg, #333 0deg)`;
             document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
          });
          
