@@ -6,6 +6,7 @@ import NodePopup from "./NodePopup";
 import "./styles/vis-network.css";
 import "./styles/Graph.css";
 import Legend from "./Legend";
+import FileUpload from "./FileUpload";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "./config/appConfig.json";
 const options = appConfig.graphOptions;
@@ -44,8 +45,9 @@ const getRandColor = () => {
 const Graph = ({ dataToVis, theme }) => {
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
+
    const edgeOptions = theme.edgeOptions;
-   let glmNetwork; // global network varibale
+   let glmNetwork = null; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
    const highlightedNodes = [];
 
@@ -210,8 +212,8 @@ const Graph = ({ dataToVis, theme }) => {
 
    // data object that holds a DataSet for nodes and edges
    const data = {
-      nodes: new DataSet(),
-      edges: new DataSet()
+      "nodes": [],
+      "edges": []
    };
 
    // used to keep count of each object type
@@ -219,6 +221,8 @@ const Graph = ({ dataToVis, theme }) => {
       "nodes": Object.keys(theme.groups).reduce((o, key) => ({...o, [key]: 0}), {}),
       "edges": Object.keys(theme.edgeOptions).reduce((o, key) => ({...o, [key]: 0}), {})
    };
+
+   objectTypeCount.edges.parentChild = 0;
 
    let setLegendData;
    const legendMount = (legendSetFunc) => {
@@ -230,83 +234,69 @@ const Graph = ({ dataToVis, theme }) => {
    * @param {Object} dataFiles 
    */
    const setGraphData = (dataFiles) => {
+      const keys = ["id", "objectType", "name"];
+      const files = Object.keys(dataFiles).map(file => dataFiles[file]);
 
-      const files = [];
-      const keys = ["name", "objectType", "id"]; // the first key of each object must have one of these key names
 
-      //this loop splits the json into each file name and their data to an array
-      //each key of the json is the file name along with the file's data
-      for (const file in dataFiles) {
-         files.push(dataFiles[file]);
-      }
-
-      //For each file gather all of the nodes that matches the types
       for (const file of files) {
          const objs = file.objects;
 
-         for (const obj of objs) {
-         
-            let name = null;
-            let attributeName = null;
-            Object.keys(obj).forEach((k) => {
-               if (keys.includes(k)) {
-                  name = k;
-               }
-            });
-
-            const objectType = obj[name];
+         const newObjs = objs.map((obj) => {
             const attributes = obj.attributes;
+            const nameForObjType = keys.find(key => Object.keys(obj).includes(key));
+            const objectType = obj[nameForObjType];
+            const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
 
-            Object.keys(attributes).forEach((k) => {
-               if (keys.includes(k)) {
-                  attributeName = k;
-               }
-            })
+            const nodeID = attributes[nameForObjID];
 
             if (nodeTypes.includes(objectType)) {
-               const nodeID = attributes[attributeName];
 
-               // if the object has x and y coordinates they will be added to the node's object datastructure
                if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
-                  data.nodes.add({
+                  objectTypeCount.nodes[objectType]++;
+
+                  return ({
                      "id": nodeID,
                      "label": nodeID,
+                     "elementType": "node",
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                      "x": parseInt(attributes.x, 10),
                      "y": parseInt(attributes.y, 10)
                   });
-               }
+               }   
                else if (Object.keys(attributes).includes("level")) {
-                  if (!options.layout.hierarchical.enabled)
-                     options.layout.hierarchical.enabled = true;
+                  if (!options.layout.hierarchical.enabled) options.layout.hierarchical.enabled = true;
 
-                  data.nodes.add({
+                  objectTypeCount.nodes[objectType]++;
+
+                  return ({
                      "id": nodeID,
                      "label": nodeID,
+                     "elementType": "node",
                      "level": attributes.level,
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   });
                }
-               else {
-                  if (options.layout.hierarchical.enabled) {
-                     options.layout.hierarchical.enabled = false;
-                     options.physics.solver = "barnesHut";
-                  }
-
-                  data.nodes.add({
-                     "id": nodeID,
-                     "label": nodeID,
-                     "attributes": attributes,
-                     "group": objectType,
-                     "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
-                  });
-               }
-               
+                              
                objectTypeCount.nodes[objectType]++;
+
+               if (options.layout.hierarchical.enabled) {
+                  options.layout.hierarchical.enabled = false;
+                  options.physics.solver = "barnesHut";
+               }
+
+               return ({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "elementType": "node",
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+               });
+               
             }
             else if (Object.keys(obj).includes("elementType") && obj.elementType === "node") {
                if (options.layout.hierarchical.enabled) {
@@ -318,18 +308,8 @@ const Graph = ({ dataToVis, theme }) => {
                   "color": getRandColor(),
                   "shape": "dot"
                };
-               nodeTypes.push(objectType);
 
-               const nodeID = attributes[attributeName];
-               data.nodes.add({
-                  "id": nodeID,
-                  "label": nodeID,
-                  "size": 15,
-                  "attributes": attributes,
-                  "group": objectType,
-                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
-                  "shape": "dot"
-               });
+               nodeTypes.push(objectType);
 
                if (Object.keys(objectTypeCount.nodes).includes(objectType)) {
                   objectTypeCount.nodes[objectType]++;
@@ -337,101 +317,104 @@ const Graph = ({ dataToVis, theme }) => {
                else {
                   objectTypeCount.nodes[objectType] = 1;
                }
+
+               return ({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "elementType": "node",
+                  "size": 15,
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+                  "shape": "dot"
+               });
             }
-         }
+
+            return obj;
+         });
+      
+         data.nodes = data.nodes.concat(newObjs.filter(obj => obj.elementType === "node"));
       }
 
-      // for each file gather all of the edge types and create edges between nodes
       for (const file of files) {
          const objs = file.objects;
 
-         for (const obj of objs) {
-            let name = null;
-            let attributeName = null;
-
-            Object.keys(obj).forEach((k) => {
-               if (keys.includes(k)) {
-                  name = k;
-               }
-            })
-
-            const objectType = obj[name];
+         const newObjs = objs.map((obj) => {
             const attributes = obj.attributes;
+            const nameForObjType = keys.find(key => Object.keys(obj).includes(key));
+            const objectType = obj[nameForObjType];
+            const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
 
-            Object.keys(attributes).forEach(k => {
-               if (keys.includes(k)) {
-                  attributeName = k;
-               }
-            })
+            if (nodeTypes.includes(objectType) && Object.keys(attributes).includes("parent")) {
+               const nodeID = attributes[nameForObjID];
+               const parent = attributes.parent;
 
-            if (edgeTypes.includes(objectType)) {
+               objectTypeCount.edges.parentChild++;
+               
+               return ({
+                  "id": `parentChild:${parent}-${nodeID}`,
+                  "from": parent,
+                  "to": nodeID,
+                  "elementType": "edge",
+                  "width": 2,
+                  "attributes": {"to": parent, "from": nodeID},
+                  "color": {"inherit": true}
+               });
+            }
+            else if (edgeTypes.includes(objectType)) {  
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = objectType + ":" + attributes[attributeName];
+               const edgeID = objectType + ":" + attributes[nameForObjID];
 
-               data.edges.add({
+               objectTypeCount.edges[objectType]++;
+
+               return ({
                   "id": edgeID,
                   "from": edgeFrom,
                   "to": edgeTo,
+                  "elementType": "edge",
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
                });
-               
-               objectTypeCount.edges[objectType]++;
-            }
-            else if (nodeTypes.includes(objectType)) {// some nodes have a parent attribute
-               const nodeID = attributes[attributeName];
-               const parent = attributes.parent;
-               
-               if (parent !== undefined) {
-                  data.edges.add({
-                     "id": `parentChild:${parent}-${nodeID}`,
-                     "from": parent,
-                     "to": nodeID,
-                     "width": 2,
-                     "attributes": {"to": parent, "from": nodeID},
-                     "color": {"inherit": true}
-                  });
-
-                  objectTypeCount.edges.parentChild++;
-               }
             }
             else if (Object.keys(obj).includes("elementType") && obj.elementType === "edge") {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = objectType + ":" + attributes[attributeName];
-
-               // edgeOptions[objectType] = {
-               //    "color": theme.groups[data.nodes.get(edgeFrom).group].color
-               // };
-
+               const edgeID = objectType + ":" + attributes[nameForObjID];
                if (!Object.keys(edgeOptions).includes(objectType)) {
                   edgeOptions[objectType] = {
                      "color": getRandColor()
                   };
                }
-               
-               data.edges.add({
-                  "id": edgeID,
-                  "from": edgeFrom,
-                  "to": edgeTo,
-                  "attributes": attributes,
-                  "color": edgeOptions[objectType].color,
-                  "width": 2,
-                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
-               });
-               
+
                if (Object.keys(objectTypeCount.edges).includes(objectType)) {
                   objectTypeCount.edges[objectType]++;
                }
                else {
                   objectTypeCount.edges[objectType] = 1;
                }
+               
+               return ({
+                  "id": edgeID,
+                  "from": edgeFrom,
+                  "to": edgeTo,
+                  "elementType": "edge",
+                  "attributes": attributes,
+                  "color": edgeOptions[objectType].color,
+                  "width": 2,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
+               });
             }
-         }
+
+            return obj;
+         });
+      
+         data.edges = data.edges.concat(newObjs.filter(obj => obj.elementType === "edge"));
       }
+      data.nodes = new DataSet(data.nodes);
+      data.edges = new DataSet(data.edges);
    }
 
    /**

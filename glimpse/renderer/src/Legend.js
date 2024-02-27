@@ -34,7 +34,7 @@ const Legend = ({
    // Getting the state and set state variables from the legend context menu component
    let contextMenuData;
    let setContextMenuData;
-   const onContextMenuChildMount = (contextMenuDataState,setContextMenuDataState) => {
+   const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
       contextMenuData = contextMenuDataState;
       setContextMenuData = setContextMenuDataState;
    };

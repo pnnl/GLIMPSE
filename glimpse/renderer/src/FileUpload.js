@@ -1,11 +1,9 @@
 import React from 'react';
 import './styles/FileUpload.css';
 import { useState, useRef } from 'react';
-import { Autocomplete, Divider, Stack, TextField } from '@mui/material';
-const THEMES = ["Power Grid [default]", "Social", "Fishing", "Layout"];
+// import { Autocomplete, Divider, Stack, TextField } from '@mui/material';
 
-const GlmFileUpload = ({ setFileData }) => {
-   const [theme, setTheme] = useState(null);
+const FileUpload = ({ setFileData }) => {
    // drag state
    const [dragActive, setDragActive] = useState(false);
    // ref
@@ -37,7 +35,8 @@ const GlmFileUpload = ({ setFileData }) => {
             paths.push(file.path);
          }
 
-         setFileData(paths, theme);
+         e.target.value = '';
+         setFileData(paths);
       }
    };
     
@@ -53,7 +52,8 @@ const GlmFileUpload = ({ setFileData }) => {
             paths.push(file.path);
          }
 
-         setFileData(paths, theme)
+         e.target.value = '';
+         setFileData(paths)
       }
    };
 
@@ -64,37 +64,37 @@ const GlmFileUpload = ({ setFileData }) => {
 
    return (
       <div className='file-upload-form-container'>
-         <Stack
-            direction="row"
-            justifyContent="center"
-            alignItems="center"
-            divider={<Divider orientation="vertical" flexItem/>}
-            spacing={1.5}
-         >
-            <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
-                  <input ref={inputRef} type="file" accept='.glm,.json' id="input-file-upload" multiple={true} onChange={handleChange} />
-                  <label id="label-file-upload" htmlFor="input-file-upload" className={dragActive ? "drag-active" : "" }>
-                  <div>
-                     <p>Drag and drop your glm/JSON files here or</p>
-                     <button className="upload-button" onClick={onButtonClick}>Upload files</button>
-                  </div> 
-                  </label>
-                  { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
-            </form>
-            <Autocomplete
-               defaultValue={THEMES[0]}
-               disablePortal
-               sx={{width: 200}}
-               id="teams-combo-box"
-               options={THEMES}
-               onChange={(event, selectedTheme) => {
-                  setTheme(selectedTheme)
-               }}
-               renderInput={(params) => <TextField {...params} label="Theme"/>}
-            />
-         </Stack>
+         <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
+               <input
+                  ref={inputRef}
+                  type="file"
+                  accept='.glm,.json'
+                  id="input-file-upload"
+                  multiple={true}
+                  onChange={handleChange}
+               />
+               <label
+                  id="label-file-upload"
+                  htmlFor="input-file-upload"
+                  className={dragActive ? "drag-active" : "" }>
+               <div>
+                  <p>Drag and drop your glm/JSON files here or</p>
+                  <button className="upload-button" onClick={onButtonClick}>Upload files</button>
+               </div> 
+               </label>
+               { 
+                  dragActive && 
+                  <div 
+                     id="drag-file-element"
+                     onDragEnter={handleDrag}
+                     onDragLeave={handleDrag}
+                     onDragOver={handleDrag}
+                     onDrop={handleDrop}
+                  />
+               }
+         </form>
       </div>
    );
 };
 
-export default GlmFileUpload
+export default FileUpload

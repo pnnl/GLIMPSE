@@ -82,7 +82,6 @@ def get_nx_graph(file_data: dict):
             object_id = attributes['name']
             
             graph.add_node(object_id, attributes = attributes)
-            
 
    for glm_file in file_data.values():
       for object in glm_file['objects']:
@@ -94,7 +93,7 @@ def get_nx_graph(file_data: dict):
             edge_to = attributes['to'].split(':')[1] if ':' in attributes['to'] else attributes['to']
             edge_id = object['name'] if ':' in object['name'] else obj_type + ':' + attributes['name']
 
-            graph.add_edge(edge_from, edge_to, id=  edge_id, attributes = attributes)
+            graph.add_edge(edge_from, edge_to, id=edge_id, attributes = attributes)
          elif obj_type in node_types:
             try:
                parent = attributes['parent']

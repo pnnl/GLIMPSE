@@ -71,6 +71,10 @@ const createJsonFile = (filename, data) => {
    });
 }
 
+const readJsonFile = (filepath) => {
+   return fs.readFileSync(filepath).toString();
+}
+
 const getGraphStats = async (data) => {
    console.log(typeof data);
    const res = await fetch("http://127.0.0.1:5000/getstats", {
@@ -98,7 +102,7 @@ const validateJson = (filePaths) => {
    let valid = true;
 
    for (const filePath of filePaths) {
-      const fileData = require(filePath);
+      const fileData = JSON.parse(fs.readFileSync(filePath).toString());
       
       if (nodeLinkDataKeys.every(key => key in fileData)) {
          data[path.basename(filePath)] = {
@@ -170,16 +174,6 @@ const json2glmFunc = async (jsonData) => {
 }
 
 const makeWindow = () => {
-   const python = spawn('py', ['./local-server/server.py']);
-
-   python.stdout.on('data', function (data) {
-      console.log("data: ", data.toString('utf8'));
-   });
-
-   python.stderr.on('data', (data) => {
-      console.log(`log: ${data}`); // when error
-   });
-
    const win = new BrowserWindow({
       width: 1500,
       height: 900,
@@ -234,6 +228,43 @@ const makeWindow = () => {
          ]
       },
       {
+         label: "Themes",
+         id: "themes-menu-item",
+         "submenu": [
+            {
+               label: "Export Theme File",
+               type: "normal",
+               click: () => console.log("Export Theme Button was pressed")
+            },
+            {type: "separator"},
+            {
+               label: "Power Grid [default]",
+               id: "power-grid-theme",
+               type: "radio",
+               checked: true,
+               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label),
+            },
+            {
+               label: "Social",
+               id: "social-theme",
+               type: "radio",
+               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
+            },
+            {
+               label: "Layout",
+               id: "layout-theme",
+               type: "radio",
+               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
+            },
+            {
+               label: "Fishing",
+               id: "fishing-theme",
+               type: "radio",
+               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
+            }
+         ]
+      },
+      {
          label: "Graph View",
          submenu: [
             {
@@ -247,17 +278,35 @@ const makeWindow = () => {
          ]
       }
    ]);
+   
    Menu.setApplicationMenu(menu);
 
+   ipcMain.handle("getSelectedTheme", () => {
+      for (const item of Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items)
+         if (item.checked)
+            return item.id;
+   });
    ipcMain.handle("glm2json", (event, paths) => glm2json(paths));
    ipcMain.handle("getStats", (event, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.handle("getCIM", () => cimGraphData);
+   ipcMain.handle("getJsonData", (e, path) => readJsonFile(path));
    ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("export2CIM", (event, CIMobjs) => export2cim(CIMobjs));
 
    win.loadFile("./renderer/public/index.html");
+
+   const python = spawn('py', ['./local-server/server.py']);
+
+   python.stdout.on('data', function (data) {
+      console.log("data: ", data.toString('utf8'));
+   });
+
+   python.stderr.on('data', (data) => {
+      console.log(`log: ${data}`); // when error
+   });
+
    win.show();
 }
 

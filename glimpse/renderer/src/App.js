@@ -22,7 +22,8 @@ const Nav = () => {
 }
 
 export const Home = () => {
-   let content = null;
+   let selectedTheme = null;
+   let themeData = null;
    const [dataToVisRequest, setDataToVisRequest] = useState({
       showFileUpload: true,
       data: null
@@ -33,71 +34,70 @@ export const Home = () => {
     * main process to then read the files, parse them, and evalute them.
     * @param {Array} paths - An array of paths from the uploaded files
     */
-   const setFileData = async (paths, selectedTheme) => {
-      let theme = null;
-      //["Power Grid [default]", "Social", "Fishing", "Layout"]
+   const setFileData = async (paths) => {
+      selectedTheme = await window.glimpseAPI.getTheme();
+
+      console.log(selectedTheme);
+
       switch (selectedTheme) {
-         case "Social":
-            theme = require("./config/DefaultTheme.json");
+         case "social-theme":
+            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/DefaultTheme.json");
             break;
-         case "Fishing":
-            theme = require("./config/FishingTheme.json");
+         case "fishing-theme":
+            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/FishingTheme.json");
             break;
-         case "Layout": 
-            theme = require("./config/LevelTheme.json");
+         case "layout-theme": 
+            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/LevelTheme.json");
             break;
          default:
-            theme = require("./config/PowerGridTheme.json");
+            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/PowerGridTheme.json");
             break;
       }
-      
-      if (theme) {
-         // validate the file if it is a json file
-         if (paths[0].split(".")[1] === "json") {
-            const validFileData = await window.glimpseAPI.validate(paths);
-   
-            if (Object.keys(validFileData).includes("error")) {
-               alert(validFileData.error);
-            }
-            else {
-               setDataToVisRequest({
-                  showFileUpload: false,
-                  data: JSON.parse(validFileData),
-                  theme: theme
-               });
-            }
+
+      themeData = JSON.parse(themeData);
+
+      // validate the file if it is a json file
+      if (paths[0].split(".")[1] === "json") {
+         const validFileData = await window.glimpseAPI.validate(paths);
+
+         if (Object.keys(validFileData).includes("error")) {
+            alert(validFileData.error);
          }
          else {
-            const data = await window.glimpseAPI.getJsonData(paths);
-            if (data === undefined) {
-               console.log("Something went wrong...");
-            }
-            else if (Object.keys(data).includes("alert")) {
-               alert(data.alert);
-            }
-            else {
-               setDataToVisRequest({
-                  showFileUpload: false,
-                  data: data,
-                  theme: theme
-               });   
-            }
+            setDataToVisRequest({
+               showFileUpload: false,
+               data: JSON.parse(validFileData),
+               theme: themeData
+            });
          }
       }
+      else if (paths[0].split(".")[1] === "glm" && selectedTheme === "power-grid-theme") {
+         const data = await window.glimpseAPI.glm2json(paths);
+         if (!data) {
+            console.log("Something went wrong...");
+         }
+         else if (Object.keys(data).includes("alert")) {
+            alert(data.alert);
+         }
+         else {
+            setDataToVisRequest({
+               showFileUpload: false,
+               data: data,
+               theme: themeData
+            });   
+         }
+      }
+      else {
+         alert("All <.glm> File Types Must Be Uploaded With The Power Grid Theme Selected !");
+      }
    }
-   
-   // Display the graph dashboard component if file uploads were succesfully validated
-   if (!dataToVisRequest.showFileUpload) {
-      content = <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} />;
-   }
-   else {
-      content = <FileUpload setFileData = {setFileData} />;
-   }
-   
+     
    return (
       <>
          <Nav />
-         {content}
+         {dataToVisRequest.showFileUpload
+            ? <FileUpload setFileData = {setFileData} /> 
+            : <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} />}
       </>
    );
 }

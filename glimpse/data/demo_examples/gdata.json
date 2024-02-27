@@ -4,29 +4,29 @@
    "graph": {},
    "nodes": [
       {
-         "_type": "Location",
+         "type": "Location",
          "color": "red",
          "id": "Wrasse_Beds"
       },
       {
-         "_type": "FishingCompany",
+         "type": "FishingCompany",
          "color": "green",
          "id": "StichtingMarine"
       },
       {
-         "_type": "FishingCompany",
+         "type": "FishingCompany",
          "color": "green",
          "id": "BlueWave"
       },
       {
-         "_type": "City",
+         "type": "City",
          "color": "c",
          "id": "PortGrove"
       }
    ],
    "edges": [
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t0",
          "color": "m",
          "source": "StichtingMarine",
@@ -34,7 +34,7 @@
          "key": 0
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t1",
          "color": "m",
          "source": "StichtingMarine",
@@ -42,7 +42,7 @@
          "key": 1
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t2",
          "color": "m",
          "source": "StichtingMarine",
@@ -50,7 +50,7 @@
          "key": 2
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t3",
          "color": "m",
          "source": "StichtingMarine",
@@ -58,7 +58,7 @@
          "key": 3
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t4",
          "color": "m",
          "source": "StichtingMarine",
@@ -66,7 +66,7 @@
          "key": 4
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t5",
          "color": "m",
          "source": "StichtingMarine",
@@ -74,7 +74,7 @@
          "key": 5
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t6",
          "color": "m",
          "source": "StichtingMarine",
@@ -82,7 +82,7 @@
          "key": 6
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t7",
          "color": "m",
          "source": "StichtingMarine",
@@ -90,7 +90,7 @@
          "key": 7
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t8",
          "color": "m",
          "source": "StichtingMarine",
@@ -98,7 +98,7 @@
          "key": 8
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t9",
          "color": "m",
          "source": "StichtingMarine",
@@ -106,7 +106,7 @@
          "key": 9
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t10",
          "color": "m",
          "source": "StichtingMarine",
@@ -114,7 +114,7 @@
          "key": 10
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t11",
          "color": "m",
          "source": "StichtingMarine",
@@ -122,7 +122,7 @@
          "key": 11
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t12",
          "color": "m",
          "source": "StichtingMarine",
@@ -130,7 +130,7 @@
          "key": 12
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t13",
          "color": "m",
          "source": "StichtingMarine",
@@ -138,7 +138,7 @@
          "key": 13
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t14",
          "color": "m",
          "source": "StichtingMarine",
@@ -146,7 +146,7 @@
          "key": 14
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t5",
          "color": "m",
          "source": "BlueWave",
@@ -154,7 +154,7 @@
          "key": 0
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t6",
          "color": "m",
          "source": "BlueWave",
@@ -162,7 +162,7 @@
          "key": 1
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t7",
          "color": "m",
          "source": "BlueWave",
@@ -170,7 +170,7 @@
          "key": 2
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t8",
          "color": "m",
          "source": "BlueWave",
@@ -178,7 +178,7 @@
          "key": 3
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t9",
          "color": "m",
          "source": "BlueWave",
@@ -186,7 +186,7 @@
          "key": 4
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t10",
          "color": "m",
          "source": "BlueWave",
@@ -194,7 +194,7 @@
          "key": 5
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t11",
          "color": "m",
          "source": "BlueWave",
@@ -202,7 +202,7 @@
          "key": 6
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t12",
          "color": "m",
          "source": "BlueWave",
@@ -210,7 +210,7 @@
          "key": 7
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t13",
          "color": "m",
          "source": "BlueWave",
@@ -218,7 +218,7 @@
          "key": 8
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t14",
          "color": "m",
          "source": "BlueWave",
@@ -226,7 +226,7 @@
          "key": 9
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t15",
          "color": "m",
          "source": "BlueWave",
@@ -234,7 +234,7 @@
          "key": 10
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t16",
          "color": "m",
          "source": "BlueWave",
@@ -242,7 +242,7 @@
          "key": 11
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t17",
          "color": "m",
          "source": "BlueWave",
@@ -250,7 +250,7 @@
          "key": 12
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t18",
          "color": "m",
          "source": "BlueWave",
@@ -258,7 +258,7 @@
          "key": 13
       },
       {
-         "_type": "Fishing",
+         "type": "Fishing",
          "_time": "t19",
          "color": "m",
          "source": "BlueWave",
@@ -266,7 +266,7 @@
          "key": 14
       },
       {
-         "_type": "Summons",
+         "type": "Summons",
          "_time": "t2",
          "color": "b",
          "source": "PortGrove",
@@ -274,7 +274,7 @@
          "key": 0
       },
       {
-         "_type": "Summons",
+         "type": "Summons",
          "_time": "t5",
          "color": "b",
          "source": "PortGrove",
@@ -282,7 +282,7 @@
          "key": 1
       },
       {
-         "_type": "Summons",
+         "type": "Summons",
          "_time": "t7",
          "color": "b",
          "source": "PortGrove",
@@ -290,7 +290,7 @@
          "key": 2
       },
       {
-         "_type": "Summons",
+         "type": "Summons",
          "_time": "t8",
          "color": "b",
          "source": "PortGrove",
