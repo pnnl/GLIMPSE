@@ -73,7 +73,7 @@ const Graph = ({ dataToVis, theme }) => {
          if (count > 0) currentEdgeTypes.push(type);
       });
 
-      let x_increment;
+      let x_increment = null;
       if (currentNodeTypes.length < 6)
          x_increment = 800 / currentNodeTypes.length;
       else 
@@ -212,8 +212,8 @@ const Graph = ({ dataToVis, theme }) => {
 
    // data object that holds a DataSet for nodes and edges
    const data = {
-      "nodes": [],
-      "edges": []
+      "nodes": null,
+      "edges": null
    };
 
    // used to keep count of each object type
@@ -333,7 +333,7 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.nodes = data.nodes.concat(newObjs.filter(obj => obj.elementType === "node"));
+         data.nodes = newObjs.filter(obj => obj.elementType === "node");
       }
 
       for (const file of files) {
@@ -411,8 +411,9 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.edges = data.edges.concat(newObjs.filter(obj => obj.elementType === "edge"));
+         data.edges = newObjs.filter(obj => obj.elementType === "edge");
       }
+      
       data.nodes = new DataSet(data.nodes);
       data.edges = new DataSet(data.edges);
    }

@@ -242,25 +242,21 @@ const makeWindow = () => {
                id: "power-grid-theme",
                type: "radio",
                checked: true,
-               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label),
             },
             {
                label: "Social",
                id: "social-theme",
                type: "radio",
-               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
             },
             {
                label: "Layout",
                id: "layout-theme",
                type: "radio",
-               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
             },
             {
                label: "Fishing",
                id: "fishing-theme",
                type: "radio",
-               click: (menuItem) => win.webContents.send("selected-theme", menuItem.label)
             }
          ]
       },
@@ -286,19 +282,19 @@ const makeWindow = () => {
          if (item.checked)
             return item.id;
    });
-   ipcMain.handle("glm2json", (event, paths) => glm2json(paths));
-   ipcMain.handle("getStats", (event, dataObject) => getGraphStats(dataObject));
+   ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
+   ipcMain.handle("getStats", (e, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
-   ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
+   ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.handle("getCIM", () => cimGraphData);
    ipcMain.handle("getJsonData", (e, path) => readJsonFile(path));
-   ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
-   ipcMain.on("export2CIM", (event, CIMobjs) => export2cim(CIMobjs));
+   ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
+   ipcMain.on("export2CIM", (e, CIMobjs) => export2cim(CIMobjs));
 
    win.loadFile("./renderer/public/index.html");
 
+   
    const python = spawn('py', ['./local-server/server.py']);
-
    python.stdout.on('data', function (data) {
       console.log("data: ", data.toString('utf8'));
    });

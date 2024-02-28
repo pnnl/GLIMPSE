@@ -1,20 +1,10 @@
 from flask import Flask, request as req
-import cimgraph.data_profile.rc4_2021 as cim
-from cimgraph.databases import ConnectionParameters
-from cimgraph.databases import RDFlibConnection
-from cimgraph.models import FeederModel
-import cimgraph.utils as cim_utils
 from uuid import uuid4
 import networkx as nx
 import random as rand
 import glm
 import ntpath
 import json
-
-params = ConnectionParameters(filename="../data/CIM/IEEE123.xml", cim_profile="rc4_2021", iec61970_301=7)
-rdf = RDFlibConnection(connection_params=params)
-feeder = cim.Feeder(mRID="_C1C3E687-6FFD-C753-582B-632A27E28507")
-
 
 # return the file name only
 def path_leaf(path: str):
@@ -126,41 +116,6 @@ def get_avg_betweenness_centrality(graph):
    
    print("betweenness centrality done")
    return avg_betweenness_centrality
-   
-def add_to_cim(objs: list):  
-   network = FeederModel(connection=rdf, container=feeder, distributed=False)
-    
-   for nodes in objs:
-      c_node = cim.ConnectivityNode(mRID=nodes[1]['mRID'], name=nodes[1]['name'])
-      new_terminal = cim.Terminal(mRID=nodes[0]['mRID'], name=nodes[0]['name'])
-      terminal_1 = cim.Terminal(mRID=nodes[2]['mRID'], name=nodes[2]['name'])
-      terminal_2 = cim.Terminal(mRID=nodes[3]['mRID'], name=nodes[3]['name'])
-      ACLine = cim.ACLineSegment(mRID=nodes[4]['id'], name=f"l:{nodes[4]['id'].split(':')[1]}")
-      parent_c_node = network.graph[cim.ConnectivityNode][nodes[3]['parent']]
-      
-      new_terminal.ConnectivityNode = c_node
-      terminal_1.ConnectivityNode = c_node
-      terminal_2.ConnectivityNode = parent_c_node
-      
-      terminal_1.ConductingEquipment = ACLine
-      terminal_2.ConductingEquipment = ACLine
-      
-      if nodes[0]['group'] == "diesel_dg":
-         energy_source = cim.EnergySource(mRID=str(uuid4()), name=f"source:{rand.randint(1,999)}")
-         new_terminal.ConductingEquipment = energy_source
-      if nodes[0]['group'] == "load":
-         energy_consumer = cim.EnergyConsumer(mRID=str(uuid4()), name=f"consumer:{rand.randint(1,999)}")
-         new_terminal.ConductingEquipment = energy_consumer
-         
-      # c_node.Terminals = [new_terminal, terminal_1]
-      
-   network.add_to_graph(new_terminal)
-   network.add_to_graph(ACLine)
-   network.add_to_graph(terminal_1)
-   network.add_to_graph(terminal_2)
-   network.add_to_graph(c_node)
-   
-   cim_utils.write_xml(network, "../data/CIM/IEEE123Output.xml")
         
 #------------------------------ Server ------------------------------#
 app = Flask(__name__)
@@ -190,13 +145,6 @@ def get_stats():
    }
    
    return summary_stats
-
-@app.route("/add2cim", methods=["POST"])
-def add2cim():
-   str_data = req.get_json()
-   add_to_cim(json.loads(str_data))
-   return '', 204
    
-
 if __name__=="__main__":
    app.run(debug=True)
