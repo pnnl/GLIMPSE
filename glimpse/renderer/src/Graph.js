@@ -6,7 +6,6 @@ import NodePopup from "./NodePopup";
 import "./styles/vis-network.css";
 import "./styles/Graph.css";
 import Legend from "./Legend";
-import FileUpload from "./FileUpload";
 import EdgeContextMenu from "./EdgeContextMenu";
 import appConfig from "./config/appConfig.json";
 const options = appConfig.graphOptions;
@@ -42,7 +41,37 @@ const getRandColor = () => {
    return color;
 }
 
+/**
+ * 
+ * @param {Object} keysMap - format: { [ name of key to rename ]: "new key name" }
+ * @param {Object} obj - The object that contains the keys you would like to rename 
+ * @returns Obejct with renamed keys
+ *
+ * @example
+ * keysMap = {
+ *    name: 'firstName',
+ *    job: 'passion'
+ * };
+ *
+ * obj = {
+ *    name: 'Bobo',
+ *    job: 'Front-End Master'
+ * };
+ *
+ *  renameKeys(keysMap, obj);
+ * // { firstName: 'Bobo', passion: 'Front-End Master' }
+*/
+const renameKeys = (keysMap, obj) => {
+   return Object.keys(obj).reduce(
+      (prev, key) => ({
+         ...prev,
+         ...{[keysMap[key] || key]: obj[key]}
+      }),{}
+   );
+}
+
 const Graph = ({ dataToVis, theme }) => {
+   const GLIMPSE_OBJECT = {"objects": []};
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
 
@@ -212,8 +241,8 @@ const Graph = ({ dataToVis, theme }) => {
 
    // data object that holds a DataSet for nodes and edges
    const data = {
-      "nodes": null,
-      "edges": null
+      "nodes": [],
+      "edges": []
    };
 
    // used to keep count of each object type
@@ -231,12 +260,11 @@ const Graph = ({ dataToVis, theme }) => {
 
    /**
    * Collects all the nodes and edges with their attributes and sets it to the data variable
-   * @param {Object} dataFiles 
+   * @param {Object} dataFromFiles 
    */
-   const setGraphData = (dataFiles) => {
+   const setGraphData = (dataFromFiles) => {
       const keys = ["id", "objectType", "name"];
-      const files = Object.keys(dataFiles).map(file => dataFiles[file]);
-
+      const files = Object.keys(dataFromFiles).map(file => dataFromFiles[file]);
 
       for (const file of files) {
          const objs = file.objects;
@@ -250,10 +278,14 @@ const Graph = ({ dataToVis, theme }) => {
             const nodeID = attributes[nameForObjID];
 
             if (nodeTypes.includes(objectType)) {
-
                if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
                   objectTypeCount.nodes[objectType]++;
 
+                  if (!Object.keys(obj).includes("elemetType"))
+                     GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+                  else
+                     GLIMPSE_OBJECT.objects.push(obj);
+                  
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -269,6 +301,11 @@ const Graph = ({ dataToVis, theme }) => {
                   if (!options.layout.hierarchical.enabled) options.layout.hierarchical.enabled = true;
 
                   objectTypeCount.nodes[objectType]++;
+
+                  if (!Object.keys(obj).includes("elemetType"))
+                     GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+                  else
+                     GLIMPSE_OBJECT.objects.push(obj);
 
                   return ({
                      "id": nodeID,
@@ -287,6 +324,11 @@ const Graph = ({ dataToVis, theme }) => {
                   options.layout.hierarchical.enabled = false;
                   options.physics.solver = "barnesHut";
                }
+
+               obj = renameKeys({name: "objectType"}, obj);
+               obj.attributes = renameKeys({name: "id"}, obj.attributes);
+               
+               GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
 
                return ({
                   "id": nodeID,
@@ -311,12 +353,12 @@ const Graph = ({ dataToVis, theme }) => {
 
                nodeTypes.push(objectType);
 
-               if (Object.keys(objectTypeCount.nodes).includes(objectType)) {
+               if (Object.keys(objectTypeCount.nodes).includes(objectType))
                   objectTypeCount.nodes[objectType]++;
-               }
-               else {
+               else
                   objectTypeCount.nodes[objectType] = 1;
-               }
+
+               GLIMPSE_OBJECT.objects.push(obj);
 
                return ({
                   "id": nodeID,
@@ -333,7 +375,7 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.nodes = newObjs.filter(obj => obj.elementType === "node");
+         data.nodes = data.nodes.concat(newObjs.filter(obj => obj.elementType === "node"));
       }
 
       for (const file of files) {
@@ -350,6 +392,16 @@ const Graph = ({ dataToVis, theme }) => {
                const parent = attributes.parent;
 
                objectTypeCount.edges.parentChild++;
+
+               GLIMPSE_OBJECT.objects.push({
+                  "objectType": "parentChild",
+                  "elementType": "edge",
+                  "attributes": {
+                     "id": `parentChild:${parent}-${nodeID}`,
+                     "from": parent,
+                     "to": nodeID
+                  }
+               });
                
                return ({
                   "id": `parentChild:${parent}-${nodeID}`,
@@ -368,6 +420,11 @@ const Graph = ({ dataToVis, theme }) => {
 
                objectTypeCount.edges[objectType]++;
 
+               obj = renameKeys({name: "objectType"}, obj);
+               obj.attributes = renameKeys({name: "id"}, obj.attributes);
+
+               GLIMPSE_OBJECT.objects.push({...obj, "elementType": "edge"});
+
                return ({
                   "id": edgeID,
                   "from": edgeFrom,
@@ -383,18 +440,16 @@ const Graph = ({ dataToVis, theme }) => {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
                const edgeID = objectType + ":" + attributes[nameForObjID];
-               if (!Object.keys(edgeOptions).includes(objectType)) {
-                  edgeOptions[objectType] = {
-                     "color": getRandColor()
-                  };
-               }
 
-               if (Object.keys(objectTypeCount.edges).includes(objectType)) {
+               if (!Object.keys(edgeOptions).includes(objectType))
+                  edgeOptions[objectType] = {"color": getRandColor()};
+
+               if (Object.keys(objectTypeCount.edges).includes(objectType))
                   objectTypeCount.edges[objectType]++;
-               }
-               else {
+               else
                   objectTypeCount.edges[objectType] = 1;
-               }
+
+               GLIMPSE_OBJECT.objects.push(obj);
                
                return ({
                   "id": edgeID,
@@ -411,9 +466,9 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.edges = newObjs.filter(obj => obj.elementType === "edge");
+         data.edges = data.edges.concat(newObjs.filter(obj => obj.elementType === "edge"));
       }
-      
+
       data.nodes = new DataSet(data.nodes);
       data.edges = new DataSet(data.edges);
    }
@@ -445,26 +500,26 @@ const Graph = ({ dataToVis, theme }) => {
          return node;
       });
 
-      const edgeItems = data.edges.map((e) => {
-         const edgeType = e.id.split(":")[0];
+      const edgeItems = data.edges.map((edge) => {
+         const edgeType = edge.id.split(":")[0];
 
-         if (e.width === 8) {
-            e.width = 2;
-            e.hidden = false;
+         if (edge.width === 8) {
+            edge.width = 2;
+            edge.hidden = false;
 
-            return e;
+            return edge;
          }
          else if (edgeTypes.includes(edgeType)) {
-            e.width = edgeOptions[edgeType].width;
-            e.hidden = false;
+            edge.width = edgeOptions[edgeType].width;
+            edge.hidden = false;
 
-            return e;
+            return edge;
          }
          else {
-            e.width = 2;
-            e.hidden = false;
+            edge.width = 2;
+            edge.hidden = false;
 
-            return e;
+            return edge;
          }
       });
 
@@ -871,7 +926,7 @@ const Graph = ({ dataToVis, theme }) => {
    return (
       <>
          <ActionBar
-            graphDataObj={dataToVis}
+            graphDataObj = {GLIMPSE_OBJECT}
             nodesDataObj = {data.nodes}
             physicsToggle = {TogglePhysics}
             reset = {Reset}
@@ -880,9 +935,9 @@ const Graph = ({ dataToVis, theme }) => {
             next = {Next}
             download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
-            nodeIDs={data.nodes.getIds()}
-            toggleLegendRef={toggleLegendRef}
-            showLegendStateRef={showLegendStateRef}
+            nodeIDs = {data.nodes.getIds()}
+            toggleLegendRef = {toggleLegendRef}
+            showLegendStateRef = {showLegendStateRef}
          />
 
          <NodePopup 

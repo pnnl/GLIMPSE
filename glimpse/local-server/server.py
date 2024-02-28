@@ -1,7 +1,5 @@
 from flask import Flask, request as req
-from uuid import uuid4
 import networkx as nx
-import random as rand
 import glm
 import ntpath
 import json
@@ -26,72 +24,15 @@ def dict2json( glm_dict: dict ):
    return glm_json
 
 def get_nx_graph(file_data: dict):
-   edge_types = [ 
-      "microgrid_connection",
-      "underground_line",
-      "series_reactor",
-      "overhead_line",
-      "communication",
-      "triplex_line",
-      "transformer",
-      "parentChild",
-      "regulator",
-      "mapping",
-      "switch",
-      "line"
-   ]
-   node_types = [
-      "communication_node",
-      "triplex_meter", 
-      "triplex_load",
-      "triplex_node",
-      "inverter_dyn",  
-      "substation", 
-      "capacitor", 
-      "diesel_dg", 
-      "microgrid",
-      "technique",
-      "terminal",
-      "c_node",
-      "capec",
-      "meter", 
-      "load", 
-      "node", 
-      "cwe",
-      "cve"
-   ]
-
    graph = nx.MultiGraph()
 
-   for glm_file in file_data.values():
-      for object in glm_file['objects']:
-         obj_type = object['name'].split(':')[0] if ':' in object['name'] else object['name']
-         attributes = object['attributes']
-         
-         if obj_type in node_types:
-            object_id = attributes['name']
-            
-            graph.add_node(object_id, attributes = attributes)
-
-   for glm_file in file_data.values():
-      for object in glm_file['objects']:
-         obj_type = object['name'].split(':')[0] if ':' in object['name'] else object['name']
-         attributes = object['attributes']
-
-         if obj_type in edge_types:
-            edge_from = attributes['from'].split(':')[1] if ':' in attributes['from'] else attributes['from']
-            edge_to = attributes['to'].split(':')[1] if ':' in attributes['to'] else attributes['to']
-            edge_id = object['name'] if ':' in object['name'] else obj_type + ':' + attributes['name']
-
-            graph.add_edge(edge_from, edge_to, id=edge_id, attributes = attributes)
-         elif obj_type in node_types:
-            try:
-               parent = attributes['parent']
-               child = attributes['name']
-               graph.add_edge(parent, child)
-            except:
-               pass
-            
+   for obj in file_data["objects"]:
+      if obj["elementType"] == "node":
+         print(obj)
+         graph.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
+      else:
+         graph.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
+                     
    return graph
 
 def get_modularity(graph):
