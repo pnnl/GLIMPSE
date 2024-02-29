@@ -10,6 +10,11 @@ GLIMPSE is a graph-based web application to visualize and update GridLAB-D power
 ```
 git clone http://github.com/pnnl/GLIMPSE
 
+cd /GLIMPSE/glimpse/
+
+npm run watch
+
+# on another terminal run the following: 
 cd /GLIMPSE/glimpse/local-server/
 
 python -m venv venv
