@@ -149,9 +149,19 @@ const validateJson = (filePaths) => {
    return JSON.stringify(data);
 }
 
+const exportThemeFile = async (themeData) => {
+   const filename = "GLIMPSE_theme_export.json";
+   let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
+
+   if (dir2save.canceled) return null;
+   dir2save = dir2save.filePaths[0];
+
+   console.log(dir2save);
+
+   createJsonFile(path.join(dir2save, filename), JSON.parse(themeData));   
+}
+
 const json2glmFunc = async (jsonData) => {
-   let newFilename;
-   let args;
    // have the user choose where to store the files
    let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
    if (dir2save.canceled) return null;
@@ -164,8 +174,8 @@ const json2glmFunc = async (jsonData) => {
    
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
-      newFilename = file.split(".")[0] + ".glm";
-      args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
+      const newFilename = file.split(".")[0] + ".glm";
+      const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
 
       createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
       execSync(args);
@@ -234,7 +244,7 @@ const makeWindow = () => {
             {
                label: "Export Theme File",
                type: "normal",
-               click: () => console.log("Export Theme Button was pressed")
+               click: () => win.webContents.send("export-theme")
             },
             {type: "separator"},
             {
@@ -289,7 +299,7 @@ const makeWindow = () => {
    ipcMain.handle("getCIM", () => cimGraphData);
    ipcMain.handle("getJsonData", (e, path) => readJsonFile(path));
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
-   ipcMain.on("export2CIM", (e, CIMobjs) => export2cim(CIMobjs));
+   ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
    win.loadFile("./renderer/public/index.html");
 

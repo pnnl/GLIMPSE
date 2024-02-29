@@ -28,7 +28,6 @@ def get_nx_graph(file_data: dict):
 
    for obj in file_data["objects"]:
       if obj["elementType"] == "node":
-         print(obj)
          graph.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
       else:
          graph.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])

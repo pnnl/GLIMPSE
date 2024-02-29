@@ -849,6 +849,7 @@ const Graph = ({ dataToVis, theme }) => {
    }
 
    window.glimpseAPI.onShowAttributes(showAttributes);
+   window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme)));
 
    const container = useRef(null);
    const toggleLegendRef = useRef(null);
