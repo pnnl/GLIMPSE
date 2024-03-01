@@ -276,16 +276,16 @@ const Graph = ({ dataToVis, theme }) => {
             const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
 
             const nodeID = attributes[nameForObjID];
-
+            
             if (nodeTypes.includes(objectType)) {
                if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
                   objectTypeCount.nodes[objectType]++;
-
+                  
                   if (!Object.keys(obj).includes("elemetType"))
                      GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
-                  
+                     
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -296,17 +296,21 @@ const Graph = ({ dataToVis, theme }) => {
                      "x": parseInt(attributes.x, 10),
                      "y": parseInt(attributes.y, 10)
                   });
-               }   
+               }
                else if (Object.keys(attributes).includes("level")) {
-                  if (!options.layout.hierarchical.enabled) options.layout.hierarchical.enabled = true;
-
-                  objectTypeCount.nodes[objectType]++;
-
+                  if (!options.layout.hierarchical.enabled)
+                     options.layout.hierarchical.enabled = true;
+      
+                  if (Object.keys(objectTypeCount.nodes).includes(objectType))
+                     objectTypeCount.nodes[objectType]++;
+                  else
+                     objectTypeCount.nodes[objectType] = 1;
+   
                   if (!Object.keys(obj).includes("elemetType"))
                      GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
-
+   
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -320,15 +324,13 @@ const Graph = ({ dataToVis, theme }) => {
                               
                objectTypeCount.nodes[objectType]++;
 
-               if (options.layout.hierarchical.enabled) {
-                  options.layout.hierarchical.enabled = false;
-                  options.physics.solver = "barnesHut";
-               }
-
                obj = renameKeys({name: "objectType"}, obj);
                obj.attributes = renameKeys({name: "id"}, obj.attributes);
                
-               GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+               if (!Object.keys(obj).includes("elemetType"))
+                  GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+               else
+                  GLIMPSE_OBJECT.objects.push(obj);
 
                return ({
                   "id": nodeID,
@@ -341,17 +343,15 @@ const Graph = ({ dataToVis, theme }) => {
                
             }
             else if (Object.keys(obj).includes("elementType") && obj.elementType === "node") {
-               if (options.layout.hierarchical.enabled) {
-                  options.layout.hierarchical.enabled = false;
-                  options.physics.solver = "barnesHut";
+               if (!Object.keys(theme.groups).includes(objectType)){
+                  theme.groups[objectType] = {
+                     "color": getRandColor(),
+                     "shape": "dot"
+                  };
                }
-
-               theme.groups[objectType] = {
-                  "color": getRandColor(),
-                  "shape": "dot"
-               };
-
-               nodeTypes.push(objectType);
+               
+               if(!nodeTypes.includes(objectType))
+                  nodeTypes.push(objectType);
 
                if (Object.keys(objectTypeCount.nodes).includes(objectType))
                   objectTypeCount.nodes[objectType]++;
@@ -365,6 +365,7 @@ const Graph = ({ dataToVis, theme }) => {
                   "label": nodeID,
                   "elementType": "node",
                   "size": 15,
+                  "level": Object.keys(attributes).includes("level") ? attributes.level : undefined,
                   "attributes": attributes,
                   "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -645,6 +646,9 @@ const Graph = ({ dataToVis, theme }) => {
    /* ------------------------ Establish Network ------------------------ */
 
    setGraphData(dataToVis);
+
+   console.log(data.nodes.get());
+   console.log(options.layout)
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
@@ -849,7 +853,7 @@ const Graph = ({ dataToVis, theme }) => {
    }
 
    window.glimpseAPI.onShowAttributes(showAttributes);
-   window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme)));
+   window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
 
    const container = useRef(null);
    const toggleLegendRef = useRef(null);

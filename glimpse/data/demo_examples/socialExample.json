@@ -2,6 +2,7 @@
    "objects":[
       {
          "objectType": "person",
+         "elementType": "node",
          "attributes": {
             "id": "John-Doe",
             "fname": "John",
@@ -12,6 +13,7 @@
       },
       {
          "objectType": "person",
+         "elementType": "node",
          "attributes": {
             "id": "Jane-Doe",
             "fname": "Jane",
@@ -22,6 +24,7 @@
       },
       {
          "objectType": "person",
+         "elementType": "node",
          "attributes": {
             "id": "Jack-Black",
             "fname": "Jack",
@@ -32,6 +35,7 @@
       },
       {
          "objectType": "person",
+         "elementType": "node",
          "attributes": {
             "id": "Brock-Purdy",
             "fname": "Brock",
@@ -42,6 +46,7 @@
       },
       {
          "objectType": "person",
+         "elementType": "node",
          "attributes": {
             "id": "Christian-McCaffrey",
             "fname": "Christian",
@@ -52,6 +57,7 @@
       },
       {
          "objectType": "location",
+         "elementType": "node",
          "attributes":{
             "id": "LVIII",
             "event": "Super Bowl",
@@ -60,6 +66,7 @@
       },
       {
          "objectType": "location",
+         "elementType": "node",
          "attributes":{
             "id": "PNNL1965",
             "location": "Richland WA",
@@ -69,6 +76,7 @@
       },
       {
          "objectType": "friend",
+         "elementType": "edge",
          "attributes": {
             "id": "BrockPurdy-ChristianMcCaffrey",
             "from": "Brock-Purdy",
@@ -78,6 +86,7 @@
       },
       {
          "objectType": "friend",
+         "elementType": "edge",
          "attributes": {
             "id": "JaneDoe-JohnDoe",
             "from": "Jane-Doe",
@@ -87,6 +96,7 @@
       },
       {
          "objectType": "friend",
+         "elementType": "edge",
          "attributes": {
             "id": "JackBlack-JohnDoe",
             "from": "Jack-Black",
@@ -96,6 +106,7 @@
       },
       {
          "objectType": "friend",
+         "elementType": "edge",
          "attributes": {
             "id": "JackBlack-BrockPurdy",
             "from": "Jack-Black",
@@ -105,6 +116,7 @@
       },
       {
          "objectType": "traveling",
+         "elementType": "edge",
          "attributes": {
             "id": "JohnDoe-PNNL1965",
             "from": "Jane-Doe",
@@ -114,6 +126,7 @@
       },
       {
          "objectType": "traveling",
+         "elementType": "edge",
          "attributes": {
             "id": "BrockPurdy-LVIII",
             "from": "Brock-Purdy",
@@ -123,6 +136,7 @@
       },
       {
          "objectType": "traveling",
+         "elementType": "edge",
          "attributes": {
             "id": "ChristianMcCaffrey-LVIII",
             "from": "Christian-McCaffrey",

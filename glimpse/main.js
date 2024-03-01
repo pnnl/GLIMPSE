@@ -62,13 +62,7 @@ const glm2json = async (filePaths) => {
 }
 
 const createJsonFile = (filename, data) => {
-   fs.writeFileSync(filename, data, (err) => {
-      if (err) {
-         console.log(err);
-      } else {
-         console.log('File written successfully.');
-      }
-   });
+   fs.writeFileSync(filename, data);
 }
 
 const readJsonFile = (filepath) => {
@@ -158,7 +152,9 @@ const exportThemeFile = async (themeData) => {
 
    console.log(dir2save);
 
-   createJsonFile(path.join(dir2save, filename), JSON.parse(themeData));   
+   console.log(themeData);
+
+   createJsonFile(path.join(dir2save, filename), themeData);   
 }
 
 const json2glmFunc = async (jsonData) => {

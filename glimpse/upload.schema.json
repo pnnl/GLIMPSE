@@ -9,7 +9,8 @@
             "type": "object",
             "patternProperties": {
                "name|objectType": {"type": "string"},
-               "attributes": {
+               "^elementType$": {"type": "string"},
+               "^attributes$": {
                   "type": "object",
                   "patternProperties": {
                      "name|id": {"type": "string"}

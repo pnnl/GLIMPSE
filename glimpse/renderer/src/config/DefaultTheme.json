@@ -1,6 +1,6 @@
 {
    "groups": {
-      "person": {
+      "Person": {
          "size": 15,
          "image": "./imgs/person.svg",
          "shape": "image"
