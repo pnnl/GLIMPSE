@@ -19,7 +19,7 @@ const getTitle = (attributes) => {
    let str = "";
 
    for (let [key, val] of Object.entries(attributes)) {
-      str += key + ": " + val + "\n";
+      str += `${key}: ${val}\n`;
    }
 
    return str;
@@ -31,7 +31,7 @@ const getHtmlLabel = (id, attributes) => {
    )
 }
 
-const getRandColor = () => {
+const getRandomColor = () => {
    const letters = "0123456789ABCDEF";
    let color = "#";
 
@@ -345,7 +345,7 @@ const Graph = ({ dataToVis, theme }) => {
             else if (Object.keys(obj).includes("elementType") && obj.elementType === "node") {
                if (!Object.keys(theme.groups).includes(objectType)){
                   theme.groups[objectType] = {
-                     "color": getRandColor(),
+                     "color": getRandomColor(),
                      "shape": "dot"
                   };
                }
@@ -445,7 +445,7 @@ const Graph = ({ dataToVis, theme }) => {
                const edgeID = attributes[nameForObjID];
 
                if (!Object.keys(edgeOptions).includes(objectType))
-                  edgeOptions[objectType] = {"color": getRandColor()};
+                  edgeOptions[objectType] = {"color": getRandomColor()};
 
                if (Object.keys(objectTypeCount.edges).includes(objectType))
                   objectTypeCount.edges[objectType]++;

@@ -297,8 +297,7 @@ const makeWindow = () => {
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
-   win.loadFile("./renderer/public/index.html");
-
+   
    const python = spawn('py', ['./local-server/server.py']);
    python.stdout.on('data', function (data) {
       console.log("data: ", data.toString('utf8'));
@@ -307,10 +306,12 @@ const makeWindow = () => {
    python.stderr.on('data', (data) => {
       console.log(`log: ${data}`); // when error
    });
-
+   
+   // Connect to WebSocket 
    socket.on("connect", () => console.log("Connected to socket server"));
    socket.on("update-data", (data) => win.webContents.send("update-data", data));
-
+   
+   win.loadFile("./renderer/public/index.html");
    win.show();
 }
 
