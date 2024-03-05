@@ -1,4 +1,5 @@
 from flask import Flask, request as req
+from flask_socketio import SocketIO
 import networkx as nx
 import glm
 import ntpath
@@ -31,12 +32,11 @@ def get_nx_graph(file_data: dict):
          graph.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
       else:
          graph.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
-                     
+                        
    return graph
 
 def get_modularity(graph):
    modularity = nx.community.modularity(graph, nx.community.label_propagation_communities(graph))
-   print("modularity done")
    return modularity
 
 # long computation with larger graphs
@@ -51,14 +51,12 @@ def get_avg_betweenness_centrality(graph):
          max_bc = centrality
       avg += centrality
 
-   print(max_bc)
-   avg_betweenness_centrality = avg/len(betweenness_centrality_dict)
-   
-   print("betweenness centrality done")
-   return avg_betweenness_centrality
+   return avg/len(betweenness_centrality_dict)
         
 #------------------------------ Server ------------------------------#
 app = Flask(__name__)
+app.config["SECRET_KEY"] = "aSecRetKey"
+socketio = SocketIO(app)
 
 @app.route("/")
 def hello():
@@ -85,6 +83,10 @@ def get_stats():
    }
    
    return summary_stats
+
+@socketio.on("glimpse")
+def glimpse(data):
+   socketio.emit("update-data", json.dumps(data))
    
 if __name__=="__main__":
-   app.run(debug=True)
+   socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

@@ -25,7 +25,8 @@
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
             "enabled": true,
-            "type": "dynamic"
+            "type": "continuous",
+            "roundness": 0.5
          },
          "hidden": true
       },
@@ -51,8 +52,8 @@
       "physics": {
          "barnesHut": {
             "gravitationalConstant": -10000,
-            "springConstant": 0.3,
-            "springLength": 100
+            "springConstant": 0.4,
+            "springLength": 75
          },
          "solver": "barnesHut",
          "stabilization": {
@@ -68,7 +69,7 @@
          "hierarchical": {
             "enabled": false,
             "direction": "LR",
-            "levelSeparation": 150,
+            "levelSeparation": 500,
             "nodeSpacing": 100
          }
       }

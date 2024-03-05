@@ -398,17 +398,18 @@ const Graph = ({ dataToVis, theme }) => {
                   "objectType": "parentChild",
                   "elementType": "edge",
                   "attributes": {
-                     "id": `parentChild:${parent}-${nodeID}`,
+                     "id": `${parent}-${nodeID}`,
                      "from": parent,
                      "to": nodeID
                   }
                });
                
                return ({
-                  "id": `parentChild:${parent}-${nodeID}`,
+                  "id": `${parent}-${nodeID}`,
                   "from": parent,
                   "to": nodeID,
                   "elementType": "edge",
+                  "type": objectType,
                   "width": 2,
                   "attributes": {"to": parent, "from": nodeID},
                   "color": {"inherit": true}
@@ -417,7 +418,7 @@ const Graph = ({ dataToVis, theme }) => {
             else if (edgeTypes.includes(objectType)) {  
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = objectType + ":" + attributes[nameForObjID];
+               const edgeID = attributes[nameForObjID];
 
                objectTypeCount.edges[objectType]++;
 
@@ -429,8 +430,9 @@ const Graph = ({ dataToVis, theme }) => {
                return ({
                   "id": edgeID,
                   "from": edgeFrom,
-                  "to": edgeTo,
+                  "to": edgeTo, 
                   "elementType": "edge",
+                  "type": objectType,
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
@@ -440,7 +442,7 @@ const Graph = ({ dataToVis, theme }) => {
             else if (Object.keys(obj).includes("elementType") && obj.elementType === "edge") {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = objectType + ":" + attributes[nameForObjID];
+               const edgeID = attributes[nameForObjID];
 
                if (!Object.keys(edgeOptions).includes(objectType))
                   edgeOptions[objectType] = {"color": getRandColor()};
@@ -457,6 +459,7 @@ const Graph = ({ dataToVis, theme }) => {
                   "from": edgeFrom,
                   "to": edgeTo,
                   "elementType": "edge",
+                  "type": objectType,
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": 2,
@@ -502,7 +505,7 @@ const Graph = ({ dataToVis, theme }) => {
       });
 
       const edgeItems = data.edges.map((edge) => {
-         const edgeType = edge.id.split(":")[0];
+         const edgeType = edge.type;
 
          if (edge.width === 8) {
             edge.width = 2;
@@ -629,7 +632,7 @@ const Graph = ({ dataToVis, theme }) => {
       }
       
       const edgeItems = data.edges.map((edge) => {
-         if (edge.id.split(":")[0] === edgeType) {
+         if (edge.type === edgeType) {
             edge.width = 8;
             return edge;
          }
@@ -646,9 +649,6 @@ const Graph = ({ dataToVis, theme }) => {
    /* ------------------------ Establish Network ------------------------ */
 
    setGraphData(dataToVis);
-
-   console.log(data.nodes.get());
-   console.log(options.layout)
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
@@ -852,6 +852,30 @@ const Graph = ({ dataToVis, theme }) => {
       setLegendData(getLegendData(objectTypeCount));
    }
 
+   window.glimpseAPI.onUpdateData((updateData) => {
+      const updateDataStream = JSON.parse(updateData);
+
+      if (updateDataStream.elementType === "node") {
+         const node = data.nodes.get(updateDataStream.id);
+
+         console.log(node);
+
+         node.size = updateDataStream.new_size;
+         node.color = updateDataStream.color;
+
+         data.nodes.update(node);
+      }
+      else {
+         console.log(updateDataStream);
+
+         const edge = data.edges.get(updateDataStream.id);
+         
+         edge.color = updateDataStream.color;
+         edge.width = updateDataStream.width;
+
+         data.edges.update(edge);
+      }
+   });
    window.glimpseAPI.onShowAttributes(showAttributes);
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
 

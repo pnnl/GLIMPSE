@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    getPlot: () => ipcRenderer.invoke("getPlot"),
    onExportTheme: (callback) => ipcRenderer.on("export-theme", () => callback()),
    onShowAttributes: (callback) => ipcRenderer.on("show-attributes", (_event, value) => callback(value)),
-   getTheme: () => ipcRenderer.invoke("getSelectedTheme")
+   getTheme: () => ipcRenderer.invoke("getSelectedTheme"),
+   onUpdateData: (callback) => ipcRenderer.on("update-data", (_event, data) => callback(data))
 });

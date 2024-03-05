@@ -5,11 +5,14 @@ const {
    dialog,
    Menu,
 } = require("electron");
-const { execSync, spawn } = require("child_process");
+const { execSync, spawn, spawnSync } = require("child_process");
 const path = require("path");
+const {io} = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
-const jsonSchema = require("./upload.schema.json");
+
+const jsonSchema = fs.readFileSync("./upload.schema.json").toString();
+const socket = io("http://127.0.0.1:5000");
 
 require("electron-reload")(__dirname, {
    electron: path.join(__dirname, "node_modules", ".bin", "electron")
@@ -70,7 +73,6 @@ const readJsonFile = (filepath) => {
 }
 
 const getGraphStats = async (data) => {
-   console.log(typeof data);
    const res = await fetch("http://127.0.0.1:5000/getstats", {
       method: "POST",
       headers: {
@@ -90,7 +92,7 @@ const sendPlot = () => {
 
 const validateJson = (filePaths) => {
    const ajv = new Ajv();
-   const validate = ajv.compile(jsonSchema);
+   const validate = ajv.compile(JSON.parse(jsonSchema));
    const data = {};
    const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
@@ -152,9 +154,7 @@ const exportThemeFile = async (themeData) => {
 
    console.log(dir2save);
 
-   console.log(themeData);
-
-   createJsonFile(path.join(dir2save, filename), themeData);   
+   createJsonFile(path.join(dir2save, filename), JSON.stringify(themeData, null, 3));   
 }
 
 const json2glmFunc = async (jsonData) => {
@@ -173,7 +173,7 @@ const json2glmFunc = async (jsonData) => {
       const newFilename = file.split(".")[0] + ".glm";
       const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
 
-      createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
+      createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
       execSync(args);
       fs.rmSync(path.join(dir2save, file));
    }
@@ -299,7 +299,6 @@ const makeWindow = () => {
 
    win.loadFile("./renderer/public/index.html");
 
-   
    const python = spawn('py', ['./local-server/server.py']);
    python.stdout.on('data', function (data) {
       console.log("data: ", data.toString('utf8'));
@@ -308,6 +307,9 @@ const makeWindow = () => {
    python.stderr.on('data', (data) => {
       console.log(`log: ${data}`); // when error
    });
+
+   socket.on("connect", () => console.log("Connected to socket server"));
+   socket.on("update-data", (data) => win.webContents.send("update-data", data));
 
    win.show();
 }
