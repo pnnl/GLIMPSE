@@ -18,8 +18,6 @@ npm run watch
 cd /GLIMPSE/glimpse/local-server/
 
 python -m venv venv
-
-pip install -r requirements.txt
 ```
 ### If on `Windows` go to `/venv/Scripts/` and rename **json2glm** to **json2glm.exe**
 
@@ -32,6 +30,9 @@ pip install -r requirements.txt
 |    -     | PowerShell | `$ <venv>/bin/Activate.ps1`             |
 | Windows  | cmd.exe    | `C:\> <venv>\Scripts\activate.bat`      |
 |    -     | PowerShell | `PS C:\> <venv>\Scripts\Activate.ps1`   |
+```
+pip install -r requirements.txt
+```
 ## Then in `GLIMPSE/glimpse/` run 
 ```
 npm install
