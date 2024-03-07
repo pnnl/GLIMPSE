@@ -1,4 +1,4 @@
 Flask==3.0.2
-Flask_SocketIO==5.3.6
+Flask-SocketIO==5.3.6
 glm==0.4.3
 networkx==3.2.1

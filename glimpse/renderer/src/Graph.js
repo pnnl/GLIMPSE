@@ -857,19 +857,13 @@ const Graph = ({ dataToVis, theme }) => {
 
       if (updateDataStream.elementType === "node") {
          const node = data.nodes.get(updateDataStream.id);
-
-         console.log(node);
-
          node.size = updateDataStream.new_size;
          node.color = updateDataStream.color;
 
          data.nodes.update(node);
       }
       else {
-         console.log(updateDataStream);
-
          const edge = data.edges.get(updateDataStream.id);
-         
          edge.color = updateDataStream.color;
          edge.width = updateDataStream.width;
 

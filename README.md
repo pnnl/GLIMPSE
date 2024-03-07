@@ -6,7 +6,7 @@ GLIMPSE is a graph-based web application to visualize and update GridLAB-D power
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
 
-### ** conda environment is recommended to build the application**
+### **Conda environment is recommended to build the application**
 ```
 git clone http://github.com/pnnl/GLIMPSE
 
@@ -18,6 +18,8 @@ npm run watch
 cd /GLIMPSE/glimpse/local-server/
 
 python -m venv venv
+
+pip install -r requirements.txt
 ```
 ### If on `Windows` go to `/venv/Scripts/` and rename **json2glm** to **json2glm.exe**
 
@@ -30,10 +32,10 @@ python -m venv venv
 |    -     | PowerShell | `$ <venv>/bin/Activate.ps1`             |
 | Windows  | cmd.exe    | `C:\> <venv>\Scripts\activate.bat`      |
 |    -     | PowerShell | `PS C:\> <venv>\Scripts\Activate.ps1`   |
-## in `GLIMPSE/glimpse/` run 
+## Then in `GLIMPSE/glimpse/` run 
 ```
-pip install -r requirements.txt
 npm install
+
 npm run start
 ```
 

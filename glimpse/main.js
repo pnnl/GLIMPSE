@@ -5,19 +5,17 @@ const {
    dialog,
    Menu,
 } = require("electron");
-const { execSync, spawn, spawnSync } = require("child_process");
+const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
 const {io} = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 
 const jsonSchema = fs.readFileSync("./upload.schema.json").toString();
 const socket = io("http://127.0.0.1:5000");
-
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
-
 const isMac = process.platform === "darwin";
 
 const checkIncludes = ( jsonData ) => {
@@ -62,10 +60,6 @@ const glm2json = async (filePaths) => {
       }
       return output;
    }
-}
-
-const createJsonFile = (filename, data) => {
-   fs.writeFileSync(filename, data);
 }
 
 const readJsonFile = (filepath) => {
@@ -154,7 +148,7 @@ const exportThemeFile = async (themeData) => {
 
    console.log(dir2save);
 
-   createJsonFile(path.join(dir2save, filename), JSON.stringify(themeData, null, 3));   
+   fs.writeFileSync(path.join(dir2save, filename), JSON.stringify(themeData, null, 3));   
 }
 
 const json2glmFunc = async (jsonData) => {
@@ -173,7 +167,7 @@ const json2glmFunc = async (jsonData) => {
       const newFilename = file.split(".")[0] + ".glm";
       const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
 
-      createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
+      fs.writeFileSync(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
       execSync(args);
       fs.rmSync(path.join(dir2save, file));
    }
@@ -297,7 +291,13 @@ const makeWindow = () => {
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
-   
+   // const server = path.join(__dirname, "local-server", "dist", "server.exe")
+   // execFile(server, {"windowsHide": true}, (err, stdout, stderr) => {
+   //    if (err) console.log(err);
+   //    if (stdout) console.log(stdout);
+   //    if (stderr) console.log(stderr);
+   // });
+
    const python = spawn('py', ['./local-server/server.py']);
    python.stdout.on('data', function (data) {
       console.log("data: ", data.toString('utf8'));
