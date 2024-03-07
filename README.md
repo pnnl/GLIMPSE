@@ -6,7 +6,7 @@ GLIMPSE is a graph-based web application to visualize and update GridLAB-D power
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
 
-### ** conda environment is recommended to build application**
+### ** conda environment is recommended to build the application**
 ```
 git clone http://github.com/pnnl/GLIMPSE
 
