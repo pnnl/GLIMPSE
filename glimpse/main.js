@@ -291,21 +291,25 @@ const makeWindow = () => {
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
-   // const server = path.join(__dirname, "local-server", "dist", "server.exe")
-   // execFile(server, {"windowsHide": true}, (err, stdout, stderr) => {
-   //    if (err) console.log(err);
-   //    if (stdout) console.log(stdout);
-   //    if (stderr) console.log(stderr);
-   // });
-
-   const python = spawn('py', ['./local-server/server.py']);
-   python.stdout.on('data', function (data) {
-      console.log("data: ", data.toString('utf8'));
-   });
-
-   python.stderr.on('data', (data) => {
-      console.log(`log: ${data}`); // when error
-   });
+   const server = path.join(__dirname, "local-server", "dist", "server.exe")
+   if (fs.existsSync(server)) {
+      console.log("ran");
+      execFile(server, {"windowsHide": true}, (err, stdout, stderr) => {
+         if (err) console.log(err);
+         if (stdout) console.log(stdout);
+         if (stderr) console.log(stderr);
+      });
+   }
+   else {
+      const python = spawn('python', ['./local-server/server.py']);
+      python.stdout.on('data', function (data) {
+         console.log("data: ", data.toString('utf8'));
+      });
+   
+      python.stderr.on('data', (data) => {
+         console.log(`log: ${data}`); // when error
+      });
+   }
    
    // Connect to WebSocket 
    socket.on("connect", () => console.log("Connected to socket server"));
