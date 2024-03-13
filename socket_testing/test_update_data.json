@@ -1,6 +1,18 @@
 {
    "update_data": [
       {
+         "elementType": "node",
+         "id": "comm2",
+         "color": "#3E2D70",
+         "new_size": 50
+      },
+      {
+         "elementType": "node",
+         "id": "comm1",
+         "color": "#3E2D70",
+         "new_size": 55
+      },
+      {
          "elementType": "edge",
          "id": "OH_line_101-105",
          "color": "#3E2D70",

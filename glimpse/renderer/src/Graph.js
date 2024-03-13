@@ -70,7 +70,7 @@ const renameKeys = (keysMap, obj) => {
    );
 }
 
-const Graph = ({ dataToVis, theme }) => {
+const Graph = ({ dataToVis, theme, isGlm }) => {
    const GLIMPSE_OBJECT = {"objects": []};
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
@@ -241,8 +241,8 @@ const Graph = ({ dataToVis, theme }) => {
 
    // data object that holds a DataSet for nodes and edges
    const data = {
-      "nodes": [],
-      "edges": []
+      "nodes": new DataSet(),
+      "edges": new DataSet()
    };
 
    // used to keep count of each object type
@@ -376,7 +376,7 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.nodes = data.nodes.concat(newObjs.filter(obj => obj.elementType === "node"));
+         data.nodes.add(newObjs.filter(obj => obj.elementType === "node"));
       }
 
       for (const file of files) {
@@ -403,15 +403,15 @@ const Graph = ({ dataToVis, theme }) => {
                      "to": nodeID
                   }
                });
-               
                return ({
                   "id": `${parent}-${nodeID}`,
                   "from": parent,
                   "to": nodeID,
                   "elementType": "edge",
-                  "type": objectType,
+                  "type": "parentChild",
                   "width": 2,
                   "attributes": {"to": parent, "from": nodeID},
+                  "title": getTitle({"objectType": "parentChild", "to": parent, "from": nodeID}),
                   "color": {"inherit": true}
                });
             }
@@ -470,11 +470,8 @@ const Graph = ({ dataToVis, theme }) => {
             return obj;
          });
       
-         data.edges = data.edges.concat(newObjs.filter(obj => obj.elementType === "edge"));
+         data.edges.add(newObjs.filter(obj => obj.elementType === "edge"));
       }
-
-      data.nodes = new DataSet(data.nodes);
-      data.edges = new DataSet(data.edges);
    }
 
    /**
@@ -658,17 +655,20 @@ const Graph = ({ dataToVis, theme }) => {
     * Then downloads the data back to the user's computer
    */
    const Export = () => {
-      Object.keys(dataToVis).forEach(( file ) => {
-         dataToVis[file]["objects"].forEach((object) => {
-            const objType = object.name;
-            if (nodeTypes.includes(objType)) {
-               object.attributes = data.nodes.get(object.attributes.name).attributes;
-            }
+      if (isGlm) {
+         Object.keys(dataToVis).forEach((file) => {
+            dataToVis[file].objects.forEach((obj) => {
+               if (Object.keys(obj).includes("attributes") && data.nodes.getIds().includes(obj.attributes.name)) {
+                  obj.attributes = data.nodes.get(obj.attributes.name).attributes;
+               }
+            });
          });
-      });
 
-      // this end point will convert the json data back to its original glm format with changes
-      window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
+         window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
+      }
+      else {
+         alert("Export feature available for .glm uploads for now");
+      }
    }
 
    // initiate variables that reference the NodePopup child component state and set state variables
@@ -812,6 +812,7 @@ const Graph = ({ dataToVis, theme }) => {
    */
    const setCommunicationNetwork = ({filename, fileData}) => {
       const microgrids = fileData.microgrid;
+      const communication_nodes = fileData.communication_nodes;
 
       const types = [
          "node",
@@ -821,6 +822,8 @@ const Graph = ({ dataToVis, theme }) => {
          "capacitor",
          "regulator",
          "diesel_dg",
+         "microgirds",
+         "communication_node"
       ];
 
       for (const microgrid of microgrids) {
@@ -838,6 +841,32 @@ const Graph = ({ dataToVis, theme }) => {
                   data.edges.add({
                      id: `parentChild:${microgrid.name}-${nodeID}`,
                      from: microgrid.name,
+                     to: nodeID,
+                     color: {inherit: true},
+                     width: 0.15
+                  });
+               });
+
+               objectTypeCount.edges.parentChild++;
+            }
+         }
+      }
+
+      for (const comm_node of communication_nodes) {
+         data.nodes.add({
+            id: comm_node.name,
+            label: comm_node.name,
+            group: "communication_node"
+         })
+
+         objectTypeCount.nodes.communication_node++;
+
+         for (const type of Object.keys(comm_node)) {
+            if (types.includes(type)) {
+               comm_node[type].forEach((nodeID) => {
+                  data.edges.add({
+                     id: `parentChild:${comm_node.name}-${nodeID}`,
+                     from: comm_node.name,
                      to: nodeID,
                      color: {inherit: true},
                      width: 0.15
@@ -872,6 +901,7 @@ const Graph = ({ dataToVis, theme }) => {
    });
    window.glimpseAPI.onShowAttributes(showAttributes);
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
+   window.glimpseAPI.onExtract(Export);
 
    const container = useRef(null);
    const toggleLegendRef = useRef(null);

@@ -205,6 +205,51 @@
          ]
       }
    ],
+   "communication_nodes": [
+      {
+         "name": "comm1",
+         "microgirds": [
+            "mg1"
+         ],
+         "communication_node": [
+            "comm2"
+         ]
+      },
+      {
+         "name": "comm2",
+         "microgirds": [
+            "mg2"
+         ],
+         "communication_node": [
+            "comm3"
+         ]
+      },
+      {
+         "name": "comm3",
+         "microgirds": [
+            "mg3"
+         ],
+         "communication_node": [
+            "comm4"
+         ]
+      },
+      {
+         "name": "comm4",
+         "microgirds": [
+            "substation"
+         ],
+         "communication_node": [
+            "comm5"
+         ]
+      },
+      {
+         "name": "comm5",
+         "microgirds": [],
+         "communication_node": [
+            "comm1"
+         ]
+      }
+   ],
    "DDoS":[
       {
          "NumberOfBots":400,

@@ -1,5 +1,5 @@
 from flask import Flask, request as req
-from engineio.async_drivers import threading
+from engineio.async_drivers import gevent
 from flask_socketio import SocketIO
 import networkx as nx
 import glm
@@ -56,8 +56,8 @@ def get_avg_betweenness_centrality(graph):
         
 #------------------------------ Server ------------------------------#
 app = Flask(__name__)
-# app.config["SECRET_KEY"] = "aSecRetKey"
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+app.config["SECRET_KEY"] = "aSecRetKey"
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 @app.route("/")
 def hello():
@@ -90,4 +90,4 @@ def glimpse(data):
    socketio.emit("update-data", json.dumps(data))
 
 if __name__ == "__main__":
-   socketio.run(app, allow_unsafe_werkzeug=True)
+   socketio.run(app, log_output=True)

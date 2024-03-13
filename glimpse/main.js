@@ -10,11 +10,13 @@ const path = require("path");
 const {io} = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 
-const jsonSchema = fs.readFileSync("./upload.schema.json").toString();
+// if (require('electron-squirrel-startup')) app.quit();
+
+const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json")).toString();
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 
@@ -194,7 +196,11 @@ const makeWindow = () => {
       {
          label: "File",
          "submenu": [
-            isMac ? {role: "close"} : {role: "quit"}
+            isMac ? {role: "close"} : {role: "quit"},
+            {
+               label: "Export",
+               click: () => win.webContents.send("extract")
+            }
          ]
       },
       {
@@ -293,7 +299,6 @@ const makeWindow = () => {
 
    const server = path.join(__dirname, "local-server", "dist", "server.exe")
    if (fs.existsSync(server)) {
-      console.log("ran");
       execFile(server, {"windowsHide": true}, (err, stdout, stderr) => {
          if (err) console.log(err);
          if (stdout) console.log(stdout);
@@ -315,7 +320,7 @@ const makeWindow = () => {
    socket.on("connect", () => console.log("Connected to socket server"));
    socket.on("update-data", (data) => win.webContents.send("update-data", data));
    
-   win.loadFile("./renderer/public/index.html");
+   win.loadFile(path.join(__dirname, "renderer", "public", "index.html"));
    win.show();
 }
 

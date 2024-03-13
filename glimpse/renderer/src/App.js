@@ -41,7 +41,7 @@ export const Home = () => {
 
       switch (selectedTheme) {
          case "social-theme":
-            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/DefaultTheme.json");
+            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/SocialTheme.json");
             break;
          case "fishing-theme":
             themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/FishingTheme.json");
@@ -67,7 +67,8 @@ export const Home = () => {
             setDataToVisRequest({
                showFileUpload: false,
                data: JSON.parse(validFileData),
-               theme: themeData
+               theme: themeData,
+               isGlm: false
             });
          }
       }
@@ -83,7 +84,8 @@ export const Home = () => {
             setDataToVisRequest({
                showFileUpload: false,
                data: data,
-               theme: themeData
+               theme: themeData,
+               isGlm: true
             });   
          }
       }
@@ -97,7 +99,7 @@ export const Home = () => {
          <Nav />
          {dataToVisRequest.showFileUpload
             ? <FileUpload setFileData = {setFileData} /> 
-            : <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} />}
+            : <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} isGlm={dataToVisRequest.isGlm} />}
       </>
    );
 }

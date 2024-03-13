@@ -1,4 +1,6 @@
 Flask==3.0.2
 Flask-SocketIO==5.3.6
+gevent==24.2.1
+gevent-websocket==0.10.1
 glm==0.4.3
 networkx==3.2.1
