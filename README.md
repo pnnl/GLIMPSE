@@ -12,6 +12,8 @@ git clone http://github.com/pnnl/GLIMPSE
 
 cd /GLIMPSE/glimpse/
 
+npm install
+
 npm run watch
 
 # on another terminal run the following: 
@@ -35,8 +37,6 @@ pip install -r requirements.txt
 ```
 ## Then in `GLIMPSE/glimpse/` run 
 ```
-npm install
-
 npm run start
 ```
 
