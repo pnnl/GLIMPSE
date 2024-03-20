@@ -19,7 +19,7 @@
 .env.development.local
 .env.test.local
 .env.production.local
-
+/dist
 /renderer/build
 /local-server/virtual-env
 /local-server/build

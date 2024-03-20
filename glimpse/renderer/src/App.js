@@ -37,24 +37,20 @@ export const Home = () => {
    const setFileData = async (paths) => {
       selectedTheme = await window.glimpseAPI.getTheme();
 
-      console.log(selectedTheme);
-
       switch (selectedTheme) {
          case "social-theme":
-            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/SocialTheme.json");
+            themeData = await window.glimpseAPI.getThemeJsonData("SocialTheme.json");
             break;
          case "fishing-theme":
-            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/FishingTheme.json");
+            themeData = await window.glimpseAPI.getThemeJsonData("FishingTheme.json");
             break;
          case "layout-theme": 
-            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/LevelTheme.json");
+            themeData = await window.glimpseAPI.getThemeJsonData("LevelTheme.json");
             break;
          default:
-            themeData = await window.glimpseAPI.getJsonData("./renderer/src/config/PowerGridTheme.json");
+            themeData = await window.glimpseAPI.getThemeJsonData("PowerGridTheme.json");
             break;
       }
-
-      themeData = JSON.parse(themeData);
 
       // validate the file if it is a json file
       if (paths[0].split(".")[1] === "json") {

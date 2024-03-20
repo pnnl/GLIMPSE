@@ -5,20 +5,52 @@ const {
    dialog,
    Menu,
 } = require("electron");
+// const log = require('electron-log');
+const { autoUpdater } = require("electron-updater");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
 const {io} = require("socket.io-client");
 const fs = require("fs");
+const kill = require("tree-kill");
 const Ajv = require("ajv");
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
-
-// if (require('electron-squirrel-startup')) app.quit();
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json")).toString();
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
+let win = null;
+
+//------------------ for debugging ------------------
+// autoUpdater.logger = log;
+// autoUpdater.logger.transports.file.level = 'info';
+// log.info('App starting...');
+//---------------------------------------------------
+const sendStatusToWindow = (text) => {
+   console.log(text);
+}
+autoUpdater.on('checking-for-update', () => {
+   sendStatusToWindow('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+   sendStatusToWindow('Update available.');
+});
+autoUpdater.on('update-not-available', (info) => {
+   sendStatusToWindow('Update not available.');
+});
+autoUpdater.on('error', (err) => {
+   sendStatusToWindow('Error in auto-updater. ' + err);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+   let log_message = "Download speed: " + progressObj.bytesPerSecond;
+   log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+   log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+   sendStatusToWindow(log_message);
+});
+autoUpdater.on('update-downloaded', (info) => {
+   sendStatusToWindow('Update downloaded');
+});
 
 const checkIncludes = ( jsonData ) => {
    const included_files = [];
@@ -64,8 +96,8 @@ const glm2json = async (filePaths) => {
    }
 }
 
-const readJsonFile = (filepath) => {
-   return fs.readFileSync(filepath).toString();
+const readThemeFile = (filepath) => {
+   return fs.readFileSync(path.join(__dirname, "themes", filepath)).toString();
 }
 
 const getGraphStats = async (data) => {
@@ -176,7 +208,7 @@ const json2glmFunc = async (jsonData) => {
 }
 
 const makeWindow = () => {
-   const win = new BrowserWindow({
+   win = new BrowserWindow({
       width: 1500,
       height: 900,
       minWidth: 1250,
@@ -293,28 +325,9 @@ const makeWindow = () => {
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.handle("getCIM", () => cimGraphData);
-   ipcMain.handle("getJsonData", (e, path) => readJsonFile(path));
+   ipcMain.handle("getThemeJsonData", (e, path) => readThemeFile(path));
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
-
-   const server = path.join(__dirname, "local-server", "dist", "server.exe")
-   if (fs.existsSync(server)) {
-      execFile(server, {"windowsHide": true}, (err, stdout, stderr) => {
-         if (err) console.log(err);
-         if (stdout) console.log(stdout);
-         if (stderr) console.log(stderr);
-      });
-   }
-   else {
-      const python = spawn('python', ['./local-server/server.py']);
-      python.stdout.on('data', function (data) {
-         console.log("data: ", data.toString('utf8'));
-      });
-   
-      python.stderr.on('data', (data) => {
-         console.log(`log: ${data}`); // when error
-      });
-   }
    
    // Connect to WebSocket 
    socket.on("connect", () => console.log("Connected to socket server"));
@@ -325,19 +338,53 @@ const makeWindow = () => {
 }
 
 app.whenReady().then(() => {
+
+   autoUpdater.checkForUpdatesAndNotify();
+   
+   const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
+   let server = null;
+   if (fs.existsSync(serverPath)) {
+      server = execFile(serverPath, {"windowsHide": true}, (error, stdout, stderr) => {
+         if (error) {
+            throw error;
+         }
+         console.log(stdout);
+      });
+   }
+   else {
+      const python = spawn('python', ['./local-server/server.py']);
+      python.stdout.on('data', function (data) {
+         console.log("data: ", data.toString('utf8'));
+      });
+
+      python.stderr.on('data', (data) => {
+         console.log(`log: ${data}`); // when error
+      });
+   }
+
    makeWindow();
+
+   app.on("before-quit", () => {
+      kill(server.pid);
+      kill(process.pid);
+   });
+
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', function() {
+   // On OS X it is common for applications and their menu bar
+   // to stay active until the user quits explicitly with Cmd + Q
    if (process.platform !== 'darwin') {
-      app.quit();
+      app.quit()
    }
-});
 
-app.on('activate', () => {
-   // On macOS it's common to re-create a window in the app when the
-   // dock icon is clicked and there are no other windows open.
-   if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+   return;
+})
+ 
+ app.on('activate', function() {
+// On OS X it's common to re-create a window in the app when the
+// dock icon is clicked and there are no other windows open.
+   if (win === null) {
+      createWindow()
    }
-});
+})

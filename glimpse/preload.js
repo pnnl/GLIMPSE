@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    glm2json: (paths) => ipcRenderer.invoke("glm2json", paths),
    validate: (jsonFilePath) => ipcRenderer.invoke("validate", jsonFilePath),
    getStats: (dataObject) => ipcRenderer.invoke("getStats", dataObject),
-   getJsonData: (path) => ipcRenderer.invoke("getJsonData", path),
+   getThemeJsonData: (path) => ipcRenderer.invoke("getThemeJsonData", path),
    json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData),
    exportTheme: (themeData) => ipcRenderer.send("exportTheme", themeData),
    getPlot: () => ipcRenderer.invoke("getPlot"),
