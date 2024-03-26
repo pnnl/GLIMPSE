@@ -1,6 +1,6 @@
 # GLIMPSE (Grid Layout Interface for Model Preview and System Exploration)
 
-GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python. It also uses following GLM parser that can be installed using pip: [GLM](https://github.com/NREL/glm) 
+GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python.
 
 ## Clone the repository and install dependencies
 - [Node.js](https://nodejs.org/en)
