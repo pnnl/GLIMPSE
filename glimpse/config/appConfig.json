@@ -25,7 +25,7 @@
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
             "enabled": true,
-            "type": "continuous",
+            "type": "dynamic",
             "roundness": 0.5
          },
          "hidden": true
@@ -47,13 +47,13 @@
          "hover": true,
          "hideEdgesOnDrag": true,
          "hideEdgesOnZoom": true,
-         "navigationButtons": true
+         "navigationButtons": false
       },
       "physics": {
          "barnesHut": {
-            "gravitationalConstant": -10000,
-            "springConstant": 0.4,
-            "springLength": 75
+            "gravitationalConstant": -100000,
+            "springConstant": 0.2,
+            "springLength": 600
          },
          "solver": "barnesHut",
          "stabilization": {

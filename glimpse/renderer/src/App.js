@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import './styles/App.css';
-import { Link } from 'react-router-dom';
+import { Link, json } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
-import appConfig from './config/appConfig.json';
 
-const appOptions = appConfig.appOptions;
+const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Nav = () => {
    return (
@@ -22,6 +21,7 @@ const Nav = () => {
 }
 
 export const Home = () => {
+
    let selectedTheme = null;
    let themeData = null;
    const [dataToVisRequest, setDataToVisRequest] = useState({
@@ -54,15 +54,15 @@ export const Home = () => {
 
       // validate the file if it is a json file
       if (paths[0].split(".")[1] === "json") {
-         const validFileData = await window.glimpseAPI.validate(paths);
+         const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
 
-         if (Object.keys(validFileData).includes("error")) {
+         if ("error" in validFileData) {
             alert(validFileData.error);
          }
          else {
             setDataToVisRequest({
                showFileUpload: false,
-               data: JSON.parse(validFileData),
+               data: validFileData,
                theme: themeData,
                isGlm: false
             });
@@ -95,7 +95,7 @@ export const Home = () => {
          <Nav />
          {dataToVisRequest.showFileUpload
             ? <FileUpload setFileData = {setFileData} /> 
-            : <Graph dataToVis = {dataToVisRequest.data} theme={dataToVisRequest.theme} isGlm={dataToVisRequest.isGlm} />}
+            : <Graph dataToVis = {dataToVisRequest.data} theme={JSON.parse(dataToVisRequest.theme)} isGlm={dataToVisRequest.isGlm} />}
       </>
    );
 }

@@ -14,6 +14,31 @@
          "size": 15,
          "image": "./imgs/FishingCompany.svg",
          "shape": "image"
+      },
+      "Person": {
+         "size": 15,
+         "image": "./imgs/person.svg",
+         "shape": "image"
+      },
+      "Company": {
+         "size": 15,
+         "image": "./imgs/company.svg",
+         "shape": "image"
+      },
+      "LogisticsCompany": {
+         "size": 15,
+         "image": "./imgs/logisticsCompany.svg",
+         "shape": "image"
+      },
+      "Region": {
+         "size": 15,
+         "image": "./imgs/region.svg",
+         "shape": "image"
+      },
+      "Point": {
+         "size": 15,
+         "image": "./imgs/point.svg",
+         "shape": "image"
       }
    },
    "edgeOptions": {

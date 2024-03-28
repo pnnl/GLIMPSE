@@ -7,9 +7,9 @@ import "./styles/vis-network.css";
 import "./styles/Graph.css";
 import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
-import appConfig from "./config/appConfig.json";
-const options = appConfig.graphOptions;
 
+const appConfig = JSON.parse(await window.glimpseAPI.getConfig());
+const options = appConfig.graphOptions;
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
 * @param {Object} attributes - an object 
@@ -71,6 +71,7 @@ const renameKeys = (keysMap, obj) => {
 }
 
 const Graph = ({ dataToVis, theme, isGlm }) => {
+
    const GLIMPSE_OBJECT = {"objects": []};
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);

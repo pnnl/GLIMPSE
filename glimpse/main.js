@@ -6,7 +6,7 @@ const {
    Menu,
 } = require("electron");
 // const log = require('electron-log');
-const { autoUpdater } = require("electron-updater");
+// const { autoUpdater } = require("electron-updater");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
 const {io} = require("socket.io-client");
@@ -22,35 +22,38 @@ const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let win = null;
 
+const rootDir = __dirname;
+// const rootDir = process.resourcesPath;
+
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
 // autoUpdater.logger.transports.file.level = 'info';
 // log.info('App starting...');
 //---------------------------------------------------
-const sendStatusToWindow = (text) => {
-   console.log(text);
-}
-autoUpdater.on('checking-for-update', () => {
-   sendStatusToWindow('Checking for update...');
-});
-autoUpdater.on('update-available', (info) => {
-   sendStatusToWindow('Update available.');
-});
-autoUpdater.on('update-not-available', (info) => {
-   sendStatusToWindow('Update not available.');
-});
-autoUpdater.on('error', (err) => {
-   sendStatusToWindow('Error in auto-updater. ' + err);
-});
-autoUpdater.on('download-progress', (progressObj) => {
-   let log_message = "Download speed: " + progressObj.bytesPerSecond;
-   log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-   log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-   sendStatusToWindow(log_message);
-});
-autoUpdater.on('update-downloaded', (info) => {
-   sendStatusToWindow('Update downloaded');
-});
+// const sendStatusToWindow = (text) => {
+//    console.log(text);
+// }
+// autoUpdater.on('checking-for-update', () => {
+//    sendStatusToWindow('Checking for update...');
+// });
+// autoUpdater.on('update-available', (info) => {
+//    sendStatusToWindow('Update available.');
+// });
+// autoUpdater.on('update-not-available', (info) => {
+//    sendStatusToWindow('Update not available.');
+// });
+// autoUpdater.on('error', (err) => {
+//    sendStatusToWindow('Error in auto-updater. ' + err);
+// });
+// autoUpdater.on('download-progress', (progressObj) => {
+//    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+//    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+//    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+//    sendStatusToWindow(log_message);
+// });
+// autoUpdater.on('update-downloaded', (info) => {
+//    sendStatusToWindow('Update downloaded');
+// });
 
 const checkIncludes = ( jsonData ) => {
    const included_files = [];
@@ -97,7 +100,7 @@ const glm2json = async (filePaths) => {
 }
 
 const readThemeFile = (filepath) => {
-   return fs.readFileSync(path.join(__dirname, "themes", filepath)).toString();
+   return fs.readFileSync(path.join(rootDir, "themes", filepath), {encoding: "utf-8"});
 }
 
 const getGraphStats = async (data) => {
@@ -126,7 +129,7 @@ const validateJson = (filePaths) => {
    let valid = true;
 
    for (const filePath of filePaths) {
-      const fileData = JSON.parse(fs.readFileSync(filePath).toString());
+      const fileData = JSON.parse(fs.readFileSync(filePath, {"encoding":"utf-8"}));
       
       if (nodeLinkDataKeys.every(key => key in fileData)) {
          data[path.basename(filePath)] = {
@@ -320,6 +323,9 @@ const makeWindow = () => {
          if (item.checked)
             return item.id;
    });
+   ipcMain.handle("getConfig", () => {
+      return fs.readFileSync(path.join(rootDir, "config", "appConfig.json"), {"encoding": "utf-8"});
+   });
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
    ipcMain.handle("getStats", (e, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
@@ -339,12 +345,12 @@ const makeWindow = () => {
 
 app.whenReady().then(() => {
 
-   autoUpdater.checkForUpdatesAndNotify();
+   // autoUpdater.checkForUpdatesAndNotify();
    
    const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
    let server = null;
    if (fs.existsSync(serverPath)) {
-      server = execFile(serverPath, {"windowsHide": true}, (error, stdout, stderr) => {
+      server = execFile(serverPath, (error, stdout, stderr) => {
          if (error) {
             throw error;
          }
@@ -365,8 +371,8 @@ app.whenReady().then(() => {
    makeWindow();
 
    app.on("before-quit", () => {
-      kill(server.pid);
       kill(process.pid);
+      kill(server.pid);
    });
 
 });

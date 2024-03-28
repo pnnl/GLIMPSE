@@ -21,12 +21,12 @@
          {
             "provider": "github",
             "owner": "itsMando",
-            "repo": "pnnl/GLIMPSE"
+            "repo": "pnnl/glm_viz"
          }
       ],
       "asar": true,
-      "extraResources": ["./themes/**", "./data/**"],
-      "appId": "com.github.GLIMPSE",
+      "extraResources": ["./themes/**", "./data/**", "./config/**"],
+      "appId": "com.github.pnnl.GLIMPSE",
       "win": {
          "target": [
             {
@@ -34,6 +34,10 @@
                "arch": ["x64"]
             }
          ]
+      },
+      "nsis": {
+         "oneClick": false,
+         "allowToChangeInstallationDirectory": true
       }
    },
    "dependencies": {
