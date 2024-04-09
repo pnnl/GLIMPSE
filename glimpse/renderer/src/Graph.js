@@ -1104,6 +1104,24 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
       return c_nodes;
    }
 
+   window.glimpseAPI.onUpdateData((updateData) => {
+      const updateDataStream = JSON.parse(updateData);
+
+      if (updateDataStream.elementType === "node") {
+         const node = data.nodes.get(updateDataStream.id);
+         node.size = updateDataStream.new_size;
+         node.color = updateDataStream.color;
+
+         data.nodes.update(node);
+      }
+      else {
+         const edge = data.edges.get(updateDataStream.id);
+         edge.color = updateDataStream.color;
+         edge.width = updateDataStream.width;
+
+         data.edges.update(edge);
+      }
+   });
    window.glimpseAPI.onShowAttributes(showAttributes);
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
    window.glimpseAPI.onExtract(Export);
@@ -1210,7 +1228,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             onFind = {NodeFocus}
             prev = {Prev}
             next = {Next}
-            download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
             nodeIDs = {data.nodes.getIds()}
             toggleLegendRef = {toggleLegendRef}
