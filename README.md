@@ -2,7 +2,7 @@
 
 GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python.
 
-## Clone the repository and install dependencies
+## Dev Installation Instructions
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
 
