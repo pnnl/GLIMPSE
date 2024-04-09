@@ -1,9 +1,8 @@
 import React from 'react';
 import './styles/FileUpload.css';
 import { useState, useRef } from 'react';
-// import { Autocomplete, Divider, Stack, TextField } from '@mui/material';
 
-const FileUpload = ({ setFileData }) => {
+const FileUpload = ({ onFileUpload }) => {
    // drag state
    const [dragActive, setDragActive] = useState(false);
    // ref
@@ -35,14 +34,14 @@ const FileUpload = ({ setFileData }) => {
             paths.push(file.path);
          }
 
-         e.target.value = '';
-         setFileData(paths);
+         onFileUpload(paths);
       }
    };
     
    // triggers when file is selected with click
    const handleChange = async (e) => {
       e.preventDefault();
+      // console.log(JSON.parse(await window.glimpseAPI.getJsonData()))
 
       if (e.target.files && e.target.files[0]) {
          const paths = [];
@@ -52,8 +51,7 @@ const FileUpload = ({ setFileData }) => {
             paths.push(file.path);
          }
 
-         e.target.value = '';
-         setFileData(paths)
+         onFileUpload(paths)
       }
    };
 
@@ -78,8 +76,8 @@ const FileUpload = ({ setFileData }) => {
                   htmlFor="input-file-upload"
                   className={dragActive ? "drag-active" : "" }>
                <div>
-                  <p>Drag and drop your glm/JSON files here or</p>
-                  <button className="upload-button" onClick={onButtonClick}>Upload files</button>
+                  <p>Drag and drop your .glm or .json file/s here or</p>
+                  <button className="upload-button" onClick={onButtonClick}>Upload file/s</button>
                </div> 
                </label>
                { 

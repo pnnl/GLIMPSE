@@ -117,7 +117,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       for (let nodeType of currentNodeTypes) {
          if (legendData.nodes.length === 0) {
 
-            if (Object.keys(theme.groups).includes(nodeType)) {
+            if (nodeType in theme.groups) {
                legendData.nodes.add({
                   id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
                   label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
@@ -160,7 +160,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             current_x += x_increment;
          }
 
-         if (Object.keys(theme.groups).includes(nodeType)) {
+         if (nodeType in theme.groups) {
             legendData.nodes.add({
                id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
                label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
@@ -214,7 +214,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             color: "#000"
          })
 
-         if (Object.keys(edgeOptions).includes(type)) {
+         if (type in edgeOptions) {
             legendData.edges.add({
                id: type,
                from: `${type}:${index}`,
@@ -272,17 +272,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
          const newObjs = objs.map((obj) => {
             const attributes = obj.attributes;
-            const nameForObjType = keys.find(key => Object.keys(obj).includes(key));
+            const nameForObjType = keys.find(key => key in obj);
             const objectType = obj[nameForObjType];
-            const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
+            const nameForObjID = keys.find(key => key in attributes);
 
             const nodeID = attributes[nameForObjID];
             
             if (nodeTypes.includes(objectType)) {
-               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
+               if ("x" in attributes && "y" in attributes) {
                   objectTypeCount.nodes[objectType]++;
                   
-                  if (!Object.keys(obj).includes("elemetType"))
+                  if (!("elemetType" in obj))
                      GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
@@ -298,16 +298,16 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      "y": parseInt(attributes.y, 10)
                   });
                }
-               else if (Object.keys(attributes).includes("level")) {
+               else if ("level" in attributes) {
                   if (!options.layout.hierarchical.enabled)
                      options.layout.hierarchical.enabled = true;
       
-                  if (Object.keys(objectTypeCount.nodes).includes(objectType))
+                  if (objectType in objectTypeCount.nodes)
                      objectTypeCount.nodes[objectType]++;
                   else
                      objectTypeCount.nodes[objectType] = 1;
    
-                  if (!Object.keys(obj).includes("elemetType"))
+                  if (!("elemetType" in obj))
                      GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
@@ -328,7 +328,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                obj = renameKeys({name: "objectType"}, obj);
                obj.attributes = renameKeys({name: "id"}, obj.attributes);
                
-               if (!Object.keys(obj).includes("elemetType"))
+               if (!("elemetType" in obj))
                   GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                else
                   GLIMPSE_OBJECT.objects.push(obj);
@@ -343,8 +343,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                });
                
             }
-            else if (Object.keys(obj).includes("elementType") && obj.elementType === "node") {
-               if (!Object.keys(theme.groups).includes(objectType)){
+            else if ("elementType" in obj && obj.elementType === "node") {
+               if (!(objectType in theme.groups)){
                   theme.groups[objectType] = {
                      "color": getRandomColor(),
                      "shape": "dot"
@@ -354,7 +354,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                if(!nodeTypes.includes(objectType))
                   nodeTypes.push(objectType);
 
-               if (Object.keys(objectTypeCount.nodes).includes(objectType))
+               if (objectType in objectTypeCount.nodes)
                   objectTypeCount.nodes[objectType]++;
                else
                   objectTypeCount.nodes[objectType] = 1;
@@ -389,7 +389,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             const objectType = obj[nameForObjType];
             const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
 
-            if (nodeTypes.includes(objectType) && Object.keys(attributes).includes("parent")) {
+            if (nodeTypes.includes(objectType) && "parent" in attributes) {
                const nodeID = attributes[nameForObjID];
                const parent = attributes.parent;
 
@@ -440,15 +440,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
                });
             }
-            else if (Object.keys(obj).includes("elementType") && obj.elementType === "edge") {
+            else if ("elementType" in obj && obj.elementType === "edge") {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
                const edgeID = attributes[nameForObjID];
 
-               if (!Object.keys(edgeOptions).includes(objectType))
+               if (!(objectType in edgeOptions))
                   edgeOptions[objectType] = {"color": getRandomColor()};
 
-               if (Object.keys(objectTypeCount.edges).includes(objectType))
+               if (objectType in objectTypeCount.edges)
                   objectTypeCount.edges[objectType]++;
                else
                   objectTypeCount.edges[objectType] = 1;
@@ -496,8 +496,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const Reset = () => {
       highlightedNodes.length = 0;
       const nodesResetMap = data.nodes.map((node) => {
-         node.size = 15;
-         node.hidden = false;
+         delete node.size;
+         delete node.color;
+         delete node.shape;
+         node.label = node.id;
 
          return node;
       });
@@ -513,11 +515,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          }
          else if (edgeTypes.includes(edgeType)) {
             edge.width = edgeOptions[edgeType].width;
+            edge.color = edgeOptions[edgeType].color;
             edge.hidden = false;
 
             return edge;
          }
          else {
+            edge.color = {"inherit": true};
             edge.width = 2;
             edge.hidden = false;
 
@@ -588,15 +592,24 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    */
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
-         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 1)) {
+         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 5)) {
             return node;
          }
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
-            node.size = 1;
+            node.size = 10;
+            node.shape = "dot"
+            node.color = "rgba(200,200,200,0.5)";
+            node.label = " ";
             return node;
          }
          else if (node.group === nodeType && !highlightedNodes.includes(node.id)) {
-            if (node.size === 1) node.size = 15;
+            if (node.size === 10) {
+               node.size = 25;
+               delete node.color;
+               delete node.shape;
+               node.label = node.id;
+            }
+            node.size = 25;
             highlightedNodes.push(node.id);
             return node;
          }
@@ -604,7 +617,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       
       const edgesMap = data.edges.map((edge) => {
          if (edge.width !== 8) {
-            edge.width = 0.01;
+            edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
          }
 
          return edge;
@@ -622,20 +636,25 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const HighlightEdges = (edgeType) => {
       if (highlightedNodes.length === 0) {
          const nodeItems = data.nodes.map((node) => {
-            node.size = 1;
+            node.size = 10;
+            node.shape = "dot"
+            node.color = "rgba(200,200,200,0.5)";
+            node.label = " ";
             return node;
          });
 
          data.nodes.update( nodeItems );
       }
-      
+
       const edgeItems = data.edges.map((edge) => {
          if (edge.type === edgeType) {
             edge.width = 8;
+            edge.color = edgeOptions[edge.type].color;
             return edge;
          }
          else if (edge.width !== 8) {
-            edge.width = 0.001;
+            edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
             return edge;
          }
          return edge;
@@ -659,7 +678,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       if (isGlm) {
          Object.keys(dataToVis).forEach((file) => {
             dataToVis[file].objects.forEach((obj) => {
-               if (Object.keys(obj).includes("attributes") && data.nodes.getIds().includes(obj.attributes.name)) {
+               if ("attributes" in obj && data.nodes.getIds().includes(obj.attributes.name)) {
                   obj.attributes = data.nodes.get(obj.attributes.name).attributes;
                }
             });
@@ -911,7 +930,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       //if Nodes and edges have x and y coordinates load the network
       //without displaying the circular progess bar 
-      if (Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y")) {
+      if ("x" in data.nodes.get()[0] && "y" in data.nodes.get()[0]) {
          options.physics.stabilization.enabled = false;
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, options);
@@ -942,6 +961,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          
          glmNetwork.once("stabilizationIterationsDone", () => {
             glmNetwork.setOptions({"edges": {"hidden": false}})
+
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
@@ -987,7 +1007,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             onFind = {NodeFocus}
             prev = {Prev}
             next = {Next}
-            download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
             nodeIDs = {data.nodes.getIds()}
             toggleLegendRef = {toggleLegendRef}
@@ -1021,7 +1040,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          <Legend 
             findGroup = {HighlightGroup} 
             findEdges = {HighlightEdges}
-            hideObjects = {hideObjects}
+            hideObjects={hideObjects}
             legendData = {getLegendData(objectTypeCount)}
             onMount={legendMount}
             setShowLegendRef={toggleLegendRef}

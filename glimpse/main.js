@@ -5,19 +5,20 @@ const {
    dialog,
    Menu,
 } = require("electron");
-// const log = require('electron-log');
-// const { autoUpdater } = require("electron-updater");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
 const {io} = require("socket.io-client");
 const fs = require("fs");
 const kill = require("tree-kill");
 const Ajv = require("ajv");
+// const log = require('electron-log');
+// const { autoUpdater } = require("electron-updater");
 // require("electron-reload")(__dirname, {
 //    electron: path.join(__dirname, "node_modules", ".bin", "electron")
 // });
+// app.commandLine.appendSwitch("js-flags", '--max-old-space-size=4096');
 
-const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json")).toString();
+const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let win = null;
@@ -202,7 +203,7 @@ const json2glmFunc = async (jsonData) => {
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
       const newFilename = file.split(".")[0] + ".glm";
-      const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
+      const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} > ${path.join(dir2save, newFilename)}`;
 
       fs.writeFileSync(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
       execSync(args);
@@ -330,7 +331,6 @@ const makeWindow = () => {
    ipcMain.handle("getStats", (e, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
-   ipcMain.handle("getCIM", () => cimGraphData);
    ipcMain.handle("getThemeJsonData", (e, path) => readThemeFile(path));
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
@@ -385,12 +385,12 @@ app.on('window-all-closed', function() {
    }
 
    return;
-})
+});
  
- app.on('activate', function() {
+app.on('activate', function() {
 // On OS X it's common to re-create a window in the app when the
 // dock icon is clicked and there are no other windows open.
    if (win === null) {
       createWindow()
    }
-})
+});

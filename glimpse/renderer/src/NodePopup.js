@@ -33,8 +33,8 @@ const NodePopup = ({onMount, onSave, onClose}) => {
       >
          <DialogTitle id="scroll-dialog-title">Edit Node</DialogTitle>
          <DialogContent dividers>
-         {
-            Object.entries(selectedNode.attributes === undefined ? {} : selectedNode.attributes).map(([key, val], index) => {
+         {selectedNode.attributes &&
+            Object.entries(selectedNode.attributes).map(([key, val], index) => {
                return(
                   <TextField sx={{mt: 1, ml: 5.5}} key={index} label={key} defaultValue={val} onChange={(e) => { 
                      setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}}) 

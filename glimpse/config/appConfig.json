@@ -24,7 +24,7 @@
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
-            "enabled": true,
+            "enabled": false,
             "type": "dynamic",
             "roundness": 0.5
          },
@@ -51,9 +51,9 @@
       },
       "physics": {
          "barnesHut": {
-            "gravitationalConstant": -100000,
-            "springConstant": 0.2,
-            "springLength": 600
+            "gravitationalConstant": -10000,
+            "springConstant": 0.3,
+            "springLength": 75
          },
          "solver": "barnesHut",
          "stabilization": {

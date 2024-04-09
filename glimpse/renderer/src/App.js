@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './styles/App.css';
-import { Link, json } from 'react-router-dom';
+import { LinearProgress, Box } from "@mui/material"
+import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
 
@@ -24,17 +25,16 @@ export const Home = () => {
 
    let selectedTheme = null;
    let themeData = null;
-   const [dataToVisRequest, setDataToVisRequest] = useState({
-      showFileUpload: true,
-      data: null
-   });
+   const [fileData, setFileData] = useState({loading: false});
+   const [filesUploaded, setFilesUploaded] = useState(false);
 
    /**
     * This function will get the paths of the uploaded files and send them to the 
     * main process to then read the files, parse them, and evalute them.
     * @param {Array} paths - An array of paths from the uploaded files
     */
-   const setFileData = async (paths) => {
+   const handleFileUpload = async (paths) => {
+      setFileData({loading: true});
       selectedTheme = await window.glimpseAPI.getTheme();
 
       switch (selectedTheme) {
@@ -52,23 +52,24 @@ export const Home = () => {
             break;
       }
 
-      // validate the file if it is a json file
       if (paths[0].split(".")[1] === "json") {
+         setFilesUploaded(true);
          const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
-
+         
          if ("error" in validFileData) {
             alert(validFileData.error);
          }
          else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: validFileData,
-               theme: themeData,
-               isGlm: false
+            setFileData({
+               visData: validFileData,
+               theme: JSON.parse(themeData),
+               isGlm: false,
+               loading: false
             });
          }
       }
       else if (paths[0].split(".")[1] === "glm" && selectedTheme === "power-grid-theme") {
+         setFilesUploaded(true);
          const data = await window.glimpseAPI.glm2json(paths);
          if (!data) {
             console.log("Something went wrong...");
@@ -77,12 +78,12 @@ export const Home = () => {
             alert(data.alert);
          }
          else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: data,
-               theme: themeData,
-               isGlm: true
-            });   
+            setFileData({
+               visData: data,
+               theme: JSON.parse(themeData),
+               isGlm: true,
+               loading: false
+            }); 
          }
       }
       else {
@@ -93,9 +94,15 @@ export const Home = () => {
    return (
       <>
          <Nav />
-         {dataToVisRequest.showFileUpload
-            ? <FileUpload setFileData = {setFileData} /> 
-            : <Graph dataToVis = {dataToVisRequest.data} theme={JSON.parse(dataToVisRequest.theme)} isGlm={dataToVisRequest.isGlm} />}
+         {!filesUploaded && <FileUpload onFileUpload={handleFileUpload} />}
+         {fileData.loading && <Box sx={{width: "100%"}}><LinearProgress /></Box>}
+         {filesUploaded && !fileData.loading && 
+            <Graph 
+               dataToVis = {fileData.visData} 
+               theme={fileData.theme} 
+               isGlm={fileData.isGlm} 
+            />
+         }
       </>
    );
 }

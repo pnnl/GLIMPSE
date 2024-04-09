@@ -46,13 +46,3 @@ We provide few examples of exploring starndard IEEE bus models using GLIMPSE. Fr
 **To re-uplaod files after visualization, press `ctrl + R` or click `view` then `reload`**
 
 ![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
-
-# Features
-* Each node or edge in the legend can be double clicked for highlighting.
-* Navigate through each highlighted Node with the **Prev** and **Next** buttons.
-* Hovering over a node in the visualization will display a tooltip of that node's attribtues.
-* **Auto layout** switch will allow for the dragging of nodes with mouse.
-* Double Clicking on a node in the visualization will show a form that allows you to edit the nodes attributes.
-* The **Show Plot** button will display a plot created from metrics gathered from the power grid model (Will show a filler plot for now).
-* The **Show Stats** button will display a couple statistics values.
-* If any changes were done to a node's attributes using the tool you can download a copy of the uploaded files to a desired directory with the changes using the **Export** button.

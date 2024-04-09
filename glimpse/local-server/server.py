@@ -43,13 +43,10 @@ def get_modularity(graph):
 # long computation with larger graphs
 def get_avg_betweenness_centrality(graph):
    avg = 0
-   max_bc = 0
    myk = int(graph.number_of_nodes()*0.68)
    betweenness_centrality_dict = nx.betweenness_centrality(graph, k=myk)
    
    for centrality in betweenness_centrality_dict.values():
-      if centrality > max_bc:
-         max_bc = centrality
       avg += centrality
 
    return avg/len(betweenness_centrality_dict)
