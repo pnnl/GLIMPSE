@@ -640,7 +640,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
    const HighlightEdges = (edgeType) => {
       if (highlightedNodes.length === 0) {
          const nodeItems = data.nodes.map((node) => {
-            node.size = 5;
+            node.size = 10;
             node.shape = "dot"
             node.color = "rgba(200,200,200,0.5)";
             node.label = " ";
