@@ -551,10 +551,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
    }
 
    /**
-   * Generates an array of highlighted nodes and focuses on a node 
-   * starting at the end of the array then moves down every function call
-   */
-   /**
    * Generates an array of highlighted nodes and focuses on a node
    * starting at the end of the array then moves down every function call
    */
