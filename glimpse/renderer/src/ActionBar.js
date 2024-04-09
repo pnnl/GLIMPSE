@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import PlotModal from "./PlotModal.js";
 import OverlayUpload from "./OverlayUpload.js";
 import Button from "@mui/material/Button";
@@ -12,17 +12,15 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from "@mui/material/Switch";
 import SearchIcon from "@mui/icons-material/Search";
 import IconButton from "@mui/material/IconButton";
-import appConfig from "./config/appConfig.json";
 import StatsTableModal from "./StatsTableModal.js";
 import Autocomplete from "@mui/material/Autocomplete";
 
-const appOptions = appConfig.appOptions;
+const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionBar = ({
    nodesDataObj,
    graphDataObj,
    onFind,
-   download,
    reset,
    prev,
    next,
@@ -54,7 +52,7 @@ const ActionBar = ({
    /**
     * Hide/Show the Legend Component
     * @param {Event} e 
-   */
+    */
    const toggleLegend = (e) => {
       e.preventDefault();
 
@@ -78,17 +76,7 @@ const ActionBar = ({
       e.preventDefault();
       
       if (nodes.get(node)) onFind(node);
-      else alert(`${node} is not in the graph.`)
-   }
-
-   /**
-    * Call the export/download function from the graph component to download back
-    * all files upload with any changes done with the UI
-    * @param {Event} e 
-    */
-   const handleExport = (e) => {
-      e.preventDefault()
-      download();
+      else alert(`${node} is not in the graph.`);
    }
 
    /**
@@ -103,7 +91,7 @@ const ActionBar = ({
    /**
     * Call the Prev function from the Graph component to focus on a previously focused node
     * @param {Event} e 
-    */   
+    */
    const handlePrev = (e) =>  {
       e.preventDefault();
       prev();
@@ -176,14 +164,6 @@ const ActionBar = ({
       <Box sx={{padding: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
-                  <Button 
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={handleExport}>
-                     {appOptions.buttons.exportBtn}
-                  </Button>
-
                   <Button 
                      size="small"
                      variant="outlined"

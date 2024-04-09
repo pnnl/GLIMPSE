@@ -21,6 +21,8 @@
 .env.production.local
 
 /backend/logs
+/local-server/dist
+/local-server/virtual-env
 /local-server/venv
 npm-debug.log*
 yarn-debug.log*

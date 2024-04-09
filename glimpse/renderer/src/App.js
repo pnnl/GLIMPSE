@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import './styles/App.css';
+import {LinearProgress, Box} from "@mui/material"
 import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
-import appConfig from './config/appConfig.json';
-const appOptions = appConfig.appOptions;
+
+const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Nav = () => {
    return (
@@ -21,71 +22,107 @@ const Nav = () => {
 }
 
 export const Home = () => {
-   let content;
-   const [dataToVisRequest, setDataToVisRequest] = useState({
-      showFileUpload: true,
-      data: null
-   });
-         
+
+   let selectedTheme = null;
+   let themeData = null;
+   const [fileData, setFileData] = useState({loading: false});
+   const [filesUploaded, setFilesUploaded] = useState(false);
+
    /**
     * This function will get the paths of the uploaded files and send them to the 
     * main process to then read the files, parse them, and evalute them.
     * @param {Array} paths - An array of paths from the uploaded files
     */
-   const setFileData = async (paths) => {
-   
-      if (paths[0].split(".")[1] === "json") {
-         const validFileData = await window.glimpseAPI.validate(paths);
+   const handleFileUpload = async (paths) => {
+      setFileData({loading: true});
+      selectedTheme = await window.glimpseAPI.getTheme();
 
-         if (Object.keys(validFileData).includes("error")) {
+      switch (selectedTheme) {
+         case "social-theme":
+            themeData = await window.glimpseAPI.getThemeJsonData("SocialTheme.json");
+            break;
+         case "fishing-theme":
+            themeData = await window.glimpseAPI.getThemeJsonData("FishingTheme.json");
+            break;
+         case "layout-theme": 
+            themeData = await window.glimpseAPI.getThemeJsonData("LevelTheme.json");
+            break;
+         case "cim-theme": 
+            themeData = await window.glimpseAPI.getThemeJsonData("CIM_Theme.json");
+            break;
+         default:
+            themeData = await window.glimpseAPI.getThemeJsonData("PowerGridTheme.json");
+            break;
+      }
+
+
+      // validate the file if it is a json file
+      if (paths[0].split(".")[1] === "xml") {
+         setFilesUploaded(true);
+         const CIM_DATA = await window.glimpseAPI.getCIM(paths[0]);
+         
+         setFileData({
+            visData: CIM_DATA,
+            theme: JSON.parse(themeData),
+            isCim: true,
+            isGlm: false,
+            loading: false
+         });
+      }
+      else if (paths[0].split(".")[1] === "json") {
+         setFilesUploaded(true);
+         const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
+         
+         if ("error" in validFileData) {
             alert(validFileData.error);
          }
          else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: JSON.parse(validFileData),
-               isCIM: false
+            setFileData({
+               visData: validFileData,
+               theme: JSON.parse(themeData),
+               isCim: false,
+               isGlm: false,
+               loading: false
             });
          }
       }
-      else {
-         const data = await window.glimpseAPI.getData(paths);
-         if (data === undefined) {
+      else if (paths[0].split(".")[1] === "glm" && selectedTheme === "power-grid-theme") {
+         setFilesUploaded(true);
+         const data = await window.glimpseAPI.glm2json(paths);
+         if (!data) {
             console.log("Something went wrong...");
          }
          else if (Object.keys(data).includes("alert")) {
             alert(data.alert);
          }
          else {
-            setDataToVisRequest({
-               showFileUpload: false,
-               data: data,
-               isCIM: false
-            });   
+            setFileData({
+               visData: data,
+               theme: JSON.parse(themeData),
+               isCim: false,
+               isGlm: true,
+               loading: false
+            }); 
          }
       }
+      else {
+         alert("All <.glm> File Types Must Be Uploaded With The Power Grid Theme Selected !");
+      }
    }
-
-   const setCimData = (data) => {
-      setDataToVisRequest({
-         showFileUpload: false,
-         data: JSON.parse(data),
-         isCIM: true
-      });
-   }
-   
-   // Display the graph dashboard component if file uploads were succesfully validated
-   if (!dataToVisRequest.showFileUpload) {
-      content = <Graph dataToVis = {dataToVisRequest.data} cim={dataToVisRequest.isCIM}/>;
-   }
-   else {
-      content = <FileUpload setFileData = {setFileData} setDataFromCim={setCimData}/>;
-   }
-   
+     
    return (
       <>
          <Nav />
-         {content}
+         {!filesUploaded && <FileUpload onFileUpload={handleFileUpload} />}
+         {fileData.loading && <Box sx={{width: "100%"}}><LinearProgress /></Box>}
+         {filesUploaded && !fileData.loading && 
+            <Graph 
+               dataToVis = {fileData.visData} 
+               theme={fileData.theme} 
+               isGlm={fileData.isGlm} 
+               isCim={fileData.isCim}
+            />
+         }
       </>
    );
 }

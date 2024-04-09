@@ -1,7 +1,5 @@
 import React, { useEffect, useState} from "react";
 import ReactDOM from "react-dom";
-import appConfig from "./config/appConfig.json";
-const edgeOptions = appConfig.edgeOptions;
 import {
    Dialog, 
    DialogTitle,
@@ -16,14 +14,8 @@ import {
    Autocomplete,
    Stack,
 } from "@mui/material";
-import { DataSet } from "vis-data";
 
-const nodeTypes = appConfig.nodeTypes;
-const edgeTypes = appConfig.edgeTypes
-
-const newNodes = new DataSet();
-
-const NewNodeForm = ({onMount, nodes, addNode}) => {
+const NewNodeForm = ({onMount, nodes, addNode, nodeTypes, edgeTypes}) => {
    const [openForm, setOpenForm] = useState(false);
    const [formFields, setFormFields] = useState({
       "nodeType": 0,
@@ -77,8 +69,7 @@ const NewNodeForm = ({onMount, nodes, addNode}) => {
                   value={formFields.nodeType}
                   onChange={handleChange}
                   >
-                  {
-                     nodeTypes.map((type, index) => {
+                  {nodeTypes.map((type, index) => {
                         return (
                            <MenuItem key={index} value={index}>{type}</MenuItem>
                         );
@@ -120,8 +111,7 @@ const NewNodeForm = ({onMount, nodes, addNode}) => {
                   variant="outlined"
                   onChange={handleChange}
                   >
-                  {
-                     edgeTypes.map((type, index) => {
+                  {edgeTypes.map((type, index) => {
                         return (
                            <MenuItem key={index} value={index}>{type}</MenuItem>
                         )

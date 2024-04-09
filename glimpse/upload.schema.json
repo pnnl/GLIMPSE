@@ -7,96 +7,17 @@
          "type": "array",
          "items": {
             "type": "object",
-            "properties": {
-               "name": {
-                  "type": "string",
-                  "enum": [
-                     "technique",
-                     "capec",
-                     "cwe",
-                     "cve",
-                     "load", 
-                     "triplex_load",
-                     "capacitor", 
-                     "node", 
-                     "triplex_node",
-                     "substation", 
-                     "meter", 
-                     "triplex_meter", 
-                     "inverter_dyn",  
-                     "diesel_dg", 
-                     "communication_node", 
-                     "microgrid_node",
-                     "overhead_line",
-                     "line",
-                     "switch",
-                     "underground_line",
-                     "series_reactor",
-                     "triplex_line",
-                     "regulator",
-                     "transformer",
-                     "mapping",
-                     "communication",
-                     "microgrid_connection",
-                     "friend",
-                     "person",
-                     "traveling",
-                     "location"
-                  ]
-               },
-               "objectType": {
-                  "type": "string",
-                  "enum": [
-                     "technique",
-                     "capec",
-                     "cwe",
-                     "cve",
-                     "load", 
-                     "triplex_load",
-                     "capacitor", 
-                     "node", 
-                     "triplex_node",
-                     "substation", 
-                     "meter", 
-                     "triplex_meter", 
-                     "inverter_dyn",  
-                     "diesel_dg", 
-                     "communication_node", 
-                     "microgrid_node",
-                     "overhead_line",
-                     "line",
-                     "switch",
-                     "underground_line",
-                     "series_reactor",
-                     "triplex_line",
-                     "regulator",
-                     "transformer",
-                     "mapping",
-                     "communication",
-                     "microgrid_connection",
-                     "friend",
-                     "person",
-                     "traveling",
-                     "location"
-                  ]
-               },
-               "attributes": {
+            "patternProperties": {
+               "name|objectType": {"type": "string"},
+               "^elementType$": {"type": "string"},
+               "^attributes$": {
                   "type": "object",
-                  "properties": {
-                     "name": {"type": "string"},
-                     "id": {"type": "string"}
+                  "patternProperties": {
+                     "name|id": {"type": "string"}
                   },
-                  "oneOf": [
-                     {"required": ["name"]},
-                     {"required": ["id"]}
-                  ],
                   "additionalProperties": true
                }
             },
-            "oneOf": [
-               {"required": ["name"]},
-               {"required": ["objectType"]}
-            ],
             "additionalProperties": false
          }
       }

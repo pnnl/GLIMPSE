@@ -9,114 +9,7 @@ import "./styles/Graph.css";
 import Legend from "./Legend";
 import GraphContextMenu from "./GraphContextMenu";
 import NewNodeForm from "./NewNodeForm";
-import appConfig from "./config/appConfig.json";
-const legendEdgeOptions = appConfig.legendEdgeOptions;
-const edgeOptions = appConfig.edgeOptions;
-
-const getLegendData = (typeCounts) => {
-   const legendData = {
-      "nodes": new DataSet(),
-      "edges": new DataSet()
-   };
-   
-   const currentNodeTypes = [];
-   const currentEdgeTypes = [];
-
-   Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
-      if (count > 0) currentNodeTypes.push(type);
-   });
-
-   Object.entries(typeCounts.edges).forEach(([type, count], i) => {
-      if (count > 0) currentEdgeTypes.push(type);
-   });
-
-   let x_increment;
-
-   if (currentNodeTypes.length < 6)
-      x_increment = 800 / currentNodeTypes.length;
-   else 
-      x_increment = 1000 / currentNodeTypes.length;
-
-   let farthest_x = 0;
-   let current_x = 0;
-   let current_y = 0;
-   let rowNodeCount = 0;
-
-   for (let nodeType of currentNodeTypes) {
-      
-      if (legendData.nodes.length === 0) {
-         legendData.nodes.add({
-            id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
-            label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
-            group: nodeType,
-            x: current_x,
-            y: current_y,
-            physics: false,
-            fixed: true
-         });
-
-         rowNodeCount++;
-         continue;
-      }
-
-      if (rowNodeCount === 6) {
-         farthest_x = current_x;
-         rowNodeCount = 0;
-         current_x = 0;
-         current_y -= 125;
-      }
-      else {
-         current_x += x_increment;
-      }
-
-      legendData.nodes.add({
-         id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
-         label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
-         group: nodeType,
-         x: current_x,
-         y: current_y,
-         physics: false,
-         fixed: true
-      });
-
-      rowNodeCount++;
-   }
-
-   current_y = 125;
-   currentEdgeTypes.forEach((type, index) => {
-
-      legendData.nodes.add({
-         id: `${type}:${index}`,
-         x: 0,
-         y: current_y,
-         fixed: true,
-         physcis: false,
-         color: "black"
-      });
-
-      legendData.nodes.add({
-         id: `${type}:${index + 1}`,
-         x: farthest_x === 0 ? current_x : farthest_x,
-         y: current_y,
-         fixed: true,
-         physcis: false,
-         color: "black"
-      })
-
-      legendData.edges.add({
-         id: type,
-         from: `${type}:${index}`,
-         to: `${type}:${index + 1}`,
-         label: `${type} [${typeCounts.edges[type]}]`,
-         width: legendEdgeOptions[type].width,
-         color: legendEdgeOptions[type].color
-      });
-
-      current_y += 65;
-   });
-
-   return legendData;
-}
+const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
@@ -127,7 +20,7 @@ const getTitle = (attributes) => {
    let str = "";
 
    for (let [key, val] of Object.entries(attributes)) {
-      str += key + ": " + val + "\n";
+      str += `${key}: ${val}\n`;
    }
 
    return str;
@@ -139,11 +32,214 @@ const getHtmlLabel = (id, attributes) => {
    )
 }
 
-const Graph = (props) => {
-   const options = appConfig.graphOptions; // get the options for the graph visualization
-   let glmNetwork; // global network varibale
+const getRandomColor = () => {
+   const letters = "0123456789ABCDEF";
+   let color = "#";
+
+   while (color.length < 7)
+      color += letters[Math.floor(Math.random() * 16)];
+   
+   return color;
+}
+
+/**
+ * 
+ * @param {Object} keysMap - format: { [ name of key to rename ]: "new key name" }
+ * @param {Object} obj - The object that contains the keys you would like to rename 
+ * @returns Obejct with renamed keys
+ *
+ * @example
+ * keysMap = {
+ *    name: 'firstName',
+ *    job: 'passion'
+ * };
+ *
+ * obj = {
+ *    name: 'Bobo',
+ *    job: 'Front-End Master'
+ * };
+ *
+ *  renameKeys(keysMap, obj);
+ * // { firstName: 'Bobo', passion: 'Front-End Master' }
+*/
+const renameKeys = (keysMap, obj) => {
+   return Object.keys(obj).reduce(
+      (prev, key) => ({
+         ...prev,
+         ...{[keysMap[key] || key]: obj[key]}
+      }),{}
+   );
+}
+
+const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
+   const GLIMPSE_OBJECT = {"objects": []};
+   const newCIMobjs = [];
+   const nodeTypes = Object.keys(theme.groups);
+   const edgeTypes = Object.keys(theme.edgeOptions);
+
+   const edgeOptions = theme.edgeOptions;
+   let glmNetwork = null; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
    const highlightedNodes = [];
+
+   /**
+   * Create nodes and edges based on the object type being visualized in the main network
+   * @param {Object} typeCounts - containes the counts of node and edge types
+   * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
+   */
+   const getLegendData = (typeCounts) => {
+      const legendData = {
+         "nodes": new DataSet(),
+         "edges": new DataSet()
+      };
+      
+      const currentNodeTypes = [];
+      const currentEdgeTypes = [];
+
+      Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
+         if (count > 0) currentNodeTypes.push(type);
+      });
+
+      Object.entries(typeCounts.edges).forEach(([type, count], i) => {
+         if (count > 0) currentEdgeTypes.push(type);
+      });
+
+      let x_increment = null;
+      if (currentNodeTypes.length < 6)
+         x_increment = 800 / currentNodeTypes.length;
+      else 
+         x_increment = 1500 / currentNodeTypes.length;
+
+      let farthest_x = 0;
+      let current_x = 0;
+      let current_y = 0;
+      let rowNodeCount = 0;
+
+      for (let nodeType of currentNodeTypes) {
+         if (legendData.nodes.length === 0) {
+
+            if (nodeType in theme.groups) {
+               legendData.nodes.add({
+                  id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+                  label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+                  size: 25,
+                  color: theme.groups[nodeType].color,
+                  shape: theme.groups[nodeType].shape,
+                  image: theme.groups[nodeType].image,
+                  group: nodeType,
+                  x: current_x,
+                  y: current_y,
+                  physics: false,
+                  fixed: true
+               });
+               rowNodeCount++;
+               continue;
+            }
+
+            legendData.nodes.add({
+               id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+               label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+               size: 25,
+               shape: "dot",
+               groups: nodeType,
+               x: current_x,
+               y: current_y,
+               physics: false,
+               fixed: true
+            });
+            rowNodeCount++;
+            continue;
+         }
+
+         if (rowNodeCount === 6) {
+            farthest_x = current_x;
+            rowNodeCount = 0;
+            current_x = 0;
+            current_y -= 125;
+         }
+         else {
+            current_x += x_increment;
+         }
+
+         if (nodeType in theme.groups) {
+            legendData.nodes.add({
+               id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+               label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+               size: 25,
+               color: theme.groups[nodeType].color,
+               shape: theme.groups[nodeType].shape,
+               image: theme.groups[nodeType].image,
+               group: nodeType,
+               x: current_x,
+               y: current_y,
+               physics: false,
+               fixed: true
+            });
+
+            rowNodeCount++;
+            continue;
+         }
+         
+         legendData.nodes.add({
+            id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
+            label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+            size: 25,
+            shape: "dot",
+            group: nodeType,
+            x: current_x,
+            y: current_y,
+            physics: false,
+            fixed: true
+         });
+         rowNodeCount++;
+      }
+
+      current_y = 125;
+      currentEdgeTypes.forEach((type, index) => {
+
+         legendData.nodes.add({
+            id: `${type}:${index}`,
+            x: current_x === farthest_x ? -250 : 0,
+            y: current_y,
+            fixed: true,
+            physcis: false,
+            color: "#000"
+         });
+
+         legendData.nodes.add({
+            id: `${type}:${index + 1}`,
+            x: farthest_x === current_x ? 250 : farthest_x === 0 ? current_x : farthest_x,
+            y: current_y,
+            fixed: true,
+            physcis: false,
+            color: "#000"
+         })
+
+         if (type in edgeOptions) {
+            legendData.edges.add({
+               id: type,
+               from: `${type}:${index}`,
+               to: `${type}:${index + 1}`,
+               label: `${type} [${typeCounts.edges[type]}]`,
+               width: 8,
+               color: edgeOptions[type].color
+            });
+         }
+         else {
+            legendData.edges.add({
+               id: type,
+               from: `${type}:${index}`,
+               to: `${type}:${index + 1}`,
+               label: `${type} [${typeCounts.edges[type]}]`,
+               width: 8,
+            });
+         }
+
+         current_y += 65;
+      });
+
+      return legendData;
+   }
 
    // data object that holds a DataSet for nodes and edges
    const data = {
@@ -151,49 +247,13 @@ const Graph = (props) => {
       "edges": new DataSet()
    };
 
-   const newCIMobjs = [];
-
    // used to keep count of each object type
    const objectTypeCount = {
-      "nodes": {
-         "communication_node": 0,
-         "triplex_meter": 0,
-         "inverter_dyn": 0,
-         "triplex_load": 0, 
-         "triplex_node": 0,
-         "substation": 0,
-         "diesel_dg": 0,
-         "capacitor": 0,
-         "technique": 0,
-         "microgrid": 0,
-         "terminal": 0,
-         "location": 0,
-         "c_node": 0,
-         "person": 0,
-         "capec": 0,
-         "meter": 0,
-         "load": 0,
-         "node": 0,
-         "cwe": 0,
-         "cve": 0,
-      },
-      "edges": {
-         "underground_line": 0,
-         "series_reactor": 0,
-         "overhead_line": 0,
-         "triplex_line": 0,
-         "transformer": 0,
-         "parentChild": 0,
-         "regulator": 0,
-         "traveling": 0,
-         "switch": 0,
-         "friend": 0, 
-         "line": 0
-      }
+      "nodes": Object.keys(theme.groups).reduce((o, key) => ({...o, [key]: 0}), {}),
+      "edges": Object.keys(theme.edgeOptions).reduce((o, key) => ({...o, [key]: 0}), {})
    };
 
-   const nodeTypes = appConfig.nodeTypes; //These types are recognized as nodes
-   const edgeTypes = appConfig.edgeTypes; //These types are recognized as edges
+   objectTypeCount.edges.parentChild = 0;
 
    let setLegendData;
    const legendMount = (legendSetFunc) => {
@@ -204,46 +264,35 @@ const Graph = (props) => {
    * Collects all the nodes and edges with their attributes and sets it to the data variable
    * @param {Object} dataFiles 
    */
-   const setGraphData = (dataFiles) => {
-      const files = [];
-      const keys = ["name", "objectType", "id"]; // the first key of each object must have one of these key names
 
-      //this loop splits the json into each file name and their data to an array
-      //each key of the json is the file name along with the file's data
-      for (const file in dataFiles) {
-         files.push(dataFiles[file]);
-      }
+   const setGraphData = (dataFromFiles) => {
+      const keys = ["id", "objectType", "name"];
+      const files = Object.keys(dataFromFiles).map(file => dataFromFiles[file]);
 
-      //For each file gather all of the nodes that matches the types
       for (const file of files) {
-
          const objs = file.objects;
 
-         for (const obj of objs) {
-            let name;
-            Object.keys(obj).forEach((k) => {
-               if (keys.includes(k)) {
-                  name = k;
-               }
-            });
+         const newObjs = objs.map((obj) => {
+            const attributes = obj.attributes;
+            const nameForObjType = keys.find(key => key in obj);
+            const objectType = obj[nameForObjType];
+            const nameForObjID = keys.find(key => key in attributes);
 
-            const objectType = obj[name]; // the object type is the first key of each object
-            const attributes = obj.attributes; // get the atributes of each object
+            const nodeID = attributes[nameForObjID];
             
-            if (nodeTypes.includes(objectType)) { // if the object is of a node type then it is added as a node
-               Object.keys(attributes).forEach((k) => {
-                  if (keys.includes(k)) {
-                     name = k;
-                  }
-               });
-
-               const nodeID = attributes[name]; // the ID of each object is in the atributes js Object
-
-               // if the object has x and y coordinates they will be added to the node's object datastructure
-               if (Object.keys(attributes).includes("x") && Object.keys(attributes).includes("y")) {
-                  data.nodes.add({
+            if (nodeTypes.includes(objectType)) {
+               if ("x" in attributes && "y" in attributes) {
+                  objectTypeCount.nodes[objectType]++;
+                  
+                  if (!("elemetType" in obj))
+                     GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+                  else
+                     GLIMPSE_OBJECT.objects.push(obj);
+                     
+                  return ({
                      "id": nodeID,
                      "label": nodeID,
+                     "elementType": "node",
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -251,102 +300,185 @@ const Graph = (props) => {
                      "y": parseInt(attributes.y, 10)
                   });
                }
-               else if (Object.keys(attributes).includes("level")) {
-                  if (!options.layout.hierarchical.enabled)
-                     options.layout.hierarchical.enabled = true;
-
-                  options.edges.smooth.roundness = 0;
-                  data.nodes.add({
+               else if ("level" in attributes) {
+                  if (!graphOptions.layout.hierarchical.enabled)
+                     graphOptions.layout.hierarchical.enabled = true;
+      
+                  if (objectType in objectTypeCount.nodes)
+                     objectTypeCount.nodes[objectType]++;
+                  else
+                     objectTypeCount.nodes[objectType] = 1;
+   
+                  if (!("elemetType" in obj))
+                     GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+                  else
+                     GLIMPSE_OBJECT.objects.push(obj);
+   
+                  return ({
                      "id": nodeID,
                      "label": nodeID,
+                     "elementType": "node",
                      "level": attributes.level,
                      "attributes": attributes,
                      "group": objectType,
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   });
                }
-               else {
-                  if (options.layout.hierarchical.enabled) {
-                     options.layout.hierarchical.enabled = false;
-                     options.physics.solver = "barnesHut";
-                  }
+                              
+               objectTypeCount.nodes[objectType]++;
 
-                  data.nodes.add({
-                     "id": nodeID,
-                     "label": nodeID.length > 15 ? "" : nodeID,
-                     "attributes": attributes,
-                     "group": objectType,
-                     "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
-                  });
+               obj = renameKeys({name: "objectType"}, obj);
+               obj.attributes = renameKeys({name: "id"}, obj.attributes);
+               
+               if (!("elemetType" in obj))
+                  GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
+               else
+                  GLIMPSE_OBJECT.objects.push(obj);
+
+               return ({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "elementType": "node",
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+               });
+               
+            }
+            else if ("elementType" in obj && obj.elementType === "node") {
+               if (!(objectType in theme.groups)){
+                  theme.groups[objectType] = {
+                     "color": getRandomColor(),
+                     "shape": "dot"
+                  };
                }
                
-               objectTypeCount.nodes[objectType]++;
+               if(!nodeTypes.includes(objectType))
+                  nodeTypes.push(objectType);
+
+               if (objectType in objectTypeCount.nodes)
+                  objectTypeCount.nodes[objectType]++;
+               else
+                  objectTypeCount.nodes[objectType] = 1;
+
+               GLIMPSE_OBJECT.objects.push(obj);
+
+               return ({
+                  "id": nodeID,
+                  "label": nodeID,
+                  "elementType": "node",
+                  "size": 15,
+                  "level": Object.keys(attributes).includes("level") ? attributes.level : undefined,
+                  "attributes": attributes,
+                  "group": objectType,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
+                  "shape": "dot"
+               });
             }
-         }
+
+            return obj;
+         });
+      
+         data.nodes.add(newObjs.filter(obj => obj.elementType === "node"));
       }
 
-      // for each file gather all of the edge types and create edges between nodes
       for (const file of files) {
          const objs = file.objects;
 
-         for (const obj of objs) {
-            let name;
-            let attributeName;
-
-            Object.keys(obj).forEach((k) => {
-               if (keys.includes(k)) {
-                  name = k;
-               }
-            })
-
-            const objectType = obj[name];
+         const newObjs = objs.map((obj) => {
             const attributes = obj.attributes;
+            const nameForObjType = keys.find(key => Object.keys(obj).includes(key));
+            const objectType = obj[nameForObjType];
+            const nameForObjID = keys.find(key => Object.keys(attributes).includes(key));
 
-            Object.keys(attributes).forEach(k => {
-               if (keys.includes(k)) {
-                  attributeName = k;
-               }
-            })
+            if (nodeTypes.includes(objectType) && "parent" in attributes) {
+               const nodeID = attributes[nameForObjID];
+               const parent = attributes.parent;
 
-            if (edgeTypes.includes(objectType)) {
+               objectTypeCount.edges.parentChild++;
+
+               GLIMPSE_OBJECT.objects.push({
+                  "objectType": "parentChild",
+                  "elementType": "edge",
+                  "attributes": {
+                     "id": `${parent}-${nodeID}`,
+                     "from": parent,
+                     "to": nodeID
+                  }
+               });
+               return ({
+                  "id": `${parent}-${nodeID}`,
+                  "from": parent,
+                  "to": nodeID,
+                  "elementType": "edge",
+                  "type": "parentChild",
+                  "width": 2,
+                  "attributes": {"to": parent, "from": nodeID},
+                  "title": getTitle({"objectType": "parentChild", "to": parent, "from": nodeID}),
+                  "color": {"inherit": true}
+               });
+            }
+            else if (edgeTypes.includes(objectType)) {  
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = objectType + ":" + attributes[attributeName];
+               const edgeID = attributes[nameForObjID];
 
-               data.edges.add({
+               objectTypeCount.edges[objectType]++;
+
+               obj = renameKeys({name: "objectType"}, obj);
+               obj.attributes = renameKeys({name: "id"}, obj.attributes);
+
+               GLIMPSE_OBJECT.objects.push({...obj, "elementType": "edge"});
+
+               return ({
                   "id": edgeID,
                   "from": edgeFrom,
-                  "to": edgeTo,
+                  "to": edgeTo, 
+                  "elementType": "edge",
+                  "type": objectType,
                   "attributes": attributes,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
                });
-               
-               objectTypeCount.edges[objectType]++;
             }
-            else if (nodeTypes.includes(objectType)) {// some nodes have a parent attribute
-               const nodeID = attributes[attributeName];
-               const parent = attributes.parent;
-               
-               if (parent !== undefined) {
-                  data.edges.add({
-                     "id": `parentChild:${parent}-${nodeID}`,
-                     "from": parent,
-                     "to": nodeID,
-                     "attributes": {"to": parent, "from": nodeID},
-                     "color": {"inherit": true}
-                  });
+            else if ("elementType" in obj && obj.elementType === "edge") {
+               const edgeFrom = attributes.from;
+               const edgeTo = attributes.to;
+               const edgeID = attributes[nameForObjID];
 
-                  objectTypeCount.edges.parentChild++;
-               }
+               if (!(objectType in edgeOptions))
+                  edgeOptions[objectType] = {"color": getRandomColor()};
+
+               if (objectType in objectTypeCount.edges)
+                  objectTypeCount.edges[objectType]++;
+               else
+                  objectTypeCount.edges[objectType] = 1;
+
+               GLIMPSE_OBJECT.objects.push(obj);
+               
+               return ({
+                  "id": edgeID,
+                  "from": edgeFrom,
+                  "to": edgeTo,
+                  "elementType": "edge",
+                  "type": objectType,
+                  "attributes": attributes,
+                  "color": edgeOptions[objectType].color,
+                  "width": 2,
+                  "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
+               });
             }
-         }
+
+            return obj;
+         });
+      
+         data.edges.add(newObjs.filter(obj => obj.elementType === "edge"));
       }
    }
 
    /**
-   * Zooms in on a node
+   * Zooms in on a node that maches the provided ID
    * @param {string} nodeID - the ID of a node 
    */
    const NodeFocus = (nodeID) => {
@@ -367,39 +499,41 @@ const Graph = (props) => {
    */
    const Reset = () => {
       highlightedNodes.length = 0;
-
       const nodesResetMap = data.nodes.map((node) => {
-         delete node.color;
          delete node.size;
-         node.hidden = false;
+         delete node.color;
+         delete node.shape;
+         node.label = node.id;
 
          return node;
       });
 
       const edgeItems = data.edges.map((edge) => {
-         const edgeType = edge.id.split(":")[0];
+         const edgeType = edge.type;
 
          if (edge.width === 8) {
             edge.width = 2;
             edge.hidden = false;
+
             return edge;
          }
          else if (edgeTypes.includes(edgeType)) {
-            edge.color = edgeOptions[edgeType].color;
             edge.width = edgeOptions[edgeType].width;
+            edge.color = edgeOptions[edgeType].color;
             edge.hidden = false;
+
             return edge;
          }
          else {
-            edge.color = {inherit: true};
-            edge.width = 0.15;
+            edge.color = {"inherit": true};
+            edge.width = 2;
             edge.hidden = false;
+
             return edge;
          }
       });
 
       data.nodes.update(nodesResetMap);
-      console.log("check");
       data.edges.update(edgeItems);
       glmNetwork.fit();
       counter = -1;
@@ -420,8 +554,11 @@ const Graph = (props) => {
    * Generates an array of highlighted nodes and focuses on a node 
    * starting at the end of the array then moves down every function call
    */
+   /**
+   * Generates an array of highlighted nodes and focuses on a node
+   * starting at the end of the array then moves down every function call
+   */
    const Prev = () => {
-
       counter--;
 
       //if the counter ends up less than 0 the counter starts over at the end of the array
@@ -430,12 +567,8 @@ const Graph = (props) => {
       }
    
       try {
-         glmNetwork.focus(highlightedNodes[counter], {
-            "scale": 3,
-            "animation": true
-         });
-      }
-      catch {
+         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
+      } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
    }
@@ -445,7 +578,6 @@ const Graph = (props) => {
    * starting at the beginning of the array then moves up by one every function call
    */
    const Next = () => {
-
       // starting counter is -1 so that when adding one is 0 to start at index 0
       counter++;
 
@@ -455,12 +587,8 @@ const Graph = (props) => {
       }
 
       try {
-         glmNetwork.focus(highlightedNodes[counter], {
-            "scale": 3,
-            "animation": true
-         });
-      }
-      catch {
+         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
+      } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
    }
@@ -472,28 +600,33 @@ const Graph = (props) => {
    */
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
-
-         if (node.group === nodeType || node.size === 15){
-            delete node.color;
-            node.size = 15;
+         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 5)) {
+            return node;
+         }
+         else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
+            node.size = 10;
+            node.shape = "dot"
+            node.color = "rgba(200,200,200,0.5)";
+            node.label = " ";
+            return node;
+         }
+         else if (node.group === nodeType && !highlightedNodes.includes(node.id)) {
+            if (node.size === 10) {
+               node.size = 25;
+               delete node.color;
+               delete node.shape;
+               node.label = node.id;
+            }
+            node.size = 25;
             highlightedNodes.push(node.id);
-
             return node;
          }
-         else if (node.group === nodeType && node.size === 15){
-            node.size = 1;
-            node.color = "lightgrey";
-            return node;
-         }
-      
-         node.size = 1;
-         node.color = "lightgrey";
-         return node;
       });
       
       const edgesMap = data.edges.map((edge) => {
          if (edge.width !== 8) {
-            edge.color = "lightgrey";
+            edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
          }
 
          return edge;
@@ -509,37 +642,38 @@ const Graph = (props) => {
    * @param {string} edgeType - The type of edges to highlight
    */
    const HighlightEdges = (edgeType) => {
-      const nodeItems = data.nodes.map((n) => {
-         if (n.size !== 15) {
-            n.color = "lightgrey";
-            n.size = 1;
+      if (highlightedNodes.length === 0) {
+         const nodeItems = data.nodes.map((node) => {
+            node.size = 5;
+            node.shape = "dot"
+            node.color = "rgba(200,200,200,0.5)";
+            node.label = " ";
+            return node;
+         });
 
-            return n;
-         }
-         return n;
-      });
-      
+         data.nodes.update( nodeItems );
+      }
+
       const edgeItems = data.edges.map((edge) => {
-         if (edge.id.split(":")[0] === edgeType) {
-            edge.color = edgeOptions[edgeType].color;
+         if (edge.type === edgeType) {
             edge.width = 8;
+            edge.color = edgeOptions[edge.type].color;
             return edge;
          }
          else if (edge.width !== 8) {
-            edge.color = "lightgrey";
             edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
             return edge;
          }
          return edge;
       });
       
-      data.nodes.update( nodeItems );
       data.edges.update( edgeItems );
    }
 
    /* ------------------------ Estabilsh Network ------------------------ */
 
-   setGraphData(props.dataToVis);
+   setGraphData(dataToVis);
    
    console.log( "Number of Nodes: " + data.nodes.length );
    console.log( "Number of Edges: " + data.edges.length );
@@ -549,22 +683,25 @@ const Graph = (props) => {
     * Then downloads the data back to the  user's computer as a zip folder with glm files
    */
    const Export = () => {
-      if (!props.cim) {
-         Object.keys(props.dataToVis).forEach(( file ) => {
-            props.dataToVis[file]["objects"].forEach((object) => {
-               const objType = object.name;
-
-               if (nodeTypes.includes(objType)) {
-                  object.attributes = data.nodes.get(object.attributes.name).attributes;
+      if (isGlm) {
+         Object.keys(dataToVis).forEach((file) => {
+            dataToVis[file].objects.forEach((obj) => {
+               if ("attributes" in obj && data.nodes.getIds().includes(obj.attributes.name)) {
+                  obj.attributes = data.nodes.get(obj.attributes.name).attributes;
                }
             });
          });
 
-         // this end point will convert the json data back to its original glm files with changesl
-         window.glimpseAPI.json2glm(JSON.stringify(props.dataToVis));
+         window.glimpseAPI.json2glm(JSON.stringify(dataToVis));
       }
-
-      window.glimpseAPI.export2CIM(JSON.stringify(newCIMobjs));
+      else if (isCim) {
+         console.log(Object.keys(dataToVis)[0]);
+         console.log(newCIMobjs);
+         window.glimpseAPI.export2CIM(JSON.stringify({filename: Object.keys(dataToVis)[0], objs: newCIMobjs}));
+      }
+      else {
+         alert("Export feature available for .glm and .xml(CIM) uploads for now");
+      }
    }
 
    let setCurrentNode;
@@ -664,7 +801,7 @@ const Graph = (props) => {
     * @param {string} objectType - the type of node or edge like "load" or "overhead_line"
     * @param {string} type - "node" or "edge"
     */
-   const hideNodes = (objectType, type) => {
+   const hideObjects = (objectType, type) => {
       if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
             if (node.group === objectType) {
@@ -717,6 +854,7 @@ const Graph = (props) => {
    */
    const setCommunicationNetwork = ({filename, fileData}) => {
       const microgrids = fileData.microgrid;
+      const communication_nodes = fileData.communication_nodes;
 
       const types = [
          "node",
@@ -726,6 +864,8 @@ const Graph = (props) => {
          "capacitor",
          "regulator",
          "diesel_dg",
+         "microgirds",
+         "communication_node"
       ];
 
       for (const microgrid of microgrids) {
@@ -754,6 +894,32 @@ const Graph = (props) => {
          }
       }
 
+      for (const comm_node of communication_nodes) {
+         data.nodes.add({
+            id: comm_node.name,
+            label: comm_node.name,
+            group: "communication_node"
+         })
+
+         objectTypeCount.nodes.communication_node++;
+
+         for (const type of Object.keys(comm_node)) {
+            if (types.includes(type)) {
+               comm_node[type].forEach((nodeID) => {
+                  data.edges.add({
+                     id: `parentChild:${comm_node.name}-${nodeID}`,
+                     from: comm_node.name,
+                     to: nodeID,
+                     color: {inherit: true},
+                     width: 0.15
+                  });
+               });
+
+               objectTypeCount.edges.parentChild++;
+            }
+         }
+      }
+
       setLegendData(getLegendData(objectTypeCount));
    }
 
@@ -766,7 +932,7 @@ const Graph = (props) => {
     * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
     */
    const addNewNode = ({nodeType, nodeID, connectTo, edgeType}) => {
-      if (props.cim) {
+      if (isCim) {
          const NEW_C_NODE_ID = v4(); // new node for new terminal
          const NEW_NODE_ID = v4(); // new terminal with type
          const TERMINAL_1_ID = v4(); // connected to the new connectivity node
@@ -926,8 +1092,6 @@ const Graph = (props) => {
       }
       
       data.edges.remove(edgesToDelete);
-
-      console.log(data.edges.length);
    }
 
    const getConnectivityNodes = () => {
@@ -941,6 +1105,8 @@ const Graph = (props) => {
    }
 
    window.glimpseAPI.onShowAttributes(showAttributes);
+   window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
+   window.glimpseAPI.onExtract(Export);
 
    const container = useRef(null);
    const toggleLegendRef = useRef(null);
@@ -950,21 +1116,23 @@ const Graph = (props) => {
 
       //if Nodes and edges have x and y coordinates load the network
       //without displaying the circular progess bar 
-      if (Object.keys(data.nodes.get()[0]).includes("x") && Object.keys(data.nodes.get()[0]).includes("y")) {
-         options.physics.stabilization.enabled = false;
+      if ("x" in data.nodes.get()[0] && "y" in data.nodes.get()[0]) {
+         graphOptions.physics.stabilization.enabled = false;
          document.getElementById("circularProgress").style.display = "none";
-         glmNetwork = new Network(container.current, data, options);
+         glmNetwork = new Network(container.current, data, graphOptions);
          glmNetwork.setOptions({physics: {enabled: false}})
       }
       else { 
-         if (data.nodes.length > 200) {
-            options.physics.barnesHut.gravitationalConstant = -100000;
-            options.physics.barnesHut.springConstant = 0.5;
-            options.physics.barnesHut.springLength = 50;
+         if (data.nodes.length > 151) {
+            graphOptions.edges.smooth.type = "continuous";
+            graphOptions.physics.barnesHut.gravitationalConstant = -80000;
+            graphOptions.physics.barnesHut.springConstant = 0.35;
+            graphOptions.physics.barnesHut.springLength = 250;
          }
 
          // create network
-         glmNetwork = new Network(container.current, data, options);
+         glmNetwork = new Network(container.current, data, graphOptions);
+         glmNetwork.setOptions({groups: theme.groups});
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -972,17 +1140,20 @@ const Graph = (props) => {
             const minWidth = 1;
             const widthFactor = params.iterations / params.total;
             const width = Math.max(minWidth, maxWidth * widthFactor);
-            document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 "+ width +"deg, #333 0deg)";
+            document.getElementById("circularProgress").style.background = `conic-gradient(#b25a00 ${width}deg, #333 0deg)`;
             document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
          });
          
          glmNetwork.once("stabilizationIterationsDone", () => {
-            glmNetwork.setOptions({"edges": {"hidden": false}, "physics": {"enabled": false}});
-
+            glmNetwork.setOptions({"edges": {"hidden": false}})
+            
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
             document.getElementById("circularProgress").style.opacity = 0.7;
+            
+            /* set physics to false for better performance when stabalization is done */
+            glmNetwork.setOptions({physics: {enabled: false}})
 
             setTimeout(() => {
                document.getElementById("circularProgress").style.display = "none";
@@ -990,19 +1161,19 @@ const Graph = (props) => {
          });
       }
 
-      glmNetwork.on("hoverNode", ({ node }) => {
-         const currNode = data.nodes.get(node);
-         currNode.label = node;
-         data.nodes.update(currNode);
-      });
+      // glmNetwork.on("hoverNode", ({ node }) => {
+      //    const currNode = data.nodes.get(node);
+      //    currNode.label = node;
+      //    data.nodes.update(currNode);
+      // });
 
-      glmNetwork.on("blurNode", ({ node }) => {
-         const currNode = data.nodes.get(node);
-         if (currNode) {
-            currNode.label = "";
-            data.nodes.update(currNode);
-         }
-      });
+      // glmNetwork.on("blurNode", ({ node }) => {
+      //    const currNode = data.nodes.get(node);
+      //    if (currNode) {
+      //       currNode.label = "";
+      //       data.nodes.update(currNode);
+      //    }
+      // });
        
       glmNetwork.on("doubleClick", (params) => {
          if (params.nodes[0] === undefined) {
@@ -1032,7 +1203,7 @@ const Graph = (props) => {
    return (
       <>
          <ActionBar
-            graphDataObj={props.dataToVis}
+            graphDataObj = {GLIMPSE_OBJECT}
             nodesDataObj = {data.nodes}
             physicsToggle = {TogglePhysics}
             reset = {Reset}
@@ -1041,9 +1212,9 @@ const Graph = (props) => {
             next = {Next}
             download = {Export}
             addGraphOverlay = {setCommunicationNetwork}
-            nodeIDs={data.nodes.getIds()}
-            toggleLegendRef={toggleLegendRef}
-            showLegendStateRef={showLegendStateRef}
+            nodeIDs = {data.nodes.getIds()}
+            toggleLegendRef = {toggleLegendRef}
+            showLegendStateRef = {showLegendStateRef}
          />
 
          <NodePopup 
@@ -1054,8 +1225,10 @@ const Graph = (props) => {
 
          <NewNodeForm
             onMount={onNewNodeFormMount}
-            nodes={props.cim ? getConnectivityNodes() : data.nodes.getIds()}
+            nodes={isCim ? getConnectivityNodes() : data.nodes.getIds()}
             addNode = {addNewNode}
+            nodeTypes={Object.keys(objectTypeCount.nodes)}
+            edgeTypes={Object.keys(objectTypeCount.edges)}
          />
 
          <div id="networks-wrapper">
@@ -1081,7 +1254,7 @@ const Graph = (props) => {
          <Legend 
             findGroup = {HighlightGroup} 
             findEdges = {HighlightEdges}
-            hideNodes = {hideNodes}
+            hideObjects = {hideObjects}
             legendData = {getLegendData(objectTypeCount)}
             onMount={legendMount}
             setShowLegendRef={toggleLegendRef}

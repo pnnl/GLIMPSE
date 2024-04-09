@@ -5,18 +5,20 @@ const {
    dialog,
    Menu,
 } = require("electron");
-const { execSync, spawn } = require("child_process");
+const { execSync, spawn, execFile } = require("child_process");
 const path = require("path");
+const { io } = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
-const jsonSchema = require("./upload.schema.json");
 
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
-
+const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
+const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
-let cimGraphData;
+
+const rootDir = __dirname;
+// const rootDir = process.resourcesPath;
+
+let win = null;
 
 const checkIncludes = ( jsonData ) => {
    const included_files = [];
@@ -30,8 +32,7 @@ const checkIncludes = ( jsonData ) => {
 
    Object.keys(jsonData).forEach((fileName) => {
 
-      if (jsonData[fileName]["includes"].length > 0) 
-      {
+      if (jsonData[fileName]["includes"].length > 0) {
          jsonData[fileName]["includes"].forEach((include) => {
             includeS_files.push(include.value.split(".")[0] + ".json");
          });
@@ -64,30 +65,42 @@ const glm2json = async (filePaths) => {
    }
 }
 
+const readThemeFile = (filepath) => {
+   return fs.readFileSync(path.join(rootDir, "themes", filepath), {encoding: "utf-8"});
+}
+
 const export2cim = async (CIMobjs) => {
+   let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
+
+   if (dir2save.canceled) return null;
+   dir2save = dir2save.filePaths[0];
+
    const res = await fetch("http://127.0.0.1:5000/add2cim", {
       method: "POST",
       headers: {
          "content-type": "application/json"
       },
-      body: JSON.stringify(CIMobjs)
+      body: JSON.stringify({savepath: dir2save, data: CIMobjs})
    });
 
-   console.log(res.ok)
+   if (res.ok) {
+      console.log(res.ok);
+   }
 }
 
-const createJsonFile = (filename, data) => {
-   fs.writeFileSync(filename, data, (err) => {
-      if (err) {
-         console.log(err);
-      } else {
-         console.log('File written successfully.');
-      }
-   });
+const exportThemeFile = async (themeData) => {
+   const filename = "GLIMPSE_theme_export.json";
+   let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
+
+   if (dir2save.canceled) return null;
+   dir2save = dir2save.filePaths[0];
+
+   console.log(dir2save);
+
+   fs.writeFileSync(path.join(dir2save, filename), JSON.stringify(themeData, null, 3));   
 }
 
 const getGraphStats = async (data) => {
-   console.log(typeof data);
    const res = await fetch("http://127.0.0.1:5000/getstats", {
       method: "POST",
       headers: {
@@ -107,16 +120,49 @@ const sendPlot = () => {
 
 const validateJson = (filePaths) => {
    const ajv = new Ajv();
-   const validate = ajv.compile(jsonSchema);
+   const validate = ajv.compile(JSON.parse(jsonSchema));
    const data = {};
+   const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
 
    for (const filePath of filePaths) {
-      const fileData = require(filePath);
-      valid = validate(fileData);
+      const fileData = JSON.parse(fs.readFileSync(filePath, {"encoding":"utf-8"}));
+      
+      if (nodeLinkDataKeys.every(key => key in fileData)) {
+         data[path.basename(filePath)] = {
+            "objects": []
+         };
 
-      if (!valid) break;
-      else data[path.basename(filePath)] = fileData;
+         for (const node of fileData.nodes) {
+            data[path.basename(filePath)].objects.push({
+               "objectType": node.type,
+               "elementType": "node",
+               "attributes": node
+            });
+         }
+
+         for (const edge of fileData.edges) {
+            const {source, target, key, ...rest} = edge;
+
+            data[path.basename(filePath)].objects.push({
+               "objectType": edge.type,
+               "elementType": "edge",
+               "attributes":{
+                  "id": `${source}-${target}-${key}`,
+                  "from": source,
+                  "to": target,
+                  ...rest
+               }
+            });
+         }
+      }
+      else {
+         valid = validate(fileData);
+         if (!valid)
+            break;
+         else
+            data[path.basename(filePath)] = fileData;
+      }
    }
 
    if (!valid) {
@@ -124,12 +170,10 @@ const validateJson = (filePaths) => {
       return {"error": errorMessage};
    }
 
-   return JSON.stringify(data);
+   return data;
 }
 
 const json2glmFunc = async (jsonData) => {
-   let newFilename;
-   let args;
    // have the user choose where to store the files
    let dir2save = await dialog.showOpenDialog({"properties": ["openDirectory"]});
    if (dir2save.canceled) return null;
@@ -142,27 +186,34 @@ const json2glmFunc = async (jsonData) => {
    
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
-      newFilename = file.split(".")[0] + ".glm";
-      args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} >> ${path.join(dir2save, newFilename)}`;
+      const newFilename = file.split(".")[0] + ".glm";
+      const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} > ${path.join(dir2save, newFilename)}`;
 
-      createJsonFile(path.join(dir2save, file), JSON.stringify(parsedData[file]));
+      fs.writeFileSync(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
       execSync(args);
       fs.rmSync(path.join(dir2save, file));
    }
 }
 
+const getCIM = async (filepath) => {
+   const res = await fetch("http://127.0.0.1:5000/getcim", {
+      method: "POST",
+      headers: {
+         "content-type": "application/json"
+      },
+      body: JSON.stringify([filepath])
+   });
+
+   if (res.ok) {
+      return await res.json();
+   }
+   else {
+      console.log(res.text())
+   }
+}
+
 const makeWindow = () => {
-   const python = spawn('py', ['./local-server/server.py']);
-
-   python.stdout.on('data', function (data) {
-      console.log("data: ", data.toString('utf8'));
-   });
-
-   python.stderr.on('data', (data) => {
-      console.log(`log: ${data}`); // when error
-   });
-
-   const win = new BrowserWindow({
+   win = new BrowserWindow({
       width: 1500,
       height: 900,
       minWidth: 1250,
@@ -178,11 +229,16 @@ const makeWindow = () => {
       }
    });
 
+
    const menu = Menu.buildFromTemplate([
       {
          label: "File",
          "submenu": [
-            isMac ? {role: "close"} : {role: "quit"}
+            isMac ? {role: "close"} : {role: "quit"},
+            {
+               label: "Export",
+               click: () => win.webContents.send("extract")
+            }
          ]
       },
       {
@@ -216,6 +272,44 @@ const makeWindow = () => {
          ]
       },
       {
+         label: "Themes",
+         id: "themes-menu-item",
+         "submenu": [
+            {
+               label: "Export Theme File",
+               type: "normal",
+               click: () => win.webContents.send("export-theme")
+            },
+            {type: "separator"},
+            {
+               label: "Power Grid [default]",
+               id: "power-grid-theme",
+               type: "radio",
+               checked: true,
+            },
+            {
+               label: "Social",
+               id: "social-theme",
+               type: "radio",
+            },
+            {
+               label: "Layout",
+               id: "layout-theme",
+               type: "radio",
+            },
+            {
+               label: "Fishing",
+               id: "fishing-theme",
+               type: "radio",
+            },
+            {
+               label: "CIM",
+               id: "cim-theme",
+               type: "radio",
+            }
+         ]
+      },
+      {
          label: "Graph View",
          submenu: [
             {
@@ -229,23 +323,63 @@ const makeWindow = () => {
          ]
       }
    ]);
+
    Menu.setApplicationMenu(menu);
 
+   ipcMain.handle("getSelectedTheme", () => {
+      for (const item of Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items)
+         if (item.checked)
+            return item.id;
+   });
+   ipcMain.handle("getConfig", () => {
+      return fs.readFileSync(path.join(rootDir, "config", "appConfig.json"), {"encoding": "utf-8"});
+   });
    ipcMain.handle("glm2json", (event, paths) => glm2json(paths));
    ipcMain.handle("getStats", (event, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (event, jsonFilePath) => validateJson(jsonFilePath));
-   ipcMain.handle("getCIM", () => cimGraphData);
+   ipcMain.handle("getCIM", (event, cimFilePath) => getCIM(cimFilePath));
+   ipcMain.handle("getThemeJsonData", (e, path) => readThemeFile(path));
    ipcMain.on("json2glm", (event, jsonData) => json2glmFunc(jsonData));
+   ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
    ipcMain.on("export2CIM", (event, CIMobjs) => export2cim(CIMobjs));
 
-   cimGraphData = JSON.stringify(require("./data/CIM/IEEE123.json"));
+   // Connect to WebSocket
+   socket.on("connect", () => console.log("Connected to socket server"));
+   socket.on("update-data", (data) => win.webContents.send("update-data", data));
+
    win.loadFile("./renderer/public/index.html");
    win.show();
 }
 
 app.whenReady().then(() => {
+   const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
+   let server = null;
+   if (fs.existsSync(serverPath)) {
+      server = execFile(serverPath, (error, stdout, stderr) => {
+         if (error) {
+            throw error;
+         }
+         console.log(stdout);
+      });
+   }
+   else {
+      const python = spawn('python', ['./local-server/server.py']);
+      python.stdout.on('data', function (data) {
+         console.log("data: ", data.toString('utf8'));
+      });
+
+      python.stderr.on('data', (err) => {
+         console.log(`log: ${err}`); // when error
+      });
+   }
+
    makeWindow();
+
+   app.on("before-quit", () => {
+      kill(server.pid);
+      kill(process.pid);
+   });
 });
 
 app.on('window-all-closed', () => {

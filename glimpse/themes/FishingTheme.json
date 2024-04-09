@@ -1,0 +1,54 @@
+{
+   "groups": {
+      "Location": {
+         "size": 15,
+         "image": "./imgs/location.svg",
+         "shape": "image"
+      },
+      "City": {
+         "size": 15,
+         "image": "./imgs/city.svg",
+         "shape": "image"
+      },
+      "FishingCompany": {
+         "size": 15,
+         "image": "./imgs/FishingCompany.svg",
+         "shape": "image"
+      },
+      "Person": {
+         "size": 15,
+         "image": "./imgs/person.svg",
+         "shape": "image"
+      },
+      "Company": {
+         "size": 15,
+         "image": "./imgs/company.svg",
+         "shape": "image"
+      },
+      "LogisticsCompany": {
+         "size": 15,
+         "image": "./imgs/logisticsCompany.svg",
+         "shape": "image"
+      },
+      "Region": {
+         "size": 15,
+         "image": "./imgs/region.svg",
+         "shape": "image"
+      },
+      "Point": {
+         "size": 15,
+         "image": "./imgs/point.svg",
+         "shape": "image"
+      }
+   },
+   "edgeOptions": {
+      "Fishing": {
+         "width": 0.5,
+         "color": "#6a994e"
+      },
+      "Summons": {
+         "width": 0.5,
+         "color": "#1b4965"
+      }
+   }
+}

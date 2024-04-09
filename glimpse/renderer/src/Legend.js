@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState} from "react";
 import { Network } from "vis-network";
+import LegendContextMenu from "./LegendContextMenu";
 import "./styles/vis-network.css";
 import "./styles/Legend.css";
-import appConfig from "./config/appConfig.json";
-import LegendContextMenu from "./LegendContextMenu";
-const options = appConfig.legendGraphOptions;
+const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({ 
    findGroup, 
    findEdges, 
-   hideNodes, 
+   hideObjects, 
    onMount, 
    legendData, 
    setShowLegendRef, 
@@ -53,7 +52,7 @@ const Legend = ({
 
    useEffect(() => {
       if (showLegend) {
-         const network = new Network(container.current, data, options);
+         const network = new Network(container.current, data, legendGraphOptions);
          network.fit();
          
          network.on("doubleClick", function (params) {
@@ -92,7 +91,7 @@ const Legend = ({
 
          <LegendContextMenu
             onMount={onContextMenuChildMount}
-            hideNodes={hideNodes}
+            hideObjects={hideObjects}
          />
       </>
    );

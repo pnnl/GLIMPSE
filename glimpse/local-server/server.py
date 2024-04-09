@@ -1,20 +1,12 @@
 from flask import Flask, request as req
-import cimgraph.data_profile.rc4_2021 as cim
-from cimgraph.databases import ConnectionParameters
-from cimgraph.databases import RDFlibConnection
-from cimgraph.models import FeederModel
-import cimgraph.utils as cim_utils
+from engineio.async_drivers import gevent
+from flask_socketio import SocketIO
 from uuid import uuid4
 import networkx as nx
 import random as rand
 import glm
 import ntpath
 import json
-
-params = ConnectionParameters(filename="./data/CIM/IEEE123.xml", cim_profile="rc4_2021", iec61970_301=7)
-rdf = RDFlibConnection(connection_params=params)
-feeder = cim.Feeder(mRID="_C1C3E687-6FFD-C753-582B-632A27E28507")
-
 
 # return the file name only
 def path_leaf(path: str):
@@ -36,106 +28,211 @@ def dict2json( glm_dict: dict ):
    return glm_json
 
 def get_nx_graph(file_data: dict):
-   edge_types = [ 
-      "microgrid_connection",
-      "underground_line",
-      "series_reactor",
-      "overhead_line",
-      "communication",
-      "triplex_line",
-      "transformer",
-      "parentChild",
-      "regulator",
-      "mapping",
-      "switch",
-      "line"
-   ]
-   node_types = [
-      "communication_node",
-      "triplex_meter", 
-      "triplex_load",
-      "triplex_node",
-      "inverter_dyn",  
-      "substation", 
-      "capacitor", 
-      "diesel_dg", 
-      "microgrid",
-      "technique",
-      "terminal",
-      "c_node",
-      "capec",
-      "meter", 
-      "load", 
-      "node", 
-      "cwe",
-      "cve"
-   ]
-
    graph = nx.MultiGraph()
 
-   for glm_file in file_data.values():
-      for object in glm_file['objects']:
-         obj_type = object['name'].split(':')[0] if ':' in object['name'] else object['name']
-         attributes = object['attributes']
-         
-         if obj_type in node_types:
-            object_id = attributes['name']
-            
-            graph.add_node(object_id, attributes = attributes)
-            
-
-   for glm_file in file_data.values():
-      for object in glm_file['objects']:
-         obj_type = object['name'].split(':')[0] if ':' in object['name'] else object['name']
-         attributes = object['attributes']
-
-         if obj_type in edge_types:
-            edge_from = attributes['from'].split(':')[1] if ':' in attributes['from'] else attributes['from']
-            edge_to = attributes['to'].split(':')[1] if ':' in attributes['to'] else attributes['to']
-            edge_id = object['name'] if ':' in object['name'] else obj_type + ':' + attributes['name']
-
-            graph.add_edge(edge_from, edge_to, id=  edge_id, attributes = attributes)
-         elif obj_type in node_types:
-            try:
-               parent = attributes['parent']
-               child = attributes['name']
-               graph.add_edge(parent, child)
-            except:
-               pass
-            
+   for obj in file_data["objects"]:
+      if obj["elementType"] == "node":
+         graph.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
+      else:
+         graph.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
+                        
    return graph
 
-def get_modularity(graph):
+def get_modularity(graph: nx.MultiGraph):
    modularity = nx.community.modularity(graph, nx.community.label_propagation_communities(graph))
-   print("modularity done")
    return modularity
 
 def get_avg_betweenness_centrality(graph):
    avg = 0
-   max_bc = 0
    myk = int(graph.number_of_nodes()*0.68)
    betweenness_centrality_dict = nx.betweenness_centrality(graph, k=myk)
    
    for centrality in betweenness_centrality_dict.values():
-      if centrality > max_bc:
-         max_bc = centrality
       avg += centrality
 
-   print(max_bc)
-   avg_betweenness_centrality = avg/len(betweenness_centrality_dict)
+   return avg/len(betweenness_centrality_dict)
+
+def cim2json(filepath: str):
+   from cimgraph.databases import ConnectionParameters
+   from cimgraph.databases import RDFlibConnection
+   import cimgraph.data_profile.rc4_2021 as cim
+   from cimgraph.models.feeder_model import FeederModel
+   import json
+
+   graphObj = {
+      f"{filepath}": {
+         "objects": []
+      }
+   }
+
+   def addObject(objType, attributes):
+      graphObj[filepath]['objects'].append({
+         "name": objType,
+         "attributes": attributes
+      })
+
+   # RDFLib File Reader Connection
+   params = ConnectionParameters(filename=filepath , cim_profile='rc4_2021', iec61970_301=7)
+   rdf = RDFlibConnection(params)
+
+   model_mrid = "_C1C3E687-6FFD-C753-582B-632A27E28507" #IEEE 123
+   container = cim.Feeder(mRID = model_mrid)
+   network = FeederModel(connection=rdf, container=container, distributed=False)
+
+   load_types = ['EnergyConsumer', 'ConformLoad', 'NonConformLoad']
+   gen_types = ['RotatingMachine', 'SynchronousMachine', 'AsynchronousMachine', 'EnergySource']
+   cap_types = ['ShuntCompensator', 'LinearShuntCompensator']
+   inv_types = ['PowerElectronicsConnection']
+   trans_types = ["PowerTransformer"]
+   switch_types = ['LoadBreakSwitch']
+
+   # dupe_ids = []
+
+   # network.pprint(cim.ConnectivityNode)
+
+   for node in network.graph[cim.ConnectivityNode].values():
+      addObject("c_node", {"id": node.mRID})
+      for terminal in node.Terminals:
+         equipment = terminal.ConductingEquipment
+         eq_class_type = equipment.__class__.__name__
+
+         # print(eq_class_type)
+
+         if eq_class_type in load_types:
+            addObject("load", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+            addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+
+         if eq_class_type in gen_types:
+            addObject("diesel_dg", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+            addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+
+         if eq_class_type in cap_types:
+            addObject("capacitor", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+            addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+
+         if eq_class_type in inv_types:
+            addObject("inverter_dyn", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+            addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+         
+         if eq_class_type in trans_types: 
+            addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+            addObject("transformer", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+
+         # if eq_class_type in switch_types:
+         #    addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+         #    addObject("switch", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+
+      # print(f"------------end of {node.mRID} terminals------------")
+
+   topo_edges = []
+
+   network.get_all_edges(cim.ACLineSegment)
+   for line in network.graph[cim.ACLineSegment].values():
+      # print(line.name)
+      addObject("terminal", {"id": line.Terminals[0].mRID})
+      addObject("terminal", {"id": line.Terminals[1].mRID}) # black
+
+      addObject("overhead_line", {
+         "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
+         "from": line.Terminals[0].mRID,
+         "to": line.Terminals[1].mRID
+      })
+
+      addObject("line", {
+         "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
+         "from": line.Terminals[0].mRID,
+         "to": line.Terminals[0].ConnectivityNode.mRID
+      })
+
+      addObject("line",{
+         "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
+         "from": line.Terminals[1].mRID,
+         "to": line.Terminals[1].ConnectivityNode.mRID
+      })
+      
+      # topo_edges.append([line.Terminals[0].mRID, line.Terminals[1].mRID])
+      
+   for line in network.graph[cim.PowerTransformer].values() :
+
+      #    addObject("terminal", {"id": line.Terminals[0].mRID})
+      #    addObject("terminal", {"id": line.Terminals[1].mRID})
+
+      addObject("transformer", {
+         "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
+         "from": line.Terminals[0].mRID,
+         "to": line.Terminals[1].mRID
+      })
+
+      addObject("line", {
+         "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
+         "from": line.Terminals[0].mRID,
+         "to": line.Terminals[0].ConnectivityNode.mRID
+      })
+
+      addObject("line",{
+         "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
+         "from": line.Terminals[1].mRID,
+         "to": line.Terminals[1].ConnectivityNode.mRID
+      })
+
+   cim_switch_types = [
+      cim.Breaker, 
+      cim.Fuse, 
+      cim.Switch, 
+      cim.Sectionaliser, 
+      cim.LoadBreakSwitch, 
+      cim.Disconnector, 
+      cim.Recloser
+   ]
+
+   for cim_type in cim_switch_types:
+      if cim_type in network.graph:
+         for line in network.graph[cim_type].values():
+            addObject("terminal", {"id": line.Terminals[0].mRID})
+            addObject("terminal", {"id": line.Terminals[1].mRID}) # black
+
+            addObject("switch", {
+               "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
+               "from": line.Terminals[0].mRID,
+               "to": line.Terminals[1].mRID
+            })
+
+            addObject("line", {
+               "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
+               "from": line.Terminals[0].mRID,
+               "to": line.Terminals[0].ConnectivityNode.mRID
+            })
+
+            addObject("line",{
+               "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
+               "from": line.Terminals[1].mRID,
+               "to": line.Terminals[1].ConnectivityNode.mRID
+            })
+   return json.dumps(graphObj)
+
+def add_to_cim(dir2save: str, data):
+   from cimgraph.databases import ConnectionParameters
+   from cimgraph.databases import RDFlibConnection
+   import cimgraph.utils as cim_utils
+   import cimgraph.data_profile.rc4_2021 as cim
+   from cimgraph.models import FeederModel
+
+   # RDFLib File Reader Connection
+   params = ConnectionParameters(filename=data["filename"] , cim_profile='rc4_2021', iec61970_301=7)
+   rdf = RDFlibConnection(params)
    
-   print("betweenness centrality done")
-   return avg_betweenness_centrality
-   
-def add_to_cim(objs: list):  
+   model_mrid = "_C1C3E687-6FFD-C753-582B-632A27E28507" #IEEE 123
+   feeder = cim.Feeder(mRID = model_mrid)
    network = FeederModel(connection=rdf, container=feeder, distributed=False)
     
-   for nodes in objs:
-      c_node = cim.ConnectivityNode(mRID="_" + nodes[1]['mRID'].upper(), name=nodes[1]['name'])
-      new_terminal = cim.Terminal(mRID="_" + nodes[0]['mRID'].upper(), name=nodes[0]['name'])
-      terminal_1 = cim.Terminal(mRID="_" + nodes[2]['mRID'].upper(), name=nodes[2]['name'])
-      terminal_2 = cim.Terminal(mRID="_" + nodes[3]['mRID'].upper(), name=nodes[3]['name'])
+   for nodes in data["objs"]:
+      c_node = cim.ConnectivityNode(mRID=f"_{nodes[1]['mRID'].upper()}", name=nodes[1]['name'])
+      c_node.ConnectivityNodeContainer = feeder
+      new_terminal = cim.Terminal(mRID=f"_{nodes[0]['mRID'].upper()}", name=nodes[0]['name'])
+      terminal_1 = cim.Terminal(mRID=f"_{nodes[2]['mRID'].upper()}", name=nodes[2]['name'])
+      terminal_2 = cim.Terminal(mRID=f"_{nodes[3]['mRID'].upper()}", name=nodes[3]['name'])
       ACLine = cim.ACLineSegment(mRID=f"_{str(uuid4()).upper()}", name=f"l:{nodes[4]['id'].split(':')[1]}")
+      ACLine.EquipmentContainer = feeder
       parent_c_node = network.graph[cim.ConnectivityNode][nodes[3]['parent']]
       
       new_terminal.ConnectivityNode = c_node
@@ -160,13 +257,15 @@ def add_to_cim(objs: list):
    network.add_to_graph(terminal_2)
    network.add_to_graph(c_node)
    
-   cim_utils.write_xml(network, "./data/CIM/IEEE123Output.xml")
+   cim_utils.get_all_data(network)
+   cim_utils.write_xml(network, dir2save + "\\cim_output.xml")
         
 #------------------------------ Server ------------------------------#
 app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 @app.route("/")
-def hello():
+def api():
    return {"api": "GLIMPSE flask backend"}
 
 @app.route("/glm2json", methods=["POST"])
@@ -193,10 +292,21 @@ def get_stats():
 
 @app.route("/add2cim", methods=["POST"])
 def add2cim():
-   str_data = req.get_json()
-   add_to_cim(json.loads(str_data))
-   return '', 204
-   
+   new_cim_data = req.get_json()
+   add_to_cim(dir2save=new_cim_data["savepath"], data=json.loads(new_cim_data["data"]))
 
+   return '', 204
+
+@app.route("/getcim", methods=["POST"])
+def getCIM():
+   paths = req.get_json()
+   output_data = cim2json(paths[0])
+
+   return output_data
+
+@socketio.on("glimpse")
+def glimpse(data):
+   socketio.emit("update-data", json.dumps(data))
+   
 if __name__=="__main__":
-   app.run(debug=True)
+   socketio.run(app, debug=True, log_output=True)

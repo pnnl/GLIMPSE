@@ -11,8 +11,7 @@ import {
    TableBody,
 } from '@mui/material';
 
-const StatsTableModal = ({show, close, data}) =>
-{
+const StatsTableModal = ({show, close, data}) => {
    if (!show) return null;
 
    return ReactDom.createPortal(

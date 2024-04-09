@@ -1,0 +1,94 @@
+{
+   "docs": "",
+   "appOptions": {
+      "title": "GLIMPSE",
+      "nav": {
+         "home": "Home",
+         "about": "About"
+      },
+      "buttons": {
+         "filterBtn": "FILTER",
+         "exportBtn": "EXPORT W/ CHANGES",
+         "plotBtn": "SHOW PLOT",
+         "addOverlayBtn": "ATTACH OVERLAY",
+         "showStatsBtn": "SHOW STATS",
+         "layoutLbl": "Auto Layout",
+         "searchLbl": "Node ID",
+         "previousBtn": "PREV",
+         "nextBtn": "NEXT",
+         "resetBtn": "RESET",
+         "toggleLegendBtn": "TOGGLE LEGEND"
+      }
+   },
+   "graphOptions": {
+      "edges": {
+         "font": {"multi": true, "align": "horizontal"},
+         "smooth": {
+            "enabled": false,
+            "type": "dynamic",
+            "roundness": 0.5
+         },
+         "hidden": true
+      },
+      "nodes": {
+         "borderWidth": 2,
+         "shapeProperties": {
+            "useBorderWithImage": false
+         },
+         "font": {
+            "color": "#000",
+            "size": 12,
+            "multi": true,
+            "align": "left"
+         },
+         "size": 15
+      },
+      "interaction": {
+         "hover": true,
+         "hideEdgesOnDrag": true,
+         "hideEdgesOnZoom": true,
+         "navigationButtons": true
+      },
+      "physics": {
+         "barnesHut": {
+            "gravitationalConstant": -10000,
+            "springConstant": 0.2,
+            "springLength": 75
+         },
+         "solver": "barnesHut",
+         "stabilization": {
+            "enabled": true,
+            "iterations": 1000,
+            "updateInterval": 1,
+            "onlyDynamicEdges": false,
+            "fit": true
+         }
+      },
+      "layout": {
+         "improvedLayout": false,
+         "hierarchical": {
+            "enabled": false,
+            "direction": "LR",
+            "levelSeparation": 500,
+            "nodeSpacing": 100
+         }
+      }
+   },
+   "legendGraphOptions": {
+      "nodes": {
+         "borderWidth": 2,
+         "font": {
+            "color": "#000",
+            "size": 20
+         }
+      },
+      "edges": {
+         "font": {
+            "color": "#000",
+            "size": 30,
+            "strokeWidth": 5,
+            "strokeColor": "white"
+         }
+      }
+   }
+}

@@ -1,0 +1,83 @@
+{
+   "groups": {
+      "c_node": {
+         "size": 15,
+         "color": {
+            "border": "#2B7CE9",
+            "background": "#97C2FC",
+            "highlight": {
+               "border": "#2B7CE9",
+               "background": "#D2E5FF"
+            },
+            "hover": {
+               "border": "#2B7CE9",
+               "background": "#D2E5FF"
+            }
+         },
+         "shape": "dot"
+      },
+      "terminal": {
+         "size": 5,
+         "color": {
+            "border": "grey",
+            "background": "lightgrey",
+            "hover": {
+               "border": "black"
+            }
+         },
+         "shape": "dot"
+      },
+      "load": {
+         "size": 15,
+         "color": "#2a9d8f",
+         "shape": "circularImage",
+         "image": "./imgs/load.png"
+      },
+      "capacitor": {
+         "size": 15,
+         "color": "#283618",
+         "shape": "circularImage",
+         "image": "./imgs/capacitor.jpg"
+      },
+      "meter": {
+         "size": 15,
+         "color": "#d90429",
+         "shape": "circularImage", 
+         "image": "./imgs/meter.jpg"
+      },
+      "inverter_dyn": {
+         "size": 15,
+         "color": "#c8b6ff",
+         "shape": "circularImage", 
+         "image": "./imgs/inverter.png"
+      },
+      "diesel_dg": {
+         "size": 15,
+         "color": "#fee440",
+         "shape": "circularImage", 
+         "image": "./imgs/generator.jpg"
+      }
+   }, 
+   "edgeOptions": {
+      "overhead_line": {
+         "width": 2,
+         "color": "#000000"
+      },
+      "switch": {
+         "width": 2, 
+         "color": "#3a0ca3"
+      },
+      "regulator": {
+         "width": 2, 
+         "color": "#ff447d"
+      },
+      "transformer": {
+         "width": 2,
+         "color": "#00FF00"
+      },
+      "line": {
+         "width": 2, 
+         "color": {"inherit": true}
+      }
+   }
+}
