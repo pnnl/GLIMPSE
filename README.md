@@ -1,19 +1,25 @@
 # GLIMPSE (Grid Layout Interface for Model Preview and System Exploration)
 
-GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python. It also uses following GLM parser that can be installed using pip: [GLM](https://github.com/NREL/glm) 
+GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python.
 
-## Clone the repository and install dependencies
+# Dev Installation Instructions
+**Clone the repository and install dependencies**
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
 
 ```
 git clone http://github.com/pnnl/GLIMPSE
 
+cd /GLIMPSE/glimpse/
+
+npm install
+
+npm run watch
+
+# on another terminal run the following: 
 cd /GLIMPSE/glimpse/local-server/
 
 python -m venv venv
-
-pip install -r requirements.txt
 ```
 ### If on `Windows` go to `/venv/Scripts/` and rename **json2glm** to **json2glm.exe**
 
@@ -26,9 +32,11 @@ pip install -r requirements.txt
 |    -     | PowerShell | `$ <venv>/bin/Activate.ps1`             |
 | Windows  | cmd.exe    | `C:\> <venv>\Scripts\activate.bat`      |
 |    -     | PowerShell | `PS C:\> <venv>\Scripts\Activate.ps1`   |
-## in `GLIMPSE/glimpse/` run 
 ```
-npm install
+pip install -r requirements.txt
+```
+## Then in `GLIMPSE/glimpse/` run 
+```
 npm run start
 ```
 
