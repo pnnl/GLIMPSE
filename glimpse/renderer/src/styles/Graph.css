@@ -1,13 +1,12 @@
 #networks-wrapper {
-  display: block;
+  display: inline-block;
   width: 100%;
-  height: calc(100vh - 7.5rem);
+  height: calc(100vh - 7rem);
 }
 
 .main-network {
-  display: inline-block;
-  border: 1px solid lightgrey;
-  border-radius: 5px;
+  border-top: 1px solid lightgrey;
+  /* border-radius: 5px; */
   width: 70%;
   height: 100%;
 }

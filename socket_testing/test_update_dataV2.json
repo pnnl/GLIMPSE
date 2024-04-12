@@ -1,0 +1,1459 @@
+{
+   "updateData": [
+      {
+         "elementType": "edge",
+         "id": "OH_line_23-25",
+         "updates": {
+            "color": {
+               "color": "#D0F665",
+               "inherit": "to",
+               "opacity": 0.1
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 94,
+            "width": 7.55
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_32",
+         "updates": {
+            "color": {
+               "border": "#4F2FA6",
+               "background": "#F1EE86"
+            },
+            "opacity": 0.7,
+            "hidden": true,
+            "shape": "box",
+            "size": 28
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_105-108",
+         "updates": {
+            "color": {
+               "color": "#E3981A",
+               "inherit": "both",
+               "opacity": 0.8
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 78,
+            "width": 7.86
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_66",
+         "updates": {
+            "color": {
+               "border": "#1B7C97",
+               "background": "#4AF6D2"
+            },
+            "opacity": 0.4,
+            "hidden": false,
+            "shape": "square",
+            "size": 29
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_73",
+         "updates": {
+            "color": {
+               "border": "#530450",
+               "background": "#3CD0C9"
+            },
+            "opacity": 0.2,
+            "hidden": true,
+            "shape": "box",
+            "size": 27
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_89-91",
+         "updates": {
+            "color": {
+               "color": "#63ADE4",
+               "inherit": "from",
+               "opacity": 0.4
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 47,
+            "width": 3.98
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_105-108",
+         "updates": {
+            "color": {
+               "color": "#4E322E",
+               "inherit": "from",
+               "opacity": 0.9
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 79,
+            "width": 7.14
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_57",
+         "updates": {
+            "color": {
+               "border": "#B872F0",
+               "background": "#A32C5A"
+            },
+            "opacity": 0.5,
+            "hidden": false,
+            "shape": "circle",
+            "size": 13
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_95-96",
+         "updates": {
+            "color": {
+               "color": "#E83FAF",
+               "inherit": "from",
+               "opacity": 0.0
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 62,
+            "width": 5.65
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_1-3",
+         "updates": {
+            "color": {
+               "color": "#A6CEC6",
+               "inherit": "both",
+               "opacity": 0.7
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 17,
+            "width": 2.43
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_3-4",
+         "updates": {
+            "color": {
+               "color": "#420517",
+               "inherit": "to",
+               "opacity": 0.5
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 26,
+            "width": 3.77
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_76",
+         "updates": {
+            "color": {
+               "border": "#A9C553",
+               "background": "#EAC17D"
+            },
+            "opacity": 0.0,
+            "hidden": true,
+            "shape": "star",
+            "size": 6
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "switch_100-101",
+         "updates": {
+            "color": {
+               "color": "#858B44",
+               "inherit": "from",
+               "opacity": 0.4
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 34,
+            "width": 5.42
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_72-73",
+         "updates": {
+            "color": {
+               "color": "#0349B0",
+               "inherit": "both",
+               "opacity": 0.8
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 76,
+            "width": 3.22
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_42-trip_shad_inv1",
+         "updates": {
+            "color": {
+               "color": "#01F68A",
+               "inherit": "from",
+               "opacity": 0.2
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 52,
+            "width": 7.39
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_89",
+         "updates": {
+            "color": {
+               "border": "#449844",
+               "background": "#FA119E"
+            },
+            "opacity": 0.3,
+            "hidden": true,
+            "shape": "star",
+            "size": 50
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_88-cap_88",
+         "updates": {
+            "color": {
+               "color": "#5DA998",
+               "inherit": "from",
+               "opacity": 0.4
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 77,
+            "width": 7.25
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_35-40",
+         "updates": {
+            "color": {
+               "color": "#F870BF",
+               "inherit": "both",
+               "opacity": 0.9
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 43,
+            "width": 0.43
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_63-64",
+         "updates": {
+            "color": {
+               "color": "#33297A",
+               "inherit": false,
+               "opacity": 0.9
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 93,
+            "width": 5.44
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "switch_300-350",
+         "updates": {
+            "color": {
+               "color": "#4BEF76",
+               "inherit": "to",
+               "opacity": 0.5
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 54,
+            "width": 6.4
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_38",
+         "updates": {
+            "color": {
+               "border": "#C78507",
+               "background": "#F3229D"
+            },
+            "opacity": 1.0,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 18
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "cap_88",
+         "updates": {
+            "color": {
+               "border": "#216BB5",
+               "background": "#BEF161"
+            },
+            "opacity": 0.6,
+            "hidden": true,
+            "shape": "circle",
+            "size": 37
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_101",
+         "updates": {
+            "color": {
+               "border": "#5BF7ED",
+               "background": "#0F92CD"
+            },
+            "opacity": 0.5,
+            "hidden": false,
+            "shape": "star",
+            "size": 38
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_15",
+         "updates": {
+            "color": {
+               "border": "#5259EF",
+               "background": "#FD9A9F"
+            },
+            "opacity": 0.6,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 23
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_67-97",
+         "updates": {
+            "color": {
+               "color": "#C09837",
+               "inherit": "from",
+               "opacity": 0.5
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 33,
+            "width": 2.35
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_14-11",
+         "updates": {
+            "color": {
+               "color": "#D7EC42",
+               "inherit": "both",
+               "opacity": 0.6
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 50,
+            "width": 4.98
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_88",
+         "updates": {
+            "color": {
+               "border": "#1F6FD7",
+               "background": "#938F7E"
+            },
+            "opacity": 0.6,
+            "hidden": false,
+            "shape": "star",
+            "size": 45
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_51",
+         "updates": {
+            "color": {
+               "border": "#BE1862",
+               "background": "#0AF96E"
+            },
+            "opacity": 0.8,
+            "hidden": false,
+            "shape": "box",
+            "size": 46
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_57-58",
+         "updates": {
+            "color": {
+               "color": "#9F44A0",
+               "inherit": false,
+               "opacity": 0.7
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 58,
+            "width": 4.15
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_90-cap_90",
+         "updates": {
+            "color": {
+               "color": "#19F12B",
+               "inherit": "to",
+               "opacity": 0.7
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 53,
+            "width": 5.66
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_611",
+         "updates": {
+            "color": {
+               "border": "#04B2B9",
+               "background": "#FEB44C"
+            },
+            "opacity": 0.4,
+            "hidden": false,
+            "shape": "box",
+            "size": 6
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_88",
+         "updates": {
+            "color": {
+               "border": "#419DF5",
+               "background": "#6A1CC2"
+            },
+            "opacity": 0.3,
+            "hidden": false,
+            "shape": "diamond",
+            "size": 27
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_59",
+         "updates": {
+            "color": {
+               "border": "#7A4F42",
+               "background": "#3D2BAF"
+            },
+            "opacity": 0.6,
+            "hidden": false,
+            "shape": "hexagon",
+            "size": 34
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "trip_shad_inv3",
+         "updates": {
+            "color": {
+               "border": "#C80E99",
+               "background": "#CE6DEF"
+            },
+            "opacity": 0.3,
+            "hidden": true,
+            "shape": "diamond",
+            "size": 45
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_83-cap_83",
+         "updates": {
+            "color": {
+               "color": "#AA58A7",
+               "inherit": "both",
+               "opacity": 0.3
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 69,
+            "width": 6.23
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "Gen4",
+         "updates": {
+            "color": {
+               "border": "#7C4524",
+               "background": "#A961BD"
+            },
+            "opacity": 0.3,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 39
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "switch_100-101",
+         "updates": {
+            "color": {
+               "color": "#203919",
+               "inherit": "both",
+               "opacity": 0.0
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 19,
+            "width": 6.77
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_1-2",
+         "updates": {
+            "color": {
+               "color": "#477A52",
+               "inherit": "both",
+               "opacity": 0.7
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 73,
+            "width": 3.22
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_23",
+         "updates": {
+            "color": {
+               "border": "#332381",
+               "background": "#7CF029"
+            },
+            "opacity": 0.1,
+            "hidden": false,
+            "shape": "diamond",
+            "size": 15
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_24",
+         "updates": {
+            "color": {
+               "border": "#F051AC",
+               "background": "#FC8498"
+            },
+            "opacity": 0.9,
+            "hidden": false,
+            "shape": "ellipse",
+            "size": 42
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_35-40",
+         "updates": {
+            "color": {
+               "color": "#5F93D6",
+               "inherit": false,
+               "opacity": 0.8
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 91,
+            "width": 5.68
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_1-2",
+         "updates": {
+            "color": {
+               "color": "#4F68E4",
+               "inherit": "to",
+               "opacity": 0.5
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 50,
+            "width": 3.38
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_62",
+         "updates": {
+            "color": {
+               "border": "#9C5F0B",
+               "background": "#308EF5"
+            },
+            "opacity": 0.8,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 41
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_30",
+         "updates": {
+            "color": {
+               "border": "#D925AC",
+               "background": "#A1031F"
+            },
+            "opacity": 0.8,
+            "hidden": false,
+            "shape": "circle",
+            "size": 18
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_44-45",
+         "updates": {
+            "color": {
+               "color": "#970BE2",
+               "inherit": "from",
+               "opacity": 0.5
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 97,
+            "width": 4.15
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_104",
+         "updates": {
+            "color": {
+               "border": "#7164FB",
+               "background": "#AC6B93"
+            },
+            "opacity": 0.2,
+            "hidden": true,
+            "shape": "star",
+            "size": 34
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_114",
+         "updates": {
+            "color": {
+               "border": "#E74D57",
+               "background": "#D8015A"
+            },
+            "opacity": 0.8,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 5
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_67-72",
+         "updates": {
+            "color": {
+               "color": "#8A981E",
+               "inherit": "to",
+               "opacity": 0.4
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 44,
+            "width": 5.14
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_92",
+         "updates": {
+            "color": {
+               "border": "#23E318",
+               "background": "#CF58B9"
+            },
+            "opacity": 0.0,
+            "hidden": false,
+            "shape": "star",
+            "size": 38
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_83-cap_83",
+         "updates": {
+            "color": {
+               "color": "#10700C",
+               "inherit": "both",
+               "opacity": 0.3
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 80,
+            "width": 3.74
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_91-93",
+         "updates": {
+            "color": {
+               "color": "#20DB17",
+               "inherit": false,
+               "opacity": 0.9
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 61,
+            "width": 2.7
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_59",
+         "updates": {
+            "color": {
+               "border": "#B33321",
+               "background": "#819446"
+            },
+            "opacity": 0.3,
+            "hidden": true,
+            "shape": "diamond",
+            "size": 38
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_68-69",
+         "updates": {
+            "color": {
+               "color": "#EAD7F8",
+               "inherit": false,
+               "opacity": 0.4
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 93,
+            "width": 5.21
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "trip_shad_inv2",
+         "updates": {
+            "color": {
+               "border": "#1A544C",
+               "background": "#A90479"
+            },
+            "opacity": 0.1,
+            "hidden": true,
+            "shape": "box",
+            "size": 13
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_149",
+         "updates": {
+            "color": {
+               "border": "#C29456",
+               "background": "#A9DA4A"
+            },
+            "opacity": 0.4,
+            "hidden": true,
+            "shape": "star",
+            "size": 39
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "trip_shad_inv5",
+         "updates": {
+            "color": {
+               "border": "#75B4EC",
+               "background": "#C83E0A"
+            },
+            "opacity": 0.9,
+            "hidden": false,
+            "shape": "dot",
+            "size": 32
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_109",
+         "updates": {
+            "color": {
+               "border": "#CD0DBD",
+               "background": "#50DD69"
+            },
+            "opacity": 0.2,
+            "hidden": false,
+            "shape": "box",
+            "size": 17
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_93",
+         "updates": {
+            "color": {
+               "border": "#D24346",
+               "background": "#0132A7"
+            },
+            "opacity": 0.8,
+            "hidden": false,
+            "shape": "hexagon",
+            "size": 24
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_45",
+         "updates": {
+            "color": {
+               "border": "#55042B",
+               "background": "#54F745"
+            },
+            "opacity": 0.6,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 25
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_92-cap_92",
+         "updates": {
+            "color": {
+               "color": "#4293FB",
+               "inherit": "both",
+               "opacity": 0.2
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 73,
+            "width": 7.84
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_95-96",
+         "updates": {
+            "color": {
+               "color": "#F49EE7",
+               "inherit": "both",
+               "opacity": 0.7
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 14,
+            "width": 6.07
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "node_300-Gen4",
+         "updates": {
+            "color": {
+               "color": "#04EDDA",
+               "inherit": false,
+               "opacity": 0.3
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 94,
+            "width": 3.36
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_89-91",
+         "updates": {
+            "color": {
+               "color": "#9B55FA",
+               "inherit": "to",
+               "opacity": 1.0
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 49,
+            "width": 3.53
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_6",
+         "updates": {
+            "color": {
+               "border": "#B3204E",
+               "background": "#0DFA07"
+            },
+            "opacity": 0.4,
+            "hidden": true,
+            "shape": "hexagon",
+            "size": 38
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_25-28",
+         "updates": {
+            "color": {
+               "color": "#7E3631",
+               "inherit": false,
+               "opacity": 0.3
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 33,
+            "width": 4.03
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "regulator_1",
+         "updates": {
+            "color": {
+               "color": "#D6D0B8",
+               "inherit": "both",
+               "opacity": 0.3
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 66,
+            "width": 7.3
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_3",
+         "updates": {
+            "color": {
+               "border": "#82055E",
+               "background": "#1CD959"
+            },
+            "opacity": 0.9,
+            "hidden": false,
+            "shape": "hexagon",
+            "size": 21
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_18-19",
+         "updates": {
+            "color": {
+               "color": "#6ABC6C",
+               "inherit": "from",
+               "opacity": 0.7
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 52,
+            "width": 6.02
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "node_300-Gen4",
+         "updates": {
+            "color": {
+               "color": "#8F8737",
+               "inherit": "both",
+               "opacity": 0.9
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 95,
+            "width": 2.87
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_83",
+         "updates": {
+            "color": {
+               "border": "#EE537D",
+               "background": "#766D0F"
+            },
+            "opacity": 0.3,
+            "hidden": true,
+            "shape": "star",
+            "size": 21
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_149",
+         "updates": {
+            "color": {
+               "border": "#EC504F",
+               "background": "#89F215"
+            },
+            "opacity": 0.7,
+            "hidden": false,
+            "shape": "star",
+            "size": 26
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_18-19",
+         "updates": {
+            "color": {
+               "color": "#40625B",
+               "inherit": "from",
+               "opacity": 0.4
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 96,
+            "width": 0.95
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_54",
+         "updates": {
+            "color": {
+               "border": "#7F8DB5",
+               "background": "#4C6530"
+            },
+            "opacity": 0.2,
+            "hidden": false,
+            "shape": "dot",
+            "size": 7
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_69-70",
+         "updates": {
+            "color": {
+               "color": "#4A063C",
+               "inherit": "to",
+               "opacity": 0.6
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 45,
+            "width": 4.05
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_112-113",
+         "updates": {
+            "color": {
+               "color": "#11F2E5",
+               "inherit": "both",
+               "opacity": 0.6
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 51,
+            "width": 6.65
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_3",
+         "updates": {
+            "color": {
+               "border": "#5A416E",
+               "background": "#221FC9"
+            },
+            "opacity": 0.9,
+            "hidden": true,
+            "shape": "box",
+            "size": 50
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_54-55",
+         "updates": {
+            "color": {
+               "color": "#7667E2",
+               "inherit": false,
+               "opacity": 0.3
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 88,
+            "width": 3.14
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_93-94",
+         "updates": {
+            "color": {
+               "color": "#BC2541",
+               "inherit": false,
+               "opacity": 0.4
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 77,
+            "width": 2.9
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_57-60",
+         "updates": {
+            "color": {
+               "color": "#3CACB8",
+               "inherit": false,
+               "opacity": 0.4
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 22,
+            "width": 7.26
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_135-35",
+         "updates": {
+            "color": {
+               "color": "#0DABD5",
+               "inherit": "to",
+               "opacity": 0.5
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 73,
+            "width": 3.33
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_31-32",
+         "updates": {
+            "color": {
+               "color": "#E470F5",
+               "inherit": "from",
+               "opacity": 0.9
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 49,
+            "width": 6.39
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_100",
+         "updates": {
+            "color": {
+               "border": "#A337E9",
+               "background": "#F77B03"
+            },
+            "opacity": 0.8,
+            "hidden": true,
+            "shape": "ellipse",
+            "size": 39
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_57-60",
+         "updates": {
+            "color": {
+               "color": "#83316C",
+               "inherit": "both",
+               "opacity": 0.8
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 22,
+            "width": 4.14
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_68-69",
+         "updates": {
+            "color": {
+               "color": "#7D4A20",
+               "inherit": "to",
+               "opacity": 0.2
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 28,
+            "width": 5.58
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_93",
+         "updates": {
+            "color": {
+               "border": "#CFC2D6",
+               "background": "#8499D2"
+            },
+            "opacity": 0.0,
+            "hidden": true,
+            "shape": "triangleDown",
+            "size": 41
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "node_21",
+         "updates": {
+            "color": {
+               "border": "#1D473F",
+               "background": "#E7DD26"
+            },
+            "opacity": 0.4,
+            "hidden": false,
+            "shape": "box",
+            "size": 36
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_45",
+         "updates": {
+            "color": {
+               "border": "#C5D7DD",
+               "background": "#2A97F8"
+            },
+            "opacity": 0.5,
+            "hidden": false,
+            "shape": "circle",
+            "size": 49
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_88",
+         "updates": {
+            "color": {
+               "border": "#76D9A6",
+               "background": "#98F767"
+            },
+            "opacity": 0.8,
+            "hidden": false,
+            "shape": "circle",
+            "size": 46
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_10",
+         "updates": {
+            "color": {
+               "border": "#56510D",
+               "background": "#2E5870"
+            },
+            "opacity": 0.9,
+            "hidden": true,
+            "shape": "box",
+            "size": 29
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_82-83",
+         "updates": {
+            "color": {
+               "color": "#CBB39D",
+               "inherit": "both",
+               "opacity": 0.5
+            },
+            "dashes": false,
+            "hidden": true,
+            "length": 48,
+            "width": 3.87
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_88-cap_88",
+         "updates": {
+            "color": {
+               "color": "#EBE693",
+               "inherit": "both",
+               "opacity": 0.9
+            },
+            "dashes": true,
+            "hidden": false,
+            "length": 48,
+            "width": 3.43
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_11",
+         "updates": {
+            "color": {
+               "border": "#8C6813",
+               "background": "#87794C"
+            },
+            "opacity": 0.3,
+            "hidden": false,
+            "shape": "circle",
+            "size": 28
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_78-79",
+         "updates": {
+            "color": {
+               "color": "#75252D",
+               "inherit": false,
+               "opacity": 0.5
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 34,
+            "width": 3.96
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_21-23",
+         "updates": {
+            "color": {
+               "color": "#D07563",
+               "inherit": "both",
+               "opacity": 0.2
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 37,
+            "width": 2.63
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "load_51-trip_shad_inv4",
+         "updates": {
+            "color": {
+               "color": "#702159",
+               "inherit": "from",
+               "opacity": 0.0
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 74,
+            "width": 5.92
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_18-21",
+         "updates": {
+            "color": {
+               "color": "#FBC395",
+               "inherit": true,
+               "opacity": 0.2
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 42,
+            "width": 0.85
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_15-16",
+         "updates": {
+            "color": {
+               "color": "#76AA89",
+               "inherit": true,
+               "opacity": 0.0
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 95,
+            "width": 1.51
+         }
+      },
+      {
+         "elementType": "node",
+         "id": "load_9",
+         "updates": {
+            "color": {
+               "border": "#3625F1",
+               "background": "#8238F4"
+            },
+            "opacity": 0.9,
+            "hidden": false,
+            "shape": "diamond",
+            "size": 49
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "regulator_1",
+         "updates": {
+            "color": {
+               "color": "#FCB92C",
+               "inherit": "both",
+               "opacity": 0.9
+            },
+            "dashes": false,
+            "hidden": false,
+            "length": 72,
+            "width": 6.38
+         }
+      },
+      {
+         "elementType": "edge",
+         "id": "OH_line_35-40",
+         "updates": {
+            "color": {
+               "color": "#F3923F",
+               "inherit": "both",
+               "opacity": 0.2
+            },
+            "dashes": true,
+            "hidden": true,
+            "length": 21,
+            "width": 3.49
+         }
+      }
+   ]
+}

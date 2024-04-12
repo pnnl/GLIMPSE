@@ -1,5 +1,6 @@
-import { Network } from "vis-network";
 import React, { useEffect, useRef, useState} from "react";
+import { Network } from "vis-network";
+import { Box } from "@mui/material";
 import LegendContextMenu from "./LegendContextMenu";
 import "./styles/vis-network.css";
 import "./styles/Legend.css";
@@ -43,8 +44,8 @@ const Legend = ({
       if (contextMenuData !== null) {
          setContextMenuData({
             ...contextMenuData,
-            mouseX: e.pageX + 2,
-            mouseY: e.pageY + 6,
+            mouseX: e.clientX + 2,
+            mouseY: e.clientY + 6,
          });
       }
       else {
@@ -86,11 +87,12 @@ const Legend = ({
 
    return (
       <>
-         <div
-            className="visLegend"
+         <Box
+            component={"div"}
+            sx={{"height": "100%", "width": "30%"}}
             ref={container}
             onContextMenu={handleContext}
-         />
+            />
 
          <LegendContextMenu
             onMount={onContextMenuChildMount}

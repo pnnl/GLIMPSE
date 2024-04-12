@@ -28,6 +28,7 @@
   border-style: dashed;
   border-color: #cbd5e1;
   background-color: #f8fafc;
+  cursor: pointer;
 }
 
 #label-file-upload.drag-active {

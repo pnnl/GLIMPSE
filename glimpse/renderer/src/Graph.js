@@ -1,4 +1,5 @@
 import React, { useEffect, useRef} from "react";
+import { Box, Stack } from "@mui/material"
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
 import ActionBar from "./ActionBar";
@@ -16,13 +17,13 @@ const options = appConfig.graphOptions;
 * @returns {string}
 */
 const getTitle = (attributes) => {
-   let str = "";
+   const title = [];
 
    for (let [key, val] of Object.entries(attributes)) {
-      str += `${key}: ${val}\n`;
+      title.push(`${key}: ${val}`);
    }
 
-   return str;
+   return title.join("\n");
 }
 
 const getHtmlLabel = (id, attributes) => {
@@ -404,6 +405,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      "to": nodeID
                   }
                });
+
                return ({
                   "id": `${parent}-${nodeID}`,
                   "from": parent,
@@ -499,6 +501,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          delete node.size;
          delete node.color;
          delete node.shape;
+         node.hidden = false;
          node.label = node.id;
 
          return node;
@@ -598,7 +601,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
             node.size = 10;
             node.shape = "dot"
-            node.color = "rgba(200,200,200,0.5)";
+            node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             return node;
          }
@@ -618,7 +621,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       const edgesMap = data.edges.map((edge) => {
          if (edge.width !== 8) {
             edge.width = 0.15;
-            edge.color = "rgba(200,200,200,0.5)";
+            edge.color = "rgba(200, 200, 200, 0.5)";
          }
 
          return edge;
@@ -747,11 +750,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} edgeType - The type of edges to hide like: "overhead_line" 
     */
    const hideEdges = (edgeType) => {
-      const edgesToHide = data.edges.get().map(e => {
-         if (e.id.includes(edgeType)) {
-            e.hidden = true;
+      const edgesToHide = data.edges.get().map((edge) => {
+         if (edge.type === edgeType) {
+            edge.hidden = true;
          }
-         return e;
+         return edge;
       });
       data.edges.update(edgesToHide);
    }
@@ -765,8 +768,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       if (contextMenuData !== null) {
          setContextMenuData({
             ...contextMenuData,
-            "mouseX": e.pageX + 2,
-            "mouseY": e.pageY + 6
+            "mouseX": e.clientX + 2,
+            "mouseY": e.clientY + 6
          });
       }
       else {
@@ -780,6 +783,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} type - "node" or "edge"
     */
    const hideObjects = (objectType, type) => {
+
+      console.log(objectType, type);
       if (type === "node") {
          const nodesToHide = data.nodes.get().map( node => {
             if (node.group === objectType) {
@@ -791,7 +796,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
       else if (type === "edge") {
          const edgesToHide = data.edges.get().map( edge => {
-            if (edge.id.includes(objectType)) {
+            if (edge.type === objectType) {
                edge.hidden = true;
             }
             return edge;
@@ -906,17 +911,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       if (updateDataStream.elementType === "node") {
          const node = data.nodes.get(updateDataStream.id);
-         node.size = updateDataStream.new_size;
-         node.color = updateDataStream.color;
-
-         data.nodes.update(node);
+         data.nodes.update({...node, ...updateDataStream.updates});
       }
       else {
          const edge = data.edges.get(updateDataStream.id);
-         edge.color = updateDataStream.color;
-         edge.width = updateDataStream.width;
-
-         data.edges.update(edge);
+         data.edges.update({...edge, ...updateDataStream.updates});
       }
    });
    window.glimpseAPI.onShowAttributes(showAttributes);
@@ -960,8 +959,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          });
          
          glmNetwork.once("stabilizationIterationsDone", () => {
-            glmNetwork.setOptions({"edges": {"hidden": false}})
-
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background = "conic-gradient(#b25a00 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
@@ -1019,13 +1016,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             onClose = {closePopUp}
          />
 
-         <div id="networks-wrapper">
-         <div
-            id="graph"
-            className="main-network"
-            onContextMenu={handleContextmenu}
-            ref={container}
-         />
+         <div id="circularProgress">
+            <span id="progressValue">0%</span>
+         </div>
 
          <EdgeContextMenu
             onMount = {onContextMenuChildMount} 
@@ -1033,20 +1026,27 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             hideEdges = {hideEdges}
          />
 
-         <div id="circularProgress">
-            <span id="progressValue">0%</span>
-         </div>
+         <Box component={"div"} sx={{"width":"100%", "height": "calc(100vh - 7rem)"}}>
+         <Stack sx={{"height":"100%", "width": "100%", "borderTop": "1px solid lightgrey"}} direction={"row"}>
+            <Box
+               id="graph"
+               component={"div"}
+               sx={{"width": "70%","height": "100%"}} 
+               ref={container}
+               onContextMenu={handleContextmenu}
+            />
 
-         <Legend 
-            findGroup = {HighlightGroup} 
-            findEdges = {HighlightEdges}
-            hideObjects={hideObjects}
-            legendData = {getLegendData(objectTypeCount)}
-            onMount={legendMount}
-            setShowLegendRef={toggleLegendRef}
-            legendStateRef={showLegendStateRef}
-         />
-         </div>
+            <Legend 
+               findGroup = {HighlightGroup} 
+               findEdges = {HighlightEdges}
+               hideObjects={hideObjects}
+               legendData = {getLegendData(objectTypeCount)}
+               onMount={legendMount}
+               setShowLegendRef={toggleLegendRef}
+               legendStateRef={showLegendStateRef}
+            />
+         </Stack>
+         </Box>
       </>
    );
 }

@@ -7,6 +7,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import TextField from '@mui/material/TextField';
+import Stack from "@mui/material/Stack";
 
 const NodePopup = ({onMount, onSave, onClose}) => {
    const [open, setOpen] = useState(false);
@@ -33,15 +34,17 @@ const NodePopup = ({onMount, onSave, onClose}) => {
       >
          <DialogTitle id="scroll-dialog-title">Edit Node</DialogTitle>
          <DialogContent dividers>
+         <Stack direction="row" justifyContent="center" spacing={1} useFlexGap flexWrap="wrap">
          {selectedNode.attributes &&
             Object.entries(selectedNode.attributes).map(([key, val], index) => {
                return(
-                  <TextField sx={{mt: 1, ml: 5.5}} key={index} label={key} defaultValue={val} onChange={(e) => { 
+                  <TextField key={index} label={key} defaultValue={val} onChange={(e) => { 
                      setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}}) 
                   }}/>
                );
             }) 
          }
+         </Stack>
          </DialogContent>
          <DialogActions>
             <Button onClick={saveChanges}>Save</Button>

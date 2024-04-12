@@ -13,9 +13,9 @@ const kill = require("tree-kill");
 const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 // app.commandLine.appendSwitch("js-flags", '--max-old-space-size=4096');
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
