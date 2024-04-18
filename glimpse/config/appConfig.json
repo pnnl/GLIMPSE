@@ -21,10 +21,14 @@
       }
    },
    "graphOptions": {
+      "configure": {
+         "enabled": true,
+         "showButton": false
+      },
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
          "smooth": {
-            "enabled": false,
+            "enabled": true,
             "type": "dynamic",
             "roundness": 0.5
          },
@@ -69,8 +73,8 @@
          "hierarchical": {
             "enabled": false,
             "direction": "LR",
-            "levelSeparation": 500,
-            "nodeSpacing": 100
+            "levelSeparation": 130,
+            "nodeSpacing": 50
          }
       }
    },
@@ -89,6 +93,10 @@
             "strokeWidth": 5,
             "strokeColor": "white"
          }
+      },
+      "interaction": {
+         "hover": true,
+         "hoverConnectedEdges": true
       }
    }
 }

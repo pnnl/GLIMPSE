@@ -1,12 +1,15 @@
 import React from 'react';
 import ReactDOM from "react-dom";
 import { useState, useEffect } from 'react';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import TextField from '@mui/material/TextField';
+import {
+   Button,
+   Dialog,
+   DialogActions,
+   DialogContent,
+   DialogTitle,
+   TextField,
+   Stack
+} from "@mui/material";
 
 const NodePopup = ({onMount, onSave, onClose}) => {
    const [open, setOpen] = useState(false);
@@ -32,15 +35,17 @@ const NodePopup = ({onMount, onSave, onClose}) => {
       >
          <DialogTitle id="scroll-dialog-title">Edit Node</DialogTitle>
          <DialogContent dividers>
+         <Stack direction="row" justifyContent="center" spacing={1} useFlexGap flexWrap="wrap">
          {selectedNode.attributes &&
             Object.entries(selectedNode.attributes).map(([key, val], index) => {
                return(
-                  <TextField sx={{mt: 2}} fullWidth key={index} label={key} defaultValue={val} onChange={(e) => { 
+                  <TextField key={index} label={key} defaultValue={val} onChange={(e) => { 
                      setSelectedNode({...selectedNode, attributes: {...selectedNode.attributes, [key]: e.target.value}}) 
                   }}/>
                );
             }) 
          }
+         </Stack>
          </DialogContent>
          <DialogActions>
             <Button onClick={saveChanges}>Save</Button>

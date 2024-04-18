@@ -114,9 +114,9 @@ def cim2json(filepath: str):
             addObject("inverter_dyn", {"id": terminal.mRID, "eq_class_type": eq_class_type})
             addObject("line", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
          
-         if eq_class_type in trans_types: 
-            addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
-            addObject("transformer", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
+         # if eq_class_type in trans_types: 
+         #    addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
+         #    addObject("transformer", {"id": f"{node.mRID}-{terminal.mRID}", "from": node.mRID, "to": terminal.mRID})
 
          # if eq_class_type in switch_types:
          #    addObject("terminal", {"id": terminal.mRID, "eq_class_type": eq_class_type})
@@ -128,7 +128,6 @@ def cim2json(filepath: str):
 
    network.get_all_edges(cim.ACLineSegment)
    for line in network.graph[cim.ACLineSegment].values():
-      # print(line.name)
       addObject("terminal", {"id": line.Terminals[0].mRID})
       addObject("terminal", {"id": line.Terminals[1].mRID}) # black
 
@@ -151,29 +150,55 @@ def cim2json(filepath: str):
       })
       
       # topo_edges.append([line.Terminals[0].mRID, line.Terminals[1].mRID])
+   network.get_all_edges(cim.PowerTransformer)
+   network.get_all_edges(cim.PowerTransformerEnd)
+   network.get_all_edges(cim.TransformerTank)
+   network.get_all_edges(cim.TransformerTankEnd)
       
-   for line in network.graph[cim.PowerTransformer].values() :
-
-      #    addObject("terminal", {"id": line.Terminals[0].mRID})
-      #    addObject("terminal", {"id": line.Terminals[1].mRID})
+   for line in network.graph[cim.TransformerTank].values():
+      addObject("terminal", {"id": line.TransformerTankEnds[0].Terminal.mRID})
+      addObject("terminal", {"id": line.TransformerTankEnds[1].Terminal.mRID})
 
       addObject("transformer", {
-         "id":f"{line.Terminals[0].mRID}-{line.Terminals[1].mRID}",
-         "from": line.Terminals[0].mRID,
-         "to": line.Terminals[1].mRID
+         "id":f"{line.TransformerTankEnds[0].Terminal.mRID}-{line.TransformerTankEnds[1].Terminal.mRID}",
+         "from": line.TransformerTankEnds[0].Terminal.mRID,
+         "to": line.TransformerTankEnds[1].Terminal.mRID
       })
 
       addObject("line", {
-         "id":f"{line.Terminals[0].mRID}-{line.Terminals[0].ConnectivityNode.mRID}",
-         "from": line.Terminals[0].mRID,
-         "to": line.Terminals[0].ConnectivityNode.mRID
+         "id":f"{line.TransformerTankEnds[0].Terminal.mRID}-{line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID}",
+         "from": line.TransformerTankEnds[0].Terminal.mRID,
+         "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID
       })
 
       addObject("line",{
-         "id":f"{line.Terminals[1].mRID}-{line.Terminals[1].ConnectivityNode.mRID}",
-         "from": line.Terminals[1].mRID,
-         "to": line.Terminals[1].ConnectivityNode.mRID
+         "id":f"{line.TransformerTankEnds[1].Terminal.mRID}-{line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID}",
+         "from": line.TransformerTankEnds[1].Terminal.mRID,
+         "to": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID
       })
+   
+   for line in network.graph[cim.PowerTransformer].values():
+      if line.PowerTransformerEnd:
+         addObject("terminal", {"id": line.PowerTransformerEnd[0].Terminal.mRID})
+         addObject("terminal", {"id": line.PowerTransformerEnd[1].Terminal.mRID})
+
+         addObject("transformer", {
+            "id":f"{line.PowerTransformerEnd[0].Terminal.mRID}-{line.PowerTransformerEnd[1].Terminal.mRID}",
+            "from": line.PowerTransformerEnd[0].Terminal.mRID,
+            "to": line.PowerTransformerEnd[1].Terminal.mRID
+         })
+
+         addObject("line", {
+            "id":f"{line.PowerTransformerEnd[0].Terminal.mRID}-{line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID}",
+            "from": line.PowerTransformerEnd[0].Terminal.mRID,
+            "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID
+         })
+
+         addObject("line",{
+            "id":f"{line.PowerTransformerEnd[1].Terminal.mRID}-{line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID}",
+            "from": line.PowerTransformerEnd[1].Terminal.mRID,
+            "to": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID
+         })
 
    cim_switch_types = [
       cim.Breaker, 

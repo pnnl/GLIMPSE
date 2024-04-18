@@ -71,7 +71,7 @@ export const Home = () => {
       }
       else if (paths[0].split(".")[1] === "json") {
          setFilesUploaded(true);
-         const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
+         const validFileData = await window.glimpseAPI.validate(paths);
          
          if ("error" in validFileData) {
             alert(validFileData.error);

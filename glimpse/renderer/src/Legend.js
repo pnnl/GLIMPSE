@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState} from "react";
 import { Network } from "vis-network";
 import LegendContextMenu from "./LegendContextMenu";
+import { Box } from "@mui/material"
 import "./styles/vis-network.css";
-import "./styles/Legend.css";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({ 
@@ -76,6 +76,19 @@ const Legend = ({
                setContextMenuData({ object: data.edges.get(ID).id, type: "edge" });
             }
          });
+
+         const networkCanvas = document
+            .getElementById("legend-network")
+            .getElementsByTagName("canvas")[0];
+
+         const changeCursor = (newCursorStyle) => {
+            networkCanvas.style.cursor = newCursorStyle;
+         }
+
+         network.on("hoverNode", () => changeCursor("pointer"));
+         network.on("blurNode", () => changeCursor("default"));
+         network.on("hoverEdge", () => changeCursor("pointer"));
+         network.on("blurEdge", () => changeCursor("default"));
       }
    });
 
@@ -83,8 +96,10 @@ const Legend = ({
 
    return (
       <>
-         <div
-            className="visLegend"
+         <Box
+            id="legend-network"
+            component={"div"}
+            sx={{"height": "100%", "width": "30%"}}
             ref={container}
             onContextMenu={handleContext}
          />

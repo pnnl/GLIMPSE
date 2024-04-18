@@ -4,13 +4,16 @@ const {
    ipcMain,
    dialog,
    Menu,
+   globalShortcut
 } = require("electron");
 const { execSync, spawn, execFile } = require("child_process");
 const path = require("path");
 const { io } = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
-
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
@@ -352,11 +355,10 @@ const makeWindow = () => {
    win.show();
 }
 
-app.whenReady().then(() => {
+const initiateServer = () => {
    const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
-   let server = null;
    if (fs.existsSync(serverPath)) {
-      server = execFile(serverPath, (error, stdout, stderr) => {
+      execFile(serverPath, (error, stdout, stderr) => {
          if (error) {
             throw error;
          }
@@ -369,29 +371,32 @@ app.whenReady().then(() => {
          console.log("data: ", data.toString('utf8'));
       });
 
-      python.stderr.on('data', (err) => {
-         console.log(`log: ${err}`); // when error
+      python.stderr.on('data', (data) => {
+         console.log(`log: ${data}`); // when error
       });
    }
+}
 
+app.whenReady().then(() => {
+   globalShortcut.register("ctrl+p", () => win.webContents.send("show-vis-options"));
+   initiateServer();
+}).then(() => {
+   // autoUpdater.checkForUpdatesAndNotify();
    makeWindow();
 
    app.on("before-quit", () => {
-      kill(server.pid);
       kill(process.pid);
+   });
+
+   app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+         makeWindow();
+      }
    });
 });
 
 app.on('window-all-closed', () => {
    if (process.platform !== 'darwin') {
-      app.quit();
-   }
-});
-
-app.on('activate', () => {
-   // On macOS it's common to re-create a window in the app when the
-   // dock icon is clicked and there are no other windows open.
-   if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      app.quit()
    }
 });

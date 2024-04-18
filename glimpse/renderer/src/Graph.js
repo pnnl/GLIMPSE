@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from "react";
+import "./styles/vis-network.css";
+import "./styles/Graph.css";
+import { Box, Stack } from "@mui/material"
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
 import { v4 } from "uuid";
 import ActionBar from "./ActionBar";
 import NodePopup from "./NodePopup";
-import "./styles/vis-network.css";
-import "./styles/Graph.css";
 import Legend from "./Legend";
 import GraphContextMenu from "./GraphContextMenu";
 import NewNodeForm from "./NewNodeForm";
@@ -80,7 +81,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
    const edgeOptions = theme.edgeOptions;
    let glmNetwork = null; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
-   const highlightedNodes = [];
+   let highlightedNodes = [];
 
    /**
    * Create nodes and edges based on the object type being visualized in the main network
@@ -106,7 +107,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
 
       let x_increment = null;
       if (currentNodeTypes.length < 6)
-         x_increment = 800 / currentNodeTypes.length;
+         x_increment = 675 / currentNodeTypes.length;
       else 
          x_increment = 1500 / currentNodeTypes.length;
 
@@ -127,6 +128,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                   shape: theme.groups[nodeType].shape,
                   image: theme.groups[nodeType].image,
                   group: nodeType,
+                  title: "Double Click to Highlight !",
                   x: current_x,
                   y: current_y,
                   physics: false,
@@ -142,6 +144,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                size: 25,
                shape: "dot",
                groups: nodeType,
+               title: "Double Click to Highlight !",
                x: current_x,
                y: current_y,
                physics: false,
@@ -170,6 +173,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                shape: theme.groups[nodeType].shape,
                image: theme.groups[nodeType].image,
                group: nodeType,
+               title: "Double Click to Highlight !",
                x: current_x,
                y: current_y,
                physics: false,
@@ -186,6 +190,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             size: 25,
             shape: "dot",
             group: nodeType,
+            title: "Double Click to Highlight !",
             x: current_x,
             y: current_y,
             physics: false,
@@ -220,6 +225,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                id: type,
                from: `${type}:${index}`,
                to: `${type}:${index + 1}`,
+               title: "Double Click to Highlight !",
                label: `${type} [${typeCounts.edges[type]}]`,
                width: 8,
                color: edgeOptions[type].color
@@ -230,6 +236,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                id: type,
                from: `${type}:${index}`,
                to: `${type}:${index + 1}`,
+               title: "Double Click to Highlight !",
                label: `${type} [${typeCounts.edges[type]}]`,
                width: 8,
             });
@@ -348,6 +355,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             else if ("elementType" in obj && obj.elementType === "node") {
                if (!(objectType in theme.groups)){
                   theme.groups[objectType] = {
+                     "size": 15,
                      "color": getRandomColor(),
                      "shape": "dot"
                   };
@@ -368,7 +376,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
                   "label": nodeID,
                   "elementType": "node",
                   "size": 15,
-                  "level": Object.keys(attributes).includes("level") ? attributes.level : undefined,
+                  "level": "level" in attributes ? attributes.level : undefined,
                   "attributes": attributes,
                   "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
@@ -503,6 +511,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
          delete node.size;
          delete node.color;
          delete node.shape;
+         node.hidden = false;
          node.label = node.id;
 
          return node;
@@ -517,8 +526,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
 
             return edge;
          }
-         else if (edgeTypes.includes(edgeType)) {
-            edge.width = edgeOptions[edgeType].width;
+         else if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
+            edge.width = 2;
             edge.color = edgeOptions[edgeType].color;
             edge.hidden = false;
 
@@ -595,14 +604,21 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
    * @param {string} nodeType - The type of nodes to highlight 
    */
    const HighlightGroup = (nodeType) => {
+      
       const nodesMap = data.nodes.map((node) => {
-         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 5)) {
+         if (node.group === nodeType && node.size === 25) {
+            node.size = 10;
+            node.shape = "dot"
+            node.color = "rgba(200, 200, 200, 0.5)";
+            node.label = " ";
+            
+            highlightedNodes = highlightedNodes.filter(nodeid => nodeid !== node.id);
             return node;
          }
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
             node.size = 10;
             node.shape = "dot"
-            node.color = "rgba(200,200,200,0.5)";
+            node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             return node;
          }
@@ -617,12 +633,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             highlightedNodes.push(node.id);
             return node;
          }
+
+         return node;
       });
       
       const edgesMap = data.edges.map((edge) => {
          if (edge.width !== 8) {
             edge.width = 0.15;
-            edge.color = "rgba(200,200,200,0.5)";
+            edge.color = "rgba(200, 200, 200, 0.5)";
          }
 
          return edge;
@@ -651,7 +669,12 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
       }
 
       const edgeItems = data.edges.map((edge) => {
-         if (edge.type === edgeType) {
+         if (edge.type === edgeType && edge.width === 8) {
+            edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
+            return edge;
+         }
+         else if (edge.type === edgeType) {
             edge.width = 8;
             edge.color = edgeOptions[edge.type].color;
             return edge;
@@ -1100,31 +1123,39 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
       return c_nodes;
    }
 
+   const configureContainer = useRef(null);
+   const showLegendStateRef = useRef(null);
+   const toggleLegendRef = useRef(null);
+   const container = useRef(null);
+
    window.glimpseAPI.onUpdateData((updateData) => {
       const updateDataStream = JSON.parse(updateData);
 
       if (updateDataStream.elementType === "node") {
          const node = data.nodes.get(updateDataStream.id);
-         node.size = updateDataStream.new_size;
-         node.color = updateDataStream.color;
-
-         data.nodes.update(node);
+         data.nodes.update({...node, ...updateDataStream.updates});
       }
       else {
          const edge = data.edges.get(updateDataStream.id);
-         edge.color = updateDataStream.color;
-         edge.width = updateDataStream.width;
-
-         data.edges.update(edge);
+         data.edges.update({...edge, ...updateDataStream.updates});
+      }
+   });
+   window.glimpseAPI.onShowVisOptions(() => {
+      if (document.getElementById("layout-config").style.display === "none" || document.getElementById("layout-config").style.display === "") {
+         toggleLegendRef.current?.(false);
+         document.getElementById("layout-config").style.display = "flex";
+      }
+      else {
+         if (document.getElementById("graph").style.width === "100%") {
+            document.getElementById("graph").style.width = "70%"
+         }
+         toggleLegendRef.current?.(true);
+         document.getElementById("layout-config").style.display = "none";
       }
    });
    window.glimpseAPI.onShowAttributes(showAttributes);
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
    window.glimpseAPI.onExtract(Export);
-
-   const container = useRef(null);
-   const toggleLegendRef = useRef(null);
-   const showLegendStateRef = useRef(null);
 
    useEffect(() => {
 
@@ -1212,6 +1243,20 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             setContextMenuData({});
          }
       });
+
+      glmNetwork.setOptions({
+         "configure": {
+            "filter": (option, path) => {
+               if (path.indexOf("physics") !== -1)
+                  return true;
+               if (path.indexOf("smooth") !== -1 || option === "smooth")
+                  return true;
+
+               return false;
+            },
+            "container": configureContainer.current
+         }
+      });
    });
 
    return (
@@ -1244,14 +1289,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             edgeTypes={Object.keys(objectTypeCount.edges)}
          />
 
-         <div id="networks-wrapper">
-         <div
-            id="graph"
-            className="main-network"
-            onContextMenu={handleContextmenu}
-            ref={container}
-         />
-
          <div id="circularProgress">
             <span id="progressValue">0%</span>
          </div>
@@ -1264,16 +1301,34 @@ const Graph = ({ dataToVis, theme, isGlm, isCim }) => {
             deleteNode={deleteNode}
          />
 
-         <Legend 
-            findGroup = {HighlightGroup} 
-            findEdges = {HighlightEdges}
-            hideObjects = {hideObjects}
-            legendData = {getLegendData(objectTypeCount)}
-            onMount={legendMount}
-            setShowLegendRef={toggleLegendRef}
-            legendStateRef={showLegendStateRef}
-         />
-         </div>
+         <Box component={"div"} sx={{"width":"100%", "height": "calc(100vh - 7rem)"}}>
+         <Stack sx={{"height":"100%", "width": "100%", "borderTop": "1px solid lightgrey"}} direction={"row"}>
+            <Box
+               id="graph"
+               component={"div"}
+               sx={{"width": "70%","height": "100%"}} 
+               ref={container}
+               onContextMenu={handleContextmenu}
+            />
+
+            <Box
+               sx={{"display": "none", "height": "100%", "width": "30%"}}
+               component="div"
+               ref={configureContainer}
+               id="layout-config"
+            />
+
+            <Legend 
+               findGroup = {HighlightGroup} 
+               findEdges = {HighlightEdges}
+               hideObjects={hideObjects}
+               legendData = {getLegendData(objectTypeCount)}
+               onMount={legendMount}
+               setShowLegendRef={toggleLegendRef}
+               legendStateRef={showLegendStateRef}
+            />
+         </Stack>
+         </Box>
       </>
    );
 }

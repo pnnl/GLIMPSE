@@ -62,6 +62,9 @@ const ActionBar = ({
          toggleLegendRef.current?.(false);
       }
       else {
+         if (document.getElementById("layout-config").style.display === "flex") {
+            document.getElementById("layout-config").style.display = "none";
+         }
          document.getElementById("graph").style.width = "70%";
          document.getElementById("circularProgress").style.left = "35%"
          toggleLegendRef.current?.(true);
@@ -161,7 +164,7 @@ const ActionBar = ({
 
    return (
       <>
-      <Box sx={{padding: 1, display: "flex", flexDirection: "row", justifyContent: "end"}}>
+      <Box sx={{padding: 0.5, display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
                   <Button 
