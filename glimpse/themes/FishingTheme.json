@@ -39,6 +39,21 @@
          "size": 15,
          "image": "./imgs/point.svg",
          "shape": "image"
+      },
+      "NGO": {
+         "size": 15,
+         "image": "./imgs/NGO.svg",
+         "shape": "image"
+      },
+      "Commodity": {
+         "size": 15,
+         "image": "./imgs/Commodity.svg",
+         "shape": "image"
+      },
+      "GovernmentOrg": {
+         "size": 15,
+         "image": "./imgs/GovernmentOrg.svg",
+         "shape": "image"
       }
    },
    "edgeOptions": {

@@ -8,9 +8,7 @@ import "./styles/vis-network.css";
 import "./styles/Graph.css";
 import Legend from "./Legend";
 import EdgeContextMenu from "./EdgeContextMenu";
-
-const appConfig = JSON.parse(await window.glimpseAPI.getConfig());
-const options = appConfig.graphOptions;
+const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
 * @param {Object} attributes - an object 
@@ -80,7 +78,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const edgeOptions = theme.edgeOptions;
    let glmNetwork = null; // global network varibale
    let counter = -1; // coutner to navigate through highlighted nodes
-   const highlightedNodes = [];
+   let highlightedNodes = [];
 
    /**
    * Create nodes and edges based on the object type being visualized in the main network
@@ -106,9 +104,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       let x_increment = null;
       if (currentNodeTypes.length < 6)
-         x_increment = 800 / currentNodeTypes.length;
+         x_increment = 675 / currentNodeTypes.length;
       else 
-         x_increment = 1500 / currentNodeTypes.length;
+         x_increment = 1450 / currentNodeTypes.length;
 
       let farthest_x = 0;
       let current_x = 0;
@@ -127,6 +125,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   shape: theme.groups[nodeType].shape,
                   image: theme.groups[nodeType].image,
                   group: nodeType,
+                  title: "Double Click to Highlight !",
                   x: current_x,
                   y: current_y,
                   physics: false,
@@ -142,6 +141,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                size: 25,
                shape: "dot",
                groups: nodeType,
+               title: "Double Click to Highlight !",
                x: current_x,
                y: current_y,
                physics: false,
@@ -170,6 +170,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                shape: theme.groups[nodeType].shape,
                image: theme.groups[nodeType].image,
                group: nodeType,
+               title: "Double Click to Highlight !",
                x: current_x,
                y: current_y,
                physics: false,
@@ -186,6 +187,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             size: 25,
             shape: "dot",
             group: nodeType,
+            title: "Double Click to Highlight !",
             x: current_x,
             y: current_y,
             physics: false,
@@ -220,6 +222,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                id: type,
                from: `${type}:${index}`,
                to: `${type}:${index + 1}`,
+               title: "Double Click to Highlight !",
                label: `${type} [${typeCounts.edges[type]}]`,
                width: 8,
                color: edgeOptions[type].color
@@ -231,6 +234,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                from: `${type}:${index}`,
                to: `${type}:${index + 1}`,
                label: `${type} [${typeCounts.edges[type]}]`,
+               title: "Double Click to Highlight !",
                width: 8,
             });
          }
@@ -300,8 +304,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   });
                }
                else if ("level" in attributes) {
-                  if (!options.layout.hierarchical.enabled)
-                     options.layout.hierarchical.enabled = true;
+                  if (!graphOptions.layout.hierarchical.enabled)
+                     graphOptions.layout.hierarchical.enabled = true;
       
                   if (objectType in objectTypeCount.nodes)
                      objectTypeCount.nodes[objectType]++;
@@ -312,7 +316,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
-   
+
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -345,8 +349,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                
             }
             else if ("elementType" in obj && obj.elementType === "node") {
+
                if (!(objectType in theme.groups)){
                   theme.groups[objectType] = {
+                     "size": 15,
                      "color": getRandomColor(),
                      "shape": "dot"
                   };
@@ -366,12 +372,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   "id": nodeID,
                   "label": nodeID,
                   "elementType": "node",
-                  "size": 15,
-                  "level": Object.keys(attributes).includes("level") ? attributes.level : undefined,
+                  "level": "level" in attributes ? attributes.level : undefined,
                   "attributes": attributes,
                   "group": objectType,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
-                  "shape": "dot"
                });
             }
 
@@ -516,8 +520,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
             return edge;
          }
-         else if (edgeTypes.includes(edgeType)) {
-            edge.width = edgeOptions[edgeType].width;
+         else if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
+            edge.width = 2;
             edge.color = edgeOptions[edgeType].color;
             edge.hidden = false;
 
@@ -595,7 +599,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    */
    const HighlightGroup = (nodeType) => {
       const nodesMap = data.nodes.map((node) => {
-         if (highlightedNodes.includes(node.id) || (node.group !== nodeType && node.size === 5)) {
+         if (node.group === nodeType && node.size === 25) {
+            node.size = 10;
+            node.shape = "dot"
+            node.color = "rgba(200, 200, 200, 0.5)";
+            node.label = " ";
+            
+            highlightedNodes = highlightedNodes.filter(nodeid => nodeid !== node.id);
             return node;
          }
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
@@ -616,6 +626,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             highlightedNodes.push(node.id);
             return node;
          }
+
+         return node;
       });
       
       const edgesMap = data.edges.map((edge) => {
@@ -650,7 +662,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
 
       const edgeItems = data.edges.map((edge) => {
-         if (edge.type === edgeType) {
+         if (edge.type === edgeType && edge.width === 8) {
+            edge.width = 0.15;
+            edge.color = "rgba(200,200,200,0.5)";
+            return edge;
+         }
+         else if (edge.type === edgeType) {
             edge.width = 8;
             edge.color = edgeOptions[edge.type].color;
             return edge;
@@ -906,6 +923,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       setLegendData(getLegendData(objectTypeCount));
    }
 
+   const container = useRef(null);
+   const configureContainer = useRef(null);
+   const toggleLegendRef = useRef(null);
+   const showLegendStateRef = useRef(null);
+
    window.glimpseAPI.onUpdateData((updateData) => {
       const updateDataStream = JSON.parse(updateData);
 
@@ -918,35 +940,134 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          data.edges.update({...edge, ...updateDataStream.updates});
       }
    });
+   window.glimpseAPI.onShowVisOptions(() => {
+      if (document.getElementById("layout-config").style.display === "none" || document.getElementById("layout-config").style.display === "") {
+         toggleLegendRef.current?.(false);
+         document.getElementById("layout-config").style.display = "flex";
+      }
+      else {
+         if (document.getElementById("graph").style.width === "100%") {
+            document.getElementById("graph").style.width = "70%"
+         }
+         toggleLegendRef.current?.(true);
+         document.getElementById("layout-config").style.display = "none";
+      }
+   });
    window.glimpseAPI.onShowAttributes(showAttributes);
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
    window.glimpseAPI.onExtract(Export);
 
-   const container = useRef(null);
-   const toggleLegendRef = useRef(null);
-   const showLegendStateRef = useRef(null);
-   useEffect(() => {
 
-      //if Nodes and edges have x and y coordinates load the network
-      //without displaying the circular progess bar 
+   const makeMeMultiSelect = (container, network, nodes) => {
+         const NO_CLICK = 0;
+         const RIGHT_CLICK = 3;
+      
+      // Disable default right-click dropdown menu
+      container.oncontextmenu = () => false;
+      
+      // State
+      
+      let drag = false, DOMRect = {};
+
+      // Selector
+      
+      const canvasify = (DOMx, DOMy) => {
+            const { x, y } = network.DOMtoCanvas({ x: DOMx, y: DOMy });
+            return [x, y];
+      };
+      
+      const correctRange = (start, end) =>
+         start < end ? [start, end] : [end, start];
+
+      const selectFromDOMRect = () => {
+         const [sX, sY] = canvasify(DOMRect.startX, DOMRect.startY);
+         const [eX, eY] = canvasify(DOMRect.endX, DOMRect.endY);
+         const [startX, endX] = correctRange(sX, eX);
+         const [startY, endY] = correctRange(sY, eY);
+
+         network.selectNodes(nodes.get().reduce(
+               (selected, { id }) => {
+                  const { x, y } = network.getPositions(id)[id];
+                  return (startX <= x && x <= endX && startY <= y && y <= endY) ?
+                     selected.concat(id) : selected;
+               }, []
+         ));
+      }
+
+      // Listeners
+
+      console.log(container);
+      container.on("mousedown", function({ which, pageX, pageY }) {
+            // When mousedown, save the initial rectangle state
+         if(which === RIGHT_CLICK) {
+               Object.assign(DOMRect, {
+                  startX: pageX - this.offsetLeft,
+                  startY: pageY - this.offsetTop,
+                  endX: pageX - this.offsetLeft,
+                  endY: pageY - this.offsetTop
+               });
+               drag = true;
+         }
+      });
+
+      container.on("mousemove", function({ which, pageX, pageY }) {
+            // Make selection rectangle disappear when accidently mouseupped outside 'container'
+         if(which === NO_CLICK && drag) {
+               drag = false;
+               network.redraw();
+         }
+         // When mousemove, update the rectangle state
+         else if(drag) {
+               Object.assign(DOMRect, {
+                  endX: pageX - this.offsetLeft,
+                  endY: pageY - this.offsetTop
+               });
+               network.redraw();
+         }
+      });
+
+      container.on("mouseup", function({ which }) {
+            // When mouseup, select the nodes in the rectangle
+         if(which === RIGHT_CLICK) {
+               drag = false;
+               network.redraw();
+               selectFromDOMRect();
+         }
+      });
+
+      // Drawer
+
+      network.on('afterDrawing', ctx => {
+         if(drag) {
+               const [startX, startY] = canvasify(DOMRect.startX, DOMRect.startY);
+               const [endX, endY] = canvasify(DOMRect.endX, DOMRect.endY);
+
+               ctx.setLineDash([5]);
+               ctx.strokeStyle = 'rgba(78, 146, 237, 0.75)';
+               ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+               ctx.setLineDash([]);
+               ctx.fillStyle = 'rgba(151, 194, 252, 0.45)';
+               ctx.fillRect(startX, startY, endX - startX, endY - startY);
+         }
+      });
+   }; // end makeMeMultiSelect
+
+
+   useEffect(() => {
       if ("x" in data.nodes.get()[0] && "y" in data.nodes.get()[0]) {
-         options.physics.stabilization.enabled = false;
+         graphOptions.physics.stabilization.enabled = false;
          document.getElementById("circularProgress").style.display = "none";
-         glmNetwork = new Network(container.current, data, options);
+         glmNetwork = new Network(container.current, data, graphOptions);
          glmNetwork.setOptions({groups: theme.groups});
          glmNetwork.setOptions({physics: {enabled: false}});
       }
       else { 
          if (data.nodes.length > 151) {
-            options.edges.smooth.type = "continuous";
-            options.physics.barnesHut.gravitationalConstant = -80000;
-            options.physics.barnesHut.springConstant = 0.35;
-            options.physics.barnesHut.springLength = 250;
+            graphOptions.physics.solver = "forceAtlas2Based";
          }
 
          // create network
-         glmNetwork = new Network(container.current, data, options);
-         glmNetwork.setOptions({groups: theme.groups});
+         glmNetwork = new Network(container.current, data, graphOptions);
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -965,7 +1086,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             document.getElementById("circularProgress").style.opacity = 0.7;
             
             /* set physics to false for better performance when stabalization is done */
-            glmNetwork.setOptions({physics: {enabled: false}})
+            glmNetwork.setOptions({physics: {enabled: false}, groups: theme.groups})
 
             setTimeout(() => {
                document.getElementById("circularProgress").style.display = "none";
@@ -992,6 +1113,20 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             setContextMenuData({"edgeID": edgeID});
          }
       })
+
+      glmNetwork.setOptions({
+         "configure": {
+            "filter": (option, path) => {
+               if (path.indexOf("physics") !== -1)
+                  return true;
+               if (path.indexOf("smooth") !== -1 || option === "smooth")
+                  return true;
+
+               return false;
+            },
+            "container": configureContainer.current
+         }
+      });
    });
 
    return (
@@ -1034,6 +1169,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                sx={{"width": "70%","height": "100%"}} 
                ref={container}
                onContextMenu={handleContextmenu}
+            />
+
+            <Box
+               sx={{"display": "none", "height": "100%", "width": "30%"}}
+               component="div"
+               ref={configureContainer}
+               id="layout-config"
             />
 
             <Legend 

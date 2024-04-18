@@ -46,3 +46,15 @@ We provide few examples of exploring starndard IEEE bus models using GLIMPSE. Fr
 **To re-uplaod files after visualization, press `ctrl + R` or click `view` then `reload`**
 
 ![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
+
+## Cite as
+```yaml
+@inproceedings{sanchez2024glimpse,
+  title={GLIMPSE of Future Power Grid Models},
+  author={Sanchez, Armando Mendoza and Purohit, Sumit},
+  booktitle={2024 IEEE 18th International Conference on Semantic Computing (ICSC)},
+  pages={224--225},
+  year={2024},
+  organization={IEEE}
+}
+```

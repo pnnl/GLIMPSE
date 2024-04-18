@@ -4,18 +4,19 @@ const {
    ipcMain,
    dialog,
    Menu,
+   globalShortcut
 } = require("electron");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
-const {io} = require("socket.io-client");
+const { io } = require("socket.io-client");
 const fs = require("fs");
 const kill = require("tree-kill");
 const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 // app.commandLine.appendSwitch("js-flags", '--max-old-space-size=4096');
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
@@ -23,8 +24,8 @@ const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let win = null;
 
-const rootDir = __dirname;
-// const rootDir = process.resourcesPath;
+// const rootDir = __dirname;
+const rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -343,14 +344,10 @@ const makeWindow = () => {
    win.show();
 }
 
-app.whenReady().then(() => {
-
-   // autoUpdater.checkForUpdatesAndNotify();
-   
+const initiateServer = () => {
    const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
-   let server = null;
    if (fs.existsSync(serverPath)) {
-      server = execFile(serverPath, (error, stdout, stderr) => {
+      execFile(serverPath, (error, stdout, stderr) => {
          if (error) {
             throw error;
          }
@@ -367,30 +364,28 @@ app.whenReady().then(() => {
          console.log(`log: ${data}`); // when error
       });
    }
+}
 
+app.whenReady().then(() => {
+   globalShortcut.register("ctrl+p", () => win.webContents.send("show-vis-options"));
+   initiateServer();
+}).then(() => {
+   // autoUpdater.checkForUpdatesAndNotify();
    makeWindow();
 
    app.on("before-quit", () => {
       kill(process.pid);
-      kill(server.pid);
    });
 
+   app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
+         makeWindow();
+      }
+   });
 });
 
-app.on('window-all-closed', function() {
-   // On OS X it is common for applications and their menu bar
-   // to stay active until the user quits explicitly with Cmd + Q
+app.on('window-all-closed', () => {
    if (process.platform !== 'darwin') {
       app.quit()
-   }
-
-   return;
-});
- 
-app.on('activate', function() {
-// On OS X it's common to re-create a window in the app when the
-// dock icon is clicked and there are no other windows open.
-   if (win === null) {
-      createWindow()
    }
 });

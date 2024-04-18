@@ -111,7 +111,7 @@ export const About = () => {
    return (
       <>
          <Nav />
-         <h1>About The tool</h1>
+         <h1>v0.2.1</h1>
       </>
    );
 }

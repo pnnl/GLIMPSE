@@ -3,61 +3,61 @@
       "load": {
          "size": 15,
          "color": "#20a4f3",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/load.png"
       },
       "triplex_load": {
          "size": 15,
          "color": "#ffea00",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/load.png"
       },
       "capacitor": {
          "size": 15,
          "color": "#023047",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/capacitor.png"
       },
       "triplex_node": {
          "size": 15,
          "color": "#003566",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/node.png"
       },
       "substation": {
          "size": 15,
          "color": "#fca311",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/substation.jpg"
       },
       "triplex_meter": {
          "size": 15,
          "color": "#072ac8",
-         "shape": "dot",
+         "shape": "circularImage",
          "image": "./imgs/meter.jpg"
       },
       "node": {
          "size": 15,
          "color": "#219ebc",
-         "shape": "dot", 
+         "shape": "circularImage", 
          "image": "./imgs/node.png"
       },
       "meter": {
          "size": 15,
          "color": "#d90429",
-         "shape": "dot", 
+         "shape": "circularImage", 
          "image": "./imgs/meter.jpg"
       },
       "inverter_dyn": {
          "size": 15,
          "color": "#ffb703",
-         "shape": "dot", 
+         "shape": "circularImage", 
          "image": "./imgs/inverter.png"
       },
       "diesel_dg": {
          "size": 15,
          "color": "#fb8500",
-         "shape": "dot", 
+         "shape": "circularImage", 
          "image": "./imgs/generator.jpg"
       },
       "communication_node": {

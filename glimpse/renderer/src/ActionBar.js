@@ -62,6 +62,9 @@ const ActionBar = ({
          toggleLegendRef.current?.(false);
       }
       else {
+         if (document.getElementById("layout-config").style.display === "flex") {
+            document.getElementById("layout-config").style.display = "none";
+         }
          document.getElementById("graph").style.width = "70%";
          document.getElementById("circularProgress").style.left = "35%"
          toggleLegendRef.current?.(true);

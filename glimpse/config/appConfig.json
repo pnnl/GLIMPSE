@@ -22,14 +22,8 @@
    },
    "graphOptions": {
       "configure": {
-         "enabled": false,
-         "filter": [
-            "physics",
-            "layout",
-            "interaction",
-            "renderer"
-         ],
-         "showButton": true
+         "enabled": true,
+         "showButton": false
       },
       "edges": {
          "font": {"multi": true, "align": "horizontal"},
@@ -40,15 +34,6 @@
       },
       "nodes": {
          "borderWidth": 2,
-         "shapeProperties": {
-            "useBorderWithImage": true
-         },
-         "color": {
-            "hover": {
-               "border": "#2B7CE9",
-               "background": "white"
-            }
-         },
          "font": {
             "color": "#000",
             "size": 12,
@@ -70,14 +55,13 @@
             "springLength": 75
          },
          "forceAtlas2Based": {
-            "gravitationalConstant": -250,
+            "gravitationalConstant": -370,
             "centralGravity": 0.01,
-            "springLength": 50,
-            "springConstant": 0.18
+            "springLength": 225,
+            "springConstant": 0.1
          },
-         "maxVelocity": 146,
-         "timestep": 0.35,
          "solver": "barnesHut",
+         "timestep": 0.25,
          "stabilization": {
             "enabled": true,
             "iterations": 1000,
@@ -91,8 +75,8 @@
          "hierarchical": {
             "enabled": false,
             "direction": "LR",
-            "levelSeparation": 500,
-            "nodeSpacing": 100
+            "levelSeparation": 130,
+            "nodeSpacing": 30
          }
       }
    },
@@ -111,6 +95,9 @@
             "strokeWidth": 5,
             "strokeColor": "white"
          }
+      },
+      "interaction": {
+         "hover": true
       }
    }
 }
