@@ -1,57 +1,50 @@
 {
    "groups": {
       "Location": {
-         "size": 15,
          "image": "./imgs/location.svg",
          "shape": "image"
       },
       "City": {
-         "size": 15,
          "image": "./imgs/city.svg",
          "shape": "image"
       },
       "FishingCompany": {
-         "size": 15,
          "image": "./imgs/FishingCompany.svg",
          "shape": "image"
       },
       "Person": {
-         "size": 15,
          "image": "./imgs/person.svg",
          "shape": "image"
       },
       "Company": {
-         "size": 15,
          "image": "./imgs/company.svg",
          "shape": "image"
       },
+      "Organization": {
+         "image": "./imgs/Organization.svg",
+         "shape": "image"
+      },
       "LogisticsCompany": {
-         "size": 15,
          "image": "./imgs/logisticsCompany.svg",
          "shape": "image"
       },
       "Region": {
-         "size": 15,
          "image": "./imgs/region.svg",
          "shape": "image"
       },
       "Point": {
-         "size": 15,
          "image": "./imgs/point.svg",
          "shape": "image"
       },
       "NGO": {
-         "size": 15,
          "image": "./imgs/NGO.svg",
          "shape": "image"
       },
       "Commodity": {
-         "size": 15,
          "image": "./imgs/Commodity.svg",
          "shape": "image"
       },
       "GovernmentOrg": {
-         "size": 15,
          "image": "./imgs/GovernmentOrg.svg",
          "shape": "image"
       }

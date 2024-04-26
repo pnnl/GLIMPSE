@@ -33,14 +33,14 @@
          }
       },
       "nodes": {
+         "shape": "image",
          "borderWidth": 2,
          "font": {
             "color": "#000",
-            "size": 12,
             "multi": true,
-            "align": "left"
-         },
-         "size": 15
+            "align": "left",
+            "bold": "20px arial black"
+         }
       },
       "interaction": {
          "hover": true,
@@ -51,8 +51,8 @@
       "physics": {
          "barnesHut": {
             "gravitationalConstant": -10000,
-            "springConstant": 0.3,
-            "springLength": 75
+            "springConstant": 0.5,
+            "springLength": 70
          },
          "forceAtlas2Based": {
             "gravitationalConstant": -370,

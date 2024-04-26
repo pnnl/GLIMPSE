@@ -7,7 +7,8 @@ import NodePopup from "./NodePopup";
 import "./styles/vis-network.css";
 import "./styles/Graph.css";
 import Legend from "./Legend";
-import EdgeContextMenu from "./EdgeContextMenu";
+import ContextMenu from "./ContextMenu";
+import NewNodeForm from "./NewNodeForm";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
@@ -292,6 +293,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
                      
+                  if (!("color" in theme.groups[objectType]))
+                     theme.groups[objectType].color = getRandomColor();
+
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -317,6 +321,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   else
                      GLIMPSE_OBJECT.objects.push(obj);
 
+                  if (!("color" in theme.groups[objectType]))
+                     theme.groups[objectType].color = getRandomColor();
+
                   return ({
                      "id": nodeID,
                      "label": nodeID,
@@ -327,7 +334,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   });
                }
-                              
+               
                objectTypeCount.nodes[objectType]++;
 
                obj = renameKeys({name: "objectType"}, obj);
@@ -337,6 +344,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   GLIMPSE_OBJECT.objects.push({...obj, elementType: "node"});
                else
                   GLIMPSE_OBJECT.objects.push(obj);
+
+               if (!("color" in theme.groups[objectType]))
+                  theme.groups[objectType].color = getRandomColor();
 
                return ({
                   "id": nodeID,
@@ -352,7 +362,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
                if (!(objectType in theme.groups)){
                   theme.groups[objectType] = {
-                     "size": 15,
                      "color": getRandomColor(),
                      "shape": "dot"
                   };
@@ -502,9 +511,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const Reset = () => {
       highlightedNodes.length = 0;
       const nodesResetMap = data.nodes.map((node) => {
-         delete node.size;
          delete node.color;
          delete node.shape;
+         delete node.size;
          node.hidden = false;
          node.label = node.id;
 
@@ -598,10 +607,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    * @param {string} nodeType - The type of nodes to highlight 
    */
    const HighlightGroup = (nodeType) => {
-      const nodesMap = data.nodes.map((node) => {
-         if (node.group === nodeType && node.size === 25) {
-            node.size = 10;
-            node.shape = "dot"
+      data.nodes.update(data.nodes.map((node) => {
+         delete node.value;
+         if (node.group === nodeType && highlightedNodes.includes(node.id)) {
+            node.shape = "dot";
+            node.size = 15;
             node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             
@@ -609,38 +619,37 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             return node;
          }
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
-            node.size = 10;
-            node.shape = "dot"
+            node.shape = "dot";
+            node.size = 15;
             node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             return node;
          }
          else if (node.group === nodeType && !highlightedNodes.includes(node.id)) {
-            if (node.size === 10) {
-               node.size = 25;
+            if (node.shape === "dot") {
                delete node.color;
                delete node.shape;
+               node.size = 35;
                node.label = node.id;
+               // node.value = glmNetwork.getConnectedEdges(node.id).length
             }
-            node.size = 25;
+
+            // node.size = 35;
             highlightedNodes.push(node.id);
             return node;
          }
 
          return node;
-      });
+      }));
       
-      const edgesMap = data.edges.map((edge) => {
+      data.edges.update(data.edges.map((edge) => {
          if (edge.width !== 8) {
             edge.width = 0.15;
             edge.color = "rgba(200, 200, 200, 0.5)";
          }
 
          return edge;
-      });
-
-      data.nodes.update(nodesMap);
-      data.edges.update(edgesMap);
+      }));
    }
 
    /* ------------------------ Highlight Edges ------------------------ */
@@ -651,7 +660,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const HighlightEdges = (edgeType) => {
       if (highlightedNodes.length === 0) {
          const nodeItems = data.nodes.map((node) => {
-            node.size = 10;
+            node.size = 15;
             node.shape = "dot"
             node.color = "rgba(200,200,200,0.5)";
             node.label = " ";
@@ -728,13 +737,22 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    let contextMenuData;
    let setContextMenuData;
    /**
-    * Takes the state variables of the EdgeContextMenu component so that the parent component may change the state of the child
+    * Takes the state variables of the ContextMenu component so that the parent component may change the state of the child
     * @param {Object} contextMenuDataState - Null or holds x and y data for placing the context menu on the page with the data of the selected edge
     * @param {React.Dispatch<React.SetStateAction<*>>} setContextMenuDataState - Sets the state of the child context menu component  
     */
    const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
       contextMenuData = contextMenuDataState;
       setContextMenuData = setContextMenuDataState;
+   }
+
+   let newNodeFormSetState;
+   const onNewNodeFormMount = (setOpenNewNodeForm) => {
+      newNodeFormSetState = setOpenNewNodeForm;
+   }
+
+   const openNewNodeForm = (openFormBool) => {
+      newNodeFormSetState(openFormBool);
    }
 
    /** close the node pupup component */
@@ -923,6 +941,57 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       setLegendData(getLegendData(objectTypeCount));
    }
 
+   /**
+    * Create and visualize a new node in either CIM or GLM model
+    * @param {Object} newNodeObj - contains the new values from each field in the new node form 
+    * @param {number} newNodeObj.nodeType - The index of the node type in the nodeTypes list
+    * @param {string} newNodeObj.nodeID - The ID for the new node
+    * @param {string} newNodeObj.connectTo - The ID of an existing Node to connect the new node
+    * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
+   */
+   const addNewNode = ({nodeType, nodeID, connectTo, edgeType}) => {
+      const node_types = Object.keys(objectTypeCount.nodes).filter((key) => objectTypeCount.nodes[key] > 0);
+      const edge_types = Object.keys(objectTypeCount.edges).filter((key) => objectTypeCount.edges[key] > 0);
+
+
+      const [addedNodeID] = data.nodes.add({
+         "id": `${node_types[nodeType]}_${nodeID}`,
+         "label": `${node_types[nodeType]}_${nodeID}`,
+         "group": node_types[nodeType]
+      });
+
+      const title = getTitle(data.nodes.get(addedNodeID));
+      const addedNode = data.nodes.get(addedNodeID);
+      addedNode.title = title;
+      data.nodes.update(addedNode);
+
+      const [addedEdgeID] = data.edges.add({
+         "id": `${connectTo}-${addedNodeID}`,
+         "from": connectTo,
+         "to": addedNodeID,
+         "type": edge_types[edgeType],
+         "color": edgeOptions[edge_types[edgeType]].color,
+         "width": edgeOptions[edge_types[edgeType]].width
+      });
+
+      const {color, width, ...rest} = data.edges.get(addedEdgeID);
+      const addedEdge = data.edges.get(addedEdgeID);
+      addedEdge.title = `Object Type: ${edge_types[edgeType]}\n${getTitle(rest)}`;
+      data.edges.update(addedEdge);
+   }
+
+   const deleteNode = (nodeID) => {
+      data.nodes.remove(nodeID);
+      
+      const edgesToDelete = [];
+      for (let edge of data.edges.get()) {
+         if (edge.from === nodeID || edge.to === nodeID)
+            edgesToDelete.push(edge.id);
+      }
+      
+      data.edges.remove(edgesToDelete);
+   }
+
    const container = useRef(null);
    const configureContainer = useRef(null);
    const toggleLegendRef = useRef(null);
@@ -941,7 +1010,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
    });
    window.glimpseAPI.onShowVisOptions(() => {
-      if (document.getElementById("layout-config").style.display === "none" || document.getElementById("layout-config").style.display === "") {
+      if (document.getElementById("layout-config").style.display === "none" || 
+         document.getElementById("layout-config").style.display === "") {
          toggleLegendRef.current?.(false);
          document.getElementById("layout-config").style.display = "flex";
       }
@@ -957,117 +1027,46 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
    window.glimpseAPI.onExtract(Export);
 
-
-   const makeMeMultiSelect = (container, network, nodes) => {
-         const NO_CLICK = 0;
-         const RIGHT_CLICK = 3;
-      
-      // Disable default right-click dropdown menu
-      container.oncontextmenu = () => false;
-      
-      // State
-      
-      let drag = false, DOMRect = {};
-
-      // Selector
-      
-      const canvasify = (DOMx, DOMy) => {
-            const { x, y } = network.DOMtoCanvas({ x: DOMx, y: DOMy });
-            return [x, y];
-      };
-      
-      const correctRange = (start, end) =>
-         start < end ? [start, end] : [end, start];
-
-      const selectFromDOMRect = () => {
-         const [sX, sY] = canvasify(DOMRect.startX, DOMRect.startY);
-         const [eX, eY] = canvasify(DOMRect.endX, DOMRect.endY);
-         const [startX, endX] = correctRange(sX, eX);
-         const [startY, endY] = correctRange(sY, eY);
-
-         network.selectNodes(nodes.get().reduce(
-               (selected, { id }) => {
-                  const { x, y } = network.getPositions(id)[id];
-                  return (startX <= x && x <= endX && startY <= y && y <= endY) ?
-                     selected.concat(id) : selected;
-               }, []
-         ));
-      }
-
-      // Listeners
-
-      console.log(container);
-      container.on("mousedown", function({ which, pageX, pageY }) {
-            // When mousedown, save the initial rectangle state
-         if(which === RIGHT_CLICK) {
-               Object.assign(DOMRect, {
-                  startX: pageX - this.offsetLeft,
-                  startY: pageY - this.offsetTop,
-                  endX: pageX - this.offsetLeft,
-                  endY: pageY - this.offsetTop
-               });
-               drag = true;
-         }
-      });
-
-      container.on("mousemove", function({ which, pageX, pageY }) {
-            // Make selection rectangle disappear when accidently mouseupped outside 'container'
-         if(which === NO_CLICK && drag) {
-               drag = false;
-               network.redraw();
-         }
-         // When mousemove, update the rectangle state
-         else if(drag) {
-               Object.assign(DOMRect, {
-                  endX: pageX - this.offsetLeft,
-                  endY: pageY - this.offsetTop
-               });
-               network.redraw();
-         }
-      });
-
-      container.on("mouseup", function({ which }) {
-            // When mouseup, select the nodes in the rectangle
-         if(which === RIGHT_CLICK) {
-               drag = false;
-               network.redraw();
-               selectFromDOMRect();
-         }
-      });
-
-      // Drawer
-
-      network.on('afterDrawing', ctx => {
-         if(drag) {
-               const [startX, startY] = canvasify(DOMRect.startX, DOMRect.startY);
-               const [endX, endY] = canvasify(DOMRect.endX, DOMRect.endY);
-
-               ctx.setLineDash([5]);
-               ctx.strokeStyle = 'rgba(78, 146, 237, 0.75)';
-               ctx.strokeRect(startX, startY, endX - startX, endY - startY);
-               ctx.setLineDash([]);
-               ctx.fillStyle = 'rgba(151, 194, 252, 0.45)';
-               ctx.fillRect(startX, startY, endX - startX, endY - startY);
-         }
-      });
-   }; // end makeMeMultiSelect
-
-
    useEffect(() => {
       if ("x" in data.nodes.get()[0] && "y" in data.nodes.get()[0]) {
          graphOptions.physics.stabilization.enabled = false;
+         graphOptions.physics.enabled = false;
+         graphOptions.groups = theme.groups;
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, graphOptions);
-         glmNetwork.setOptions({groups: theme.groups});
-         glmNetwork.setOptions({physics: {enabled: false}});
       }
       else { 
-         if (data.nodes.length > 151) {
+         if (data.nodes.length > 151 && data.nodes.length <= 300 && data.edges.length >= 7000) {
             graphOptions.physics.solver = "forceAtlas2Based";
+            graphOptions.nodes.scaling = {};
+            graphOptions.nodes.scaling.min = 15;
+            graphOptions.nodes.scaling.max = 150;
+            graphOptions.nodes.scaling.label = {};
+            graphOptions.nodes.scaling.label.min = 20;
+            graphOptions.nodes.scaling.label.max = 100;
+         }
+         else if (data.nodes.length > 300 && data.edges.length < 7000) {            
+            graphOptions.physics.barnesHut.gravitationalConstant = -80000;
+            graphOptions.physics.barnesHut.springConstant = 0.8;
+            graphOptions.physics.barnesHut.springLength = 250;
+            graphOptions.nodes.scaling = {};
+            graphOptions.nodes.scaling.min = 15;
+            graphOptions.nodes.scaling.max = 85;
+            graphOptions.nodes.scaling.label = {};
+            graphOptions.nodes.scaling.label.min = 20;
+            graphOptions.nodes.scaling.label.max = 80;
          }
 
          // create network
+         graphOptions.groups = theme.groups;
          glmNetwork = new Network(container.current, data, graphOptions);
+
+         if ("scaling" in graphOptions.nodes) {
+            data.nodes.update(data.nodes.get().map((node) => {
+               node.value = glmNetwork.getConnectedEdges(node.id).length;
+               return node;
+            }));
+         }
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -1086,7 +1085,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             document.getElementById("circularProgress").style.opacity = 0.7;
             
             /* set physics to false for better performance when stabalization is done */
-            glmNetwork.setOptions({physics: {enabled: false}, groups: theme.groups})
+            glmNetwork.setOptions({physics: {enabled: false}});
 
             setTimeout(() => {
                document.getElementById("circularProgress").style.display = "none";
@@ -1105,14 +1104,22 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          }
       });
 
+      // glmNetwork.on("click", (params) => {
+      //    console.log(data.nodes.get(params.nodes[0]));
+      // });
+
       /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
-         let edgeID = null;
-         if (glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined) {
-            edgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
-            setContextMenuData({"edgeID": edgeID});
+         if (glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined && glmNetwork.getNodeAt(params.pointer.DOM) === undefined) {
+            setContextMenuData({"edgeID": glmNetwork.getEdgeAt(params.pointer.DOM)});
          }
-      })
+         else if (glmNetwork.getNodeAt(params.pointer.DOM) !== undefined) {
+            setContextMenuData({"nodeID": glmNetwork.getNodeAt(params.pointer.DOM)});
+         }
+         else {
+            setContextMenuData({});
+         }
+      });
 
       glmNetwork.setOptions({
          "configure": {
@@ -1151,14 +1158,24 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             onClose = {closePopUp}
          />
 
+         <NewNodeForm
+            onMount={onNewNodeFormMount}
+            nodes={data.nodes.getIds()}
+            addNode = {addNewNode}
+            nodeTypes={Object.keys(objectTypeCount.nodes).filter((key) => objectTypeCount.nodes[key] > 0)}
+            edgeTypes={Object.keys(objectTypeCount.edges).filter((key) => objectTypeCount.edges[key] > 0)}
+         />
+
          <div id="circularProgress">
             <span id="progressValue">0%</span>
          </div>
 
-         <EdgeContextMenu
+         <ContextMenu
             onMount = {onContextMenuChildMount} 
             hideEdge = {hideEdge}
             hideEdges = {hideEdges}
+            openNewNodeForm={openNewNodeForm}
+            deleteNode={deleteNode}
          />
 
          <Box component={"div"} sx={{"width":"100%", "height": "calc(100vh - 7rem)"}}>

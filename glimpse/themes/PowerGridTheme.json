@@ -1,73 +1,71 @@
 {
    "groups": {
       "load": {
-         "size": 15,
+         "size": 25,
          "color": "#20a4f3",
-         "shape": "circularImage",
-         "image": "./imgs/load.png"
+         "shape": "image",
+         "image": "./imgs/Load.svg"
       },
       "triplex_load": {
-         "size": 15,
+         "size": 25,
          "color": "#ffea00",
          "shape": "circularImage",
-         "image": "./imgs/load.png"
+         "image": "./imgs/Load.svg"
       },
       "capacitor": {
-         "size": 15,
+         "size": 25,
          "color": "#023047",
-         "shape": "circularImage",
-         "image": "./imgs/capacitor.png"
+         "shape": "image",
+         "image": "./imgs/Capacitor.svg"
       },
       "triplex_node": {
-         "size": 15,
-         "color": "#003566",
-         "shape": "circularImage",
-         "image": "./imgs/node.png"
+         "size": 4,
+         "color": "#219ebc",
+         "shape": "dot"
       },
       "substation": {
-         "size": 15,
+         "size": 25,
          "color": "#fca311",
          "shape": "circularImage",
          "image": "./imgs/substation.jpg"
       },
       "triplex_meter": {
-         "size": 15,
+         "size": 25,
          "color": "#072ac8",
          "shape": "circularImage",
          "image": "./imgs/meter.jpg"
       },
       "node": {
-         "size": 15,
+         "size": 4,
          "color": "#219ebc",
-         "shape": "circularImage", 
-         "image": "./imgs/node.png"
+         "shape": "dot"
       },
       "meter": {
-         "size": 15,
+         "size": 25,
          "color": "#d90429",
          "shape": "circularImage", 
          "image": "./imgs/meter.jpg"
       },
       "inverter_dyn": {
-         "size": 15,
+         "size": 25,
          "color": "#ffb703",
-         "shape": "circularImage", 
-         "image": "./imgs/inverter.png"
+         "shape": "image", 
+         "image": "./imgs/Inverter.svg"
       },
       "diesel_dg": {
-         "size": 15,
+         "size": 25,
          "color": "#fb8500",
-         "shape": "circularImage", 
-         "image": "./imgs/generator.jpg"
+         "shape": "image", 
+         "image": "./imgs/generator.svg"
       },
       "communication_node": {
-         "size": 15,
+         "size": 25,
          "color": "#c1121f",
          "shape": "image",
          "image": "./imgs/comm.jpg"
       },
       "microgrid": {
-         "size": 15,
+         "size": 25,
          "color": "#6b9080",
          "shape": "image",
          "image": "./imgs/microgrid.svg"
