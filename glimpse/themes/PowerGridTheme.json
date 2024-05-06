@@ -1,21 +1,54 @@
 {
    "groups": {
       "load": {
-         "size": 25,
-         "color": "#20a4f3",
-         "shape": "image",
+         "size": 15,
+         "color": {
+            "border": "#20a4f3",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#20a4f3",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage",
          "image": "./imgs/Load.svg"
       },
       "triplex_load": {
-         "size": 25,
-         "color": "#ffea00",
+         "size": 15,
+         "color": {
+            "border": "#ffea00",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#ffea00",
+               "background": "#fff"
+            }
+         },
          "shape": "circularImage",
          "image": "./imgs/Load.svg"
       },
       "capacitor": {
-         "size": 25,
-         "color": "#023047",
-         "shape": "image",
+         "size": 15,
+         "color": {
+            "border": "#023047",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#023047",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage",
          "image": "./imgs/Capacitor.svg"
       },
       "triplex_node": {
@@ -24,14 +57,36 @@
          "shape": "dot"
       },
       "substation": {
-         "size": 25,
-         "color": "#fca311",
+         "size": 15,
+         "color": {
+            "border": "#fca311",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#fca311",
+               "background": "#fff"
+            }
+         },
          "shape": "circularImage",
          "image": "./imgs/substation.jpg"
       },
       "triplex_meter": {
-         "size": 25,
-         "color": "#072ac8",
+         "size": 15,
+         "color": {
+            "border": "#072ac8",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#072ac8",
+               "background": "#fff"
+            }
+         },
          "shape": "circularImage",
          "image": "./imgs/meter.jpg"
       },
@@ -41,33 +96,88 @@
          "shape": "dot"
       },
       "meter": {
-         "size": 25,
-         "color": "#d90429",
+         "size": 15,
+         "color": {
+            "border": "#d90429",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#d90429",
+               "background": "#fff"
+            }
+         },
          "shape": "circularImage", 
          "image": "./imgs/meter.jpg"
       },
       "inverter_dyn": {
-         "size": 25,
-         "color": "#ffb703",
-         "shape": "image", 
+         "size": 15,
+         "color": {
+            "border": "#ffb703",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#ffb703",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage", 
          "image": "./imgs/Inverter.svg"
       },
       "diesel_dg": {
-         "size": 25,
-         "color": "#fb8500",
-         "shape": "image", 
+         "size": 15,
+         "color": {
+            "border": "#fb8500",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#fb8500",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage", 
          "image": "./imgs/generator.svg"
       },
       "communication_node": {
-         "size": 25,
-         "color": "#c1121f",
-         "shape": "image",
+         "size": 15,
+         "color": {
+            "border": "#c1121f",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#c1121f",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage",
          "image": "./imgs/comm.jpg"
       },
       "microgrid": {
-         "size": 25,
-         "color": "#6b9080",
-         "shape": "image",
+         "size": 15,
+         "color": {
+            "border": "#6b9080",
+            "background": "#fff",
+            "hover": {
+               "border": "#000",
+               "background": "#fff"
+            },
+            "highlight": {
+               "border": "#6b9080",
+               "background": "#fff"
+            }
+         },
+         "shape": "circularImage",
          "image": "./imgs/microgrid.svg"
       }
    },

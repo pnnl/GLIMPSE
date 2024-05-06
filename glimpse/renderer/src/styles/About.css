@@ -1,0 +1,36 @@
+.about-banner {
+   display: flex;
+   width: 100%;
+   padding: 4px;
+}
+
+.about-title {
+   text-align: center;
+}
+
+.description {
+   padding: 1rem 2rem;
+   text-align: center;
+   font-weight: bold;
+}
+
+.close-about-btn {
+   width: 5rem;
+   height: 2.5rem;
+   color: white;
+   background-color: #333;
+   border: 1px solid#FFF;
+   margin-left: auto;
+   margin-right: 1rem;
+   border-radius: 5px;
+   text-transform: uppercase;
+   cursor: pointer;
+}
+
+.close-about-btn:hover {
+   background-color: #b25a00;
+}
+
+.citation-wrapper {
+   margin-top: 1rem;
+}

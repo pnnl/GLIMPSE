@@ -185,8 +185,6 @@ const exportThemeFile = async (themeData) => {
    if (dir2save.canceled) return null;
    dir2save = dir2save.filePaths[0];
 
-   console.log(dir2save);
-
    fs.writeFileSync(path.join(dir2save, filename), themeData);   
 }
 
@@ -196,10 +194,8 @@ const json2glmFunc = async (jsonData) => {
    if (dir2save.canceled) return null;
    dir2save = dir2save.filePaths[0];
 
-   console.log(dir2save);
-
    const parsedData = JSON.parse(jsonData);
-   const json2glmArg = process.platform == "darwin" ? "json2glm" : "json2glm.exe";
+   const json2glmArg = process.platform == "darwin" ? ".\\tools\\json2glm" : ".\\tools\\json2glm.exe";
    
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
@@ -296,11 +292,11 @@ const makeWindow = () => {
                id: "layout-theme",
                type: "radio",
             },
-            {
-               label: "Fishing",
-               id: "fishing-theme",
-               type: "radio",
-            }
+            // {
+            //    label: "Fishing",
+            //    id: "fishing-theme",
+            //    type: "radio",
+            // }
          ]
       },
       {
@@ -373,10 +369,6 @@ app.whenReady().then(() => {
    // autoUpdater.checkForUpdatesAndNotify();
    makeWindow();
 
-   app.on("before-quit", () => {
-      kill(process.pid);
-   });
-
    app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) {
          makeWindow();
@@ -384,8 +376,12 @@ app.whenReady().then(() => {
    });
 });
 
+app.on("quit", () => {
+   kill(process.pid);
+});
+
 app.on('window-all-closed', () => {
    if (process.platform !== 'darwin') {
-      app.quit()
+      kill(process.pid);
    }
 });

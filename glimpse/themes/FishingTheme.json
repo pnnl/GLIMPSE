@@ -1,52 +1,75 @@
 {
    "groups": {
       "Location": {
+         "size": 35,
          "image": "./imgs/location.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "City": {
+         "size": 35,
          "image": "./imgs/city.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "FishingCompany": {
+         "size": 35,
          "image": "./imgs/FishingCompany.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Person": {
+         "size": 35,
          "image": "./imgs/person.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Company": {
+         "size": 35,
          "image": "./imgs/company.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Organization": {
+         "size": 35,
          "image": "./imgs/Organization.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "LogisticsCompany": {
+         "size": 35,
          "image": "./imgs/logisticsCompany.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Region": {
+         "size": 35,
          "image": "./imgs/region.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Point": {
+         "size": 35,
          "image": "./imgs/point.svg",
-         "shape": "image"
+         "shape": "circularImage"
       },
       "NGO": {
+         "size": 35,
          "image": "./imgs/NGO.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "Commodity": {
+         "size": 35,
          "image": "./imgs/Commodity.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       },
       "GovernmentOrg": {
+         "size": 35,
          "image": "./imgs/GovernmentOrg.svg",
-         "shape": "image"
+         "shape": "circularImage",
+         "color": "#FFF"
       }
    },
    "edgeOptions": {
@@ -57,6 +80,50 @@
       "Summons": {
          "width": 0.5,
          "color": "#1b4965"
+      },
+      "Invest": {
+         "width": 0.5,
+         "color": "#A66AC7"
+      },
+      "Aid": {
+         "width": 0.5,
+         "color": "#75ED90"
+      },
+      "Transaction": {
+         "width": 0.5,
+         "color": "#C23394"
+      },
+      "SustainableFishing": {
+         "width": 0.5,
+         "color": "#EAE2b7"
+      },
+      "Conference": {
+         "width": 0.5,
+         "color": "#A7FA52"
+      },
+      "OverFishing": {
+         "width": 0.5,
+         "color": "#CB3632"
+      },
+      "Criticize": {
+         "width": 0.5,
+         "color": "#53D84D"
+      },
+      "PartiallyOwns": {
+         "width": 0.5,
+         "color": "#435C51"
+      },
+      "Applaud": {
+         "width": 0.5,
+         "color": "#F8E814"
+      },
+      "CertificateIssued": {
+         "width": 0.5,
+         "color": "#D8D582"
+      },
+      "Convicted": {
+         "width": 0.5,
+         "color": "#10494A"
       }
    }
 }

@@ -1,27 +1,10 @@
 import React, { useState } from 'react';
-import './styles/App.css';
 import { LinearProgress, Box } from "@mui/material"
-import { Link } from 'react-router-dom';
 import FileUpload from './FileUpload';
 import Graph from './Graph';
+import Nav from './Nav';
 
-const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
-
-const Nav = () => {
-   return (
-      <header>
-         <h1 className="title" ><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.title}</Link></h1>
-         <nav>
-            <ul className="nav-links">
-               <li><Link to ="/" style={{ textDecoration: 'none', color: "white" }}>{appOptions.nav.home}</Link></li>
-               <li><Link to="/About" style={{ textDecoration: 'none', color: "white"}}>{appOptions.nav.about}</Link></li>
-            </ul>
-         </nav>
-      </header>
-   )
-}
-
-export const Home = () => {
+export const App = () => {
 
    let selectedTheme = null;
    let themeData = null;
@@ -93,25 +76,19 @@ export const Home = () => {
      
    return (
       <>
-         <Nav />
+         <Nav showHome={()=> {
+               setFilesUploaded(false);
+               setFileData({loading: false});
+            }}/>
          {!filesUploaded && <FileUpload onFileUpload={handleFileUpload} />}
          {fileData.loading && <Box sx={{width: "100%"}}><LinearProgress /></Box>}
          {filesUploaded && !fileData.loading && 
-            <Graph 
-               dataToVis = {fileData.visData} 
-               theme={fileData.theme} 
-               isGlm={fileData.isGlm} 
+            <Graph
+               dataToVis = {fileData.visData}
+               theme={fileData.theme}
+               isGlm={fileData.isGlm}
             />
          }
-      </>
-   );
-}
-
-export const About = () => {
-   return (
-      <>
-         <Nav />
-         <h1>v0.2.1</h1>
       </>
    );
 }

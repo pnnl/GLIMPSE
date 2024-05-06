@@ -99,18 +99,18 @@ const Legend = ({
 
    return (
       <>
-         <Box
-            id="legend-network"
-            component={"div"}
-            sx={{"height": "100%", "width": "30%"}}
-            ref={container}
-            onContextMenu={handleContext}
-            />
+      <Box
+         id="legend-network"
+         component={"div"}
+         sx={{"height": "100%", "width": "30%"}}
+         ref={container}
+         onContextMenu={handleContext}
+      />
 
-         <LegendContextMenu
-            onMount={onContextMenuChildMount}
-            hideObjects={hideObjects}
-         />
+      <LegendContextMenu
+         onMount={onContextMenuChildMount}
+         hideObjects={hideObjects}
+      />
       </>
    );
 }

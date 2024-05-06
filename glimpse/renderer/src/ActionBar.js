@@ -59,15 +59,15 @@ const ActionBar = ({
       if (showLegendStateRef.current) {
          document.getElementById("graph").style.width = "100%";
          document.getElementById("circularProgress").style.left = "45%"
-         toggleLegendRef.current?.(false);
+         toggleLegendRef.current(false);
       }
       else {
-         if (document.getElementById("layout-config").style.display === "flex") {
-            document.getElementById("layout-config").style.display = "none";
+         if (document.getElementById("layout-form").style.display === "flex") {
+            document.getElementById("layout-form").style.display = "none";
          }
          document.getElementById("graph").style.width = "70%";
          document.getElementById("circularProgress").style.left = "35%"
-         toggleLegendRef.current?.(true);
+         toggleLegendRef.current(true);
       }
    }
 
@@ -164,7 +164,7 @@ const ActionBar = ({
 
    return (
       <>
-      <Box sx={{padding: 0.5, display: "flex", flexDirection: "row", justifyContent: "end"}}>
+      <Box sx={{padding: "6px", display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
                   <Button 

@@ -70,7 +70,10 @@ const renameKeys = (keysMap, obj) => {
    );
 }
 
-const Graph = ({ dataToVis, theme, isGlm }) => {
+const Graph = ({ dataToVis, theme, isGlm}) => {
+   const container = useRef(null);
+   const toggleLegendRef = useRef(null);
+   const showLegendStateRef = useRef(null);
 
    const GLIMPSE_OBJECT = {"objects": []};
    const nodeTypes = Object.keys(theme.groups);
@@ -334,6 +337,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   });
                }
+
+               if (graphOptions.layout.hierarchical.enabled) {
+                  graphOptions.physics.solver = "barnesHut";
+                  graphOptions.layout.hierarchical.enabled = false;
+               }
                
                objectTypeCount.nodes[objectType]++;
 
@@ -511,9 +519,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const Reset = () => {
       highlightedNodes.length = 0;
       const nodesResetMap = data.nodes.map((node) => {
+         delete node.size;
          delete node.color;
          delete node.shape;
-         delete node.size;
          node.hidden = false;
          node.label = node.id;
 
@@ -545,6 +553,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          }
       });
 
+      glmNetwork.setOptions({"groups": theme.groups});
       data.nodes.update(nodesResetMap);
       data.edges.update(edgeItems);
       glmNetwork.fit();
@@ -575,7 +584,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
    
       try {
-         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
+         glmNetwork.focus(highlightedNodes[counter], {
+            "scale": 3,
+            "animation": {
+               "duration": 750
+            }, 
+            "easingFunction": "easeInQuad"
+         });
       } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
@@ -595,7 +610,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
 
       try {
-         glmNetwork.focus(highlightedNodes[counter], {"scale": 3, "animation": true})
+         glmNetwork.focus(highlightedNodes[counter], {
+            "scale": 3,
+            "animation": {
+               "duration": 750
+            }, 
+            "easingFunction": "easeInQuad"
+         });
       } catch {
          alert("There are no highlighted nodes to cycle through...");
       }
@@ -608,10 +629,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    */
    const HighlightGroup = (nodeType) => {
       data.nodes.update(data.nodes.map((node) => {
-         delete node.value;
          if (node.group === nodeType && highlightedNodes.includes(node.id)) {
             node.shape = "dot";
-            node.size = 15;
+            node.size = 10;
             node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             
@@ -620,7 +640,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          }
          else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
             node.shape = "dot";
-            node.size = 15;
+            node.size = 10;
             node.color = "rgba(200, 200, 200, 0.5)";
             node.label = " ";
             return node;
@@ -629,12 +649,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             if (node.shape === "dot") {
                delete node.color;
                delete node.shape;
-               node.size = 35;
+               delete node.size;
                node.label = node.id;
-               // node.value = glmNetwork.getConnectedEdges(node.id).length
             }
 
-            // node.size = 35;
             highlightedNodes.push(node.id);
             return node;
          }
@@ -660,8 +678,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const HighlightEdges = (edgeType) => {
       if (highlightedNodes.length === 0) {
          const nodeItems = data.nodes.map((node) => {
-            node.size = 15;
             node.shape = "dot"
+            node.size = 10;
             node.color = "rgba(200,200,200,0.5)";
             node.label = " ";
             return node;
@@ -992,12 +1010,23 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       data.edges.remove(edgesToDelete);
    }
 
-   const container = useRef(null);
-   const configureContainer = useRef(null);
-   const toggleLegendRef = useRef(null);
-   const showLegendStateRef = useRef(null);
+   const toggleVisOptions = () => {
+      const layoutForm = document.getElementById("layout-form");
 
-   window.glimpseAPI.onUpdateData((updateData) => {
+      if (layoutForm.style.display === "none") {
+         layoutForm.style.display = "flex";
+         toggleLegendRef.current(false);
+      }
+      else {
+         if (document.getElementById("graph").style.width === "100%") {
+            document.getElementById("graph").style.width = "70%"
+         }
+         layoutForm.style.display = "none";
+         toggleLegendRef.current(true);
+      }
+   }
+
+   const updateNode = (updateData) => {
       const updateDataStream = JSON.parse(updateData);
 
       if (updateDataStream.elementType === "node") {
@@ -1008,24 +1037,22 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const edge = data.edges.get(updateDataStream.id);
          data.edges.update({...edge, ...updateDataStream.updates});
       }
-   });
-   window.glimpseAPI.onShowVisOptions(() => {
-      if (document.getElementById("layout-config").style.display === "none" || 
-         document.getElementById("layout-config").style.display === "") {
-         toggleLegendRef.current?.(false);
-         document.getElementById("layout-config").style.display = "flex";
-      }
-      else {
-         if (document.getElementById("graph").style.width === "100%") {
-            document.getElementById("graph").style.width = "70%"
+   }
+
+   useEffect(() => {
+      const removeListenerArr = [];
+      removeListenerArr.push(window.glimpseAPI.onShowVisOptions(toggleVisOptions));
+      removeListenerArr.push(window.glimpseAPI.onExtract(Export));
+      removeListenerArr.push(window.glimpseAPI.onShowAttributes(showAttributes));
+      removeListenerArr.push(window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3))));
+      removeListenerArr.push(window.glimpseAPI.onUpdateData(updateNode));
+
+      return () => {
+         for (let removeListener of removeListenerArr) {
+            removeListener();
          }
-         toggleLegendRef.current?.(true);
-         document.getElementById("layout-config").style.display = "none";
-      }
-   });
-   window.glimpseAPI.onShowAttributes(showAttributes);
-   window.glimpseAPI.onExportTheme(() => window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)));
-   window.glimpseAPI.onExtract(Export);
+      };
+   }, []);
 
    useEffect(() => {
       if ("x" in data.nodes.get()[0] && "y" in data.nodes.get()[0]) {
@@ -1035,38 +1062,33 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          document.getElementById("circularProgress").style.display = "none";
          glmNetwork = new Network(container.current, data, graphOptions);
       }
-      else { 
+      else {
          if (data.nodes.length > 151 && data.nodes.length <= 300 && data.edges.length >= 7000) {
             graphOptions.physics.solver = "forceAtlas2Based";
-            graphOptions.nodes.scaling = {};
-            graphOptions.nodes.scaling.min = 15;
-            graphOptions.nodes.scaling.max = 150;
-            graphOptions.nodes.scaling.label = {};
-            graphOptions.nodes.scaling.label.min = 20;
-            graphOptions.nodes.scaling.label.max = 100;
+            // graphOptions.nodes.scaling.max = 100;
+            // graphOptions.nodes.scaling.label.max = 90;
+            
          }
          else if (data.nodes.length > 300 && data.edges.length < 7000) {            
-            graphOptions.physics.barnesHut.gravitationalConstant = -80000;
-            graphOptions.physics.barnesHut.springConstant = 0.8;
-            graphOptions.physics.barnesHut.springLength = 250;
-            graphOptions.nodes.scaling = {};
-            graphOptions.nodes.scaling.min = 15;
-            graphOptions.nodes.scaling.max = 85;
-            graphOptions.nodes.scaling.label = {};
-            graphOptions.nodes.scaling.label.min = 20;
-            graphOptions.nodes.scaling.label.max = 80;
+            graphOptions.physics.barnesHut.gravitationalConstant = -23000;
+            graphOptions.physics.barnesHut.springConstant = 0.85;
+            graphOptions.physics.barnesHut.centralGravity = 0.1;
+            graphOptions.physics.barnesHut.springLength = 90;
+            graphOptions.physics.barnesHut.avoidOverlap = 0.6;
+            graphOptions.physics.barnesHut.damping = 0.18;
+            // graphOptions.nodes.scaling.max = 100;
+            // graphOptions.nodes.scaling.label.max = 90;
          }
 
          // create network
          graphOptions.groups = theme.groups;
          glmNetwork = new Network(container.current, data, graphOptions);
-
-         if ("scaling" in graphOptions.nodes) {
-            data.nodes.update(data.nodes.get().map((node) => {
-               node.value = glmNetwork.getConnectedEdges(node.id).length;
-               return node;
-            }));
-         }
+         
+         // data.nodes.update(data.nodes.get().map((node) => {
+         //    node.value = glmNetwork.getConnectedEdges(node.id).length;
+         //    return node;
+         // }));
+         
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -1087,6 +1109,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             /* set physics to false for better performance when stabalization is done */
             glmNetwork.setOptions({physics: {enabled: false}});
 
+            // data.nodes.update(data.nodes.get().map((node) => {
+            //    node.value = undefined;
+            //    return node;
+            // }));
+
             setTimeout(() => {
                document.getElementById("circularProgress").style.display = "none";
             }, 500);
@@ -1103,10 +1130,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             setOpenNodePopup(true);
          }
       });
-
-      // glmNetwork.on("click", (params) => {
-      //    console.log(data.nodes.get(params.nodes[0]));
-      // });
 
       /* Display the child Context menu component to hide an edge or edge types */
       glmNetwork.on("oncontext", (params) => {
@@ -1131,10 +1154,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
                return false;
             },
-            "container": configureContainer.current
+            "container": document.getElementById("layout-form")
          }
       });
-   });
+   }, []);
 
    return (
       <>
@@ -1168,7 +1191,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
          <div id="circularProgress">
             <span id="progressValue">0%</span>
-         </div>
+         </div> 
 
          <ContextMenu
             onMount = {onContextMenuChildMount} 
@@ -1178,7 +1201,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             deleteNode={deleteNode}
          />
 
-         <Box component={"div"} sx={{"width":"100%", "height": "calc(100vh - 7rem)"}}>
+         <Box 
+            component={"div"}
+            sx={{"width":"100%", "height": "calc(100vh - 116px)"}}
+         >
          <Stack sx={{"height":"100%", "width": "100%", "borderTop": "1px solid lightgrey"}} direction={"row"}>
             <Box
                id="graph"
@@ -1188,15 +1214,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                onContextMenu={handleContextmenu}
             />
 
-            <Box
-               sx={{"display": "none", "height": "100%", "width": "30%"}}
-               component="div"
-               ref={configureContainer}
-               id="layout-config"
+            <div
+               id="layout-form"
+               style={{"width": "30%", "height": "100%", "display": "none"}}
             />
 
-            <Legend 
-               findGroup = {HighlightGroup} 
+            <Legend
+               findGroup = {HighlightGroup}
                findEdges = {HighlightEdges}
                hideObjects={hideObjects}
                legendData = {getLegendData(objectTypeCount)}

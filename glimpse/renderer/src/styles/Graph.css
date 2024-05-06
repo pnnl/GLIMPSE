@@ -20,9 +20,15 @@
   background-color: white;
 }
 
-#progressValue{
+#progressValue {
   position: relative;
   font-size: 2rem;
   font-weight: 600;
   color: #b25a00;
 }
+
+/* #layout-config {
+   display: none;
+   height: 100%;
+   width: 30%;
+} */
