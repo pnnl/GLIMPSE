@@ -14,9 +14,9 @@ const kill = require("tree-kill");
 const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron")
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
+// });
 // app.commandLine.appendSwitch("js-flags", '--max-old-space-size=4096');
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
@@ -24,8 +24,8 @@ const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let win = null;
 
-const rootDir = __dirname;
-// const rootDir = process.resourcesPath;
+// const rootDir = __dirname;
+const rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;

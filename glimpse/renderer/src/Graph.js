@@ -9,7 +9,7 @@ import "./styles/Graph.css";
 import Legend from "./Legend";
 import ContextMenu from "./ContextMenu";
 import NewNodeForm from "./NewNodeForm";
-const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
+const {graphOptions} = JSON.parse(await window.glimpseAPI.getConfig());
 /**
 * Converts an object of attributes from a node or edge to a string to be displayed
 * @param {Object} attributes - an object 
@@ -337,11 +337,6 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
                      "title": "Object Type: " + objectType + "\n" + getTitle(attributes),
                   });
                }
-
-               if (graphOptions.layout.hierarchical.enabled) {
-                  graphOptions.physics.solver = "barnesHut";
-                  graphOptions.layout.hierarchical.enabled = false;
-               }
                
                objectTypeCount.nodes[objectType]++;
 
@@ -532,13 +527,13 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          const edgeType = edge.type;
 
          if (edge.width === 8) {
-            edge.width = 2;
+            edge.width = "width" in edgeOptions[edgeType] ? edgeOptions[edgeType].width : 2;
             edge.hidden = false;
 
             return edge;
          }
          else if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
-            edge.width = 2;
+            edge.width = "width" in edgeOptions[edgeType] ? edgeOptions[edgeType].width : 2;
             edge.color = edgeOptions[edgeType].color;
             edge.hidden = false;
 
@@ -546,7 +541,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          }
          else {
             edge.color = {"inherit": true};
-            edge.width = 2;
+            edge.width = 0.15;
             edge.hidden = false;
 
             return edge;
@@ -921,6 +916,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
                      from: microgrid.name,
                      to: nodeID,
                      color: {inherit: true},
+                     type: type,
                      width: 0.15
                   });
                });
@@ -946,6 +942,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
                      id: `parentChild:${comm_node.name}-${nodeID}`,
                      from: comm_node.name,
                      to: nodeID,
+                     type: type,
                      color: {inherit: true},
                      width: 0.15
                   });
@@ -1013,7 +1010,9 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
    const toggleVisOptions = () => {
       const layoutForm = document.getElementById("layout-form");
 
-      if (layoutForm.style.display === "none") {
+      console.log(layoutForm);
+
+      if (layoutForm.style.display === "none" || layoutForm.style.display === "") {
          layoutForm.style.display = "flex";
          toggleLegendRef.current(false);
       }
@@ -1051,6 +1050,8 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          for (let removeListener of removeListenerArr) {
             removeListener();
          }
+
+         graphOptions.physics.solver = "barnesHut";
       };
    }, []);
 
@@ -1157,6 +1158,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
             "container": document.getElementById("layout-form")
          }
       });
+
    }, []);
 
    return (
@@ -1214,10 +1216,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
                onContextMenu={handleContextmenu}
             />
 
-            <div
-               id="layout-form"
-               style={{"width": "30%", "height": "100%", "display": "none"}}
-            />
+            <div id="layout-form"/>
 
             <Legend
                findGroup = {HighlightGroup}

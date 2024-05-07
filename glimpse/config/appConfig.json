@@ -33,6 +33,7 @@
          }
       },
       "nodes": {
+         "size": 15,
          "borderWidth": 2,
          "font": {
             "color": "#000",

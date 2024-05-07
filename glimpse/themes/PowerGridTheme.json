@@ -223,7 +223,7 @@
          "color": {"inherit": false}
       },
       "microgrid_connection": {
-         "width": 1, 
+         "width": 0.15, 
          "color": "cyan"
       }
    }
