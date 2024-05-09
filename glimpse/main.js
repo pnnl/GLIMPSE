@@ -14,9 +14,10 @@ const kill = require("tree-kill");
 const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
-// require("electron-reload")(__dirname, {
-//    electron: path.join(__dirname, "node_modules", ".bin", "electron")
-// });
+
+require("electron-reload")(__dirname, {
+   electron: path.join(__dirname, "node_modules", ".bin", "electron")
+});
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
 const socket = io("http://127.0.0.1:5000");
@@ -316,6 +317,7 @@ const makeWindow = () => {
          submenu: [
             {
                "label": "Embeddings",
+               click: () => win.webContents.send("embeddings_plot", sendPlot())
             },
             {
                label: "Graph Metrics"

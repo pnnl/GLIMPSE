@@ -1,34 +1,37 @@
-import React, { useState } from "react";
-import PlotModal from "./PlotModal.js";
+import React, { useEffect, useState } from "react";
+import { 
+   Box,
+   Stack,
+   Button,
+   Switch,
+   TextField,
+   FormGroup,
+   IconButton,
+   createTheme,
+   ButtonGroup,
+   Autocomplete,
+   ThemeProvider,
+   FormControlLabel
+} from "@mui/material";
 import OverlayUpload from "./OverlayUpload.js";
-import Button from "@mui/material/Button";
-import { createTheme, ThemeProvider } from "@mui/material";
-import Stack from "@mui/material/Stack";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import TextField from "@mui/material/TextField";
-import FormGroup from "@mui/material/FormGroup";
-import Box from '@mui/material/Box';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from "@mui/material/Switch";
+import PlotModal from "./PlotModal.js";
 import SearchIcon from "@mui/icons-material/Search";
-import IconButton from "@mui/material/IconButton";
 import StatsTableModal from "./StatsTableModal.js";
-import Autocomplete from "@mui/material/Autocomplete";
 
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionBar = ({
+   showLegendStateRef,
+   addGraphOverlay,
+   toggleLegendRef,
+   physicsToggle,
    nodesDataObj,
    graphDataObj,
+   getNodeIds,
    onFind,
    reset,
    prev,
-   next,
-   physicsToggle,
-   addGraphOverlay,
-   nodeIDs,
-   toggleLegendRef,
-   showLegendStateRef
+   next
 }) => {
    const nodes = nodesDataObj;
    const [node, setNode] = useState(null);
@@ -56,17 +59,21 @@ const ActionBar = ({
    const toggleLegend = (e) => {
       e.preventDefault();
 
+      const graph = document.getElementById("graph");
+      const circularProgress = document.getElementById("circularProgress");
+      const layoutForm = document.getElementById("layout-form");
+
       if (showLegendStateRef.current) {
-         document.getElementById("graph").style.width = "100%";
-         document.getElementById("circularProgress").style.left = "45%"
+         graph.style.width = "100%";
+         circularProgress.style.left = "50%";
          toggleLegendRef.current(false);
       }
       else {
-         if (document.getElementById("layout-form").style.display === "flex") {
-            document.getElementById("layout-form").style.display = "none";
+         if (layoutForm.style.display === "flex") {
+            layoutForm.style.display = "none";
          }
-         document.getElementById("graph").style.width = "70%";
-         document.getElementById("circularProgress").style.left = "35%"
+         graph.style.width = "80%";
+         circularProgress.style.left = "40%";
          toggleLegendRef.current(true);
       }
    }
@@ -118,23 +125,6 @@ const ActionBar = ({
     * Communicate With the main process to get a buffer of the plot and display it
     * @param {Event} e 
     */
-   const plot = async (e) => {
-      e.preventDefault();
-      
-      if (imgUrl === null) {
-         // getPlot returns a Uint8Array of the png
-         const plot = await window.glimpseAPI.getPlot();
-         const imgUrl = URL.createObjectURL(
-            new Blob([plot.buffer], {type: "image/png"})
-         );
-
-         setImgUrl(imgUrl);
-         setShowPlot(true);
-      }
-      else {
-         setShowPlot(true);
-      }
-   }
 
    /**
     * Send the entire graph data object to the main process and extract statistic using networkx
@@ -162,19 +152,49 @@ const ActionBar = ({
       setShowUpload(true)
    }
 
+   // const plot = async (e) => {
+   //    e.preventDefault();
+      
+   //    if (imgUrl === null) {
+   //       // getPlot returns a Uint8Array of the png
+   //       const plot = await window.glimpseAPI.getPlot();
+   //       const imgUrl = URL.createObjectURL(
+   //          new Blob([plot.buffer], {type: "image/png"})
+   //       );
+
+   //       setImgUrl(imgUrl);
+   //       setShowPlot(true);
+   //    }
+   //    else {
+   //       setShowPlot(true);
+   //    }
+   // }
+
+   const getPlotImg = ({ buffer }) => {
+      const imgUrl = URL.createObjectURL(
+         new Blob([buffer], {"type": "image/png"})
+      );
+
+      setImgUrl(imgUrl);
+      setShowPlot(true);
+   }
+
+   useEffect(() => {
+      const removeListenersArr = [];
+      removeListenersArr.push(window.glimpseAPI.getEmbeddingsPlot(getPlotImg))
+
+      return () => {
+         for (let removeListener of removeListenersArr) {
+            removeListener();
+         }
+      }
+   }, []);
+
    return (
       <>
       <Box sx={{padding: "6px", display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
-                  <Button 
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={plot}>
-                     {appOptions.buttons.plotBtn}
-                  </Button>
-
                   <Button
                      size="small"
                      variant="outlined"
@@ -202,7 +222,7 @@ const ActionBar = ({
                <Autocomplete sx={{width: 200}}
                   size="small"
                   id="autocomplete-nodeID-search"
-                  options = {nodeIDs}
+                  options = {getNodeIds()}
                   onChange={(even, ID) => {
                      setNode(ID)
                   }}

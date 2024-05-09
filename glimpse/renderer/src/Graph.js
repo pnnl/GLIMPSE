@@ -1018,16 +1018,16 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
 
    const toggleVisOptions = () => {
       const layoutForm = document.getElementById("layout-form");
-
-      console.log(layoutForm);
+      const graph = document.getElementById("graph");
 
       if (layoutForm.style.display === "none" || layoutForm.style.display === "") {
+         graph.style.width = "72%";
          layoutForm.style.display = "flex";
          toggleLegendRef.current(false);
       }
       else {
-         if (document.getElementById("graph").style.width === "100%") {
-            document.getElementById("graph").style.width = "70%"
+         if (graph.style.width === "72%") {
+            graph.style.width = "80%";
          }
          layoutForm.style.display = "none";
          toggleLegendRef.current(true);
@@ -1183,7 +1183,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
             prev = {Prev}
             next = {Next}
             addGraphOverlay = {setCommunicationNetwork}
-            nodeIDs = {data.nodes.getIds()}
+            getNodeIds = {() => data.nodes.getIds()}
             toggleLegendRef = {toggleLegendRef}
             showLegendStateRef = {showLegendStateRef}
          />
@@ -1222,7 +1222,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
             <Box
                id="graph"
                component={"div"}
-               sx={{"width": "70%","height": "100%"}} 
+               sx={{"width": "80%","height": "100%"}} 
                ref={container}
                onContextMenu={handleContextmenu}
             />

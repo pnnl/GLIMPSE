@@ -5,7 +5,7 @@
   border-radius: 50%;
   background: conic-gradient(#b25a00 1deg, #333 0deg);
   display: flex;
-  left: 30%;
+  left: 40%;
   top: 50%;
   align-items: center;
   justify-content: center;
@@ -30,5 +30,5 @@
 #layout-form {
    display: none;
    height: 100%;
-   width: 30%;
+   width: 28%;
 }
