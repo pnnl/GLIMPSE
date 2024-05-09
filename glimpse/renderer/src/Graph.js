@@ -453,6 +453,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
                   "elementType": "edge",
                   "type": objectType,
                   "attributes": attributes,
+                  // "length": "length" in attributes ? attributes.length : undefined,
                   "color": edgeOptions[objectType].color,
                   "width": edgeOptions[objectType].width,
                   "title": "Object Type: " + objectType + "\n" + getTitle(attributes)
@@ -968,31 +969,39 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
       const node_types = Object.keys(objectTypeCount.nodes).filter((key) => objectTypeCount.nodes[key] > 0);
       const edge_types = Object.keys(objectTypeCount.edges).filter((key) => objectTypeCount.edges[key] > 0);
 
+      try {
 
-      const [addedNodeID] = data.nodes.add({
-         "id": `${node_types[nodeType]}_${nodeID}`,
-         "label": `${node_types[nodeType]}_${nodeID}`,
-         "group": node_types[nodeType]
-      });
-
-      const title = getTitle(data.nodes.get(addedNodeID));
-      const addedNode = data.nodes.get(addedNodeID);
-      addedNode.title = title;
-      data.nodes.update(addedNode);
-
-      const [addedEdgeID] = data.edges.add({
-         "id": `${connectTo}-${addedNodeID}`,
-         "from": connectTo,
-         "to": addedNodeID,
-         "type": edge_types[edgeType],
-         "color": edgeOptions[edge_types[edgeType]].color,
-         "width": edgeOptions[edge_types[edgeType]].width
-      });
-
-      const {color, width, ...rest} = data.edges.get(addedEdgeID);
-      const addedEdge = data.edges.get(addedEdgeID);
-      addedEdge.title = `Object Type: ${edge_types[edgeType]}\n${getTitle(rest)}`;
-      data.edges.update(addedEdge);
+         const nodesOfsameType = data.nodes.get().filter(n => n.group === node_types[nodeType])
+         
+         const [addedNodeID] = data.nodes.add({
+            "id": `${node_types[nodeType]}_${nodeID}`,
+            "label": `${node_types[nodeType]}_${nodeID}`,
+            "group": node_types[nodeType],
+            "level": "level" in nodesOfsameType[0].attributes ? nodesOfsameType[0].attributes.level : undefined
+         });
+   
+         const title = getTitle(data.nodes.get(addedNodeID));
+         const addedNode = data.nodes.get(addedNodeID);
+         addedNode.title = title;
+         data.nodes.update(addedNode);
+   
+         const [addedEdgeID] = data.edges.add({
+            "id": `${connectTo}-${addedNodeID}`,
+            "from": connectTo,
+            "to": addedNodeID,
+            "type": edge_types[edgeType],
+            "color": edgeOptions[edge_types[edgeType]].color,
+            "width": edgeOptions[edge_types[edgeType]].width
+         });
+   
+         const {color, width, ...rest} = data.edges.get(addedEdgeID);
+         const addedEdge = data.edges.get(addedEdgeID);
+         addedEdge.title = `Object Type: ${edge_types[edgeType]}\n${getTitle(rest)}`;
+         data.edges.update(addedEdge);
+      } 
+      catch (err) {
+         alert(`${node_types[nodeType]}_${nodeID} already exists...`);
+      }
    }
 
    const deleteNode = (nodeID) => {
@@ -1052,6 +1061,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          }
 
          graphOptions.physics.solver = "barnesHut";
+         graphOptions.layout.hierarchical.enabled = false;
       };
    }, []);
 
@@ -1071,10 +1081,11 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
             
          }
          else if (data.nodes.length > 300 && data.edges.length < 7000) {            
-            graphOptions.physics.barnesHut.gravitationalConstant = -23000;
+            // graphOptions.physics.solver = "forceAtlas2Based";
+            graphOptions.physics.barnesHut.gravitationalConstant = -80000;
             graphOptions.physics.barnesHut.springConstant = 0.85;
             graphOptions.physics.barnesHut.centralGravity = 0.1;
-            graphOptions.physics.barnesHut.springLength = 90;
+            graphOptions.physics.barnesHut.springLength = 105;
             graphOptions.physics.barnesHut.avoidOverlap = 0.6;
             graphOptions.physics.barnesHut.damping = 0.18;
             // graphOptions.nodes.scaling.max = 100;

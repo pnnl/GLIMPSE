@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDom from 'react-dom';
 import './styles/OverlayUpload.css';
 import { useState, useRef } from 'react';
@@ -7,6 +7,18 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
 
    const [dragActive, setDragActive] = useState(false);
    const inputRef = useRef(null);
+
+   const handleEscKey = (e) => {
+      if (e.key === "Escape") {
+         close();
+      }
+   }
+
+   useEffect(() => {
+      window.addEventListener("keydown", handleEscKey);
+
+      return () => window.removeEventListener("keydown", handleEscKey);
+   }, []);
 
    if (!show) return null;
    
@@ -67,7 +79,7 @@ const OverlayUpload = ({show, overlayFunc, close}) => {
 
    return ReactDom.createPortal (
       <div className='upload-modal'>
-         <div className='upload-overlay' onDoubleClick={close} >
+         <div className='upload-overlay' onDoubleClick={close}>
             <div className='file-upload-form-container'>
                <form id="form-file-upload" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
                      <input ref={inputRef} type="file" accept='.json' id="input-file-upload" multiple={true} onChange={handleChange} />

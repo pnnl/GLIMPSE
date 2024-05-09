@@ -17,15 +17,14 @@ const Ajv = require("ajv");
 // require("electron-reload")(__dirname, {
 //    electron: path.join(__dirname, "node_modules", ".bin", "electron")
 // });
-// app.commandLine.appendSwitch("js-flags", '--max-old-space-size=4096');
 
 const jsonSchema = fs.readFileSync(path.join(__dirname,"upload.schema.json"), {"encoding": "utf-8"});
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let win = null;
 
-// const rootDir = __dirname;
-const rootDir = process.resourcesPath;
+const rootDir = __dirname;
+// const rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -140,7 +139,7 @@ const validateJson = (filePaths) => {
 
          for (const node of fileData.nodes) {
             data[path.basename(filePath)].objects.push({
-               "objectType": node.type,
+               "objectType": "type" in node ? node.type : "node",
                "elementType": "node",
                "attributes": node
             });
@@ -150,7 +149,7 @@ const validateJson = (filePaths) => {
             const {source, target, key, ...rest} = edge;
 
             data[path.basename(filePath)].objects.push({
-               "objectType": edge.type,
+               "objectType": "type" in edge ? edge.type : "edge",
                "elementType": "edge",
                "attributes":{
                   "id": `${source}-${target}-${key}`,
@@ -309,6 +308,17 @@ const makeWindow = () => {
             {
                label: "hide attributes",
                click: () => win.webContents.send("show-attributes", false)
+            }
+         ]
+      },
+      {
+         label: "Tools",
+         submenu: [
+            {
+               "label": "Embeddings",
+            },
+            {
+               label: "Graph Metrics"
             }
          ]
       }
