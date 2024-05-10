@@ -320,7 +320,8 @@ const makeWindow = () => {
                click: () => win.webContents.send("embeddings_plot", sendPlot())
             },
             {
-               label: "Graph Metrics"
+               label: "Graph Metrics",
+               click: () => win.webContents.send("getGraphMetrics")
             }
          ]
       }

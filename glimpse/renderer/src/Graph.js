@@ -983,6 +983,7 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          const title = getTitle(data.nodes.get(addedNodeID));
          const addedNode = data.nodes.get(addedNodeID);
          addedNode.title = title;
+         objectTypeCount.nodes[addedNode.group]++;
          data.nodes.update(addedNode);
    
          const [addedEdgeID] = data.edges.add({
@@ -997,23 +998,34 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          const {color, width, ...rest} = data.edges.get(addedEdgeID);
          const addedEdge = data.edges.get(addedEdgeID);
          addedEdge.title = `Object Type: ${edge_types[edgeType]}\n${getTitle(rest)}`;
+         objectTypeCount.edges[addedEdge.type]++;
          data.edges.update(addedEdge);
+
+         setLegendData(getLegendData(objectTypeCount));
       } 
       catch (err) {
          alert(`${node_types[nodeType]}_${nodeID} already exists...`);
       }
+
    }
 
    const deleteNode = (nodeID) => {
-      data.nodes.remove(nodeID);
+      // get node obj and subtract from that node type's count
+      objectTypeCount.nodes[data.nodes.get(nodeID).group]--;
+
       
       const edgesToDelete = [];
       for (let edge of data.edges.get()) {
-         if (edge.from === nodeID || edge.to === nodeID)
+         if (edge.from === nodeID || edge.to === nodeID) {
             edgesToDelete.push(edge.id);
+            objectTypeCount.edges[edge.type]--;
+         }
       }
       
+      data.nodes.remove(nodeID);
       data.edges.remove(edgesToDelete);
+
+      setLegendData(getLegendData(objectTypeCount));
    }
 
    const toggleVisOptions = () => {

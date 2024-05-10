@@ -128,11 +128,8 @@ const ActionBar = ({
 
    /**
     * Send the entire graph data object to the main process and extract statistic using networkx
-    * @param {Event} e 
     */
-   const showStats = async (e) => {
-      e.preventDefault();
-
+   const showStats = async () => {
       if (stats === null) {
          const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
          setStats(statsObj);
@@ -181,7 +178,8 @@ const ActionBar = ({
 
    useEffect(() => {
       const removeListenersArr = [];
-      removeListenersArr.push(window.glimpseAPI.getEmbeddingsPlot(getPlotImg))
+      removeListenersArr.push(window.glimpseAPI.getEmbeddingsPlot(getPlotImg));
+      removeListenersArr.push(window.glimpseAPI.onGetMetrics(showStats));
 
       return () => {
          for (let removeListener of removeListenersArr) {
@@ -195,14 +193,6 @@ const ActionBar = ({
       <Box sx={{padding: "6px", display: "flex", flexDirection: "row", justifyContent: "end"}}>
          <ThemeProvider theme={theme}>
                <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
-                  <Button
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={showStats}>
-                     {appOptions.buttons.showStatsBtn}
-                  </Button>
-
                   <Button
                      size="small"
                      variant="outlined"
