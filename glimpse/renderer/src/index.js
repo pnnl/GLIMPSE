@@ -10,7 +10,6 @@ root.render(
    <App />
 );
 
-
 // root.render(
 //    <HashRouter>
 //       <Routes>

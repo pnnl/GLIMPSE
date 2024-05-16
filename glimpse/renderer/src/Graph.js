@@ -108,9 +108,9 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
 
       let x_increment = null;
       if (currentNodeTypes.length < 6)
-         x_increment = 675 / currentNodeTypes.length;
+         x_increment = 800 / currentNodeTypes.length;
       else 
-         x_increment = 1450 / currentNodeTypes.length;
+         x_increment = 1100 / currentNodeTypes.length;
 
       let farthest_x = 0;
       let current_x = 0;
@@ -927,29 +927,31 @@ const Graph = ({ dataToVis, theme, isGlm}) => {
          }
       }
 
-      for (const comm_node of communication_nodes) {
-         data.nodes.add({
-            id: comm_node.name,
-            label: comm_node.name,
-            group: "communication_node"
-         })
+      if (communication_nodes) {
+         for (const comm_node of communication_nodes) {
+            data.nodes.add({
+               id: comm_node.name,
+               label: comm_node.name,
+               group: "communication_node"
+            })
 
-         objectTypeCount.nodes.communication_node++;
+            objectTypeCount.nodes.communication_node++;
 
-         for (const type of Object.keys(comm_node)) {
-            if (types.includes(type)) {
-               comm_node[type].forEach((nodeID) => {
-                  data.edges.add({
-                     id: `parentChild:${comm_node.name}-${nodeID}`,
-                     from: comm_node.name,
-                     to: nodeID,
-                     type: type,
-                     color: {inherit: true},
-                     width: 0.15
+            for (const type of Object.keys(comm_node)) {
+               if (types.includes(type)) {
+                  comm_node[type].forEach((nodeID) => {
+                     data.edges.add({
+                        id: `parentChild:${comm_node.name}-${nodeID}`,
+                        from: comm_node.name,
+                        to: nodeID,
+                        type: type,
+                        color: {inherit: true},
+                        width: 0.15
+                     });
                   });
-               });
 
-               objectTypeCount.edges.parentChild++;
+                  objectTypeCount.edges.parentChild++;
+               }
             }
          }
       }
