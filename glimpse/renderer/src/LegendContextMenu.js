@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Menu from "@mui/material/Menu";
-import MenuItem from '@mui/material/MenuItem';
+import MenuItem from "@mui/material/MenuItem";
 
-const LegendContextMenu = ({onMount, hideObjects}) => {
-    
+const LegendContextMenu = ({ onMount, hideObjects }) => {
    const [contextMenu, setContextMenu] = useState(null);
 
    useEffect(() => {
@@ -14,25 +13,25 @@ const LegendContextMenu = ({onMount, hideObjects}) => {
       setContextMenu(null);
 
       hideObjects(contextMenu.object, contextMenu.type);
-   }
+   };
 
    const handleClose = () => {
       setContextMenu(null);
-   }
+   };
 
    return (
-      <Menu sx={{zIndex: 999}}
-         open = {contextMenu !== null}
+      <Menu
+         sx={{ zIndex: 999 }}
+         open={contextMenu !== null}
          onClose={handleClose}
          anchorReference="anchorPosition"
          anchorPosition={
-            contextMenu !== null
-            ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-            : null            
-         }>
+            contextMenu !== null ? { top: contextMenu.mouseY, left: contextMenu.mouseX } : null
+         }
+      >
          <MenuItem onClick={onHideObjects}>Hide All</MenuItem>
       </Menu>
    );
-}
+};
 
 export default LegendContextMenu;

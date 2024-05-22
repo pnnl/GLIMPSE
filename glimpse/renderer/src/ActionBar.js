@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { 
+import {
    Box,
    Stack,
    Button,
@@ -11,7 +11,7 @@ import {
    ButtonGroup,
    Autocomplete,
    ThemeProvider,
-   FormControlLabel
+   FormControlLabel,
 } from "@mui/material";
 import OverlayUpload from "./OverlayUpload.js";
 import PlotModal from "./PlotModal.js";
@@ -28,10 +28,11 @@ const ActionBar = ({
    nodesDataObj,
    graphDataObj,
    getNodeIds,
+   removeOverlay,
    onFind,
    reset,
    prev,
-   next
+   next,
 }) => {
    const nodes = nodesDataObj;
    const [node, setNode] = useState(null);
@@ -41,20 +42,22 @@ const ActionBar = ({
    const [showPlot, setShowPlot] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [showUpload, setShowUpload] = useState(false);
+   const [displayRemoveOverlayBtn, setDisplayRemoveOverlayBtn] = useState("none");
+
    const theme = createTheme({
       palette: {
          primary: {
-            main: "#333333"
+            main: "#333333",
          },
          secondary: {
-            main: "#b25a00"
-         }
-      }
+            main: "#b25a00",
+         },
+      },
    });
 
    /**
     * Hide/Show the Legend Component
-    * @param {Event} e 
+    * @param {Event} e
     */
    const toggleLegend = (e) => {
       e.preventDefault();
@@ -67,8 +70,7 @@ const ActionBar = ({
          graph.style.width = "100%";
          circularProgress.style.left = "50%";
          toggleLegendRef.current(false);
-      }
-      else {
+      } else {
          if (layoutForm.style.display === "flex") {
             layoutForm.style.display = "none";
          }
@@ -76,54 +78,54 @@ const ActionBar = ({
          circularProgress.style.left = "40%";
          toggleLegendRef.current(true);
       }
-   }
+   };
 
    /**
     * Trigger the find function from the Graph component to focus on the selected node ID
-    * @param {Event} e 
+    * @param {Event} e
     */
    const handleSubmit = (e) => {
       e.preventDefault();
-      
+
       if (nodes.get(node)) onFind(node);
       else alert(`${node} is not in the graph.`);
-   }
+   };
 
    /**
     * Call the reset function from the Graph component to revert to original styles
-    * @param {Event} e 
+    * @param {Event} e
     */
    const handleReset = (e) => {
       e.preventDefault();
       reset();
-   }
+   };
 
    /**
     * Call the Prev function from the Graph component to focus on a previously focused node
-    * @param {Event} e 
+    * @param {Event} e
     */
-   const handlePrev = (e) =>  {
+   const handlePrev = (e) => {
       e.preventDefault();
       prev();
-   }
+   };
 
    /**
     * Call the Next function from the Graph component to focus on the next highlighted node
-    * @param {Event} e 
+    * @param {Event} e
     */
    const handleNext = (e) => {
       e.preventDefault();
       next();
-   }
+   };
 
    const autoLayout = (e) => {
       physicsToggle(e.target.checked);
-      setChecked(e.target.checked)
-   }
+      setChecked(e.target.checked);
+   };
 
    /**
     * Communicate With the main process to get a buffer of the plot and display it
-    * @param {Event} e 
+    * @param {Event} e
     */
 
    /**
@@ -134,47 +136,31 @@ const ActionBar = ({
          const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
          setStats(statsObj);
          setShowTable(true);
-      }
-      else {
+      } else {
          setShowTable(true);
       }
-   }
+   };
 
    /**
     * show the overlay upload component
-    * @param {Event} e 
+    * @param {Event} e
     */
    const showOverlay = (e) => {
       e.preventDefault();
-      setShowUpload(true)
-   }
-
-   // const plot = async (e) => {
-   //    e.preventDefault();
-      
-   //    if (imgUrl === null) {
-   //       // getPlot returns a Uint8Array of the png
-   //       const plot = await window.glimpseAPI.getPlot();
-   //       const imgUrl = URL.createObjectURL(
-   //          new Blob([plot.buffer], {type: "image/png"})
-   //       );
-
-   //       setImgUrl(imgUrl);
-   //       setShowPlot(true);
-   //    }
-   //    else {
-   //       setShowPlot(true);
-   //    }
-   // }
+      setShowUpload(true);
+   };
 
    const getPlotImg = ({ buffer }) => {
-      const imgUrl = URL.createObjectURL(
-         new Blob([buffer], {"type": "image/png"})
-      );
+      const imgUrl = URL.createObjectURL(new Blob([buffer], { type: "image/png" }));
 
       setImgUrl(imgUrl);
       setShowPlot(true);
-   }
+   };
+
+   const handleRemoveOverlay = () => {
+      removeOverlay();
+      setDisplayRemoveOverlayBtn("none");
+   };
 
    useEffect(() => {
       const removeListenersArr = [];
@@ -185,19 +171,24 @@ const ActionBar = ({
          for (let removeListener of removeListenersArr) {
             removeListener();
          }
-      }
+      };
    }, []);
 
    return (
       <>
-      <Box sx={{padding: "6px", display: "flex", flexDirection: "row", justifyContent: "end"}}>
-         <ThemeProvider theme={theme}>
-               <Stack direction="row" spacing={1} sx={{marginRight: "auto"}}>
+         <Box sx={{ padding: "6px", display: "flex", flexDirection: "row", justifyContent: "end" }}>
+            <ThemeProvider theme={theme}>
+               <Stack direction="row" spacing={1} sx={{ marginRight: "auto" }}>
                   <Button
+                     sx={{ display: displayRemoveOverlayBtn }}
                      size="small"
                      variant="outlined"
                      color="primary"
-                     onClick={showOverlay}>
+                     onClick={handleRemoveOverlay}
+                  >
+                     Remove Overlay
+                  </Button>
+                  <Button size="small" variant="outlined" color="primary" onClick={showOverlay}>
                      {appOptions.buttons.addOverlayBtn}
                   </Button>
                </Stack>
@@ -206,89 +197,56 @@ const ActionBar = ({
                   <FormControlLabel
                      control={<Switch checked={checked} onChange={autoLayout} />}
                      label={appOptions.buttons.layoutLbl}
-                     />
+                  />
                </FormGroup>
 
-               <Autocomplete sx={{width: 200}}
+               <Autocomplete
+                  sx={{ width: 200 }}
                   size="small"
                   id="autocomplete-nodeID-search"
-                  options = {getNodeIds()}
+                  options={getNodeIds()}
                   onChange={(even, ID) => {
-                     setNode(ID)
+                     setNode(ID);
                   }}
-                  renderInput={(params) =>
-                     <TextField
-                        variant="outlined"
-                        {...params} 
-                        label={appOptions.buttons.searchLbl}
-                     />
-                  }
+                  renderInput={(params) => (
+                     <TextField variant="outlined" {...params} label={appOptions.buttons.searchLbl} />
+                  )}
                />
 
                <Stack direction="row" spacing={2}>
-                  <IconButton
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={handleSubmit}
-                     >
+                  <IconButton size="small" variant="outlined" color="primary" onClick={handleSubmit}>
                      <SearchIcon />
                   </IconButton>
 
                   <ButtonGroup variant="outlined" aria-label="cycle through nodes">
-                     <Button
-                           size="small"
-                           color="primary"
-                           onClick={handlePrev}
-                           >
-                           {appOptions.buttons.previousBtn}
+                     <Button size="small" color="primary" onClick={handlePrev}>
+                        {appOptions.buttons.previousBtn}
                      </Button>
-                     <Button
-                           size="small"
-                           color="primary"
-                           onClick={handleNext}
-                           >
-                           {appOptions.buttons.nextBtn}
+                     <Button size="small" color="primary" onClick={handleNext}>
+                        {appOptions.buttons.nextBtn}
                      </Button>
                   </ButtonGroup>
 
-                  <Button
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={handleReset}
-                     >
+                  <Button size="small" variant="outlined" color="primary" onClick={handleReset}>
                      {appOptions.buttons.resetBtn}
                   </Button>
 
-                  <Button 
-                     size="small"
-                     variant="outlined"
-                     color="primary"
-                     onClick={toggleLegend}
-                     >
-                  {appOptions.buttons.toggleLegendBtn}
+                  <Button size="small" variant="outlined" color="primary" onClick={toggleLegend}>
+                     {appOptions.buttons.toggleLegendBtn}
                   </Button>
                </Stack>
-         </ThemeProvider>
-      </Box>
-      <StatsTableModal
-         show = {showTable}
-         data = {stats}
-         close={() => setShowTable(false)}
-      />
-      <OverlayUpload
-         show = {showUpload}
-         overlayFunc = {addGraphOverlay}
-         close={() => setShowUpload(false)}
-      />
-      <PlotModal
-         plot={imgUrl}
-         show={showPlot}
-         close={() => setShowPlot(false)}
-      />
+            </ThemeProvider>
+         </Box>
+         <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
+         <OverlayUpload
+            show={showUpload}
+            displayRemoveOverlayBtn={setDisplayRemoveOverlayBtn}
+            overlayFunc={addGraphOverlay}
+            close={() => setShowUpload(false)}
+         />
+         <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)} />
       </>
    );
-}
+};
 
 export default ActionBar;

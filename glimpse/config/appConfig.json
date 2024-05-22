@@ -49,28 +49,48 @@
          "navigationButtons": true
       },
       "physics": {
+         "enabled": true,
          "barnesHut": {
-            "gravitationalConstant": -10000,
-            "springConstant": 0.5,
-            "springLength": 70
+           "gravitationalConstant": -10000,
+           "centralGravity": 0.2,
+           "springConstant": 0.5,
+           "springLength": 70,
+           "avoidOverlap": 0.4
          },
          "forceAtlas2Based": {
-            "gravitationalConstant": -370,
+            "gravitationalConstant": -400,
             "centralGravity": 0.01,
             "springLength": 225,
             "springConstant": 0.1
          },
-         "solver": "barnesHut",
-         "timestep": 0.25,
+         "repulsion": {
+           "centralGravity": 0.2,
+           "springLength": 200,
+           "springConstant": 0.05,
+           "nodeDistance": 100,
+           "damping": 0.09
+         },
+         "hierarchicalRepulsion": {
+           "centralGravity": 0.1,
+           "springLength": 100,
+           "springConstant": 0.01,
+           "nodeDistance": 120,
+           "damping": 0.09,
+           "avoidOverlap": 0
+         },
          "stabilization": {
             "enabled": true,
             "iterations": 1000,
             "updateInterval": 1,
             "onlyDynamicEdges": false,
             "fit": true
-         }
+         },
+         "solver": "barnesHut",
+         "timestep": 0.25,
+         "wind": { "x": 0, "y": 0 }
       },
       "layout": {
+         "randomSeed": "0.582586794393368:1716327223219",
          "improvedLayout": false,
          "hierarchical": {
             "enabled": false,
@@ -97,7 +117,9 @@
          }
       },
       "interaction": {
-         "hover": true
+         "hover": true,
+         "dragView": false,
+         "zoomView": false
       }
    }
 }

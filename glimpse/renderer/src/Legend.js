@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Network } from "vis-network";
 import { Box } from "@mui/material";
 import LegendContextMenu from "./LegendContextMenu";
@@ -12,9 +12,8 @@ const Legend = ({
    onMount,
    legendData,
    setShowLegendRef,
-   legendStateRef
+   legendStateRef,
 }) => {
-   
    const container = useRef(null);
    const [data, setData] = useState(legendData);
    const [showLegend, setShowLegend] = useState(true);
@@ -26,9 +25,9 @@ const Legend = ({
    });
 
    useEffect(() => {
-      onMount(setData);  
+      onMount(setData);
    });
-   
+
    // Getting the state and set state variables from the legend context menu component
    let contextMenuData;
    let setContextMenuData;
@@ -36,18 +35,17 @@ const Legend = ({
       contextMenuData = contextMenuDataState;
       setContextMenuData = setContextMenuDataState;
    };
-   
+
    const handleContext = (e) => {
       e.preventDefault();
-      
+
       if (contextMenuData !== null) {
          setContextMenuData({
             ...contextMenuData,
             mouseX: e.clientX + 2,
             mouseY: e.clientY + 6,
          });
-      }
-      else {
+      } else {
          setContextMenuData(null);
       }
    };
@@ -56,7 +54,7 @@ const Legend = ({
       if (showLegend) {
          const network = new Network(container.current, data, legendGraphOptions);
          network.fit();
-         
+
          network.on("doubleClick", function (params) {
             if (params.nodes[0]) {
                let g = data.nodes.get(params.nodes[0]);
@@ -66,15 +64,16 @@ const Legend = ({
                let e = data.edges.get(params.edges[0]);
                findEdges(e.id);
             }
+
+            network.fit();
          });
-         
+
          // set the context menu data with either a node or edge ID so that type can be hidden in the main network
          network.on("oncontext", (params) => {
             if (network.getNodeAt(params.pointer.DOM)) {
                const ID = network.getNodeAt(params.pointer.DOM);
                setContextMenuData({ object: data.nodes.get(ID).group, type: "node" });
-            } 
-            else if (network.getEdgeAt(params.pointer.DOM)) {
+            } else if (network.getEdgeAt(params.pointer.DOM)) {
                const ID = network.getEdgeAt(params.pointer.DOM);
                setContextMenuData({ object: data.edges.get(ID).id, type: "edge" });
             }
@@ -86,7 +85,7 @@ const Legend = ({
 
          const changeCursor = (newCursorStyle) => {
             networkCanvas.style.cursor = newCursorStyle;
-         }
+         };
 
          network.on("hoverNode", () => changeCursor("pointer"));
          network.on("blurNode", () => changeCursor("default"));
@@ -99,20 +98,17 @@ const Legend = ({
 
    return (
       <>
-      <Box
-         id="legend-network"
-         component={"div"}
-         sx={{"height": "100%", "width": "30%"}}
-         ref={container}
-         onContextMenu={handleContext}
-      />
+         <Box
+            id="legend-network"
+            component={"div"}
+            sx={{ height: "100%", width: "30%" }}
+            ref={container}
+            onContextMenu={handleContext}
+         />
 
-      <LegendContextMenu
-         onMount={onContextMenuChildMount}
-         hideObjects={hideObjects}
-      />
+         <LegendContextMenu onMount={onContextMenuChildMount} hideObjects={hideObjects} />
       </>
    );
-}
+};
 
 export default Legend;
