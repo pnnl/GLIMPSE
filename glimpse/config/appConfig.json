@@ -87,10 +87,10 @@
          },
          "solver": "barnesHut",
          "timestep": 0.25,
+         "adaptiveTimestep": false,
          "wind": { "x": 0, "y": 0 }
       },
       "layout": {
-         "randomSeed": "0.582586794393368:1716327223219",
          "improvedLayout": false,
          "hierarchical": {
             "enabled": false,

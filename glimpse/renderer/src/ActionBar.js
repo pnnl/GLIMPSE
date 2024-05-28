@@ -75,7 +75,7 @@ const ActionBar = ({
             layoutForm.style.display = "none";
          }
          graph.style.width = "80%";
-         circularProgress.style.left = "40%";
+         circularProgress.style.left = "35%";
          toggleLegendRef.current(true);
       }
    };
