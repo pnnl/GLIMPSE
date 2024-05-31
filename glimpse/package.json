@@ -1,13 +1,14 @@
 {
    "productName": "GLIMPSE",
-   "version": "0.2.2",
+   "version": "0.2.3",
    "main": "main.js",
    "description": "A lightweight power grid model visualization tool",
    "author": "Armando Mendoza Sanchez",
-   "name": "glimpse-0.2.2",
+   "name": "glimpse-0.2.3",
    "scripts": {
       "test": "echo \"Error: no test specified\" && exit 1",
       "watch": "webpack --config webpack.common.js --watch",
+      "build": "electron-builder build",
       "package-mac": "electron-packager . GLIMPSE --overwrite --platform=darwin --arch=x64 --prune=true --out=out",
       "package-win": "electron-packager . GLIMPSE --overwrite --asar=false --platform=win32 --arch=x64 --prune=true --out=out --version-string.CompanyName=PNNL --version-string.FileDescription=PNNL --version-string.ProductName=\"GLIMPSE\"",
       "package-linux": "electron-packager . GLIMPSE --overwrite --asar=false --platform=linux --arch=x64 --prune=true --out=out",
@@ -47,10 +48,10 @@
       }
    },
    "dependencies": {
-      "@emotion/react": "^11.11.1",
-      "@emotion/styled": "^11.11.0",
-      "@mui/icons-material": "^5.15.17",
-      "@mui/material": "^5.15.17",
+      "@emotion/react": "^11.11.4",
+      "@emotion/styled": "^11.11.5",
+      "@mui/icons-material": "^5.15.19",
+      "@mui/material": "^5.15.19",
       "ajv": "^8.12.0",
       "child_process": "^1.0.2",
       "electron-updater": "^6.1.8",

@@ -1,3 +1,13 @@
+.rotate-btns {
+   position: absolute;
+   height: auto;
+   width: auto;
+   display: flex;
+   z-index: 999;
+   top: 120px;
+   left: 0%;
+}
+
 #circularProgress {
   position: absolute;
   height: 125px;

@@ -485,6 +485,38 @@ export const Prev = (glmNetwork, highlightedNodes, counter) => {
    }
 };
 
+export const rotateCCW = (data, network, angle) => {
+   const rotatedNodes = data.nodes.get().map((node) => {
+      const coordinates = network.getPositions(node.id);
+
+      const newX = coordinates[node.id].x * Math.cos(-angle) - coordinates[node.id].y * Math.sin(-angle);
+      const newY = coordinates[node.id].x * Math.sin(-angle) + coordinates[node.id].y * Math.cos(-angle);
+
+      node.x = newX.toFixed(0);
+      node.y = newY.toFixed(0);
+
+      return node;
+   });
+
+   data.nodes.update(rotatedNodes);
+};
+
+export const rotateCW = (data, network, angle) => {
+   const rotatedNodes = data.nodes.get().map((node) => {
+      const coordinates = network.getPositions(node.id);
+
+      const newX = coordinates[node.id].x * Math.cos(angle) - coordinates[node.id].y * Math.sin(angle);
+      const newY = coordinates[node.id].x * Math.sin(angle) + coordinates[node.id].y * Math.cos(angle);
+
+      node.x = newX.toFixed(0);
+      node.y = newY.toFixed(0);
+
+      return node;
+   });
+
+   data.nodes.update(rotatedNodes);
+};
+
 /**
  * Collects all the nodes and edges with their attributes and sets it to the data variable
  * @param {Object} dataFromFiles

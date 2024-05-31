@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { Box, Stack } from "@mui/material";
+import { Box, Stack, IconButton } from "@mui/material";
+import { RotateLeftRounded, RotateRightRounded } from "@mui/icons-material";
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
 import ActionBar from "./ActionBar";
@@ -25,7 +26,11 @@ import {
    HighlightGroup,
    Next,
    Prev,
+   rotateCW,
+   rotateCCW,
 } from "./utils/graphUtils";
+
+const ANGLE = Math.PI / 12; // 15 degrees in radians
 
 const Graph = ({ dataToVis, theme, isGlm }) => {
    const container = useRef(null);
@@ -38,7 +43,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
    const edgeOptions = theme.edgeOptions;
    let glmNetwork = null; // global network varibale
-   const counter = { value: -1 }; // coutner to navigate through highlighted nodes
+   const counter = { value: -1 }; // counter to navigate through highlighted nodes
    let highlightedNodes = [];
 
    const addedOverlayObjects = {
@@ -558,6 +563,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                (key) => objectTypeCount.edges[key] > 0
             )}
          />
+
+         <Box className="rotate-btns" component={"div"}>
+            <Stack direction={"row"}>
+               <IconButton onClick={() => rotateCCW(graphData, glmNetwork, ANGLE)}>
+                  <RotateLeftRounded />
+               </IconButton>
+               <IconButton onClick={() => rotateCW(graphData, glmNetwork, ANGLE)}>
+                  <RotateRightRounded />
+               </IconButton>
+            </Stack>
+         </Box>
 
          <div id="circularProgress">
             <span id="progressValue">0%</span>
