@@ -1,11 +1,11 @@
-.rotate-btns {
+.rotate-btns-wrapper {
    position: absolute;
    height: auto;
    width: auto;
    display: flex;
    z-index: 999;
    top: 120px;
-   left: 0%;
+   left: 67%;
 }
 
 #circularProgress {

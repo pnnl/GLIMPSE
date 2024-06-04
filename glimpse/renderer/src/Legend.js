@@ -6,8 +6,8 @@ import "./styles/vis-network.css";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({
-   findGroup,
-   findEdges,
+   highlightNodes,
+   highlightEdges,
    hideObjects,
    onMount,
    legendData,
@@ -58,11 +58,11 @@ const Legend = ({
          network.on("doubleClick", function (params) {
             if (params.nodes[0]) {
                let g = data.nodes.get(params.nodes[0]);
-               findGroup(g.group);
+               highlightNodes(g.group);
             }
             if (params.edges[0]) {
                let e = data.edges.get(params.edges[0]);
-               findEdges(e.id);
+               highlightEdges(e.id);
             }
 
             network.fit();
@@ -101,7 +101,7 @@ const Legend = ({
          <Box
             id="legend-network"
             component={"div"}
-            sx={{ height: "100%", width: "30%" }}
+            sx={{ height: "100%", width: "30%", borderLeft: "1px solid lightgrey" }}
             ref={container}
             onContextMenu={handleContext}
          />

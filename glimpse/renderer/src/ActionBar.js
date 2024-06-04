@@ -65,15 +65,18 @@ const ActionBar = ({
       const graph = document.getElementById("graph");
       const circularProgress = document.getElementById("circularProgress");
       const layoutForm = document.getElementById("layout-form");
+      const rotateBtns = document.getElementById("rt-btns-wrapper");
 
       if (showLegendStateRef.current) {
+         toggleLegendRef.current(false);
+         rotateBtns.style.left = "95%";
          graph.style.width = "100%";
          circularProgress.style.left = "50%";
-         toggleLegendRef.current(false);
       } else {
          if (layoutForm.style.display === "flex") {
             layoutForm.style.display = "none";
          }
+         rotateBtns.style.left = "67%";
          graph.style.width = "80%";
          circularProgress.style.left = "35%";
          toggleLegendRef.current(true);
@@ -96,7 +99,6 @@ const ActionBar = ({
     * @param {Event} e
     */
    const handleReset = (e) => {
-      e.preventDefault();
       reset();
    };
 
@@ -105,7 +107,6 @@ const ActionBar = ({
     * @param {Event} e
     */
    const handlePrev = (e) => {
-      e.preventDefault();
       prev();
    };
 
@@ -114,7 +115,6 @@ const ActionBar = ({
     * @param {Event} e
     */
    const handleNext = (e) => {
-      e.preventDefault();
       next();
    };
 

@@ -353,7 +353,7 @@ export const hideObjects = (objectType, type, data) => {
  * @param {string} edgeType - The type of edges to highlight
  */
 export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions) => {
-   if (highlightedNodes.length === 0) {
+   if (highlightedNodes.current.length === 0) {
       const nodeItems = data.nodes.map((node) => {
          node.shape = "dot";
          node.size = 10;
@@ -390,48 +390,47 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions) =>
  * @param {string} nodeType - The type of nodes to highlight
  */
 export const HighlightGroup = (nodeType, data, highlightedNodes) => {
-   data.nodes.update(
-      data.nodes.map((node) => {
-         if (node.group === nodeType && highlightedNodes.includes(node.id)) {
-            node.shape = "dot";
-            node.size = 10;
-            node.color = "rgba(200, 200, 200, 0.5)";
-            node.label = " ";
+   const updateNodes = data.nodes.map((node) => {
+      if (node.group === nodeType && highlightedNodes.current.includes(node.id)) {
+         node.shape = "dot";
+         node.size = 10;
+         node.color = "rgba(200, 200, 200, 0.5)";
+         node.label = " ";
 
-            highlightedNodes = highlightedNodes.filter((nodeid) => nodeid !== node.id);
-            return node;
-         } else if (node.group !== nodeType && !highlightedNodes.includes(node.id)) {
-            node.shape = "dot";
-            node.size = 10;
-            node.color = "rgba(200, 200, 200, 0.5)";
-            node.label = " ";
-            return node;
-         } else if (node.group === nodeType && !highlightedNodes.includes(node.id)) {
-            if (node.shape === "dot") {
-               delete node.color;
-               delete node.shape;
-               delete node.size;
-               node.label = node.id;
-            }
-
-            highlightedNodes.push(node.id);
-            return node;
-         }
-
+         highlightedNodes.current = highlightedNodes.current.filter((nodeid) => nodeid !== node.id);
          return node;
-      })
-   );
-
-   data.edges.update(
-      data.edges.map((edge) => {
-         if (edge.width !== 8) {
-            edge.width = 0.15;
-            edge.color = "rgba(200, 200, 200, 0.5)";
+      } else if (node.group !== nodeType && !highlightedNodes.current.includes(node.id)) {
+         node.shape = "dot";
+         node.size = 10;
+         node.color = "rgba(200, 200, 200, 0.5)";
+         node.label = " ";
+         return node;
+      } else if (node.group === nodeType && !highlightedNodes.current.includes(node.id)) {
+         if (node.shape === "dot") {
+            delete node.color;
+            delete node.shape;
+            delete node.size;
+            node.label = node.id;
          }
 
-         return edge;
-      })
-   );
+         highlightedNodes.current.push(node.id);
+         return node;
+      }
+
+      return node;
+   });
+
+   const updateEdges = data.edges.map((edge) => {
+      if (edge.width !== 8) {
+         edge.width = 0.15;
+         edge.color = "rgba(200, 200, 200, 0.5)";
+      }
+
+      return edge;
+   });
+
+   data.nodes.update(updateNodes);
+   data.edges.update(updateEdges);
 };
 
 /**
@@ -443,12 +442,12 @@ export const Next = (glmNetwork, highlightedNodes, counter) => {
    counter.value++;
 
    // if the counter matches the length of the array then the count starts back at 0
-   if (counter.value === highlightedNodes.length) {
+   if (counter.value === highlightedNodes.current.length) {
       counter.value = 0;
    }
 
    try {
-      glmNetwork.focus(highlightedNodes[counter.value], {
+      glmNetwork.focus(highlightedNodes.current[counter.value], {
          scale: 3,
          animation: {
             duration: 750,
@@ -469,11 +468,11 @@ export const Prev = (glmNetwork, highlightedNodes, counter) => {
 
    //if the counter ends up less than 0 the counter starts over at the end of the array
    if (counter.value < 0) {
-      counter.value = highlightedNodes.length - 1;
+      counter.value = highlightedNodes.current.length - 1;
    }
 
    try {
-      glmNetwork.focus(highlightedNodes[counter.value], {
+      glmNetwork.focus(highlightedNodes.current[counter.value], {
          scale: 3,
          animation: {
             duration: 750,

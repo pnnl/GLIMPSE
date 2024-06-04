@@ -44,7 +44,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const edgeOptions = theme.edgeOptions;
    let glmNetwork = null; // global network varibale
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
-   let highlightedNodes = [];
+   let highlightedNodes = useRef([]);
 
    const addedOverlayObjects = {
       nodes: [],
@@ -72,7 +72,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
    //Reverts all nodes and edges back to their original styles
    const Reset = () => {
-      highlightedNodes.length = 0;
+      highlightedNodes.current.length = 0;
       const nodesResetMap = graphData.nodes.map((node) => {
          delete node.size;
          delete node.color;
@@ -407,6 +407,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
          graphOptions.physics.solver = "barnesHut";
          graphOptions.layout.hierarchical.enabled = false;
+         graphOptions.physics.stabilization.enabled = true;
+         graphOptions.physics.enabled = true;
       };
    }, []);
 
@@ -446,6 +448,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          //    node.value = glmNetwork.getConnectedEdges(node.id).length;
          //    return node;
          // }));
+
+         // if (document.getElementById("circularProgress").style.display === "none")
+         //    document.getElementById("circularProgress").style.display = "flex";
 
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -564,7 +569,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             )}
          />
 
-         <Box className="rotate-btns" component={"div"}>
+         <div id="rt-btns-wrapper" className="rotate-btns-wrapper">
             <Stack direction={"row"}>
                <IconButton onClick={() => rotateCCW(graphData, glmNetwork, ANGLE)}>
                   <RotateLeftRounded />
@@ -573,7 +578,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   <RotateRightRounded />
                </IconButton>
             </Stack>
-         </Box>
+         </div>
 
          <div id="circularProgress">
             <span id="progressValue">0%</span>
@@ -603,8 +608,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                <div id="layout-form" />
 
                <Legend
-                  findGroup={(nodeType) => HighlightGroup(nodeType, graphData, highlightedNodes)}
-                  findEdges={(edgeType) =>
+                  highlightNodes={(nodeType) => HighlightGroup(nodeType, graphData, highlightedNodes)}
+                  highlightEdges={(edgeType) =>
                      HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions)
                   }
                   hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
