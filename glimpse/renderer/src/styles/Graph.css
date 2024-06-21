@@ -1,13 +1,3 @@
-.rotate-btns-wrapper {
-   position: absolute;
-   height: auto;
-   width: auto;
-   display: flex;
-   z-index: 999;
-   top: 120px;
-   left: 67%;
-}
-
 #circularProgress {
   position: absolute;
   height: 125px;
@@ -37,8 +27,14 @@
   color: #b25a00;
 }
 
+div.vis-configuration-wrapper {
+   width: auto;
+}
+
 #layout-form {
    display: none;
    height: 100%;
    width: 28%;
+   padding: 1rem;
+   border-left: 1px solid lightgray;
 }

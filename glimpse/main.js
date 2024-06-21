@@ -12,10 +12,12 @@ require("electron-reload")(__dirname, {
    electron: path.join(__dirname, "node_modules", ".bin", "electron"),
 });
 
-const jsonSchema = fs.readFileSync(path.join(__dirname, "upload.schema.json"), { encoding: "utf-8" });
+const jsonUploadSchema = require("./schemas/json_upload.schema.json");
+const themeUploadSchema = require("./schemas/theme_upload.schema.json");
 const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
-let win = null;
+let mainWindow = null;
+let splashWindow = null;
 
 const rootDir = __dirname;
 // const rootDir = process.resourcesPath;
@@ -93,8 +95,19 @@ const glm2json = async (filePaths) => {
    }
 };
 
-const readThemeFile = (filepath) => {
-   return fs.readFileSync(path.join(rootDir, "themes", filepath), { encoding: "utf-8" });
+const validateThemeFile = (filepath) => {
+   const ajv = new Ajv();
+   const validate = ajv.compile(themeUploadSchema);
+   const themeData = JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }));
+   const valid = validate(themeData);
+
+   if (valid) {
+      console.log("custom them file is valid !!");
+      return themeData;
+   } else {
+      const errorMsg = ajv.errorsText(validate.errors, { dataVar: "jsonData" });
+      return { error: errorMsg };
+   }
 };
 
 const getGraphStats = async (data) => {
@@ -117,7 +130,7 @@ const sendPlot = () => {
 
 const validateJson = (filePaths) => {
    const ajv = new Ajv();
-   const validate = ajv.compile(JSON.parse(jsonSchema));
+   const validate = ajv.compile(jsonUploadSchema);
    const data = {};
    const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
@@ -161,8 +174,10 @@ const validateJson = (filePaths) => {
 
    if (!valid) {
       const errorMessage = ajv.errorsText(validate.errors, { dataVar: "jsonData" });
-      return { error: errorMessage };
+      return JSON.stringify({ error: errorMessage });
    }
+
+   console.log("Upload is valid !!");
 
    return JSON.stringify(data);
 };
@@ -201,7 +216,7 @@ const json2glmFunc = async (jsonData) => {
 };
 
 const makeWindow = () => {
-   win = new BrowserWindow({
+   mainWindow = new BrowserWindow({
       width: 1500,
       height: 900,
       minWidth: 1250,
@@ -224,7 +239,7 @@ const makeWindow = () => {
             isMac ? { role: "close" } : { role: "quit" },
             {
                label: "Export",
-               click: () => win.webContents.send("extract"),
+               click: () => mainWindow.webContents.send("extract"),
             },
          ],
       },
@@ -259,7 +274,7 @@ const makeWindow = () => {
             {
                label: "Export Theme File",
                type: "normal",
-               click: () => win.webContents.send("export-theme"),
+               click: () => mainWindow.webContents.send("export-theme"),
             },
             { type: "separator" },
             {
@@ -278,11 +293,16 @@ const makeWindow = () => {
                id: "layout-theme",
                type: "radio",
             },
-            // {
-            //    label: "Fishing",
-            //    id: "fishing-theme",
-            //    type: "radio",
-            // }
+            {
+               label: "Fishing",
+               id: "fishing-theme",
+               type: "radio",
+            },
+            {
+               label: "Custom",
+               id: "custom-theme",
+               type: "radio",
+            },
          ],
       },
       {
@@ -290,11 +310,11 @@ const makeWindow = () => {
          submenu: [
             {
                label: "show attributes",
-               click: () => win.webContents.send("show-attributes", true),
+               click: () => mainWindow.webContents.send("show-attributes", true),
             },
             {
                label: "hide attributes",
-               click: () => win.webContents.send("show-attributes", false),
+               click: () => mainWindow.webContents.send("show-attributes", false),
             },
          ],
       },
@@ -303,11 +323,11 @@ const makeWindow = () => {
          submenu: [
             {
                label: "Embeddings",
-               click: () => win.webContents.send("embeddings_plot", sendPlot()),
+               click: () => mainWindow.webContents.send("embeddings_plot", sendPlot()),
             },
             {
                label: "Graph Metrics",
-               click: () => win.webContents.send("getGraphMetrics"),
+               click: () => mainWindow.webContents.send("getGraphMetrics"),
             },
          ],
       },
@@ -326,27 +346,46 @@ const makeWindow = () => {
    ipcMain.handle("getStats", (e, dataObject) => getGraphStats(dataObject));
    ipcMain.handle("getPlot", () => sendPlot());
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
-   ipcMain.handle("getThemeJsonData", (e, path) => readThemeFile(path));
+   ipcMain.handle("getThemeJsonData", (e, filepath) =>
+      JSON.parse(fs.readFileSync(path.join(rootDir, "themes", filepath), { encoding: "utf-8" }))
+   );
+   ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
-   // Connect to WebSocket
-   socket.on("connect", () => console.log("Connected to socket server"));
-   socket.on("update-data", (data) => win.webContents.send("update-data", data));
+   mainWindow.loadFile(path.join(__dirname, "renderer", "public", "index.html"));
+};
 
-   win.loadFile(path.join(__dirname, "renderer", "public", "index.html"));
-   win.show();
+const makeSplashWindow = () => {
+   splashWindow = new BrowserWindow({
+      width: 500,
+      height: 300,
+      backgroundColor: "white",
+      transparent: true,
+      frame: false,
+      alwaysOnTop: true,
+      resizable: false,
+      movable: true,
+      roundedCorners: true,
+   });
+
+   splashWindow.loadFile("./splash_window/splash-window.html");
+   splashWindow.center();
 };
 
 const initiateServer = () => {
    const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
    if (fs.existsSync(serverPath)) {
-      execFile(serverPath, (error, stdout, stderr) => {
-         if (error) {
-            throw error;
-         }
-         console.log(stdout);
-      });
+      try {
+         execFile(serverPath, (error, stdout, stderr) => {
+            if (error) throw error;
+            if (stderr) throw stderr;
+            console.log(stdout);
+         });
+      } catch (error) {
+         console.log(error);
+         return;
+      }
    } else {
       const python = spawn("python", ["./local-server/server.py"]);
       python.stdout.on("data", function (data) {
@@ -361,16 +400,23 @@ const initiateServer = () => {
 
 app.whenReady()
    .then(() => {
-      globalShortcut.register("ctrl+p", () => win.webContents.send("show-vis-options"));
+      makeSplashWindow();
+      globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
       initiateServer();
    })
    .then(() => {
+      socket.on("connect", () => {
+         console.log("connected to socket server!!");
+         splashWindow.close();
+         makeWindow();
+         mainWindow.show();
+      });
+      socket.on("update-data", (data) => mainWindow.webContents.send("update-data", data));
       // autoUpdater.checkForUpdatesAndNotify();
-      makeWindow();
-
       app.on("activate", () => {
          if (BrowserWindow.getAllWindows().length === 0) {
             makeWindow();
+            mainWindow.show();
          }
       });
    });

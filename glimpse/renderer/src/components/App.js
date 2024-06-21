@@ -3,7 +3,7 @@ import { LinearProgress, Box } from "@mui/material";
 import FileUpload from "./FileUpload";
 import Graph from "./Graph";
 import Nav from "./Nav";
-import { handleFileUpload } from "./utils/appUtils";
+import { handleFileUpload } from "../utils/appUtils";
 
 export const App = () => {
    const [fileData, setFileData] = useState({ loading: false });

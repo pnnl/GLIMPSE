@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Menu, MenuItem, Divider } from "@mui/material";
+import { Menu, MenuItem } from "@mui/material";
 
 const ContextMenu = ({ onMount, hideEdge, hideEdges, openNewNodeForm, deleteNode }) => {
    const [contextMenu, setContextMenu] = useState(null);

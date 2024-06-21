@@ -2,7 +2,7 @@
 
 GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python.
 
-## Dev Installation Instructions
+## Build Installation Instructions
 **Download Node and Nim** 
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
@@ -43,7 +43,7 @@ npm run start
 ### Example:
 We provide few examples of exploring starndard IEEE bus models using GLIMPSE. From the home page, upload all the ".glm" files from `data/123-bus-model`.
 
-**To re-uplaod files after visualization, press `ctrl + R` or click `view` then `reload`**
+**To re-uplaod files after visualization, click on the HOME button, press `ctrl + R`, or click `view` then `reload`**
 
 ![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
 

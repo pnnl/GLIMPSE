@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDom from "react-dom";
-import "./styles/PlotModal.css";
+import "../styles/PlotModal.css";
 
 const PlotModal = ({ plot, show, close }) => {
    if (!show) return null;

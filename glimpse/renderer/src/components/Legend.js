@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Network } from "vis-network";
 import { Box } from "@mui/material";
 import LegendContextMenu from "./LegendContextMenu";
-import "./styles/vis-network.css";
+import "../styles/vis-network.css";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({
@@ -101,7 +101,7 @@ const Legend = ({
          <Box
             id="legend-network"
             component={"div"}
-            sx={{ height: "100%", width: "30%", borderLeft: "1px solid lightgrey" }}
+            sx={{ height: "100%", width: "28%", borderLeft: "1px solid lightgrey" }}
             ref={container}
             onContextMenu={handleContext}
          />

@@ -85,7 +85,7 @@ const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
                <Stack direction="row" spacing={2}>
                   <FormControl fullWidth>
                      <Autocomplete
-                        options={nodes}
+                        options={nodes()}
                         onChange={(e, value) =>
                            setFormFields((formFields) => ({
                               ...formFields,

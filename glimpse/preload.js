@@ -34,7 +34,7 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
    glm2json: (paths) => ipcRenderer.invoke("glm2json", paths),
    getTheme: () => ipcRenderer.invoke("getSelectedTheme"),
    getConfig: () => ipcRenderer.invoke("getConfig"),
-
+   validateTheme: (jsonFilePath) => ipcRenderer.invoke("validate-theme", jsonFilePath),
    getEmbeddingsPlot: (callback) => {
       ipcRenderer.on("embeddings_plot", (e, buffer) => callback(buffer));
       return () => ipcRenderer.removeAllListeners("embeddings_plot");

@@ -26,7 +26,10 @@
          "showButton": false
       },
       "edges": {
-         "font": {"multi": true, "align": "horizontal"},
+         "font": {
+            "multi": true,
+            "align": "horizontal"
+         },
          "smooth": {
             "enabled": true,
             "type": "continuous"
@@ -35,6 +38,9 @@
       "nodes": {
          "size": 15,
          "borderWidth": 2,
+         "shapeProperties": {
+            "interpolation": false
+         },
          "font": {
             "color": "#000",
             "multi": true,
@@ -51,11 +57,11 @@
       "physics": {
          "enabled": true,
          "barnesHut": {
-           "gravitationalConstant": -10000,
-           "centralGravity": 0.2,
-           "springConstant": 0.5,
-           "springLength": 70,
-           "avoidOverlap": 0.4
+            "gravitationalConstant": -10000,
+            "centralGravity": 0.2,
+            "springConstant": 0.5,
+            "springLength": 70,
+            "avoidOverlap": 0.4
          },
          "forceAtlas2Based": {
             "gravitationalConstant": -400,
@@ -64,19 +70,19 @@
             "springConstant": 0.1
          },
          "repulsion": {
-           "centralGravity": 0.2,
-           "springLength": 200,
-           "springConstant": 0.05,
-           "nodeDistance": 100,
-           "damping": 0.09
+            "centralGravity": 0.2,
+            "springLength": 200,
+            "springConstant": 0.05,
+            "nodeDistance": 100,
+            "damping": 0.09
          },
          "hierarchicalRepulsion": {
-           "centralGravity": 0.1,
-           "springLength": 100,
-           "springConstant": 0.01,
-           "nodeDistance": 120,
-           "damping": 0.09,
-           "avoidOverlap": 0
+            "centralGravity": 0.1,
+            "springLength": 100,
+            "springConstant": 0.01,
+            "nodeDistance": 120,
+            "damping": 0.09,
+            "avoidOverlap": 0
          },
          "stabilization": {
             "enabled": true,
@@ -88,7 +94,10 @@
          "solver": "barnesHut",
          "timestep": 0.25,
          "adaptiveTimestep": false,
-         "wind": { "x": 0, "y": 0 }
+         "wind": {
+            "x": 0,
+            "y": 0
+         }
       },
       "layout": {
          "improvedLayout": false,

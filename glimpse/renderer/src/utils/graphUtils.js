@@ -68,7 +68,7 @@ export const Export = (data, isGlm, dataToVis) => {
  *  renameKeys(keysMap, obj);
  * // { firstName: 'Bobo', passion: 'Front-End Master' }
  */
-const renameKeys = (keysMap, obj) => {
+export const renameKeys = (keysMap, obj) => {
    return Object.keys(obj).reduce(
       (prev, key) => ({
          ...prev,
@@ -352,12 +352,11 @@ export const hideObjects = (objectType, type, data) => {
  * Grays out the edges and nodes but the edges that are of the passed edge type
  * @param {string} edgeType - The type of edges to highlight
  */
-export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions) => {
+export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, highlightedEdges) => {
    if (highlightedNodes.current.length === 0) {
       const nodeItems = data.nodes.map((node) => {
          node.shape = "dot";
-         node.size = 10;
-         node.color = "rgba(200,200,200,0.5)";
+         node.color = "rgba(200,200,200,0.4)";
          node.label = " ";
          return node;
       });
@@ -365,72 +364,64 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions) =>
       data.nodes.update(nodeItems);
    }
 
-   const edgeItems = data.edges.map((edge) => {
-      if (edge.type === edgeType && edge.width === 8) {
-         edge.width = 0.15;
-         edge.color = "rgba(200,200,200,0.5)";
-         return edge;
-      } else if (edge.type === edgeType) {
-         edge.width = 8;
-         edge.color = edgeOptions[edge.type].color;
-         return edge;
-      } else if (edge.width !== 8) {
-         edge.width = 0.15;
-         edge.color = "rgba(200,200,200,0.5)";
-         return edge;
-      }
-      return edge;
-   });
+   data.edges.update(
+      data.edges.map((edge) => {
+         if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
+            edge.color = "rgba(200, 200, 200, 0.4)";
 
-   data.edges.update(edgeItems);
+            highlightedEdges.current = highlightedEdges.current.filter((edgeid) => edgeid !== edge.id);
+         } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
+            edge.color = "rgba(200, 200, 200, 0.4)";
+         } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
+            edge.color = edgeOptions[edge.type].color;
+
+            highlightedEdges.current.push(edge.id);
+         }
+
+         return edge;
+      })
+   );
 };
 
 /**
  * Grays out all edges and nodes that dont mach the node type
  * @param {string} nodeType - The type of nodes to highlight
  */
-export const HighlightGroup = (nodeType, data, highlightedNodes) => {
+export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdges) => {
    const updateNodes = data.nodes.map((node) => {
       if (node.group === nodeType && highlightedNodes.current.includes(node.id)) {
          node.shape = "dot";
-         node.size = 10;
-         node.color = "rgba(200, 200, 200, 0.5)";
+         node.color = "rgba(200, 200, 200, 0.4)";
          node.label = " ";
 
          highlightedNodes.current = highlightedNodes.current.filter((nodeid) => nodeid !== node.id);
-         return node;
       } else if (node.group !== nodeType && !highlightedNodes.current.includes(node.id)) {
          node.shape = "dot";
-         node.size = 10;
-         node.color = "rgba(200, 200, 200, 0.5)";
+         node.color = "rgba(200, 200, 200, 0.4)";
          node.label = " ";
-         return node;
       } else if (node.group === nodeType && !highlightedNodes.current.includes(node.id)) {
          if (node.shape === "dot") {
             delete node.color;
             delete node.shape;
-            delete node.size;
             node.label = node.id;
          }
 
          highlightedNodes.current.push(node.id);
-         return node;
       }
 
       return node;
    });
 
-   const updateEdges = data.edges.map((edge) => {
-      if (edge.width !== 8) {
-         edge.width = 0.15;
+   if (highlightedEdges.current.length === 0) {
+      const updateEdges = data.edges.map((edge) => {
          edge.color = "rgba(200, 200, 200, 0.5)";
-      }
 
-      return edge;
-   });
+         return edge;
+      });
+      data.edges.update(updateEdges);
+   }
 
    data.nodes.update(updateNodes);
-   data.edges.update(updateEdges);
 };
 
 /**
@@ -672,7 +663,7 @@ export const setGraphData = (
                to: nodeID,
                elementType: "edge",
                type: "parentChild",
-               width: 2,
+               width: 4,
                attributes: { to: parent, from: nodeID },
                title: getTitle({ objectType: "parentChild", to: parent, from: nodeID }),
                color: { inherit: true },
@@ -696,9 +687,7 @@ export const setGraphData = (
                elementType: "edge",
                type: objectType,
                attributes: attributes,
-               // "length": "length" in attributes ? attributes.length : undefined,
-               color: edgeOptions[objectType].color,
-               width: edgeOptions[objectType].width,
+               ...edgeOptions[objectType],
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
             };
          } else if ("elementType" in obj && obj.elementType === "edge") {
@@ -720,8 +709,7 @@ export const setGraphData = (
                elementType: "edge",
                type: objectType,
                attributes: attributes,
-               color: edgeOptions[objectType].color,
-               width: 2,
+               ...edgeOptions[objectType],
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
             };
          }

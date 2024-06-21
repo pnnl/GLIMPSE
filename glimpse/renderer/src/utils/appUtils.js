@@ -1,3 +1,17 @@
+const getCustomTheme = async (paths) => {
+   let themeData = null;
+
+   for (let i = 0; i < paths.length; i++) {
+      if (paths[i].split(".")[1] === "theme") {
+         themeData = await window.glimpseAPI.validateTheme(paths[i]);
+         paths.splice(i, 1);
+         break;
+      }
+   }
+
+   return themeData;
+};
+
 /**
  * This function will get the paths of the uploaded files and send them to the
  * main process to then read the files, parse them, and evalute them.
@@ -19,6 +33,17 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
       case "layout-theme":
          themeData = await window.glimpseAPI.getThemeJsonData("LevelTheme.json");
          break;
+      case "custom-theme":
+         if (paths.length > 1) themeData = await getCustomTheme(paths);
+
+         if ("error" in themeData) {
+            alert(themeData.error);
+            return;
+         } else if (themeData === null) {
+            themeData = { groups: {}, edgeOptions: {} };
+         }
+
+         break;
       default:
          themeData = await window.glimpseAPI.getThemeJsonData("PowerGridTheme.json");
          break;
@@ -33,12 +58,15 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
       } else {
          setFileData({
             visData: validFileData,
-            theme: JSON.parse(themeData),
+            theme: themeData,
             isGlm: false,
             loading: false,
          });
       }
-   } else if (paths[0].split(".")[1] === "glm" && selectedTheme === "power-grid-theme") {
+   } else if (
+      paths[0].split(".")[1] === "glm" &&
+      (selectedTheme === "power-grid-theme" || selectedTheme === "custom-theme")
+   ) {
       setFilesUploaded(true);
       const data = await window.glimpseAPI.glm2json(paths);
       if (!data) {
@@ -48,7 +76,7 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
       } else {
          setFileData({
             visData: data,
-            theme: JSON.parse(themeData),
+            theme: typeof themeData === "string" ? JSON.parse(themeData) : themeData,
             isGlm: true,
             loading: false,
          });

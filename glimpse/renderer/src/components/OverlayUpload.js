@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import ReactDom from "react-dom";
-import "./styles/OverlayUpload.css";
+import "../styles/OverlayUpload.css";
 import { useState, useRef } from "react";
 
-const OverlayUpload = ({ show, overlayFunc, close, displayRemoveOverlayBtn }) => {
+const OverlayUpload = ({ show, overlayFunc, close, setHideRemoveOverlayBtn }) => {
    const [dragActive, setDragActive] = useState(false);
    const inputRef = useRef(null);
 
@@ -46,7 +46,7 @@ const OverlayUpload = ({ show, overlayFunc, close, displayRemoveOverlayBtn }) =>
          const fileContents = e.target.result; // Read the file contents
          const jsonData = JSON.parse(fileContents); // Parse the JSON data
          overlayFunc({ filename: filename, fileData: jsonData });
-         displayRemoveOverlayBtn("flex");
+         setHideRemoveOverlayBtn("flex");
       };
 
       reader.readAsText(file);
@@ -65,7 +65,7 @@ const OverlayUpload = ({ show, overlayFunc, close, displayRemoveOverlayBtn }) =>
          const fileContents = e.target.result; // Read the file contents
          const jsonData = JSON.parse(fileContents); // Parse the JSON data
          overlayFunc({ filename: filename, fileData: jsonData });
-         displayRemoveOverlayBtn("flex");
+         setHideRemoveOverlayBtn("flex");
       };
 
       reader.readAsText(file);

@@ -9,7 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import TextField from "@mui/material/TextField";
 import Stack from "@mui/material/Stack";
 
-const NodePopup = ({ onMount, onSave, onClose }) => {
+const NodePopup = ({ onMount, onSave, close }) => {
    const [open, setOpen] = useState(false);
    const [selectedNode, setSelectedNode] = useState({});
 
@@ -22,15 +22,11 @@ const NodePopup = ({ onMount, onSave, onClose }) => {
       onSave(selectedNode);
    };
 
-   const closePopup = () => {
-      onClose();
-   };
-
    return ReactDOM.createPortal(
       <Dialog
          sx={{ "& .MuiDialog-paper": { maxHeight: "35rem" } }}
          open={open}
-         onClose={onClose}
+         onClose={close}
          scroll="paper"
       >
          <DialogTitle id="scroll-dialog-title">Edit Node</DialogTitle>
@@ -56,7 +52,7 @@ const NodePopup = ({ onMount, onSave, onClose }) => {
          </DialogContent>
          <DialogActions>
             <Button onClick={saveChanges}>Save</Button>
-            <Button onClick={closePopup}>Close</Button>
+            <Button onClick={close}>Close</Button>
          </DialogActions>
       </Dialog>,
       document.getElementById("portal")

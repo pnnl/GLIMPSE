@@ -69,16 +69,16 @@ const ActionBar = ({
 
       if (showLegendStateRef.current) {
          toggleLegendRef.current(false);
-         rotateBtns.style.left = "95%";
+         rotateBtns.style.left = "96%";
          graph.style.width = "100%";
          circularProgress.style.left = "50%";
       } else {
          if (layoutForm.style.display === "flex") {
             layoutForm.style.display = "none";
          }
-         rotateBtns.style.left = "67%";
-         graph.style.width = "80%";
-         circularProgress.style.left = "35%";
+         rotateBtns.style.left = "68%";
+         graph.style.width = "72%";
+         circularProgress.style.left = "36%";
          toggleLegendRef.current(true);
       }
    };
@@ -92,30 +92,6 @@ const ActionBar = ({
 
       if (nodes.get(node)) onFind(node);
       else alert(`${node} is not in the graph.`);
-   };
-
-   /**
-    * Call the reset function from the Graph component to revert to original styles
-    * @param {Event} e
-    */
-   const handleReset = (e) => {
-      reset();
-   };
-
-   /**
-    * Call the Prev function from the Graph component to focus on a previously focused node
-    * @param {Event} e
-    */
-   const handlePrev = (e) => {
-      prev();
-   };
-
-   /**
-    * Call the Next function from the Graph component to focus on the next highlighted node
-    * @param {Event} e
-    */
-   const handleNext = (e) => {
-      next();
    };
 
    const autoLayout = (e) => {
@@ -139,15 +115,6 @@ const ActionBar = ({
       } else {
          setShowTable(true);
       }
-   };
-
-   /**
-    * show the overlay upload component
-    * @param {Event} e
-    */
-   const showOverlay = (e) => {
-      e.preventDefault();
-      setShowUpload(true);
    };
 
    const getPlotImg = ({ buffer }) => {
@@ -188,7 +155,12 @@ const ActionBar = ({
                   >
                      Remove Overlay
                   </Button>
-                  <Button size="small" variant="outlined" color="primary" onClick={showOverlay}>
+                  <Button
+                     size="small"
+                     variant="outlined"
+                     color="primary"
+                     onClick={() => setShowUpload(true)}
+                  >
                      {appOptions.buttons.addOverlayBtn}
                   </Button>
                </Stack>
@@ -205,9 +177,7 @@ const ActionBar = ({
                   size="small"
                   id="autocomplete-nodeID-search"
                   options={getNodeIds()}
-                  onChange={(even, ID) => {
-                     setNode(ID);
-                  }}
+                  onChange={(even, ID) => setNode(ID)}
                   renderInput={(params) => (
                      <TextField variant="outlined" {...params} label={appOptions.buttons.searchLbl} />
                   )}
@@ -219,15 +189,15 @@ const ActionBar = ({
                   </IconButton>
 
                   <ButtonGroup variant="outlined" aria-label="cycle through nodes">
-                     <Button size="small" color="primary" onClick={handlePrev}>
+                     <Button size="small" color="primary" onClick={prev}>
                         {appOptions.buttons.previousBtn}
                      </Button>
-                     <Button size="small" color="primary" onClick={handleNext}>
+                     <Button size="small" color="primary" onClick={next}>
                         {appOptions.buttons.nextBtn}
                      </Button>
                   </ButtonGroup>
 
-                  <Button size="small" variant="outlined" color="primary" onClick={handleReset}>
+                  <Button size="small" variant="outlined" color="primary" onClick={reset}>
                      {appOptions.buttons.resetBtn}
                   </Button>
 

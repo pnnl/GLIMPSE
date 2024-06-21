@@ -1,5 +1,5 @@
 import React from "react";
-import "./styles/About.css";
+import "../styles/About.css";
 import { Dialog, DialogContent, Slide } from "@mui/material";
 
 const Transition = React.forwardRef((props, ref) => {
@@ -17,7 +17,7 @@ const About = ({ show, close }) => {
             </div>
             <DialogContent sx={{ padding: "0rem 12rem" }}>
                <div className="about-title">
-                  <h1>GLIMPSE v0.2.2</h1>
+                  <h1>GLIMPSE v0.2.4</h1>
                   <h3>(Grid Layout Interface for Model Preview and System Exploration)</h3>
                </div>
                <div className="description">

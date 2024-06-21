@@ -1,13 +1,6 @@
 clock {
 };
 
-
-
-
-
-
-
-
 object inverter {
 	name inv_pv_pv_6;
 	parent sx2000404a_pvmtr;

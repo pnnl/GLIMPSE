@@ -3,14 +3,17 @@ import { Box, Stack, IconButton } from "@mui/material";
 import { RotateLeftRounded, RotateRightRounded } from "@mui/icons-material";
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
-import ActionBar from "./ActionBar";
+// import ActionBar from "./ActionBar";
+import ActionDrawer from "./ActionDrawer";
 import NodePopup from "./NodePopup";
-import "./styles/vis-network.css";
-import "./styles/Graph.css";
+import "../styles/vis-network.css";
+import "../styles/Graph.css";
 import Legend from "./Legend";
 import ContextMenu from "./ContextMenu";
 import NewNodeForm from "./NewNodeForm";
+import VisActionsDial from "./VisActionsDial";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
+// import * as d3 from "d3";
 import {
    getTitle,
    setGraphData,
@@ -28,7 +31,8 @@ import {
    Prev,
    rotateCW,
    rotateCCW,
-} from "./utils/graphUtils";
+   // renameKeys,
+} from "../utils/graphUtils";
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
 
@@ -44,7 +48,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const edgeOptions = theme.edgeOptions;
    let glmNetwork = null; // global network varibale
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
-   let highlightedNodes = useRef([]);
+   const highlightedNodes = useRef([]);
+   const highlightedEdges = useRef([]);
+
+   // const svgRef = useRef(null);
 
    const addedOverlayObjects = {
       nodes: [],
@@ -73,6 +80,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    //Reverts all nodes and edges back to their original styles
    const Reset = () => {
       highlightedNodes.current.length = 0;
+      highlightedEdges.current.length = 0;
       const nodesResetMap = graphData.nodes.map((node) => {
          delete node.size;
          delete node.color;
@@ -86,14 +94,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       const edgeItems = graphData.edges.map((edge) => {
          const edgeType = edge.type;
 
-         if (edge.width === 8) {
-            edge.width = "width" in edgeOptions[edgeType] ? edgeOptions[edgeType].width : 2;
-            edge.hidden = false;
-
-            return edge;
-         } else if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
-            edge.width = "width" in edgeOptions[edgeType] ? edgeOptions[edgeType].width : 2;
-            edge.color = edgeOptions[edgeType].color;
+         if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
+            Object.assign(edge, edgeOptions[edgeType]);
             edge.hidden = false;
 
             return edge;
@@ -139,15 +141,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    console.log("Number of Edges: " + graphData.edges.length);
 
    // initiate variables that reference the NodePopup child component state and set state variables
-   let setCurrentNode;
+   let seNode;
    let setOpenNodePopup;
    /**
     * Used to send the set state function from the child to the parent
-    * @param {React.Dispatch<React.SetStateAction<{}>>} setChildCurrentNode - The useState function of the NodePopup child component
+    * @param {React.Dispatch<React.SetStateAction<{}>>} setChilNode - The useState function of the NodePopup child component
     * @param {React.Dispatch<React.SetStateAction<false>>} setOpen - Used to display the node popup form
     */
-   const onChildMount = (setChildCurrentNode, setOpen) => {
-      setCurrentNode = setChildCurrentNode;
+   const onChildMount = (setChilNode, setOpen) => {
+      seNode = setChilNode;
       setOpenNodePopup = setOpen;
    };
 
@@ -210,7 +212,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} filename - Name of the file
     * @param {Object} data - the json data of the uploaded file
     */
-   const setCommunicationNetwork = ({ filename, fileData }) => {
+   const attachOverlay = ({ filename, fileData }) => {
       const microgrids = fileData.microgrid;
       const communication_nodes = fileData.communication_nodes;
 
@@ -313,8 +315,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const nodesOfsameType = graphData.nodes.get().filter((n) => n.group === node_types[nodeType]);
 
          const [addedNodeID] = graphData.nodes.add({
-            id: `${node_types[nodeType]}_${nodeID}`,
-            label: `${node_types[nodeType]}_${nodeID}`,
+            id: `${nodeID}`,
+            label: `${nodeID}`,
             group: node_types[nodeType],
             level:
                "level" in nodesOfsameType[0].attributes
@@ -376,12 +378,28 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          layoutForm.style.display = "flex";
          toggleLegendRef.current(false);
       } else {
-         if (graph.style.width === "72%") {
-            graph.style.width = "80%";
+         if (graph.style.width === "30%") {
+            graph.style.width = "72%";
          }
          layoutForm.style.display = "none";
          toggleLegendRef.current(true);
       }
+   };
+
+   const removeOverlay = () => {
+      graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
+         objectTypeCount.nodes[node.group]--;
+      });
+      graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
+         objectTypeCount.edges[edge.type]--;
+      });
+      graphData.nodes.remove(addedOverlayObjects.nodes);
+      graphData.edges.remove(addedOverlayObjects.edges);
+
+      addedOverlayObjects.nodes.length = 0;
+      addedOverlayObjects.edges.length = 0;
+
+      setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
    };
 
    useEffect(() => {
@@ -444,14 +462,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          graphOptions.groups = theme.groups;
          glmNetwork = new Network(container.current, graphData, graphOptions);
 
-         // data.nodes.update(data.nodes.get().map((node) => {
-         //    node.value = glmNetwork.getConnectedEdges(node.id).length;
-         //    return node;
-         // }));
-
-         // if (document.getElementById("circularProgress").style.display === "none")
-         //    document.getElementById("circularProgress").style.display = "flex";
-
          glmNetwork.on("stabilizationProgress", (params) => {
             /* Math for determining the radius of the circular progress bar based on the stabilization progress */
             const maxWidth = 360;
@@ -474,16 +484,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             /* set physics to false for better performance when stabalization is done */
             glmNetwork.setOptions({ physics: { enabled: false } });
 
-            // data.nodes.update(data.nodes.get().map((node) => {
-            //    node.value = undefined;
-            //    return node;
-            // }));
-
             setTimeout(() => {
                document.getElementById("circularProgress").style.display = "none";
             }, 500);
-
-            // console.log(glmNetwork.getSeed());
          });
       }
 
@@ -492,7 +495,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             alert("Double click on a node to edit.");
          } else {
             /* Set the state of the NodePopup component for editing of the selected node's attributes */
-            setCurrentNode(graphData.nodes.get(params.nodes[0]));
+            seNode(graphData.nodes.get(params.nodes[0]));
             setOpenNodePopup(true);
          }
       });
@@ -521,12 +524,125 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             },
             container: document.getElementById("layout-form"),
          },
+         nodes: {
+            scaling: {
+               min: 5,
+               max: 75,
+            },
+         },
+         edges: {
+            scaling: {
+               min: 5,
+               max: 20,
+            },
+         },
       });
    }, []);
 
+   // a d3.js example
+   // useEffect(() => {
+   //    const width = 1200;
+   //    const height = 900;
+
+   //    // const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+   //    const links = graphData.edges
+   //       .get()
+   //       .map((edge) => renameKeys({ from: "source", to: "target" }, edge));
+   //    const nodes = graphData.nodes.get();
+
+   //    const simulation = d3
+   //       .forceSimulation(nodes)
+   //       .force(
+   //          "link",
+   //          d3.forceLink(links).id((node) => node.id)
+   //       )
+   //       .force("charge", d3.forceManyBody())
+   //       .force("center", d3.forceCenter(width / 2, height / 2))
+   //       .on("tick", ticked);
+
+   //    const svg = d3
+   //       .select(svgRef.current)
+   //       .attr("width", width)
+   //       .attr("height", height)
+   //       .attr("viewBox", [0, 0, width, height])
+   //       .attr("style", "max-width: 100%; height: auto;");
+
+   //    const link = svg
+   //       .append("g")
+   //       .attr("stroke", "#999")
+   //       .attr("stroke-apacity", 0.6)
+   //       .selectAll()
+   //       .data(links)
+   //       .join("line")
+   //       .attr("stroke-width", 2);
+
+   //    const node = svg
+   //       .append("g")
+   //       .attr("stroke", "#fff")
+   //       .attr("stroke-width", 1.5)
+   //       .selectAll()
+   //       .data(nodes)
+   //       .join("circle")
+   //       .attr("r", 5)
+   //       .attr("fill", "blue");
+
+   //    node.append("tittle").text((node) => node.id);
+   //    link.append("p").text((edge) => edge.id);
+
+   //    const zoom = d3
+   //       .zoom()
+   //       .scaleExtent([0.1, 10])
+   //       .on("zoom", (e) => {
+   //          node.attr("transform", e.transform);
+   //          link.attr("transform", e.transform);
+   //       });
+
+   //    svg.call(zoom);
+
+   //    node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
+
+   //    // Set the position attributes of links and nodes each time the simulation ticks.
+   //    function ticked() {
+   //       link
+   //          .attr("x1", (d) => d.source.x)
+   //          .attr("y1", (d) => d.source.y)
+   //          .attr("x2", (d) => d.target.x)
+   //          .attr("y2", (d) => d.target.y);
+
+   //       node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
+   //    }
+
+   //    // Reheat the simulation when drag starts, and fix the subject position.
+   //    function dragstarted(event) {
+   //       if (!event.active) simulation.alphaTarget(0.3).restart();
+   //       event.subject.fx = event.subject.x;
+   //       event.subject.fy = event.subject.y;
+   //    }
+
+   //    // Update the subject (dragged node) position during drag.
+   //    function dragged(event) {
+   //       event.subject.fx = event.x;
+   //       event.subject.fy = event.y;
+   //    }
+
+   //    // Restore the target alpha so the simulation cools after dragging ends.
+   //    // Unfix the subject position now that it’s no longer being dragged.
+   //    function dragended(event) {
+   //       if (!event.active) simulation.alphaTarget(0);
+   //       event.subject.fx = null;
+   //       event.subject.fy = null;
+   //    }
+
+   //    // When this cell is re-run, stop the previous simulation. (This doesn’t
+   //    // really matter since the target alpha is zero and the simulation will
+   //    // stop naturally, but it’s a good practice.)
+   //    // invalidation.then(() => simulation.stop());
+   // });
+
    return (
       <>
-         <ActionBar
+         {/* <ActionBar
             graphDataObj={GLIMPSE_OBJECT}
             nodesDataObj={graphData.nodes}
             physicsToggle={TogglePhysics}
@@ -538,28 +654,14 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             getNodeIds={() => graphData.nodes.getIds()}
             toggleLegendRef={toggleLegendRef}
             showLegendStateRef={showLegendStateRef}
-            removeOverlay={() => {
-               graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
-                  objectTypeCount.nodes[node.group]--;
-               });
-               graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
-                  objectTypeCount.edges[edge.type]--;
-               });
-               graphData.nodes.remove(addedOverlayObjects.nodes);
-               graphData.edges.remove(addedOverlayObjects.edges);
+            removeOverlay={removeOverlay}
+         /> */}
 
-               addedOverlayObjects.nodes.length = 0;
-               addedOverlayObjects.edges.length = 0;
-
-               setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
-            }}
-         />
-
-         <NodePopup onMount={onChildMount} onSave={saveEdits} onClose={closePopUp} />
+         <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
 
          <NewNodeForm
             onMount={onNewNodeFormMount}
-            nodes={graphData.nodes.getIds()}
+            nodes={() => graphData.nodes.getIds()}
             addNode={addNewNode}
             nodeTypes={Object.keys(objectTypeCount.nodes).filter(
                (key) => objectTypeCount.nodes[key] > 0
@@ -568,17 +670,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                (key) => objectTypeCount.edges[key] > 0
             )}
          />
-
-         <div id="rt-btns-wrapper" className="rotate-btns-wrapper">
-            <Stack direction={"row"}>
-               <IconButton onClick={() => rotateCCW(graphData, glmNetwork, ANGLE)}>
-                  <RotateLeftRounded />
-               </IconButton>
-               <IconButton onClick={() => rotateCW(graphData, glmNetwork, ANGLE)}>
-                  <RotateRightRounded />
-               </IconButton>
-            </Stack>
-         </div>
 
          <div id="circularProgress">
             <span id="progressValue">0%</span>
@@ -592,15 +683,23 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             deleteNode={deleteNode}
          />
 
-         <Box component={"div"} sx={{ width: "100%", height: "calc(100vh - 116px)" }}>
-            <Stack
-               sx={{ height: "100%", width: "100%", borderTop: "1px solid lightgrey" }}
-               direction={"row"}
-            >
+         <ActionDrawer
+            findNode={(id) => NodeFocus(id, glmNetwork)}
+            getNodeIds={() => graphData.nodes.getIds()}
+            physicsToggle={TogglePhysics}
+            toggleLegendRef={toggleLegendRef}
+            showLegendStateRef={showLegendStateRef}
+            attachOverlay={attachOverlay}
+            removeOverlay={removeOverlay}
+            reset={Reset}
+         />
+
+         <Box component={"div"} sx={{ width: "100%", height: "calc(100vh - 4rem)" }}>
+            <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>
                <Box
                   id="graph"
                   component={"div"}
-                  sx={{ width: "80%", height: "100%" }}
+                  sx={{ width: "72%", height: "100%" }}
                   ref={container}
                   onContextMenu={handleContextmenu}
                />
@@ -608,9 +707,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                <div id="layout-form" />
 
                <Legend
-                  highlightNodes={(nodeType) => HighlightGroup(nodeType, graphData, highlightedNodes)}
+                  highlightNodes={(nodeType) =>
+                     HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
+                  }
                   highlightEdges={(edgeType) =>
-                     HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions)
+                     HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
                   }
                   hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
                   legendData={getLegendData(objectTypeCount, theme, edgeOptions)}
@@ -619,6 +720,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   legendStateRef={showLegendStateRef}
                />
             </Stack>
+
+            <VisActionsDial
+               rotateCW={() => rotateCW(graphData, glmNetwork, ANGLE)}
+               rotateCCW={() => rotateCCW(graphData, glmNetwork, ANGLE)}
+               prev={() => Prev(glmNetwork, highlightedNodes, counter)}
+               next={() => Next(glmNetwork, highlightedNodes, counter)}
+            />
          </Box>
       </>
    );

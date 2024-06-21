@@ -1,7 +1,7 @@
 {
    "groups": {
       "load": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#20a4f3",
             "background": "#fff",
@@ -18,7 +18,7 @@
          "image": "./imgs/Load.svg"
       },
       "triplex_load": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#ffea00",
             "background": "#fff",
@@ -35,7 +35,7 @@
          "image": "./imgs/Load.svg"
       },
       "capacitor": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#023047",
             "background": "#fff",
@@ -57,7 +57,7 @@
          "shape": "dot"
       },
       "substation": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#fca311",
             "background": "#fff",
@@ -74,7 +74,7 @@
          "image": "./imgs/substation.jpg"
       },
       "triplex_meter": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#072ac8",
             "background": "#fff",
@@ -96,7 +96,7 @@
          "shape": "dot"
       },
       "meter": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#d90429",
             "background": "#fff",
@@ -109,11 +109,11 @@
                "background": "#fff"
             }
          },
-         "shape": "circularImage",
+         "shape": "circularImage", 
          "image": "./imgs/meter.jpg"
       },
       "inverter_dyn": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#ffb703",
             "background": "#fff",
@@ -126,11 +126,11 @@
                "background": "#fff"
             }
          },
-         "shape": "circularImage",
+         "shape": "circularImage", 
          "image": "./imgs/Inverter.svg"
       },
       "diesel_dg": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#fb8500",
             "background": "#fff",
@@ -143,11 +143,11 @@
                "background": "#fff"
             }
          },
-         "shape": "circularImage",
+         "shape": "circularImage", 
          "image": "./imgs/generator.svg"
       },
       "communication_node": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#c1121f",
             "background": "#fff",
@@ -164,7 +164,7 @@
          "image": "./imgs/comm.jpg"
       },
       "microgrid": {
-         "size": 12,
+         "size": 15,
          "color": {
             "border": "#6b9080",
             "background": "#fff",
@@ -187,23 +187,23 @@
          "color": "#000000"
       },
       "switch": {
-         "width": 2,
+         "width": 2, 
          "color": "#3a0ca3"
       },
       "series_reactor": {
-         "width": 2,
+         "width": 2, 
          "color": "#3c1642"
       },
       "triplex_line": {
-         "width": 2,
+         "width": 2, 
          "color": "#c86bfa"
       },
       "underground_line": {
-         "width": 2,
+         "width": 2, 
          "color": "#FFFF00"
       },
       "regulator": {
-         "width": 2,
+         "width": 2, 
          "color": "#ff447d"
       },
       "transformer": {
@@ -212,22 +212,18 @@
       },
       "parentChild": {
          "width": 2,
-         "color": {
-            "inherit": true
-         }
+         "color": {"inherit": true}
       },
       "mapping": {
-         "width": 0.30,
+         "width": 0.15, 
          "color": "lightgrey"
       },
       "communication": {
-         "width": 2,
-         "color": {
-            "inherit": false
-         }
+         "width": 1, 
+         "color": {"inherit": false}
       },
       "microgrid_connection": {
-         "width": 0.30,
+         "width": 0.15, 
          "color": "cyan"
       }
    }
