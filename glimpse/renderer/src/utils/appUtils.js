@@ -34,12 +34,10 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
          themeData = await window.glimpseAPI.getThemeJsonData("LevelTheme.json");
          break;
       case "custom-theme":
-         if (paths.length > 1) themeData = await getCustomTheme(paths);
-
-         if ("error" in themeData) {
-            alert(themeData.error);
-            return;
-         } else if (themeData === null) {
+         if (paths.length > 1) {
+            themeData = await getCustomTheme(paths);
+            if ("error" in themeData) alert(themeData.error);
+         } else {
             themeData = { groups: {}, edgeOptions: {} };
          }
 

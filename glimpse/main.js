@@ -8,9 +8,9 @@ const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron"),
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron"),
+// });
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
@@ -19,8 +19,8 @@ const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
 
-const rootDir = __dirname;
-// const rootDir = process.resourcesPath;
+// const rootDir = __dirname;
+const rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;

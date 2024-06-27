@@ -3,6 +3,7 @@ import { Network } from "vis-network";
 import { Box } from "@mui/material";
 import LegendContextMenu from "./LegendContextMenu";
 import "../styles/vis-network.css";
+// import ThemeBuilder from "./ThemeBuilder";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({
@@ -17,6 +18,7 @@ const Legend = ({
    const container = useRef(null);
    const [data, setData] = useState(legendData);
    const [showLegend, setShowLegend] = useState(true);
+   // const [openThemeBuilder, setOpenThemeBuilder] = useState(false);
 
    // set the current state as refs from the Graph component
    useEffect(() => {
@@ -68,6 +70,10 @@ const Legend = ({
             network.fit();
          });
 
+         // network.on("click", () => {
+         //    setOpenThemeBuilder(true);
+         // });
+
          // set the context menu data with either a node or edge ID so that type can be hidden in the main network
          network.on("oncontext", (params) => {
             if (network.getNodeAt(params.pointer.DOM)) {
@@ -105,7 +111,14 @@ const Legend = ({
             ref={container}
             onContextMenu={handleContext}
          />
-
+         {/* <ThemeBuilder
+            nodeTypes={legendData.nodes
+               .get()
+               .filter((node) => "group" in node)
+               .map((node) => node.group)}
+            open={openThemeBuilder}
+            close={() => setOpenThemeBuilder(false)}
+         /> */}
          <LegendContextMenu onMount={onContextMenuChildMount} hideObjects={hideObjects} />
       </>
    );

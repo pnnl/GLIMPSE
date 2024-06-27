@@ -2,7 +2,7 @@
 
 GLIMPSE is a graph-based web application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Node.js, and Python.
 
-## Build Installation Instructions
+## Build Instructions
 **Download Node and Nim** 
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html)
@@ -21,7 +21,6 @@ cd /GLIMPSE/glimpse/local-server/
 
 python -m venv venv
 ```
-### If on `Windows` go to `/venv/Scripts/` and rename **json2glm** to **json2glm.exe**
 
 ### In `/GLIMPSE/glimpse/local-server/` Activate Virtual Environment using the following command for your system
 | Platform | Shell      | Command to activate virtual environment |

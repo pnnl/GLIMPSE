@@ -27,6 +27,7 @@ const ActionDrawer = ({
    attachOverlay,
    removeOverlay,
    reset,
+   graphDataObj,
 }) => {
    const nodes = getNodeIds();
    const [nodeID, setNodeID] = useState("");

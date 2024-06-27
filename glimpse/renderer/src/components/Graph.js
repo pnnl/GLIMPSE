@@ -537,7 +537,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             },
          },
       });
-   }, []);
+   });
 
    // a d3.js example
    // useEffect(() => {
@@ -641,22 +641,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    // });
 
    return (
-      <>
-         {/* <ActionBar
-            graphDataObj={GLIMPSE_OBJECT}
-            nodesDataObj={graphData.nodes}
-            physicsToggle={TogglePhysics}
-            reset={Reset}
-            onFind={(id) => NodeFocus(id, glmNetwork)}
-            prev={() => Prev(glmNetwork, highlightedNodes, counter)}
-            next={() => Next(glmNetwork, highlightedNodes, counter)}
-            addGraphOverlay={setCommunicationNetwork}
-            getNodeIds={() => graphData.nodes.getIds()}
-            toggleLegendRef={toggleLegendRef}
-            showLegendStateRef={showLegendStateRef}
-            removeOverlay={removeOverlay}
-         /> */}
-
+      <Box className="gl-wrapper" component={"div"} sx={{ width: "100%", height: "calc(100vh - 4rem)" }}>
          <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
 
          <NewNodeForm
@@ -692,43 +677,42 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}
             reset={Reset}
+            graphDataObj={GLIMPSE_OBJECT}
          />
 
-         <Box component={"div"} sx={{ width: "100%", height: "calc(100vh - 4rem)" }}>
-            <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>
-               <Box
-                  id="graph"
-                  component={"div"}
-                  sx={{ width: "72%", height: "100%" }}
-                  ref={container}
-                  onContextMenu={handleContextmenu}
-               />
-
-               <div id="layout-form" />
-
-               <Legend
-                  highlightNodes={(nodeType) =>
-                     HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
-                  }
-                  highlightEdges={(edgeType) =>
-                     HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
-                  }
-                  hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
-                  legendData={getLegendData(objectTypeCount, theme, edgeOptions)}
-                  onMount={legendMount}
-                  setShowLegendRef={toggleLegendRef}
-                  legendStateRef={showLegendStateRef}
-               />
-            </Stack>
-
-            <VisActionsDial
-               rotateCW={() => rotateCW(graphData, glmNetwork, ANGLE)}
-               rotateCCW={() => rotateCCW(graphData, glmNetwork, ANGLE)}
-               prev={() => Prev(glmNetwork, highlightedNodes, counter)}
-               next={() => Next(glmNetwork, highlightedNodes, counter)}
+         <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>
+            <Box
+               id="graph"
+               component={"div"}
+               sx={{ width: "72%", height: "100%" }}
+               ref={container}
+               onContextMenu={handleContextmenu}
             />
-         </Box>
-      </>
+
+            <div id="layout-form" />
+
+            <Legend
+               highlightNodes={(nodeType) =>
+                  HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
+               }
+               highlightEdges={(edgeType) =>
+                  HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
+               }
+               hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
+               legendData={getLegendData(objectTypeCount, theme, edgeOptions)}
+               onMount={legendMount}
+               setShowLegendRef={toggleLegendRef}
+               legendStateRef={showLegendStateRef}
+            />
+         </Stack>
+
+         <VisActionsDial
+            rotateCW={() => rotateCW(graphData, glmNetwork, ANGLE)}
+            rotateCCW={() => rotateCCW(graphData, glmNetwork, ANGLE)}
+            prev={() => Prev(glmNetwork, highlightedNodes, counter)}
+            next={() => Next(glmNetwork, highlightedNodes, counter)}
+         />
+      </Box>
    );
 };
 
