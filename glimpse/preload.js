@@ -10,6 +10,22 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
       ipcRenderer.on("update-data", (_event, data) => callback(data));
       return () => ipcRenderer.removeAllListeners("update-data");
    },
+   onAddNodeEvent: (callback) => {
+      ipcRenderer.on("add-node", (_event, newNodeData) => callback(newNodeData));
+      return () => ipcRenderer.removeAllListeners("add-node");
+   },
+   onAddEdgeEvent: (callback) => {
+      ipcRenderer.on("add-edge", (_event, newEdgeData) => callback(newEdgeData));
+      return () => ipcRenderer.removeAllListeners("add-edge");
+   },
+   onDeleteNodeEvent: (callback) => {
+      ipcRenderer.on("delete-node", (_event, nodeID) => callback(nodeID));
+      return () => ipcRenderer.removeAllListeners("delete-node");
+   },
+   onDeleteEdgeEvent: (callback) => {
+      ipcRenderer.on("delete-edge", (_event, edgeID) => callback(edgeID));
+      return () => ipcRenderer.removeAllListeners("delete-edge");
+   },
    onShowVisOptions: (callback) => {
       ipcRenderer.on("show-vis-options", () => callback());
       return () => ipcRenderer.removeAllListeners("show-vis-options");
@@ -19,6 +35,7 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
       return () => ipcRenderer.removeAllListeners("export-theme");
    },
    validate: (jsonFilePath) => ipcRenderer.invoke("validate", jsonFilePath),
+   onReadJsonFile: (filepath) => ipcRenderer.invoke("read-json-file", filepath),
    getThemeJsonData: (path) => ipcRenderer.invoke("getThemeJsonData", path),
    exportTheme: (themeData) => ipcRenderer.send("exportTheme", themeData),
    onExtract: (callback) => {

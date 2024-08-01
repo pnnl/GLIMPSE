@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 
-const LegendContextMenu = ({ onMount, hideObjects }) => {
+const LegendContextMenu = ({ openThemeBuilder, onMount, hideObjects }) => {
    const [contextMenu, setContextMenu] = useState(null);
 
    useEffect(() => {
@@ -19,6 +19,11 @@ const LegendContextMenu = ({ onMount, hideObjects }) => {
       setContextMenu(null);
    };
 
+   const showThemeBuilder = () => {
+      openThemeBuilder();
+      setContextMenu(null);
+   };
+
    return (
       <Menu
          sx={{ zIndex: 999 }}
@@ -30,6 +35,7 @@ const LegendContextMenu = ({ onMount, hideObjects }) => {
          }
       >
          <MenuItem onClick={onHideObjects}>Hide All</MenuItem>
+         <MenuItem onClick={showThemeBuilder}>Edit Theme</MenuItem>
       </Menu>
    );
 };

@@ -4,26 +4,25 @@ import {
    Box,
    Drawer,
    IconButton,
-   Fab,
    Divider,
    TextField,
    Stack,
    FormControlLabel,
    Switch,
    Button,
+   Tooltip,
 } from "@mui/material";
 import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
 import OverlayUpload from "./OverlayUpload";
 import StatsTableModal from "./StatsTableModal";
 import PlotModal from "./PlotModal";
+import { CustomFab } from "../utils/CustomComponents";
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionDrawer = ({
    getNodeIds,
    findNode,
    physicsToggle,
-   toggleLegendRef,
-   showLegendStateRef,
    attachOverlay,
    removeOverlay,
    reset,
@@ -58,29 +57,6 @@ const ActionDrawer = ({
       setOpenDrawer(false);
    };
 
-   /**
-    * Hide/Show the Legend Component
-    * @param {Event} e
-    */
-   const toggleLegend = (e) => {
-      const graph = document.getElementById("graph");
-      const circularProgress = document.getElementById("circularProgress");
-      const layoutForm = document.getElementById("layout-form");
-
-      if (showLegendStateRef.current) {
-         toggleLegendRef.current(false);
-         graph.style.width = "100%";
-         circularProgress.style.left = "50%";
-      } else {
-         if (layoutForm.style.display === "flex") {
-            layoutForm.style.display = "none";
-         }
-         graph.style.width = "72%";
-         circularProgress.style.left = "36%";
-         toggleLegendRef.current(true);
-      }
-   };
-
    const handleRemoveOverlay = () => {
       setHideRemoveOverlayBtn("none");
       removeOverlay();
@@ -106,6 +82,26 @@ const ActionDrawer = ({
       setShowPlot(true);
    };
 
+   const toggleLegend = (e) => {
+      const legend = document.getElementById("legend-network");
+      const graph = document.getElementById("graph");
+      const circularProgress = document.getElementById("circularProgress");
+      const layoutForm = document.getElementById("layout-form");
+
+      if (e.target.checked) {
+         legend.style.display = "none";
+         graph.style.width = "100%";
+         circularProgress.style.left = "50%";
+      } else {
+         if (layoutForm.style.display === "flex") {
+            layoutForm.style.display = "none";
+         }
+         graph.style.width = "72%";
+         circularProgress.style.left = "36%";
+         legend.style.display = "block";
+      }
+   };
+
    useEffect(() => {
       const removeListenersArr = [];
       removeListenersArr.push(window.glimpseAPI.getEmbeddingsPlot(getPlotImg));
@@ -121,43 +117,23 @@ const ActionDrawer = ({
    return (
       <Box>
          <Stack spacing={1} direction={"row"} sx={{ position: "absolute", margin: 1 }}>
-            <Fab
-               sx={{
-                  color: "#FFF",
-                  border: "1px solid grey",
-                  backgroundColor: "#333",
-                  ":hover": { backgroundColor: "#b25a00" },
-               }}
-               variant="extended"
-               onClick={() => setOpenDrawer(true)}
-            >
-               <TuneRounded />
-            </Fab>
-            <Fab
-               sx={{
-                  color: "#FFF",
-                  border: "1px solid grey",
-                  backgroundColor: "#333",
-                  ":hover": { backgroundColor: "#b25a00" },
-               }}
-               onClick={reset}
-               variant="extended"
-            >
+            <Tooltip title="Vis Options" placement="bottom-end">
+               <CustomFab variant="extended" onClick={() => setOpenDrawer(true)}>
+                  <TuneRounded />
+               </CustomFab>
+            </Tooltip>
+
+            <CustomFab onClick={reset} variant="extended">
                Reset
-            </Fab>
-            <Fab
-               sx={{
-                  display: hideRemoveOverlayBtn,
-                  color: "#FFF",
-                  border: "1px solid grey",
-                  backgroundColor: "#333",
-                  ":hover": { backgroundColor: "#b25a00" },
-               }}
+            </CustomFab>
+
+            <CustomFab
+               sx={{ display: hideRemoveOverlayBtn }}
                variant="extended"
                onClick={handleRemoveOverlay}
             >
                Remove Overlay
-            </Fab>
+            </CustomFab>
          </Stack>
          <Drawer
             variant="persistent"
@@ -175,7 +151,9 @@ const ActionDrawer = ({
                   <ChevronLeft />
                </IconButton>
             </div>
+
             <Divider />
+
             <Autocomplete
                sx={{ width: "100%" }}
                size="small"
@@ -184,7 +162,12 @@ const ActionDrawer = ({
                onChange={(even, ID) => setNodeID(ID)}
                renderInput={(params) => (
                   <Stack sx={{ m: 1 }} direction="row" spacing={1}>
-                     <TextField variant="outlined" {...params} label={appOptions.buttons.searchLbl} />
+                     <TextField
+                        variant="outlined"
+                        {...params}
+                        label={appOptions.buttons.searchLbl}
+                     />
+
                      <IconButton onClick={handleSubmit}>
                         <SearchRounded />
                      </IconButton>
@@ -198,14 +181,18 @@ const ActionDrawer = ({
                label={appOptions.buttons.layoutLbl}
                labelPlacement="start"
             />
+
             <Divider />
+
             <FormControlLabel
                value="Legend Toggle"
                control={<Switch sx={{ ml: "auto", mr: 1 }} size="medium" onChange={toggleLegend} />}
                label="Hide Legend"
                labelPlacement="start"
             />
+
             <Divider />
+
             <Button
                variant="text"
                onClick={() => setShowOverlayUpload(true)}
@@ -217,6 +204,7 @@ const ActionDrawer = ({
             >
                Attach Overlay
             </Button>
+
             <Divider />
          </Drawer>
          <OverlayUpload

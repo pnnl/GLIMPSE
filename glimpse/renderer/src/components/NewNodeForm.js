@@ -5,7 +5,6 @@ import {
    DialogTitle,
    DialogContent,
    DialogActions,
-   Button,
    FormControl,
    MenuItem,
    TextField,
@@ -14,6 +13,7 @@ import {
    Autocomplete,
    Stack,
 } from "@mui/material";
+import { CustomButton } from "../utils/CustomComponents";
 
 const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
    const [openForm, setOpenForm] = useState(false);
@@ -93,7 +93,11 @@ const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
                            }))
                         }
                         renderInput={(params) => (
-                           <TextField value={formFields.connectTo} {...params} label="Connected To" />
+                           <TextField
+                              value={formFields.connectTo}
+                              {...params}
+                              label="Connected To"
+                           />
                         )}
                      />
                   </FormControl>
@@ -118,8 +122,8 @@ const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
                </Stack>
             </DialogContent>
             <DialogActions>
-               <Button onClick={createNewNode}>Create Node</Button>
-               <Button onClick={handleClose}>Cancel</Button>
+               <CustomButton onClick={createNewNode}>Create Node</CustomButton>
+               <CustomButton onClick={handleClose}>Cancel</CustomButton>
             </DialogActions>
          </Dialog>
       </>,

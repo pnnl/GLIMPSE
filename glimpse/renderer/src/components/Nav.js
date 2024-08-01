@@ -13,31 +13,23 @@ const Nav = ({ showHome }) => {
 
    return (
       <>
-         <Box sx={{ flexGrow: 1, height: "4rem" }}>
-            <AppBar
-               className="nav-header"
-               sx={{
-                  display: "flex",
-                  boxShadow: "none",
-                  backgroundColor: "#333",
-                  color: "white",
-                  padding: "4px",
-               }}
-            >
-               <Toolbar variant="dense" sx={{ width: "100%" }}>
-                  <span className="title">GLIMPSE</span>
-                  <Stack direction={"row"} spacing={1} sx={{ marginLeft: "auto" }}>
-                     <button className="header-btn" onClick={showHome}>
-                        Home
-                     </button>
-                     <button className="header-btn" onClick={handleAboutBtn}>
-                        About
-                     </button>
-                  </Stack>
-               </Toolbar>
-            </AppBar>
-            <About show={open} close={() => setOpen(false)} />
-         </Box>
+         <Toolbar variant="dense" sx={{ width: "100%" }}>
+            <img
+               className="nav-logo"
+               src="./imgs/GLIMPSE/NSD_2294_BRAND_HAGEN-GLIMPSE_final_color.png"
+               alt="GLIMPSE LOGO"
+            />
+            <Stack direction={"row"} spacing={1} sx={{ marginLeft: "auto" }}>
+               <button className="header-btn" onClick={showHome}>
+                  Home
+               </button>
+               <button className="header-btn" onClick={handleAboutBtn}>
+                  About
+               </button>
+            </Stack>
+         </Toolbar>
+
+         <About show={open} close={() => setOpen(false)} />
       </>
    );
 };

@@ -1,13 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { useState, useEffect } from "react";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
-import TextField from "@mui/material/TextField";
-import Stack from "@mui/material/Stack";
+import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack } from "@mui/material";
+import { CustomButton } from "../utils/CustomComponents";
 
 const NodePopup = ({ onMount, onSave, close }) => {
    const [open, setOpen] = useState(false);
@@ -51,8 +46,8 @@ const NodePopup = ({ onMount, onSave, close }) => {
             </Stack>
          </DialogContent>
          <DialogActions>
-            <Button onClick={saveChanges}>Save</Button>
-            <Button onClick={close}>Close</Button>
+            <CustomButton onClick={saveChanges}>Save</CustomButton>
+            <CustomButton onClick={close}>Close</CustomButton>
          </DialogActions>
       </Dialog>,
       document.getElementById("portal")

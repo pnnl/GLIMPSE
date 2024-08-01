@@ -1,4 +1,12 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, globalShortcut } = require("electron");
+const {
+   app,
+   BrowserWindow,
+   ipcMain,
+   dialog,
+   Menu,
+   globalShortcut,
+   nativeImage,
+} = require("electron");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
 const { io } = require("socket.io-client");
@@ -8,9 +16,9 @@ const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron"),
-});
+// require("electron-reload")(__dirname, {
+//    electron: path.join(__dirname, "node_modules", ".bin", "electron"),
+// });
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
@@ -19,8 +27,8 @@ const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
 
-const rootDir = __dirname;
-// const rootDir = process.resourcesPath;
+// const rootDir = __dirname;
+const rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -183,7 +191,7 @@ const validateJson = (filePaths) => {
 };
 
 const exportThemeFile = async (themeData) => {
-   const filename = "GLIMPSE_theme_export.json";
+   const filename = "custom.theme.json";
    let dir2save = await dialog.showOpenDialog({ properties: ["openDirectory"] });
 
    if (dir2save.canceled) return null;
@@ -199,7 +207,8 @@ const json2glmFunc = async (jsonData) => {
    dir2save = dir2save.filePaths[0];
 
    const parsedData = JSON.parse(jsonData);
-   const json2glmArg = process.platform == "darwin" ? ".\\tools\\json2glm" : ".\\tools\\json2glm.exe";
+   const json2glmArg =
+      process.platform == "darwin" ? ".\\tools\\json2glm" : ".\\tools\\json2glm.exe";
 
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
@@ -221,6 +230,7 @@ const makeWindow = () => {
       height: 900,
       minWidth: 1250,
       minHeight: 750,
+      icon: path.join(__dirname, "assets", "HAGEN-GLIMPSE_color_icon"),
       backgroundColor: "white",
       autoHideMenuBar: false,
       show: false,
@@ -231,6 +241,13 @@ const makeWindow = () => {
          preload: path.join(__dirname, "preload.js"),
       },
    });
+
+   // mainWindow.setOverlayIcon(
+   //    nativeImage.createFromPath(
+   //       path.join(__dirname, "assets", "NSD_2294_BRAND_HAGEN-GLIMPSE_final_color_icon.png")
+   //    ),
+   //    "GLIMPSE TOOL"
+   // );
 
    const menu = Menu.buildFromTemplate([
       {
@@ -249,7 +266,12 @@ const makeWindow = () => {
             { role: "minimize" },
             { role: "zoom" },
             ...(isMac
-               ? [{ type: "separator" }, { role: "front" }, { type: "separator" }, { role: "window" }]
+               ? [
+                    { type: "separator" },
+                    { role: "front" },
+                    { type: "separator" },
+                    { role: "window" },
+                 ]
                : [{ role: "close" }]),
          ],
       },
@@ -282,21 +304,6 @@ const makeWindow = () => {
                id: "power-grid-theme",
                type: "radio",
                checked: true,
-            },
-            {
-               label: "Social",
-               id: "social-theme",
-               type: "radio",
-            },
-            {
-               label: "Layout",
-               id: "layout-theme",
-               type: "radio",
-            },
-            {
-               label: "Fishing",
-               id: "fishing-theme",
-               type: "radio",
             },
             {
                label: "Custom",
@@ -336,7 +343,8 @@ const makeWindow = () => {
    Menu.setApplicationMenu(menu);
 
    ipcMain.handle("getSelectedTheme", () => {
-      for (const item of Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items)
+      for (const item of Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu
+         .items)
          if (item.checked) return item.id;
    });
    ipcMain.handle("getConfig", () => {
@@ -348,6 +356,9 @@ const makeWindow = () => {
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
    ipcMain.handle("getThemeJsonData", (e, filepath) =>
       JSON.parse(fs.readFileSync(path.join(rootDir, "themes", filepath), { encoding: "utf-8" }))
+   );
+   ipcMain.handle("read-json-file", (e, filepath) =>
+      JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }))
    );
    ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
@@ -411,7 +422,12 @@ app.whenReady()
          makeWindow();
          mainWindow.show();
       });
+
       socket.on("update-data", (data) => mainWindow.webContents.send("update-data", data));
+      socket.on("add-node", (data) => mainWindow.webContents.send("add-node", data));
+      socket.on("add-edge", (data) => mainWindow.webContents.send("add-edge", data));
+      socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
+      socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
       // autoUpdater.checkForUpdatesAndNotify();
       app.on("activate", () => {
          if (BrowserWindow.getAllWindows().length === 0) {

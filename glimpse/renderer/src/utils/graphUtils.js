@@ -84,7 +84,7 @@ export const renameKeys = (keysMap, obj) => {
  */
 export const NodeFocus = (nodeID, glmNetwork) => {
    const options = {
-      scale: 3,
+      scale: 4,
       locked: true,
       animation: {
          duration: 1500,
@@ -100,11 +100,9 @@ export const NodeFocus = (nodeID, glmNetwork) => {
  * @param {Object} typeCounts - containes the counts of node and edge types
  * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
  */
-export const getLegendData = (typeCounts, theme, edgeOptions) => {
-   const legendData = {
-      nodes: new DataSet(),
-      edges: new DataSet(),
-   };
+export const getLegendData = (typeCounts, theme, edgeOptions, legendData) => {
+   legendData.nodes.clear();
+   legendData.edges.clear();
 
    const currentNodeTypes = [];
    const currentEdgeTypes = [];
@@ -132,10 +130,8 @@ export const getLegendData = (typeCounts, theme, edgeOptions) => {
             legendData.nodes.add({
                id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
                label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+               ...theme.groups[nodeType],
                size: 25,
-               color: theme.groups[nodeType].color,
-               shape: theme.groups[nodeType].shape,
-               image: theme.groups[nodeType].image,
                group: nodeType,
                title: "Double Click to Highlight !",
                x: current_x,
@@ -176,10 +172,8 @@ export const getLegendData = (typeCounts, theme, edgeOptions) => {
          legendData.nodes.add({
             id: `${nodeType}:${typeCounts.nodes[nodeType]}`,
             label: `${nodeType}\n[${typeCounts.nodes[nodeType]}]`,
+            ...theme.groups[nodeType],
             size: 25,
-            color: theme.groups[nodeType].color,
-            shape: theme.groups[nodeType].shape,
-            image: theme.groups[nodeType].image,
             group: nodeType,
             title: "Double Click to Highlight !",
             x: current_x,
@@ -250,8 +244,6 @@ export const getLegendData = (typeCounts, theme, edgeOptions) => {
 
       current_y += 65;
    });
-
-   return legendData;
 };
 
 /**
@@ -268,9 +260,10 @@ export const hideEdge = (edgeID, data) => {
  * Hide all edges of a type
  * @param {string} edgeType - The type of edges to hide like: "overhead_line"
  */
-export const hideEdges = (edgeType, data) => {
+export const hideEdges = (edgeID, data) => {
+   const type = data.edges.get(edgeID).type;
    const edgesToHide = data.edges.get().map((edge) => {
-      if (edge.type === edgeType) {
+      if (edge.type === type) {
          edge.hidden = true;
       }
       return edge;
@@ -279,7 +272,7 @@ export const hideEdges = (edgeType, data) => {
 };
 
 export const updateNode = (updateData, data) => {
-   const updateDataStream = JSON.parse(updateData);
+   const updateDataStream = updateData;
 
    if (updateDataStream.elementType === "node") {
       const node = data.nodes.get(updateDataStream.id);
@@ -368,12 +361,17 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
       data.edges.map((edge) => {
          if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
             edge.color = "rgba(200, 200, 200, 0.4)";
+            edge.width = edgeOptions[edge.type].width;
 
-            highlightedEdges.current = highlightedEdges.current.filter((edgeid) => edgeid !== edge.id);
+            highlightedEdges.current = highlightedEdges.current.filter(
+               (edgeid) => edgeid !== edge.id
+            );
          } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
             edge.color = "rgba(200, 200, 200, 0.4)";
+            edge.width = edgeOptions[edge.type].width;
          } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
             edge.color = edgeOptions[edge.type].color;
+            edge.width = edgeOptions[edge.type].width * 3;
 
             highlightedEdges.current.push(edge.id);
          }
@@ -479,8 +477,10 @@ export const rotateCCW = (data, network, angle) => {
    const rotatedNodes = data.nodes.get().map((node) => {
       const coordinates = network.getPositions(node.id);
 
-      const newX = coordinates[node.id].x * Math.cos(-angle) - coordinates[node.id].y * Math.sin(-angle);
-      const newY = coordinates[node.id].x * Math.sin(-angle) + coordinates[node.id].y * Math.cos(-angle);
+      const newX =
+         coordinates[node.id].x * Math.cos(-angle) - coordinates[node.id].y * Math.sin(-angle);
+      const newY =
+         coordinates[node.id].x * Math.sin(-angle) + coordinates[node.id].y * Math.cos(-angle);
 
       node.x = newX.toFixed(0);
       node.y = newY.toFixed(0);
@@ -495,8 +495,10 @@ export const rotateCW = (data, network, angle) => {
    const rotatedNodes = data.nodes.get().map((node) => {
       const coordinates = network.getPositions(node.id);
 
-      const newX = coordinates[node.id].x * Math.cos(angle) - coordinates[node.id].y * Math.sin(angle);
-      const newY = coordinates[node.id].x * Math.sin(angle) + coordinates[node.id].y * Math.cos(angle);
+      const newX =
+         coordinates[node.id].x * Math.cos(angle) - coordinates[node.id].y * Math.sin(angle);
+      const newY =
+         coordinates[node.id].x * Math.sin(angle) + coordinates[node.id].y * Math.cos(angle);
 
       node.x = newX.toFixed(0);
       node.y = newY.toFixed(0);
@@ -519,7 +521,8 @@ export const setGraphData = (
    objectTypeCount,
    GLIMPSE_OBJECT,
    theme,
-   edgeOptions
+   edgeOptions,
+   graphOptions
 ) => {
    const keys = ["id", "objectType", "name"];
    const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);
@@ -540,7 +543,8 @@ export const setGraphData = (
             if ("x" in attributes && "y" in attributes) {
                objectTypeCount.nodes[objectType]++;
 
-               if (!("elemetType" in obj)) GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
+               if (!("elemetType" in obj))
+                  GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
                else GLIMPSE_OBJECT.objects.push(obj);
 
                if (!("color" in theme.groups[objectType]))
@@ -563,7 +567,8 @@ export const setGraphData = (
                if (objectType in objectTypeCount.nodes) objectTypeCount.nodes[objectType]++;
                else objectTypeCount.nodes[objectType] = 1;
 
-               if (!("elemetType" in obj)) GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
+               if (!("elemetType" in obj))
+                  GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
                else GLIMPSE_OBJECT.objects.push(obj);
 
                if (!("color" in theme.groups[objectType]))
@@ -585,7 +590,8 @@ export const setGraphData = (
             obj = renameKeys({ name: "objectType" }, obj);
             obj.attributes = renameKeys({ name: "id" }, obj.attributes);
 
-            if (!("elemetType" in obj)) GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
+            if (!("elemetType" in obj))
+               GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
             else GLIMPSE_OBJECT.objects.push(obj);
 
             if (!("color" in theme.groups[objectType]))
@@ -603,6 +609,7 @@ export const setGraphData = (
             if (!(objectType in theme.groups)) {
                theme.groups[objectType] = {
                   color: getRandomColor(),
+                  size: 10,
                   shape: "dot",
                };
             }
@@ -695,7 +702,8 @@ export const setGraphData = (
             const edgeTo = attributes.to;
             const edgeID = attributes[nameForObjID];
 
-            if (!(objectType in edgeOptions)) edgeOptions[objectType] = { color: getRandomColor() };
+            if (!(objectType in edgeOptions))
+               edgeOptions[objectType] = { color: getRandomColor(), width: 2 };
 
             if (objectType in objectTypeCount.edges) objectTypeCount.edges[objectType]++;
             else objectTypeCount.edges[objectType] = 1;

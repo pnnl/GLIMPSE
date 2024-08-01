@@ -32,7 +32,7 @@ const FileUpload = ({ onFileUpload }) => {
          for (const file of files) {
             paths.push(file.path);
          }
-
+         e.target.value = "";
          onFileUpload(paths);
       }
    };
@@ -40,7 +40,6 @@ const FileUpload = ({ onFileUpload }) => {
    // triggers when file is selected with click
    const handleChange = async (e) => {
       e.preventDefault();
-      // console.log(JSON.parse(await window.glimpseAPI.getJsonData()))
 
       if (e.target.files && e.target.files[0]) {
          const paths = [];
@@ -49,7 +48,7 @@ const FileUpload = ({ onFileUpload }) => {
          for (const file of files) {
             paths.push(file.path);
          }
-
+         e.target.value = "";
          onFileUpload(paths);
       }
    };
@@ -76,9 +75,12 @@ const FileUpload = ({ onFileUpload }) => {
                className={dragActive ? "drag-active" : ""}
             >
                <div>
-                  <p>Drag and drop your .glm or .json file/s here or</p>
+                  <p>
+                     Drag and drop GLIMPSE supported file formats (e.g., JSON, GLM, NetworkX
+                     [node-link data])
+                  </p>
                   <button className="upload-button" onClick={onButtonClick}>
-                     Upload file/s
+                     Or Click here to Upload file/s
                   </button>
                </div>
             </label>

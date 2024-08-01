@@ -3,31 +3,22 @@ import { Network } from "vis-network";
 import { Box } from "@mui/material";
 import LegendContextMenu from "./LegendContextMenu";
 import "../styles/vis-network.css";
-// import ThemeBuilder from "./ThemeBuilder";
+import ThemeBuilder from "./ThemeBuilder";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({
    highlightNodes,
    highlightEdges,
    hideObjects,
-   onMount,
    legendData,
-   setShowLegendRef,
-   legendStateRef,
+   visTheme,
+   applyTheme,
 }) => {
    const container = useRef(null);
-   const [data, setData] = useState(legendData);
-   const [showLegend, setShowLegend] = useState(true);
-   // const [openThemeBuilder, setOpenThemeBuilder] = useState(false);
-
-   // set the current state as refs from the Graph component
-   useEffect(() => {
-      setShowLegendRef.current = setShowLegend;
-      legendStateRef.current = showLegend;
-   });
-
-   useEffect(() => {
-      onMount(setData);
+   const [openThemeBuilder, setOpenThemeBuilder] = useState(false);
+   const [themeBuilderContext, setThemeBuilderContext] = useState({
+      group: Object.keys(visTheme.groups)[0],
+      edgeType: Object.keys(visTheme.edgeOptions)[0],
    });
 
    // Getting the state and set state variables from the legend context menu component
@@ -53,54 +44,59 @@ const Legend = ({
    };
 
    useEffect(() => {
-      if (showLegend) {
-         const network = new Network(container.current, data, legendGraphOptions);
+      const network = new Network(container.current, legendData, legendGraphOptions);
+      network.fit();
+
+      network.on("doubleClick", (params) => {
+         if (params.nodes[0]) {
+            let g = legendData.nodes.get(params.nodes[0]);
+            highlightNodes(g.group);
+         }
+         if (params.edges[0]) {
+            let e = legendData.edges.get(params.edges[0]);
+            highlightEdges(e.id);
+         }
+
          network.fit();
+      });
 
-         network.on("doubleClick", function (params) {
-            if (params.nodes[0]) {
-               let g = data.nodes.get(params.nodes[0]);
-               highlightNodes(g.group);
-            }
-            if (params.edges[0]) {
-               let e = data.edges.get(params.edges[0]);
-               highlightEdges(e.id);
-            }
+      legendData.nodes.on("*", () => {
+         network.fit();
+      });
 
-            network.fit();
-         });
+      // set the context menu data with either a node or edge ID so that type can be hidden in the main network
+      network.on("oncontext", (params) => {
+         let ID = null;
+         let group = null;
+         let edgeType = null;
 
-         // network.on("click", () => {
-         //    setOpenThemeBuilder(true);
-         // });
+         if (network.getNodeAt(params.pointer.DOM)) {
+            ID = network.getNodeAt(params.pointer.DOM);
+            group = legendData.nodes.get(ID).group;
 
-         // set the context menu data with either a node or edge ID so that type can be hidden in the main network
-         network.on("oncontext", (params) => {
-            if (network.getNodeAt(params.pointer.DOM)) {
-               const ID = network.getNodeAt(params.pointer.DOM);
-               setContextMenuData({ object: data.nodes.get(ID).group, type: "node" });
-            } else if (network.getEdgeAt(params.pointer.DOM)) {
-               const ID = network.getEdgeAt(params.pointer.DOM);
-               setContextMenuData({ object: data.edges.get(ID).id, type: "edge" });
-            }
-         });
+            setContextMenuData({ object: group, type: "node" });
+            setThemeBuilderContext({ ...themeBuilderContext, group: group });
+         } else if (network.getEdgeAt(params.pointer.DOM)) {
+            edgeType = network.getEdgeAt(params.pointer.DOM);
 
-         const networkCanvas = document
-            .getElementById("legend-network")
-            .getElementsByTagName("canvas")[0];
+            setContextMenuData({ object: edgeType, type: "edge" });
+            setThemeBuilderContext({ ...themeBuilderContext, edgeType: edgeType });
+         }
+      });
 
-         const changeCursor = (newCursorStyle) => {
-            networkCanvas.style.cursor = newCursorStyle;
-         };
+      const networkCanvas = document
+         .getElementById("legend-network")
+         .getElementsByTagName("canvas")[0];
 
-         network.on("hoverNode", () => changeCursor("pointer"));
-         network.on("blurNode", () => changeCursor("default"));
-         network.on("hoverEdge", () => changeCursor("pointer"));
-         network.on("blurEdge", () => changeCursor("default"));
-      }
-   });
+      const changeCursor = (newCursorStyle) => {
+         networkCanvas.style.cursor = newCursorStyle;
+      };
 
-   if (!showLegend) return null;
+      network.on("hoverNode", () => changeCursor("pointer"));
+      network.on("blurNode", () => changeCursor("default"));
+      network.on("hoverEdge", () => changeCursor("pointer"));
+      network.on("blurEdge", () => changeCursor("default"));
+   }, []);
 
    return (
       <>
@@ -111,15 +107,18 @@ const Legend = ({
             ref={container}
             onContextMenu={handleContext}
          />
-         {/* <ThemeBuilder
-            nodeTypes={legendData.nodes
-               .get()
-               .filter((node) => "group" in node)
-               .map((node) => node.group)}
+         <LegendContextMenu
+            openThemeBuilder={() => setOpenThemeBuilder(true)}
+            onMount={onContextMenuChildMount}
+            hideObjects={hideObjects}
+         />
+         <ThemeBuilder
             open={openThemeBuilder}
             close={() => setOpenThemeBuilder(false)}
-         /> */}
-         <LegendContextMenu onMount={onContextMenuChildMount} hideObjects={hideObjects} />
+            visTheme={visTheme}
+            context={themeBuilderContext}
+            applyTheme={applyTheme}
+         />
       </>
    );
 };

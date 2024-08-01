@@ -29,5 +29,6 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
-#jar
-/backend/jar/uber-STM-1.4-SNAPSHOT.jar
+/jar
+/metrics
+/jar/uber-STM-1.4-SNAPSHOT.jar

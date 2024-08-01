@@ -1,31 +1,42 @@
 {
    "groups": {
       "R": {
-         "color": "#F00",
-         "shape": "star"
+         "color": "#FF0000",
+         "shape": "star",
+         "size": 5
       },
       "G": {
-         "color": "#0F0",
-         "shape": "dot"
-         },
-         "B": {
-            "color": "#00F",
-            "shape": "dot"
+         "color": "#00FF00",
+         "shape": "dot",
+         "size": 5
+      },
+      "B": {
+         "color": "#0000FF",
+         "shape": "dot",
+         "size": 5
       }
    },
    "edgeOptions": {
       "M": {
-         "color": "#F0F",
-         "dashes": [5, 5, 3, 3],
+         "color": "#FF00FF",
+         "dashes": [
+            5,
+            5,
+            3,
+            3
+         ],
          "width": 3
       },
       "Y": {
-         "color": "#FF0",
-         "dashes": [3, 3],
+         "color": "#FFFF00",
+         "dashes": [
+            3,
+            3
+         ],
          "width": 5
       },
       "C": {
-         "color": "#0FF",
+         "color": "#00FFFF",
          "dashes": false,
          "width": 1
       }

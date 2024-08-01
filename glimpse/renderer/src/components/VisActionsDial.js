@@ -1,6 +1,7 @@
 import React from "react";
 import { Fab, SpeedDial, SpeedDialAction, Stack, Tooltip } from "@mui/material";
-import { ControlPoint, RotateRightSharp, RotateLeftSharp } from "@mui/icons-material";
+import { Adjust, RotateRightSharp, RotateLeftSharp } from "@mui/icons-material";
+import { CustomFab } from "../utils/CustomComponents";
 
 const VisActionsDial = ({ rotateCW, rotateCCW, prev, next }) => {
    return (
@@ -14,13 +15,13 @@ const VisActionsDial = ({ rotateCW, rotateCCW, prev, next }) => {
             <SpeedDial
                direction="left"
                ariaLabel="action-speed-dial"
-               icon={<ControlPoint />}
+               icon={<Adjust />}
                sx={{
                   ["& .MuiSpeedDial-fab"]: {
                      backgroundColor: "#333",
                      width: "3rem",
                      height: "3rem",
-                     ":hover": { backgroundColor: "#B25A00" },
+                     ":hover": { backgroundColor: "#45AB48" },
                   },
                }}
             >
@@ -40,30 +41,12 @@ const VisActionsDial = ({ rotateCW, rotateCCW, prev, next }) => {
                />
             </SpeedDial>
          </Tooltip>
-         <Fab
-            sx={{
-               color: "#FFF",
-               border: "1px solid grey",
-               backgroundColor: "#333",
-               ":hover": { backgroundColor: "#b25a00" },
-            }}
-            variant="extended"
-            onClick={prev}
-         >
+         <CustomFab variant="extended" onClick={prev}>
             Prev
-         </Fab>
-         <Fab
-            sx={{
-               color: "#FFF",
-               border: "1px solid grey",
-               backgroundColor: "#333",
-               ":hover": { backgroundColor: "#b25a00" },
-            }}
-            variant="extended"
-            onClick={next}
-         >
+         </CustomFab>
+         <CustomFab variant="extended" onClick={next}>
             Next
-         </Fab>
+         </CustomFab>
       </Stack>
    );
 };

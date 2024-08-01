@@ -1,0 +1,22 @@
+appId: com.github.pnnl.GLIMPSE
+win:
+   target:
+      - target: nsis
+        arch:
+           - x64
+           - ia32
+
+asar: true
+
+extraResources:
+   - ./themes/**
+   - ./data/**
+   - ./config/**
+
+nsis:
+   oneClick: false
+   allowToChangeInstallationDirectory: true
+# mac:
+#    target:
+#       - target: dmg
+#         arch: univeral

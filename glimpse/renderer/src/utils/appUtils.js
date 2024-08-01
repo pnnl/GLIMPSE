@@ -2,15 +2,26 @@ const getCustomTheme = async (paths) => {
    let themeData = null;
 
    for (let i = 0; i < paths.length; i++) {
+      // Look for the theme file
       if (paths[i].split(".")[1] === "theme") {
+         // get the theme data if the file is valid against a JSON schema
+         // if not valid the validateTheme function will return a object with an error message
          themeData = await window.glimpseAPI.validateTheme(paths[i]);
          paths.splice(i, 1);
          break;
       }
    }
 
+   if (themeData && "error" in themeData) {
+      alert(themeData.error);
+      return;
+   }
+
    return themeData;
 };
+
+const isGlmFile = (path) => path.split(".").pop() === "glm";
+const isJsonFile = (path) => path.split(".").pop() === "json";
 
 /**
  * This function will get the paths of the uploaded files and send them to the
@@ -19,67 +30,46 @@ const getCustomTheme = async (paths) => {
  */
 export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => {
    const selectedTheme = await window.glimpseAPI.getTheme();
-   let themeData = null;
-
    setFileData({ loading: true });
 
-   switch (selectedTheme) {
-      case "social-theme":
-         themeData = await window.glimpseAPI.getThemeJsonData("SocialTheme.json");
-         break;
-      case "fishing-theme":
-         themeData = await window.glimpseAPI.getThemeJsonData("FishingTheme.json");
-         break;
-      case "layout-theme":
-         themeData = await window.glimpseAPI.getThemeJsonData("LevelTheme.json");
-         break;
-      case "custom-theme":
-         if (paths.length > 1) {
-            themeData = await getCustomTheme(paths);
-            if ("error" in themeData) alert(themeData.error);
-         } else {
-            themeData = { groups: {}, edgeOptions: {} };
-         }
+   if (paths.every(isGlmFile) && selectedTheme === "power-grid-theme") {
+      setFilesUploaded(true);
+      const data = await window.glimpseAPI.glm2json(paths);
 
-         break;
-      default:
-         themeData = await window.glimpseAPI.getThemeJsonData("PowerGridTheme.json");
-         break;
-   }
+      if (!data) {
+         alert("Something went wrong... \n Re-upload or reset app");
+         setFileData({ loading: false });
+      } else if ("alert" in data) {
+         alert(data.alert);
+         setFileData({ loading: false });
+      } else {
+         setFileData({
+            visData: data,
+            theme: await window.glimpseAPI.getThemeJsonData("PowerGrid.theme.json"),
+            isGlm: true,
+            loading: false,
+         });
+      }
+   } else if (paths.every(isJsonFile) && selectedTheme === "custom-theme") {
+      let themeData = { groups: {}, edgeOptions: {} };
 
-   if (paths[0].split(".")[1] === "json") {
+      if (paths.length > 1) themeData = await getCustomTheme(paths);
+
       setFilesUploaded(true);
       const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
 
-      if ("error" in validFileData) {
-         alert(validFileData.error);
-      } else {
+      if ("error" in validFileData) alert(validFileData.error);
+      else
          setFileData({
             visData: validFileData,
             theme: themeData,
             isGlm: false,
             loading: false,
          });
-      }
-   } else if (
-      paths[0].split(".")[1] === "glm" &&
-      (selectedTheme === "power-grid-theme" || selectedTheme === "custom-theme")
-   ) {
-      setFilesUploaded(true);
-      const data = await window.glimpseAPI.glm2json(paths);
-      if (!data) {
-         console.log("Something went wrong...");
-      } else if (Object.keys(data).includes("alert")) {
-         alert(data.alert);
-      } else {
-         setFileData({
-            visData: data,
-            theme: typeof themeData === "string" ? JSON.parse(themeData) : themeData,
-            isGlm: true,
-            loading: false,
-         });
-      }
    } else {
-      alert("All <.glm> File Types Must Be Uploaded With The Power Grid Theme Selected !");
+      alert(
+         "Upload glm files with the Power Grid theme or any JSON file with the custom theme selected"
+      );
+      setFileData({ loading: false });
    }
 };

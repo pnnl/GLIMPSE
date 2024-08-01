@@ -20,6 +20,7 @@
 #label-file-upload {
   height: 100%;
   display: flex;
+  padding: 1rem;
   align-items: center;
   justify-content: center;
   border-width: 2px;
@@ -36,6 +37,7 @@
 
 .upload-button {
   cursor: pointer;
+  margin-top: 6px;
   padding: 0.25rem;
   font-size: 1rem;
   border: none;

@@ -4,8 +4,8 @@
    padding: 4px;
 }
 
-.about-title {
-   text-align: center;
+.features-list > ul{
+   padding: 0 0 0 40px;
 }
 
 .description {
@@ -19,7 +19,7 @@
    height: 2.5rem;
    color: white;
    background-color: #333;
-   border: 1px solid#FFF;
+   border: 1px solid#FFFFFF;
    margin-left: auto;
    margin-right: 1rem;
    border-radius: 5px;
@@ -28,7 +28,11 @@
 }
 
 .close-about-btn:hover {
-   background-color: #b25a00;
+   background-color: #45AB48;
+}
+
+.about-title {
+   text-align: center;
 }
 
 .citation-wrapper {

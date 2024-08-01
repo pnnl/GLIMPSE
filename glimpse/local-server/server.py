@@ -52,10 +52,11 @@ def get_avg_betweenness_centrality(graph):
    return avg/len(betweenness_centrality_dict)
         
 #------------------------------ Server ------------------------------#
+
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "aSecRetKey"
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
+#------------------------------ Server Routes ------------------------------#
 @app.route("/")
 def hello():
    return {"api": "GLIMPSE flask backend"}
@@ -82,9 +83,27 @@ def get_stats():
    
    return summary_stats
 
+#------------------ Socket Events ------------------#
 @socketio.on("glimpse")
 def glimpse(data):
-   socketio.emit("update-data", json.dumps(data))
+   socketio.emit("update-data", data)
 
+@socketio.on("addNode")
+def add_node(newNodeData):
+   socketio.emit("add-node", newNodeData)
+
+@socketio.on("addEdge")
+def add_edge(newEdgeData):
+   socketio.emit("add-edge", newEdgeData)
+
+@socketio.on("deleteNode")
+def delete_node(nodeID):
+   socketio.emit("delete-node", nodeID)
+   
+@socketio.on("deleteEdge")
+def delete_edge(edgeID):
+   socketio.emit("delete-edge", edgeID)
+
+#------------------------------ Start WebSocket Server ------------------------------#
 if __name__ == "__main__":
    socketio.run(app, log_output=True)

@@ -14,7 +14,7 @@ const ContextMenu = ({ onMount, hideEdge, hideEdges, openNewNodeForm, deleteNode
    };
 
    const handleHideEdges = () => {
-      hideEdges(contextMenu.edgeID.split(":")[0]);
+      hideEdges(contextMenu.edgeID);
       setContextMenu(null);
    };
 

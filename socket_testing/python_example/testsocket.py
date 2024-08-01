@@ -3,6 +3,9 @@ import json
 import sys
 import time
 
+PORT = 5000
+URL = "http://127.0.0.1"
+
 def get_update_data(filepath):
    file = open(filepath, "r")
    file_data = json.loads(file.read())
@@ -13,7 +16,7 @@ def get_update_data(filepath):
 # ------------------ Connecting to Socket Server ------------------ #
 def main(filepath):
    sio = socketio.Client()
-   sio.connect("http://127.0.0.1:5000")
+   sio.connect(f"{URL}:{PORT}")
 
    update_data = get_update_data(filepath)
    

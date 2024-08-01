@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { Box, Stack, IconButton } from "@mui/material";
-import { RotateLeftRounded, RotateRightRounded } from "@mui/icons-material";
+import { Box, Stack } from "@mui/material";
 import { Network } from "vis-network";
 import { DataSet } from "vis-data";
-// import ActionBar from "./ActionBar";
 import ActionDrawer from "./ActionDrawer";
 import NodePopup from "./NodePopup";
 import "../styles/vis-network.css";
@@ -13,7 +11,6 @@ import ContextMenu from "./ContextMenu";
 import NewNodeForm from "./NewNodeForm";
 import VisActionsDial from "./VisActionsDial";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
-// import * as d3 from "d3";
 import {
    getTitle,
    setGraphData,
@@ -31,16 +28,12 @@ import {
    Prev,
    rotateCW,
    rotateCCW,
-   // renameKeys,
 } from "../utils/graphUtils";
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
 
 const Graph = ({ dataToVis, theme, isGlm }) => {
    const container = useRef(null);
-   const toggleLegendRef = useRef(null);
-   const showLegendStateRef = useRef(null);
-
    const GLIMPSE_OBJECT = { objects: [] };
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
@@ -50,8 +43,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
-
-   // const svgRef = useRef(null);
 
    const addedOverlayObjects = {
       nodes: [],
@@ -64,6 +55,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       edges: new DataSet(),
    };
 
+   const legendData = {
+      nodes: new DataSet(),
+      edges: new DataSet(),
+   };
+
    // used to keep count of each object type
    const objectTypeCount = {
       nodes: Object.keys(theme.groups).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
@@ -72,12 +68,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
    objectTypeCount.edges.parentChild = 0;
 
-   let setLegendData;
-   const legendMount = (legendSetFunc) => {
-      setLegendData = legendSetFunc;
-   };
-
-   //Reverts all nodes and edges back to their original styles
+   /**
+    * Reset all nodes and edges back to their original styles
+    */
    const Reset = () => {
       highlightedNodes.current.length = 0;
       highlightedEdges.current.length = 0;
@@ -134,11 +127,22 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       objectTypeCount,
       GLIMPSE_OBJECT,
       theme,
-      edgeOptions
+      edgeOptions,
+      graphOptions
    );
+
+   /* ------------------------ End Establish Network ------------------------ */
+
+   /* ------------------------ Establish Legend Data ------------------------ */
+
+   getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+
+   /* ------------------------ End Establish Legend Data ------------------------ */
 
    console.log("Number of Nodes: " + graphData.nodes.length);
    console.log("Number of Edges: " + graphData.edges.length);
+
+   /* ------------------------ Recive Sate Variables from Children ------------------------ */
 
    // initiate variables that reference the NodePopup child component state and set state variables
    let seNode;
@@ -180,6 +184,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       setOpenNodePopup(false);
    };
 
+   /* ------------------------ End Recive Sate Variables from Children ------------------------ */
+
    /**
     * Updates the nodes's hover title with the new attributes
     * @param {Object} selectedNode - The node object that was selected to be edited
@@ -208,79 +214,47 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    /**
-    * @param {Object} fileData - Should Contain the file's name with extension and the file's data
-    * @param {string} filename - Name of the file
-    * @param {Object} data - the json data of the uploaded file
+    * Adds new nodes and edges based on the overlay json file data
+    * @param {Object} fileData - the json object read from the file
     */
-   const attachOverlay = ({ filename, fileData }) => {
-      const microgrids = fileData.microgrid;
-      const communication_nodes = fileData.communication_nodes;
+   const attachOverlay = (fileData, showRemoveOverlayButton) => {
+      try {
+         const microgrids = fileData.microgrid;
+         const communication_nodes = fileData.communication_nodes;
 
-      const types = [
-         "node",
-         "load",
-         "switch",
-         "inverter",
-         "capacitor",
-         "regulator",
-         "diesel_dg",
-         "microgirds",
-         "communication_node",
-      ];
+         const types = [
+            "node",
+            "load",
+            "switch",
+            "inverter",
+            "capacitor",
+            "regulator",
+            "diesel_dg",
+            "microgirds",
+            "communication_node",
+         ];
 
-      for (const microgrid of microgrids) {
-         addedOverlayObjects.nodes.push(
-            graphData.nodes.add({
-               id: microgrid.name,
-               label: microgrid.name,
-               group: "microgrid",
-            })[0]
-         );
-
-         objectTypeCount.nodes.microgrid++;
-
-         for (const type of Object.keys(microgrid)) {
-            if (types.includes(type)) {
-               microgrid[type].forEach((nodeID) => {
-                  addedOverlayObjects.edges.push(
-                     graphData.edges.add({
-                        id: `parentChild:${microgrid.name}-${nodeID}`,
-                        from: microgrid.name,
-                        to: nodeID,
-                        color: { inherit: true },
-                        type: type,
-                        width: 0.15,
-                     })[0]
-                  );
-               });
-
-               objectTypeCount.edges.parentChild++;
-            }
-         }
-      }
-
-      if (communication_nodes) {
-         for (const comm_node of communication_nodes) {
+         for (const microgrid of microgrids) {
             addedOverlayObjects.nodes.push(
                graphData.nodes.add({
-                  id: comm_node.name,
-                  label: comm_node.name,
-                  group: "communication_node",
+                  id: microgrid.name,
+                  label: microgrid.name,
+                  group: "microgrid",
                })[0]
             );
 
-            objectTypeCount.nodes.communication_node++;
+            objectTypeCount.nodes.microgrid++;
 
-            for (const type of Object.keys(comm_node)) {
+            for (const type of Object.keys(microgrid)) {
                if (types.includes(type)) {
-                  comm_node[type].forEach((nodeID) => {
+                  microgrid[type].forEach((nodeID) => {
                      addedOverlayObjects.edges.push(
                         graphData.edges.add({
-                           id: `parentChild:${comm_node.name}-${nodeID}`,
-                           from: comm_node.name,
+                           id: `parentChild:${microgrid.name}-${nodeID}`,
+                           from: microgrid.name,
                            to: nodeID,
-                           type: type,
                            color: { inherit: true },
+                           type: type,
                            width: 0.15,
                         })[0]
                      );
@@ -290,9 +264,46 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                }
             }
          }
-      }
 
-      setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
+         if (communication_nodes) {
+            for (const comm_node of communication_nodes) {
+               addedOverlayObjects.nodes.push(
+                  graphData.nodes.add({
+                     id: comm_node.name,
+                     label: comm_node.name,
+                     group: "communication_node",
+                  })[0]
+               );
+
+               objectTypeCount.nodes.communication_node++;
+
+               for (const type of Object.keys(comm_node)) {
+                  if (types.includes(type)) {
+                     comm_node[type].forEach((nodeID) => {
+                        addedOverlayObjects.edges.push(
+                           graphData.edges.add({
+                              id: `parentChild:${comm_node.name}-${nodeID}`,
+                              from: comm_node.name,
+                              to: nodeID,
+                              type: type,
+                              color: { inherit: true },
+                              width: 0.15,
+                           })[0]
+                        );
+                     });
+
+                     objectTypeCount.edges.parentChild++;
+                  }
+               }
+            }
+         }
+
+         showRemoveOverlayButton("flex");
+         getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      } catch (msg) {
+         console.log(msg);
+         alert("File currently not compatible...");
+      }
    };
 
    /**
@@ -312,7 +323,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       );
 
       try {
-         const nodesOfsameType = graphData.nodes.get().filter((n) => n.group === node_types[nodeType]);
+         const nodesOfsameType = graphData.nodes
+            .get()
+            .filter((n) => n.group === node_types[nodeType]);
 
          const [addedNodeID] = graphData.nodes.add({
             id: `${nodeID}`,
@@ -345,12 +358,16 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          objectTypeCount.edges[addedEdge.type]++;
          graphData.edges.update(addedEdge);
 
-         setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
+         getLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
          alert(`${node_types[nodeType]}_${nodeID} already exists...`);
       }
    };
 
+   /**
+    * Delete a node along with the edges connected to it and updating the legend
+    * @param {string} nodeID the ID of a node to delete
+    */
    const deleteNode = (nodeID) => {
       // get node obj and subtract from that node type's count
       objectTypeCount.nodes[graphData.nodes.get(nodeID).group]--;
@@ -366,30 +383,39 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       graphData.nodes.remove(nodeID);
       graphData.edges.remove(edgesToDelete);
 
-      setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
+      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
+   /**
+    * Hides the legend container and shows the vis.js layout options form
+    */
    const toggleVisOptions = () => {
+      const legend = document.getElementById("legend-network");
       const layoutForm = document.getElementById("layout-form");
       const graph = document.getElementById("graph");
 
       if (layoutForm.style.display === "none" || layoutForm.style.display === "") {
          graph.style.width = "72%";
          layoutForm.style.display = "flex";
-         toggleLegendRef.current(false);
+         legend.style.display = "none";
       } else {
          if (graph.style.width === "30%") {
             graph.style.width = "72%";
          }
          layoutForm.style.display = "none";
-         toggleLegendRef.current(true);
+         legend.style.display = "block";
       }
    };
 
+   /**
+    * Removes all nodes and edges added through the overlay upload feature
+    * and updates the legend
+    */
    const removeOverlay = () => {
       graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
          objectTypeCount.nodes[node.group]--;
       });
+
       graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
          objectTypeCount.edges[edge.type]--;
       });
@@ -399,13 +425,45 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       addedOverlayObjects.nodes.length = 0;
       addedOverlayObjects.edges.length = 0;
 
-      setLegendData(getLegendData(objectTypeCount, theme, edgeOptions));
+      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
+   /**
+    * Applies the node and edge styes from the them builder component and updates the legend
+    * @param {Object} newStyles
+    * @param {Object} newStyles.newNodeStyles
+    * @param {Object} newStyles.newEdgeStyles
+    */
+   const applyTheme = ({ newNodeStyles, newEdgeStyles }) => {
+      const { group, size, ...restOfNodeStyles } = newNodeStyles;
+      theme.groups[group] = { size: Number(size), ...restOfNodeStyles };
+      glmNetwork.setOptions({ groups: theme.groups });
+
+      const { type, ...restOfEdgeStyles } = newEdgeStyles;
+      theme.edgeOptions[type] = restOfEdgeStyles;
+
+      graphData.edges.update(
+         graphData.edges.map((edge) => {
+            if (edge.type === type) {
+               edge = {
+                  ...edge,
+                  ...restOfEdgeStyles,
+               };
+            }
+            return edge;
+         })
+      );
+
+      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   };
+
+   /* ------------------------ Establish Listeners Between Main process and renderer process ------------------------ */
    useEffect(() => {
       const removeListenerArr = [];
       removeListenerArr.push(window.glimpseAPI.onShowVisOptions(toggleVisOptions));
-      removeListenerArr.push(window.glimpseAPI.onExtract(() => Export(graphData, isGlm, dataToVis)));
+      removeListenerArr.push(
+         window.glimpseAPI.onExtract(() => Export(graphData, isGlm, dataToVis))
+      );
       removeListenerArr.push(
          window.glimpseAPI.onShowAttributes((show) => showAttributes(show, graphData))
       );
@@ -417,7 +475,42 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       removeListenerArr.push(
          window.glimpseAPI.onUpdateData((updateData) => updateNode(updateData, graphData))
       );
+      removeListenerArr.push(
+         window.glimpseAPI.onAddNodeEvent((newNodeData) => {
+            graphData.nodes.add({
+               id: newNodeData.attributes.id,
+               attributes: newNodeData.attributes,
+               title: "Type: " + newNodeData.objectType + "\n" + getTitle(newNodeData.attributes),
+               ...newNodeData.styles,
+            });
+         })
+      );
+      removeListenerArr.push(
+         window.glimpseAPI.onAddEdgeEvent((newEdgeData) => {
+            graphData.edges.add({
+               id: newEdgeData.id,
+               to: newEdgeData.attributes.to,
+               from: newEdgeData.attributes.from,
+               title: "Type: " + newEdgeData.objectType + "\n" + getTitle(newEdgeData.attributes),
+               ...newEdgeData.styles,
+            });
+         })
+      );
+      removeListenerArr.push(
+         window.glimpseAPI.onDeleteNodeEvent((nodeID) => {
+            graphData.nodes.remove(nodeID);
+         })
+      );
+      removeListenerArr.push(
+         window.glimpseAPI.onDeleteEdgeEvent((edgeID) => {
+            graphData.edges.remove(edgeID);
+         })
+      );
 
+      /*
+         Remove listeners when component dismounts to prevent
+         duplication of events when component mounts again
+      */
       return () => {
          for (let removeListener of removeListenerArr) {
             removeListener();
@@ -429,6 +522,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          graphOptions.physics.enabled = true;
       };
    }, []);
+   /* ------------------------ End Establish Listeners Between Main process and renderer process ------------------------ */
 
    useEffect(() => {
       if ("x" in graphData.nodes.get()[0] && "y" in graphData.nodes.get()[0]) {
@@ -470,14 +564,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             const width = Math.max(minWidth, maxWidth * widthFactor);
             document.getElementById(
                "circularProgress"
-            ).style.background = `conic-gradient(#b25a00 ${width}deg, #333 0deg)`;
-            document.getElementById("progressValue").innerText = Math.round(widthFactor * 100) + "%";
+            ).style.background = `conic-gradient(#45AB48 ${width}deg, #333 0deg)`;
+            document.getElementById("progressValue").innerText =
+               Math.round(widthFactor * 100) + "%";
          });
 
          glmNetwork.once("stabilizationIterationsDone", () => {
             /* Once stabilization is done the circular progress with display 100% for half a second then hide */
             document.getElementById("circularProgress").style.background =
-               "conic-gradient(#b25a00 360deg, #333 0deg)";
+               "conic-gradient(#45AB48 360deg, #333 0deg)";
             document.getElementById("progressValue").innerText = "100%";
             document.getElementById("circularProgress").style.opacity = 0.7;
 
@@ -506,9 +601,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined &&
             glmNetwork.getNodeAt(params.pointer.DOM) === undefined
          ) {
-            setContextMenuData({ edgeID: glmNetwork.getEdgeAt(params.pointer.DOM) });
+            setContextMenuData({
+               edgeID: glmNetwork.getEdgeAt(params.pointer.DOM),
+            });
          } else if (glmNetwork.getNodeAt(params.pointer.DOM) !== undefined) {
-            setContextMenuData({ nodeID: glmNetwork.getNodeAt(params.pointer.DOM) });
+            setContextMenuData({
+               nodeID: glmNetwork.getNodeAt(params.pointer.DOM),
+            });
          } else {
             setContextMenuData({});
          }
@@ -537,111 +636,41 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             },
          },
       });
+
+      // (async () => {
+      //    const edgeToAnimate = graphData.edges.get("red_40-blue_2");
+      //    for (;;) {
+      //       await new Promise((resolve) => setTimeout(resolve, 300));
+
+      //       if ("arrows" in edgeToAnimate) {
+      //          if (edgeToAnimate.arrows.from) {
+      //             edgeToAnimate.arrows.from = false;
+      //             edgeToAnimate.arrows.middle = true;
+      //             edgeToAnimate.arrows.to = false;
+      //          } else if (edgeToAnimate.arrows.middle) {
+      //             edgeToAnimate.arrows.from = false;
+      //             edgeToAnimate.arrows.middle = false;
+      //             edgeToAnimate.arrows.to = true;
+      //          } else if (edgeToAnimate.arrows.to) {
+      //             edgeToAnimate.arrows.from = { enabled: true, type: "inv_triangle" };
+      //             edgeToAnimate.arrows.middle = false;
+      //             edgeToAnimate.arrows.to = false;
+      //          }
+      //       } else {
+      //          edgeToAnimate.arrows = {
+      //             from: { enabled: true, type: "inv_triangle" },
+      //             middle: false,
+      //             to: false,
+      //          };
+      //       }
+
+      //       graphData.edges.update(edgeToAnimate);
+      //    }
+      // })();
    });
 
-   // a d3.js example
-   // useEffect(() => {
-   //    const width = 1200;
-   //    const height = 900;
-
-   //    // const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-   //    const links = graphData.edges
-   //       .get()
-   //       .map((edge) => renameKeys({ from: "source", to: "target" }, edge));
-   //    const nodes = graphData.nodes.get();
-
-   //    const simulation = d3
-   //       .forceSimulation(nodes)
-   //       .force(
-   //          "link",
-   //          d3.forceLink(links).id((node) => node.id)
-   //       )
-   //       .force("charge", d3.forceManyBody())
-   //       .force("center", d3.forceCenter(width / 2, height / 2))
-   //       .on("tick", ticked);
-
-   //    const svg = d3
-   //       .select(svgRef.current)
-   //       .attr("width", width)
-   //       .attr("height", height)
-   //       .attr("viewBox", [0, 0, width, height])
-   //       .attr("style", "max-width: 100%; height: auto;");
-
-   //    const link = svg
-   //       .append("g")
-   //       .attr("stroke", "#999")
-   //       .attr("stroke-apacity", 0.6)
-   //       .selectAll()
-   //       .data(links)
-   //       .join("line")
-   //       .attr("stroke-width", 2);
-
-   //    const node = svg
-   //       .append("g")
-   //       .attr("stroke", "#fff")
-   //       .attr("stroke-width", 1.5)
-   //       .selectAll()
-   //       .data(nodes)
-   //       .join("circle")
-   //       .attr("r", 5)
-   //       .attr("fill", "blue");
-
-   //    node.append("tittle").text((node) => node.id);
-   //    link.append("p").text((edge) => edge.id);
-
-   //    const zoom = d3
-   //       .zoom()
-   //       .scaleExtent([0.1, 10])
-   //       .on("zoom", (e) => {
-   //          node.attr("transform", e.transform);
-   //          link.attr("transform", e.transform);
-   //       });
-
-   //    svg.call(zoom);
-
-   //    node.call(d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended));
-
-   //    // Set the position attributes of links and nodes each time the simulation ticks.
-   //    function ticked() {
-   //       link
-   //          .attr("x1", (d) => d.source.x)
-   //          .attr("y1", (d) => d.source.y)
-   //          .attr("x2", (d) => d.target.x)
-   //          .attr("y2", (d) => d.target.y);
-
-   //       node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
-   //    }
-
-   //    // Reheat the simulation when drag starts, and fix the subject position.
-   //    function dragstarted(event) {
-   //       if (!event.active) simulation.alphaTarget(0.3).restart();
-   //       event.subject.fx = event.subject.x;
-   //       event.subject.fy = event.subject.y;
-   //    }
-
-   //    // Update the subject (dragged node) position during drag.
-   //    function dragged(event) {
-   //       event.subject.fx = event.x;
-   //       event.subject.fy = event.y;
-   //    }
-
-   //    // Restore the target alpha so the simulation cools after dragging ends.
-   //    // Unfix the subject position now that it’s no longer being dragged.
-   //    function dragended(event) {
-   //       if (!event.active) simulation.alphaTarget(0);
-   //       event.subject.fx = null;
-   //       event.subject.fy = null;
-   //    }
-
-   //    // When this cell is re-run, stop the previous simulation. (This doesn’t
-   //    // really matter since the target alpha is zero and the simulation will
-   //    // stop naturally, but it’s a good practice.)
-   //    // invalidation.then(() => simulation.stop());
-   // });
-
    return (
-      <Box className="gl-wrapper" component={"div"} sx={{ width: "100%", height: "calc(100vh - 4rem)" }}>
+      <div className="vis-wrapper">
          <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
 
          <NewNodeForm
@@ -672,8 +701,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             findNode={(id) => NodeFocus(id, glmNetwork)}
             getNodeIds={() => graphData.nodes.getIds()}
             physicsToggle={TogglePhysics}
-            toggleLegendRef={toggleLegendRef}
-            showLegendStateRef={showLegendStateRef}
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}
             reset={Reset}
@@ -696,13 +723,18 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
                }
                highlightEdges={(edgeType) =>
-                  HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
+                  HighlightEdges(
+                     edgeType,
+                     highlightedNodes,
+                     graphData,
+                     edgeOptions,
+                     highlightedEdges
+                  )
                }
                hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
-               legendData={getLegendData(objectTypeCount, theme, edgeOptions)}
-               onMount={legendMount}
-               setShowLegendRef={toggleLegendRef}
-               legendStateRef={showLegendStateRef}
+               legendData={legendData}
+               visTheme={theme}
+               applyTheme={applyTheme}
             />
          </Stack>
 
@@ -712,7 +744,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             prev={() => Prev(glmNetwork, highlightedNodes, counter)}
             next={() => Next(glmNetwork, highlightedNodes, counter)}
          />
-      </Box>
+      </div>
    );
 };
 

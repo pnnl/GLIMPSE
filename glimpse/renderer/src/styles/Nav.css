@@ -1,13 +1,6 @@
-.title {
-   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-   font-weight: 400;
-   font-size: 3rem;
-   line-height: 1.2;
-   letter-spacing: 0em;
-   overflow: hidden;
-   text-overflow: ellipsis;
-   white-space: nowrap;
-   display: block;
+.nav-logo {
+   height: auto;
+   width: 12rem;
 }
 
 .header-btn {
@@ -24,5 +17,5 @@
 }
 
 .header-btn:hover {
-   background-color: #b25a00;
+   background-color: #45AB48;
 }
