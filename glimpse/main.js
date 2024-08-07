@@ -16,9 +16,11 @@ const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
-require("electron-reload")(__dirname, {
-   electron: path.join(__dirname, "node_modules", ".bin", "electron"),
-});
+if (!app.isPackaged) {
+   require("electron-reload")(__dirname, {
+      electron: path.join(__dirname, "node_modules", ".bin", "electron"),
+   });
+}
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
@@ -26,9 +28,9 @@ const socket = io("http://127.0.0.1:5000");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
+let rootDir = __dirname;
 
-const rootDir = __dirname;
-// const rootDir = process.resourcesPath;
+if (app.isPackaged) rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -230,7 +232,7 @@ const makeWindow = () => {
       height: 900,
       minWidth: 1250,
       minHeight: 750,
-      icon: path.join(__dirname, "assets", "HAGEN-GLIMPSE_color_icon"),
+      icon: "./assets/GLIMPSE_color_icon.ico",
       backgroundColor: "white",
       autoHideMenuBar: false,
       show: false,
@@ -242,12 +244,9 @@ const makeWindow = () => {
       },
    });
 
-   // mainWindow.setOverlayIcon(
-   //    nativeImage.createFromPath(
-   //       path.join(__dirname, "assets", "NSD_2294_BRAND_HAGEN-GLIMPSE_final_color_icon.png")
-   //    ),
-   //    "GLIMPSE TOOL"
-   // );
+   mainWindow.setIcon(
+      nativeImage.createFromPath(path.join(__dirname, "assets", "GLIMPSE_color_icon.ico"))
+   );
 
    const menu = Menu.buildFromTemplate([
       {
@@ -378,6 +377,7 @@ const makeSplashWindow = () => {
       resizable: false,
       movable: true,
       roundedCorners: true,
+      icon: "./assets/GLIMPSE_color_icon.ico",
    });
 
    splashWindow.loadFile("./splash_window/splash-window.html");

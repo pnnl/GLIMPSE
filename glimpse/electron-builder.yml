@@ -4,7 +4,6 @@ win:
       - target: nsis
         arch:
            - x64
-           - ia32
 
 asar: true
 
@@ -16,7 +15,4 @@ extraResources:
 nsis:
    oneClick: false
    allowToChangeInstallationDirectory: true
-# mac:
-#    target:
-#       - target: dmg
-#         arch: univeral
+   installerIcon: ./assets/GLIMPSE_white_icon.ico

@@ -331,15 +331,18 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             id: `${nodeID}`,
             label: `${nodeID}`,
             group: node_types[nodeType],
+            attributes: {
+               id: `${nodeID}`,
+            },
             level:
                "level" in nodesOfsameType[0].attributes
                   ? nodesOfsameType[0].attributes.level
                   : undefined,
          });
 
-         const title = getTitle(graphData.nodes.get(addedNodeID));
          const addedNode = graphData.nodes.get(addedNodeID);
-         addedNode.title = title;
+         addedNode.title =
+            "Object Type: " + node_types[nodeType] + "\n" + getTitle(addedNode.attributes);
          objectTypeCount.nodes[addedNode.group]++;
          graphData.nodes.update(addedNode);
 

@@ -40,9 +40,9 @@ const About = ({ show, close }) => {
                   <ul>
                      <li>
                         Before uploading JSON files use the custom theme by clicking on themes at
-                        the on the top left menu items. The custome theme mode will allow you to
-                        also supply a custom.theme.json file with your JSON uplaod. If not the tool
-                        will still visualize your file.
+                        the on the top left menu items. The custom theme mode will allow you to also
+                        supply a custom.theme.json file with your JSON upload. If not the tool will
+                        still visualize your file.
                      </li>
                      <li>Each node or edge in the legend can be double clicked for highlighting</li>
                      <li>Navigate through each highlighted Node with the Prev and Next buttons</li>
@@ -55,7 +55,7 @@ const About = ({ show, close }) => {
                         network to be manipulated by the pointer
                      </li>
                      <li>
-                        Double clickin gon a node in the visualization will show a edit node form
+                        Double clicking on a node in the visualization will show a edit node form
                         that will allow you to edit that nodes attributes
                      </li>
                      <li>
@@ -63,7 +63,7 @@ const About = ({ show, close }) => {
                         the power grid model (Will show a filler plot for now)
                      </li>
                      <li>
-                        The Show Stats Button will diplay a couple of summary statistics on the
+                        The Show Stats Button will display a couple of summary statistics on the
                         current visualization
                      </li>
                      <li>
@@ -81,17 +81,17 @@ const About = ({ show, close }) => {
                         that type.
                      </li>
                      <li>
-                        Righ clicking on the node or edge types in the legend will show a context
+                        Right clicking on the node or edge types in the legend will show a context
                         menu and by selecting the edit theme button a movable form will show. This
                         form contains options to change the nodes color, shape, size, and image if
-                        selcting the circular image shape. You will also be able to change a edge
+                        selecting the circular image shape. You will also be able to change a edge
                         type's color and width.
                      </li>
                      <li>
-                        Any style changes done can be saved and exported to a custome.theme.json
-                        file by selecting export theme in the themese file menu at the top of the
-                        tool. This file can then be re-uploaded with any GLIMPSE compatible file
-                        that those themes apply to.
+                        Any style changes done can be saved and exported to a custom.theme.json file
+                        by selecting export theme in the themes file menu at the top of the tool.
+                        This file can then be re-uploaded with any GLIMPSE compatible file that
+                        those themes apply to.
                      </li>
                   </ul>
                </div>
