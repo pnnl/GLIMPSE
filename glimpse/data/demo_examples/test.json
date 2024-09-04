@@ -24,61 +24,61 @@
       {
          "objectType": "G",
          "elementType": "node",
-         "attributes":{
-            "id":"green_2"
+         "attributes": {
+            "id": "green_2"
          }
       },
       {
          "objectType": "B",
          "elementType": "node",
-         "attributes":{
-            "id":"blue_2"
+         "attributes": {
+            "id": "blue_2"
          }
       },
       {
-         "objectType":"M",
-         "elementType":"edge",
-         "attributes":{
+         "objectType": "M",
+         "elementType": "edge",
+         "attributes": {
             "id": "red_40-green_2",
             "from": "red_40",
             "to": "green_2"
          }
       },
       {
-         "objectType":"C",
-         "elementType":"edge",
-         "attributes":{
+         "objectType": "C",
+         "elementType": "edge",
+         "attributes": {
             "id": "green_2-blue_2",
             "from": "green_2",
             "to": "blue_2"
          }
       },
       {
-         "objectType":"Y",
-         "elementType":"edge",
-         "attributes":{
+         "objectType": "Y",
+         "elementType": "edge",
+         "attributes": {
             "id": "blue_1-green_1",
             "from": "blue_1",
             "to": "green_1"
          }
       },
       {
-         "objectType":"M",
-         "elementType":"edge",
-         "attributes":{
+         "objectType": "M",
+         "elementType": "edge",
+         "attributes": {
             "id": "red_40-blue_2",
             "from": "red_40",
             "to": "blue_2"
          }
-      },      
+      },
       {
-         "objectType":"Y",
-         "elementType":"edge",
-         "attributes":{
+         "objectType": "Y",
+         "elementType": "edge",
+         "attributes": {
             "id": "green_2-green_1",
             "from": "green_2",
             "to": "green_1"
          }
-      }   
+      }
    ]
 }

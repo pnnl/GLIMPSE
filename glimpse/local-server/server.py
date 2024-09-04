@@ -2,9 +2,12 @@ from flask import Flask, request as req
 from engineio.async_drivers import gevent
 from flask_socketio import SocketIO
 import networkx as nx
+import pprint
 import glm
 import ntpath
 import json
+
+GRAPH = nx.MultiGraph()
 
 # return the file name only
 def path_leaf(path: str):
@@ -25,26 +28,32 @@ def dict2json( glm_dict: dict ):
    glm_json = json.dumps( glm_dict, indent = 3 )
    return glm_json
 
-def get_nx_graph(file_data: dict):
-   graph = nx.MultiGraph()
+def create_graph(data: dict, set_communities=False):
+   GRAPH.clear()
 
-   for obj in file_data["objects"]:
+   for obj in data["objects"]:
       if obj["elementType"] == "node":
-         graph.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
+         GRAPH.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
       else:
-         graph.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
-                        
-   return graph
+         GRAPH.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
 
-def get_modularity(graph):
-   modularity = nx.community.modularity(graph, nx.community.label_propagation_communities(graph))
+   if set_communities : 
+      partition = nx.algorithms.community.louvain_communities(G=GRAPH, max_level=5)
+
+      community_ids = {node: community_id for community_id, community in enumerate(partition) for node in community}
+
+      nx.set_node_attributes(GRAPH, community_ids, "glimpse_community_id")
+      return nx.get_node_attributes(G=GRAPH, name="glimpse_community_id")
+
+def get_modularity():
+   modularity = nx.community.modularity(GRAPH, nx.community.label_propagation_communities(GRAPH))
    return modularity
 
 # long computation with larger graphs
-def get_avg_betweenness_centrality(graph):
+def get_avg_betweenness_centrality():
    avg = 0
-   myk = int(graph.number_of_nodes()*0.68)
-   betweenness_centrality_dict = nx.betweenness_centrality(graph, k=myk)
+   myk = int(GRAPH.number_of_nodes()*0.68)
+   betweenness_centrality_dict = nx.betweenness_centrality(GRAPH, k=myk)
    
    for centrality in betweenness_centrality_dict.values():
       avg += centrality
@@ -54,7 +63,8 @@ def get_avg_betweenness_centrality(graph):
 #------------------------------ Server ------------------------------#
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
+socketio = SocketIO(app)
+# socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 #------------------------------ Server Routes ------------------------------#
 @app.route("/")
@@ -68,17 +78,26 @@ def glm_to_json():
    
    return dict2json(glm_dict)
 
-@app.route("/getstats", methods=["POST"])
+@app.route("/create-nx-graph", methods=["POST"])
+def create_nx_graph(): 
+   graphData = req.get_json()
+
+   if isinstance(graphData, dict):
+      create_graph(graphData)
+      return '', 204
+   elif isinstance(graphData, list):
+      #index 0 contains the data and index 1 contains a bool value whether to set the community IDs as well
+      community_ids = create_graph(data=graphData[0], set_communities=graphData[1])
+      return community_ids
+      
+@app.route("/get-stats", methods=["GET"])
 def get_stats():
-   data = req.get_json()
-   graph = get_nx_graph(data)
-   
    summary_stats = {
-      '#Nodes': graph.number_of_nodes(),
-      '#Edges': graph.number_of_edges(),
-      '#ConnectedComponets': nx.number_connected_components(graph),
-      'modularity': get_modularity(graph),
-      'avgBetweennessCentrality': get_avg_betweenness_centrality(graph)
+      '#Nodes': GRAPH.number_of_nodes(),
+      '#Edges': GRAPH.number_of_edges(),
+      '#ConnectedComponets': nx.number_connected_components(GRAPH),
+      'modularity': get_modularity(),
+      'avgBetweennessCentrality': get_avg_betweenness_centrality()
    }
    
    return summary_stats
@@ -106,4 +125,4 @@ def delete_edge(edgeID):
 
 #------------------------------ Start WebSocket Server ------------------------------#
 if __name__ == "__main__":
-   socketio.run(app, log_output=True)
+   socketio.run(app, debug=True, log_output=True)

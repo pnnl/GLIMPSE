@@ -9,14 +9,14 @@ export const App = () => {
    const [fileData, setFileData] = useState({ loading: false });
    const [filesUploaded, setFilesUploaded] = useState(false);
 
+   const showHome = () => {
+      setFilesUploaded(false);
+      setFileData({ loading: false });
+   };
+
    return (
       <>
-         <Nav
-            showHome={() => {
-               setFilesUploaded(false);
-               setFileData({ loading: false });
-            }}
-         />
+         <Nav showHome={showHome} />
          {!filesUploaded && (
             <FileUpload
                onFileUpload={(paths) => handleFileUpload(paths, setFileData, setFilesUploaded)}

@@ -4,7 +4,7 @@
   width: 125px;
   border-radius: 50%;
   background: conic-gradient(#45AB48 1deg, #333 0deg);
-  display: flex;
+  display: none;
   left: 35%;
   top: 50%;
   align-items: center;

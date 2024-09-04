@@ -10,6 +10,7 @@ import Legend from "./Legend";
 import ContextMenu from "./ContextMenu";
 import NewNodeForm from "./NewNodeForm";
 import VisActionsDial from "./VisActionsDial";
+import axios from "axios";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 import {
    getTitle,
@@ -28,6 +29,7 @@ import {
    Prev,
    rotateCW,
    rotateCCW,
+   getRandomColor,
 } from "../utils/graphUtils";
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
@@ -39,10 +41,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const edgeTypes = Object.keys(theme.edgeOptions);
 
    const edgeOptions = theme.edgeOptions;
-   let glmNetwork = null; // global network varibale
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
+   let glmNetwork = null; // global network varibale
 
    const addedOverlayObjects = {
       nodes: [],
@@ -109,7 +111,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    /**
-    * Turns phyics on or off
+    * Turns physics on or off
     * @param {bool} toggle - True turns on physics, false turns off physics
     */
    const TogglePhysics = (toggle) => {
@@ -117,8 +119,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       else glmNetwork.setOptions({ physics: { enabled: false } });
    };
 
-   /* ------------------------ Establish Network ------------------------ */
-
+   /* ---------------------------- Establish Network --------------------------- */
    setGraphData(
       graphData,
       dataToVis,
@@ -130,19 +131,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       edgeOptions,
       graphOptions
    );
-
-   /* ------------------------ End Establish Network ------------------------ */
-
-   /* ------------------------ Establish Legend Data ------------------------ */
-
+   /* ---------------------------- Establish Network --------------------------- */
    getLegendData(objectTypeCount, theme, edgeOptions, legendData);
-
-   /* ------------------------ End Establish Legend Data ------------------------ */
 
    console.log("Number of Nodes: " + graphData.nodes.length);
    console.log("Number of Edges: " + graphData.edges.length);
 
-   /* ------------------------ Recive Sate Variables from Children ------------------------ */
+   /* ------------------ Receive Sate Variables from Children ------------------ */
 
    // initiate variables that reference the NodePopup child component state and set state variables
    let seNode;
@@ -240,6 +235,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   id: microgrid.name,
                   label: microgrid.name,
                   group: "microgrid",
+                  title: `ObjectType: microgrid\nname: ${microgrid.name}`,
                })[0]
             );
 
@@ -250,9 +246,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   microgrid[type].forEach((nodeID) => {
                      addedOverlayObjects.edges.push(
                         graphData.edges.add({
-                           id: `parentChild:${microgrid.name}-${nodeID}`,
+                           id: `${microgrid.name}-${nodeID}`,
                            from: microgrid.name,
                            to: nodeID,
+                           title: `objectType: parentChild\nname: ${microgrid.name}-${nodeID}\nfrom: ${microgrid.name}\nto: ${nodeID}`,
                            color: { inherit: true },
                            type: type,
                            width: 0.15,
@@ -272,6 +269,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      id: comm_node.name,
                      label: comm_node.name,
                      group: "communication_node",
+                     title: `ObjectType: communication_node\nname: ${comm_node.name}`,
                   })[0]
                );
 
@@ -282,9 +280,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      comm_node[type].forEach((nodeID) => {
                         addedOverlayObjects.edges.push(
                            graphData.edges.add({
-                              id: `parentChild:${comm_node.name}-${nodeID}`,
+                              id: `${comm_node.name}-${nodeID}`,
                               from: comm_node.name,
                               to: nodeID,
+                              title: `objectType: parentChild\nname: ${comm_node.name}-${nodeID}\nfrom: ${comm_node.name}\nto: ${nodeID}`,
                               type: type,
                               color: { inherit: true },
                               width: 0.15,
@@ -460,7 +459,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
-   /* ------------------------ Establish Listeners Between Main process and renderer process ------------------------ */
+   /* ------ Establish Listeners Between Main process and renderer process ----- */
    useEffect(() => {
       const removeListenerArr = [];
       removeListenerArr.push(window.glimpseAPI.onShowVisOptions(toggleVisOptions));
@@ -525,121 +524,170 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          graphOptions.physics.enabled = true;
       };
    }, []);
-   /* ------------------------ End Establish Listeners Between Main process and renderer process ------------------------ */
+   /* ---- End Establish Listeners Between Main process and renderer process --- */
 
+   /* --------------------------- visualization hook --------------------------- */
    useEffect(() => {
-      if ("x" in graphData.nodes.get()[0] && "y" in graphData.nodes.get()[0]) {
-         graphOptions.physics.stabilization.enabled = false;
-         graphOptions.physics.enabled = false;
-         graphOptions.groups = theme.groups;
-         document.getElementById("circularProgress").style.display = "none";
-         glmNetwork = new Network(container.current, graphData, graphOptions);
-      } else {
-         if (
-            graphData.nodes.length > 151 &&
-            graphData.nodes.length <= 300 &&
-            graphData.edges.length >= 7000
-         ) {
-            graphOptions.physics.solver = "forceAtlas2Based";
-            // graphOptions.nodes.scaling.max = 100;
-            // graphOptions.nodes.scaling.label.max = 90;
-         } else if (graphData.nodes.length > 300 && graphData.edges.length < 7000) {
-            graphOptions.physics.timestep = 0.72;
-            graphOptions.physics.barnesHut.gravitationalConstant = -100000;
-            graphOptions.physics.barnesHut.springConstant = 0.85;
-            graphOptions.physics.barnesHut.centralGravity = 0.1;
-            graphOptions.physics.barnesHut.springLength = 95;
-            graphOptions.physics.barnesHut.avoidOverlap = 0.6;
-            graphOptions.physics.barnesHut.damping = 0.1;
-            // graphOptions.nodes.scaling.max = 100;
-            // graphOptions.nodes.scaling.label.max = 90;
+      const circularProgressBar = document.getElementById("circularProgress");
+      const circularProgressValue = document.getElementById("progressValue");
+      let establishCommunities = false;
+
+      const establishNetworkxGraph = async (data) => {
+         try {
+            const res = await axios.post("http://127.0.0.1:5000/create-nx-graph", data, {
+               headers: "application/json",
+            });
+
+            if (res.status === 200) {
+               const communityIDs = res.data;
+               const updatedNodes = graphData.nodes.map((node) => {
+                  node.communityID = communityIDs[node.id];
+                  return node;
+               });
+
+               graphData.nodes.update(updatedNodes);
+               return [...new Set(graphData.nodes.map((node) => node.communityID))];
+            }
+         } catch (err) {
+            console.log(err);
+         }
+      };
+
+      const initializeGraph = async () => {
+         let communityIDsSet = null;
+
+         if (graphData.edges.length >= 6800) {
+            communityIDsSet = await establishNetworkxGraph([GLIMPSE_OBJECT, true]);
+            establishCommunities = true;
+         } else {
+            establishNetworkxGraph(GLIMPSE_OBJECT);
          }
 
-         // create network
-         graphOptions.groups = theme.groups;
-         glmNetwork = new Network(container.current, graphData, graphOptions);
+         if ("x" in graphData.nodes.get()[0] && "y" in graphData.nodes.get()[0]) {
+            graphOptions.physics.enabled = false;
+            graphOptions.groups = theme.groups;
+            circularProgressBar.style.display = "none";
+            glmNetwork = new Network(container.current, graphData, graphOptions);
+         } else {
+            if (
+               graphData.nodes.length > 151 &&
+               graphData.nodes.length <= 300 &&
+               graphData.edges.length >= 7000
+            ) {
+               graphOptions.physics.solver = "forceAtlas2Based";
+            }
 
-         glmNetwork.on("stabilizationProgress", (params) => {
-            /* Math for determining the radius of the circular progress bar based on the stabilization progress */
-            const maxWidth = 360;
-            const minWidth = 1;
-            const widthFactor = params.iterations / params.total;
-            const width = Math.max(minWidth, maxWidth * widthFactor);
-            document.getElementById(
-               "circularProgress"
-            ).style.background = `conic-gradient(#45AB48 ${width}deg, #333 0deg)`;
-            document.getElementById("progressValue").innerText =
-               Math.round(widthFactor * 100) + "%";
+            graphOptions.groups = theme.groups;
+            glmNetwork = new Network(container.current, graphData, graphOptions);
+
+            // Create clusters
+            if (establishCommunities) {
+               for (let i = 0; i < communityIDsSet.length; i++) {
+                  let communityID = communityIDsSet[i];
+
+                  glmNetwork.cluster({
+                     joinCondition: (childOptions) => {
+                        return childOptions.communityID === communityID;
+                     },
+                     processProperties: (clusterOptions, childNodes, childEdges) => {
+                        let totalMass = 0;
+                        for (let i = 0; i < childNodes.length; i++) {
+                           totalMass += childNodes[i].mass;
+                        }
+                        clusterOptions.mass = totalMass;
+                        return clusterOptions;
+                     },
+                     clusterNodeProperties: {
+                        id: `Community: ${communityID}`,
+                        borderWidth: 3,
+                        shape: "hexagon",
+                        label: `Community: ${communityID}`,
+                        color: getRandomColor(),
+                     },
+                  });
+               }
+            }
+
+            glmNetwork.on("stabilizationProgress", (params) => {
+               circularProgressBar.style.display = "flex";
+               /* Math for determining the radius of the circular progress bar based on the stabilization progress */
+               const maxWidth = 360;
+               const minWidth = 1;
+               const widthFactor = params.iterations / params.total;
+               const width = Math.max(minWidth, maxWidth * widthFactor);
+               circularProgressBar.style.background = `conic-gradient(#45AB48 ${width}deg, #333 0deg)`;
+               circularProgressValue.innerText = Math.round(widthFactor * 100) + "%";
+            });
+
+            glmNetwork.once("stabilizationIterationsDone", () => {
+               /* Once stabilization is done the circular progress with display 100% for half a second then hide */
+               circularProgressBar.style.background = "conic-gradient(#45AB48 360deg, #333 0deg)";
+               circularProgressValue.innerText = "100%";
+               circularProgressBar.style.opacity = 0.7;
+
+               /* set physics to false for better performance when stabilization is done */
+               glmNetwork.setOptions({ physics: { enabled: false } });
+
+               setTimeout(() => {
+                  circularProgressBar.style.display = "none";
+               }, 500);
+            });
+         }
+
+         glmNetwork.on("doubleClick", (params) => {
+            if (params.nodes[0] === undefined) {
+               alert("Double click on a node to edit.");
+            } else {
+               /* Set the state of the NodePopup component for editing of the selected node's attributes */
+               seNode(graphData.nodes.get(params.nodes[0]));
+               setOpenNodePopup(true);
+            }
          });
 
-         glmNetwork.once("stabilizationIterationsDone", () => {
-            /* Once stabilization is done the circular progress with display 100% for half a second then hide */
-            document.getElementById("circularProgress").style.background =
-               "conic-gradient(#45AB48 360deg, #333 0deg)";
-            document.getElementById("progressValue").innerText = "100%";
-            document.getElementById("circularProgress").style.opacity = 0.7;
-
-            /* set physics to false for better performance when stabalization is done */
-            glmNetwork.setOptions({ physics: { enabled: false } });
-
-            setTimeout(() => {
-               document.getElementById("circularProgress").style.display = "none";
-            }, 500);
+         /* Display the child Context menu component to hide an edge or edge types */
+         glmNetwork.on("oncontext", (params) => {
+            if (
+               glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined &&
+               glmNetwork.getNodeAt(params.pointer.DOM) === undefined
+            ) {
+               setContextMenuData({
+                  edgeID: glmNetwork.getEdgeAt(params.pointer.DOM),
+               });
+            } else if (glmNetwork.getNodeAt(params.pointer.DOM) !== undefined) {
+               setContextMenuData({
+                  nodeID: glmNetwork.getNodeAt(params.pointer.DOM),
+               });
+            } else {
+               setContextMenuData({});
+            }
          });
-      }
 
-      glmNetwork.on("doubleClick", (params) => {
-         if (params.nodes[0] === undefined) {
-            alert("Double click on a node to edit.");
-         } else {
-            /* Set the state of the NodePopup component for editing of the selected node's attributes */
-            seNode(graphData.nodes.get(params.nodes[0]));
-            setOpenNodePopup(true);
-         }
-      });
+         glmNetwork.setOptions({
+            configure: {
+               filter: (option, path) => {
+                  if (path.indexOf("physics") !== -1) return true;
+                  if (path.indexOf("smooth") !== -1 || option === "smooth") return true;
 
-      /* Display the child Context menu component to hide an edge or edge types */
-      glmNetwork.on("oncontext", (params) => {
-         if (
-            glmNetwork.getEdgeAt(params.pointer.DOM) !== undefined &&
-            glmNetwork.getNodeAt(params.pointer.DOM) === undefined
-         ) {
-            setContextMenuData({
-               edgeID: glmNetwork.getEdgeAt(params.pointer.DOM),
-            });
-         } else if (glmNetwork.getNodeAt(params.pointer.DOM) !== undefined) {
-            setContextMenuData({
-               nodeID: glmNetwork.getNodeAt(params.pointer.DOM),
-            });
-         } else {
-            setContextMenuData({});
-         }
-      });
-
-      glmNetwork.setOptions({
-         configure: {
-            filter: (option, path) => {
-               if (path.indexOf("physics") !== -1) return true;
-               if (path.indexOf("smooth") !== -1 || option === "smooth") return true;
-
-               return false;
+                  return false;
+               },
+               container: document.getElementById("layout-form"),
             },
-            container: document.getElementById("layout-form"),
-         },
-         nodes: {
-            scaling: {
-               min: 5,
-               max: 75,
+            nodes: {
+               scaling: {
+                  min: 5,
+                  max: 75,
+               },
             },
-         },
-         edges: {
-            scaling: {
-               min: 5,
-               max: 20,
+            edges: {
+               scaling: {
+                  min: 5,
+                  max: 20,
+               },
             },
-         },
-      });
+         });
+      };
 
+      initializeGraph();
       // (async () => {
       //    const edgeToAnimate = graphData.edges.get("red_40-blue_2");
       //    for (;;) {
@@ -671,6 +719,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       //    }
       // })();
    });
+   /* ------------------------- End visualization hook ------------------------- */
 
    return (
       <div className="vis-wrapper">
@@ -707,7 +756,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}
             reset={Reset}
-            graphDataObj={GLIMPSE_OBJECT}
          />
 
          <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>

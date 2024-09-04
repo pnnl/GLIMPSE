@@ -16,6 +16,7 @@ import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
 import OverlayUpload from "./OverlayUpload";
 import StatsTableModal from "./StatsTableModal";
 import PlotModal from "./PlotModal";
+import axios from "axios";
 import { CustomFab } from "../utils/CustomComponents";
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
@@ -26,7 +27,6 @@ const ActionDrawer = ({
    attachOverlay,
    removeOverlay,
    reset,
-   graphDataObj,
 }) => {
    const nodes = getNodeIds();
    const [nodeID, setNodeID] = useState("");
@@ -67,8 +67,8 @@ const ActionDrawer = ({
     */
    const showStats = async () => {
       if (stats === null) {
-         const statsObj = await window.glimpseAPI.getStats(JSON.stringify(graphDataObj));
-         setStats(statsObj);
+         const response = await axios.get("http://127.0.0.1:5000/get-stats");
+         setStats(response.data);
          setShowTable(true);
       } else {
          setShowTable(true);

@@ -96,8 +96,8 @@ const glm2json = async (filePaths) => {
 
    if (res.ok) {
       const output = await res.json();
-
       const valid = checkIncludes(output);
+
       if (!valid) {
          return { alert: "One or more include files are missing!" };
       }
@@ -117,20 +117,6 @@ const validateThemeFile = (filepath) => {
    } else {
       const errorMsg = ajv.errorsText(validate.errors, { dataVar: "jsonData" });
       return { error: errorMsg };
-   }
-};
-
-const getGraphStats = async (data) => {
-   const res = await fetch("http://127.0.0.1:5000/getstats", {
-      method: "POST",
-      headers: {
-         "content-type": "application/json",
-      },
-      body: data,
-   });
-
-   if (res.ok) {
-      return await res.json();
    }
 };
 
@@ -346,21 +332,28 @@ const makeWindow = () => {
          .items)
          if (item.checked) return item.id;
    });
+
    ipcMain.handle("getConfig", () => {
       return fs.readFileSync(path.join(rootDir, "config", "appConfig.json"), { encoding: "utf-8" });
    });
+
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
-   ipcMain.handle("getStats", (e, dataObject) => getGraphStats(dataObject));
+
    ipcMain.handle("getPlot", () => sendPlot());
+
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
+
    ipcMain.handle("getThemeJsonData", (e, filepath) =>
       JSON.parse(fs.readFileSync(path.join(rootDir, "themes", filepath), { encoding: "utf-8" }))
    );
+
    ipcMain.handle("read-json-file", (e, filepath) =>
       JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }))
    );
    ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
+
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
+
    ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
 
    mainWindow.loadFile(path.join(__dirname, "renderer", "public", "index.html"));
@@ -385,28 +378,27 @@ const makeSplashWindow = () => {
 };
 
 const initiateServer = () => {
-   const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
-   if (fs.existsSync(serverPath)) {
-      try {
-         execFile(serverPath, (error, stdout, stderr) => {
-            if (error) throw error;
-            if (stderr) throw stderr;
-            console.log(stdout);
-         });
-      } catch (error) {
-         console.log(error);
-         return;
-      }
-   } else {
-      const python = spawn("python", ["./local-server/server.py"]);
-      python.stdout.on("data", function (data) {
-         console.log("data: ", data.toString("utf8"));
-      });
-
-      python.stderr.on("data", (data) => {
-         console.log(`log: ${data}`); // when error
-      });
-   }
+   // const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
+   // if (fs.existsSync(serverPath)) {
+   //    try {
+   //       execFile(serverPath, (error, stdout, stderr) => {
+   //          if (error) throw error;
+   //          if (stderr) throw stderr;
+   //          console.log(stdout);
+   //       });
+   //    } catch (error) {
+   //       console.log(error);
+   //       return;
+   //    }
+   // } else {
+   //    const python = spawn("python", ["./local-server/server.py"]);
+   //    python.stdout.on("data", function (data) {
+   //       console.log("data: ", data.toString("utf8"));
+   //    });
+   //    python.stderr.on("data", (data) => {
+   //       console.log(`log: ${data}`); // when error
+   //    });
+   // }
 };
 
 app.whenReady()

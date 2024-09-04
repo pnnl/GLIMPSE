@@ -46,7 +46,6 @@ contextBridge.exposeInMainWorld("glimpseAPI", {
       ipcRenderer.on("getGraphMetrics", () => callback());
       return () => ipcRenderer.removeAllListeners("getMetrics");
    },
-   getStats: (dataObject) => ipcRenderer.invoke("getStats", dataObject),
    json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData),
    glm2json: (paths) => ipcRenderer.invoke("glm2json", paths),
    getTheme: () => ipcRenderer.invoke("getSelectedTheme"),

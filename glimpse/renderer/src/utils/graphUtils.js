@@ -1,4 +1,15 @@
-import { DataSet } from "vis-data";
+/**
+ * Generates a random color in hexadecimal format.
+ * @returns A hexadecimal color
+ */
+export const getRandomColor = () => {
+   const letters = "0123456789ABCDEF";
+   let color = "#";
+
+   while (color.length < 7) color += letters[Math.floor(Math.random() * 16)];
+
+   return color;
+};
 
 /**
  * Converts an object of attributes from a node or edge to a string to be displayed
@@ -17,15 +28,6 @@ export const getTitle = (attributes) => {
 
 export const getHtmlLabel = (id, attributes) => {
    return `\t<b>${id}</b>\n\n` + getTitle(attributes);
-};
-
-const getRandomColor = () => {
-   const letters = "0123456789ABCDEF";
-   let color = "#";
-
-   while (color.length < 7) color += letters[Math.floor(Math.random() * 16)];
-
-   return color;
 };
 
 /**
@@ -524,6 +526,17 @@ export const setGraphData = (
    edgeOptions,
    graphOptions
 ) => {
+   /* 
+      acceptable keys object and its attributes ex:
+      {
+         "name" || "objectType": "load",
+         ...
+         "attributes": {
+            "name" || "id": "load_123",
+            ...
+         }
+      } 
+   */
    const keys = ["id", "objectType", "name"];
    const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);
 
@@ -533,8 +546,10 @@ export const setGraphData = (
 
       const newObjs = objs.map((obj) => {
          const attributes = obj.attributes;
+         // get the key that is at the top of the object which can be "name" or "objectType"
          const nameForObjType = keys.find((key) => key in obj);
          const objectType = obj[nameForObjType];
+         // get the key that is used for the objects id which can be of course "id" or "name"
          const nameForObjID = keys.find((key) => key in attributes);
 
          const nodeID = attributes[nameForObjID];
@@ -567,7 +582,7 @@ export const setGraphData = (
                if (objectType in objectTypeCount.nodes) objectTypeCount.nodes[objectType]++;
                else objectTypeCount.nodes[objectType] = 1;
 
-               if (!("elemetType" in obj))
+               if (!("elementType" in obj))
                   GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
                else GLIMPSE_OBJECT.objects.push(obj);
 
@@ -590,7 +605,7 @@ export const setGraphData = (
             obj = renameKeys({ name: "objectType" }, obj);
             obj.attributes = renameKeys({ name: "id" }, obj.attributes);
 
-            if (!("elemetType" in obj))
+            if (!("elementType" in obj))
                GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "node" });
             else GLIMPSE_OBJECT.objects.push(obj);
 
