@@ -2,24 +2,17 @@ from flask import Flask, request as req
 from engineio.async_drivers import gevent
 from flask_socketio import SocketIO
 import networkx as nx
-import pprint
 import glm
-import ntpath
 import json
+from os import path
 
 GRAPH = nx.MultiGraph()
-
-# return the file name only
-def path_leaf(path: str):
-   head, tail = ntpath.split(path)
-   return tail or ntpath.basename(head)
 
 #Convert glm file to python dictionary
 def glm_to_dict( file_paths: list ):
    glm_dicts = {}
-
-   for path in file_paths:
-      glm_dicts[ path_leaf(path).split(".")[0] + ".json" ] = glm.load(path)
+   for glm_path in file_paths:
+      glm_dicts[ path.basename(glm_path).split(".")[0] + ".json" ] = glm.load(glm_path)
 
    return glm_dicts
 
@@ -51,14 +44,13 @@ def get_modularity():
 
 # long computation with larger graphs
 def get_avg_betweenness_centrality():
-   avg = 0
-   myk = int(GRAPH.number_of_nodes()*0.68)
-   betweenness_centrality_dict = nx.betweenness_centrality(GRAPH, k=myk)
+   my_k = int(GRAPH.number_of_nodes()*0.68)
+   betweenness_centrality_dict = nx.betweenness_centrality(GRAPH, k=my_k)
    
-   for centrality in betweenness_centrality_dict.values():
-      avg += centrality
+   centrality_sum = sum(betweenness_centrality_dict.values())
+   avg = centrality_sum/len(betweenness_centrality_dict)
 
-   return avg/len(betweenness_centrality_dict)
+   return avg
         
 #------------------------------ Server ------------------------------#
 

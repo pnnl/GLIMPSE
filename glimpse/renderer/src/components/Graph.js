@@ -557,9 +557,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          let communityIDsSet = null;
 
          if (graphData.edges.length >= 6800) {
+            // This will result in a array of unique community IDs and establish the networkx object in server
             communityIDsSet = await establishNetworkxGraph([GLIMPSE_OBJECT, true]);
             establishCommunities = true;
+            graphOptions.physics.barnesHut.damping = 0.7;
          } else {
+            // this will create and establish the networkx object in the
             establishNetworkxGraph(GLIMPSE_OBJECT);
          }
 
@@ -590,11 +593,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                         return childOptions.communityID === communityID;
                      },
                      processProperties: (clusterOptions, childNodes, childEdges) => {
-                        let totalMass = 0;
-                        for (let i = 0; i < childNodes.length; i++) {
-                           totalMass += childNodes[i].mass;
-                        }
-                        clusterOptions.mass = totalMass;
+                        clusterOptions.value = childNodes.length;
+                        clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
+                        clusterOptions.mass = childNodes.length;
                         return clusterOptions;
                      },
                      clusterNodeProperties: {
@@ -602,11 +603,19 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                         borderWidth: 3,
                         shape: "hexagon",
                         label: `Community: ${communityID}`,
-                        color: getRandomColor(),
+                        group: communityID,
                      },
                   });
                }
             }
+
+            glmNetwork.on("selectNode", (params) => {
+               if (params.nodes.length === 1) {
+                  if (glmNetwork.isCluster(params.nodes[0]) === true) {
+                     glmNetwork.openCluster(params.nodes[0]);
+                  }
+               }
+            });
 
             glmNetwork.on("stabilizationProgress", (params) => {
                circularProgressBar.style.display = "flex";
