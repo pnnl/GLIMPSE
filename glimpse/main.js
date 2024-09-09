@@ -378,27 +378,27 @@ const makeSplashWindow = () => {
 };
 
 const initiateServer = () => {
-   // const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
-   // if (fs.existsSync(serverPath)) {
-   //    try {
-   //       execFile(serverPath, (error, stdout, stderr) => {
-   //          if (error) throw error;
-   //          if (stderr) throw stderr;
-   //          console.log(stdout);
-   //       });
-   //    } catch (error) {
-   //       console.log(error);
-   //       return;
-   //    }
-   // } else {
-   //    const python = spawn("python", ["./local-server/server.py"]);
-   //    python.stdout.on("data", function (data) {
-   //       console.log("data: ", data.toString("utf8"));
-   //    });
-   //    python.stderr.on("data", (data) => {
-   //       console.log(`log: ${data}`); // when error
-   //    });
-   // }
+   const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
+   if (fs.existsSync(serverPath)) {
+      try {
+         execFile(serverPath, (error, stdout, stderr) => {
+            if (error) throw error;
+            if (stderr) throw stderr;
+            console.log(stdout);
+         });
+      } catch (error) {
+         console.log(error);
+         return;
+      }
+   } else {
+      const python = spawn("python", ["./local-server/server.py"]);
+      python.stdout.on("data", function (data) {
+         console.log("data: ", data.toString("utf8"));
+      });
+      python.stderr.on("data", (data) => {
+         console.log(`log: ${data}`); // when error
+      });
+   }
 };
 
 app.whenReady()
