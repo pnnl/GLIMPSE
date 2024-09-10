@@ -58,7 +58,10 @@ app = Flask(__name__)
 socketio = SocketIO(app)
 # socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
+#------------------------------ Server ------------------------------#
+
 #------------------------------ Server Routes ------------------------------#
+
 @app.route("/")
 def hello():
    return {"api": "GLIMPSE flask backend"}
@@ -94,7 +97,10 @@ def get_stats():
    
    return summary_stats
 
-#------------------ Socket Events ------------------#
+#------------------------------ Server Routes ------------------------------#
+
+#------------------------------ Socket Events ------------------------------#
+
 @socketio.on("glimpse")
 def glimpse(data):
    socketio.emit("update-data", data)
@@ -115,6 +121,11 @@ def delete_node(nodeID):
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
 
-#------------------------------ Start WebSocket Server ------------------------------#
+#------------------------------ Socket Events ------------------------------#
+
+#-------------------------- Start WebSocket Server --------------------------#
+
 if __name__ == "__main__":
    socketio.run(app, debug=True, log_output=True)
+   
+#-------------------------- Start WebSocket Server --------------------------#

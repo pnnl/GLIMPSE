@@ -657,50 +657,51 @@ div.vis-network div.vis-navigation div.vis-button:hover {
 
 div.vis-network div.vis-navigation div.vis-button:active {
    border: none;
-  box-shadow: 0 0 1px 3px rgba(51, 51, 51, 0.95);
+   box-shadow: 0 0 1px 3px rgba(51, 51, 51, 0.95);
 }
 
 div.vis-network div.vis-navigation div.vis-button.vis-up {
-  background-image: url("../../public/imgs/up_arrow.png");
-  background-size: contain;
-  bottom: 50px;
-  left: 55px;
+   background-image: url("../../public/imgs/up_arrow.png");
+   background-size: contain;
+   bottom: 50px;
+   left: 55px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-down {
-  background-image: url("../../public/imgs/down_arrow.png");
-  background-size: contain;
-  bottom: 10px;
-  left: 55px;
+   background-image: url("../../public/imgs/down_arrow.png");
+   background-size: contain;
+   bottom: 10px;
+   left: 55px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-left {
-  background-image: url("../../public/imgs/left_arrow.png");
-  background-size: contain;
-  bottom: 10px;
-  left: 15px;
+   background-image: url("../../public/imgs/left_arrow.png");
+   background-size: contain;
+   bottom: 10px;
+   left: 15px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-right {
    background-image: url("../../public/imgs/right_arrow.png");
    background-size: contain;
-  bottom: 10px;
-  left: 95px;
+   bottom: 10px;
+   left: 95px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-zoomIn {
-      background-image: url("../../public/imgs/zoom_in.png");
+   background-image: url("../../public/imgs/zoom_in.png");
    background-size: cover;
-  bottom: 10px;
-  right: 15px;
+   bottom: 10px;
+   right: 15px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-zoomOut {
-      background-image: url("../../public/imgs/zoom_out.png");
+   background-image: url("../../public/imgs/zoom_out.png");
    background-size: cover;
-  bottom: 10px;
-  right: 55px;
+   bottom: 10px;
+   right: 55px;
 }
 div.vis-network div.vis-navigation div.vis-button.vis-zoomExtends {
    background-image: url("../../public/imgs/zoom_extends.png");
    background-size: cover;
-  bottom: 50px;
-  right: 15px;
+   border-radius: 5px;
+   bottom: 50px;
+   right: 15px;
 }
 
 div.vis-network div.vis-manipulation {

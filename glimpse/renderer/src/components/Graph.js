@@ -1,36 +1,35 @@
-import React, { useEffect, useRef } from "react";
 import { Box, Stack } from "@mui/material";
-import { Network } from "vis-network";
-import { DataSet } from "vis-data";
-import ActionDrawer from "./ActionDrawer";
-import NodePopup from "./NodePopup";
-import "../styles/vis-network.css";
-import "../styles/Graph.css";
-import Legend from "./Legend";
-import ContextMenu from "./ContextMenu";
-import NewNodeForm from "./NewNodeForm";
-import VisActionsDial from "./VisActionsDial";
 import axios from "axios";
-const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
+import React, { useEffect, useRef } from "react";
+import { DataSet } from "vis-data";
+import { Network } from "vis-network";
+import "../styles/Graph.css";
+import "../styles/vis-network.css";
 import {
-   getTitle,
-   setGraphData,
    Export,
    getLegendData,
-   NodeFocus,
+   getTitle,
    hideEdge,
    hideEdges,
-   updateNode,
-   showAttributes,
    hideObjects,
    HighlightEdges,
    HighlightGroup,
    Next,
+   NodeFocus,
    Prev,
-   rotateCW,
    rotateCCW,
-   getRandomColor,
+   rotateCW,
+   setGraphData,
+   showAttributes,
+   updateNode,
 } from "../utils/graphUtils";
+import ActionDrawer from "./ActionDrawer";
+import ContextMenu from "./ContextMenu";
+import Legend from "./Legend";
+import NewNodeForm from "./NewNodeForm";
+import NodePopup from "./NodePopup";
+import VisActionsDial from "./VisActionsDial";
+const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
 
@@ -251,7 +250,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                            to: nodeID,
                            title: `objectType: parentChild\nname: ${microgrid.name}-${nodeID}\nfrom: ${microgrid.name}\nto: ${nodeID}`,
                            color: { inherit: true },
-                           type: type,
+                           type: "parentChild",
                            width: 0.15,
                         })[0]
                      );
@@ -284,7 +283,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                               from: comm_node.name,
                               to: nodeID,
                               title: `objectType: parentChild\nname: ${comm_node.name}-${nodeID}\nfrom: ${comm_node.name}\nto: ${nodeID}`,
-                              type: type,
+                              type: "parentChild",
                               color: { inherit: true },
                               width: 0.15,
                            })[0]
