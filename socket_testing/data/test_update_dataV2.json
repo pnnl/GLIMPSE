@@ -4,13 +4,14 @@
          "elementType": "edge",
          "id": "OH_line_23-25",
          "updates": {
+            "animation": true,
             "color": {
                "color": "#D0F665",
                "inherit": "to",
                "opacity": 0.1
             },
             "dashes": false,
-            "hidden": true,
+            "hidden": false,
             "length": 94,
             "width": 7.55
          }
@@ -24,7 +25,7 @@
                "background": "#F1EE86"
             },
             "opacity": 0.7,
-            "hidden": true,
+            "hidden": false,
             "shape": "box",
             "size": 28
          }
@@ -33,6 +34,7 @@
          "elementType": "edge",
          "id": "OH_line_105-108",
          "updates": {
+            "animation": true,
             "color": {
                "color": "#E3981A",
                "inherit": "both",

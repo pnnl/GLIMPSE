@@ -1,4 +1,9 @@
 appId: com.github.pnnl.GLIMPSE
+
+directories:
+   output: out
+   buildResources: build
+
 win:
    target:
       - target: nsis
@@ -11,8 +16,11 @@ extraResources:
    - ./themes/**
    - ./data/**
    - ./config/**
+   - ./local-server/**
 
 nsis:
    oneClick: false
    allowToChangeInstallationDirectory: true
    installerIcon: ./assets/GLIMPSE_white_icon.ico
+
+icon: ./assets/GLIMPSE_color_icon.png

@@ -1,5 +1,5 @@
 import { styled } from "@mui/system";
-import { Button, Fab } from "@mui/material";
+import { Button, Fab, FormControlLabel, Switch } from "@mui/material";
 
 export const CustomButton = styled(Button)({
    color: "#333333",
@@ -11,4 +11,22 @@ export const CustomFab = styled(Fab)({
    border: "1px solid grey",
    backgroundColor: "#333",
    ":hover": { backgroundColor: "#45AB48" },
+});
+
+export const CustomSwitch = styled(Switch)({
+   "& .MuiSwitch-switchBase": {
+      "&.Mui-checked": {
+         color: "#45AB48",
+         "& + .MuiSwitch-track": {
+            backgroundColor: "#45AB48",
+         },
+      },
+   },
+});
+
+export const CustomFormControlLabel = styled(FormControlLabel)({
+   marginLeft: 0,
+   marginRight: 0,
+   padding: "0 0 0 1rem",
+   justifyContent: "space-between",
 });

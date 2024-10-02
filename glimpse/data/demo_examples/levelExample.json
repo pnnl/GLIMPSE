@@ -175,7 +175,8 @@
          "attributes": {
             "id": "tech1-capec2",
             "from": "tech-1",
-            "to": "capec-2"
+            "to": "capec-2",
+            "animation": true
          }
       },
       {
@@ -256,7 +257,8 @@
          "attributes": {
             "id": "cwe1-cve0",
             "from": "cwe-1",
-            "to": "cve-0"
+            "to": "cve-0",
+            "animation": true
          }
       },
       {
@@ -328,7 +330,8 @@
          "attributes": {
             "id": "capec2-cwe1",
             "from": "capec-2",
-            "to": "cwe-1"
+            "to": "cwe-1",
+            "animation": true
          }
       },
       {

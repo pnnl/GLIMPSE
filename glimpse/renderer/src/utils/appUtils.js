@@ -20,7 +20,7 @@ const getCustomTheme = async (paths) => {
    return themeData;
 };
 
-const isGlmFile = (path) => path.split(".").pop() === "glm";
+export const isGlmFile = (path) => path.split(".").pop() === "glm";
 const isJsonFile = (path) => path.split(".").pop() === "json";
 
 /**
@@ -38,9 +38,11 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
 
       if (!data) {
          alert("Something went wrong... \n Re-upload or reset app");
+         setFilesUploaded(false);
          setFileData({ loading: false });
       } else if ("alert" in data) {
          alert(data.alert);
+         setFilesUploaded(false);
          setFileData({ loading: false });
       } else {
          setFileData({

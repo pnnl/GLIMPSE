@@ -3,7 +3,7 @@ import json
 import sys
 import time
 
-PORT = 5000
+PORT = 5051
 URL = "http://127.0.0.1"
 
 def get_update_data(filepath):

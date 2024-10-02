@@ -1,6 +1,6 @@
 {
    "productName": "GLIMPSE",
-   "version": "0.3.1",
+   "version": "0.4.0",
    "main": "main.js",
    "description": "A lightweight graph-based power grid model visualization tool",
    "author": "Armando Mendoza Sanchez",

@@ -2,7 +2,7 @@ import socketio
 import json
 import time
 
-PORT = 5000
+PORT = 5051
 URL = "http://127.0.0.1"
 
 newNodes = [
@@ -151,7 +151,7 @@ newNodes = [
 '''
 Setting the element type to "edge" lets GLIMPSE 
 know to look for the "to" and "from" 
-keys in the attributes dict
+keys in the attributes dict and create the edge object
 '''
 newEdges = [
    {
@@ -342,7 +342,7 @@ def main():
    # create new nodes in GLIMPSE with the addNode socket event
    for new_node_obj in newNodes: 
       sio.emit("addNode", new_node_obj)
-      time.sleep(1.5)
+      time.sleep(0.75)
       
    # create new edges between the added nodes in GLIMPSE
    for new_edge_obj in newEdges: 
@@ -352,7 +352,7 @@ def main():
    # delete some nodes via the deleteNode socket event
    for nodeID in nodes_to_delete: 
       sio.emit("deleteNode", nodeID)
-      time.sleep(3)
+      time.sleep(1)
   
    # delete some edge via the deleteEdge socket event
    for edgeID in edges_to_delete: 

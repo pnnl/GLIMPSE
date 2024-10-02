@@ -18,7 +18,7 @@ def glm_to_dict( file_paths: list ):
 
 #Converts glm dict to json
 def dict2json( glm_dict: dict ):
-   glm_json = json.dumps( glm_dict, indent = 3 )
+   glm_json = json.dumps( glm_dict, indent= 3 )
    return glm_json
 
 def create_graph(data: dict, set_communities=False):
@@ -55,8 +55,8 @@ def get_avg_betweenness_centrality():
 #------------------------------ Server ------------------------------#
 
 app = Flask(__name__)
-socketio = SocketIO(app)
-# socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
+# socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 #------------------------------ Server ------------------------------#
 
@@ -100,7 +100,6 @@ def get_stats():
 #------------------------------ Server Routes ------------------------------#
 
 #------------------------------ Socket Events ------------------------------#
-
 @socketio.on("glimpse")
 def glimpse(data):
    socketio.emit("update-data", data)
@@ -126,6 +125,6 @@ def delete_edge(edgeID):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, debug=True, log_output=True)
+   socketio.run(app, port=5051, debug=False, log_output=True)
    
 #-------------------------- Start WebSocket Server --------------------------#

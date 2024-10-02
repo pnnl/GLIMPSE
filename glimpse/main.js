@@ -24,7 +24,7 @@ if (!app.isPackaged) {
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
-const socket = io("http://127.0.0.1:5000");
+const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
@@ -86,7 +86,7 @@ const checkIncludes = (jsonData) => {
 };
 
 const glm2json = async (filePaths) => {
-   const res = await fetch("http://127.0.0.1:5000/glm2json", {
+   const res = await fetch("http://127.0.0.1:5051/glm2json", {
       method: "POST",
       headers: {
          "content-type": "application/json",
@@ -102,6 +102,9 @@ const glm2json = async (filePaths) => {
          return { alert: "One or more include files are missing!" };
       }
       return output;
+   } else {
+      console.log(res.status);
+      console.log(res);
    }
 };
 
@@ -112,7 +115,7 @@ const validateThemeFile = (filepath) => {
    const valid = validate(themeData);
 
    if (valid) {
-      console.log("custom them file is valid !!");
+      console.log("custom theme file is valid !!");
       return themeData;
    } else {
       const errorMsg = ajv.errorsText(validate.errors, { dataVar: "jsonData" });
@@ -366,7 +369,7 @@ const makeSplashWindow = () => {
       backgroundColor: "white",
       transparent: true,
       frame: false,
-      alwaysOnTop: true,
+      alwaysOnTop: false,
       resizable: false,
       movable: true,
       roundedCorners: true,
@@ -378,7 +381,7 @@ const makeSplashWindow = () => {
 };
 
 const initiateServer = () => {
-   const serverPath = path.join(__dirname, "local-server", "dist", "server.exe");
+   const serverPath = path.join(rootDir, "local-server", "server", "server.exe");
    if (fs.existsSync(serverPath)) {
       try {
          execFile(serverPath, (error, stdout, stderr) => {
