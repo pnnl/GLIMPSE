@@ -23,7 +23,7 @@
 /renderer/build
 /local-server/virtual-env
 /local-server/build
-/local-server/dist
+/local-server/server
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
