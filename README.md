@@ -1,6 +1,6 @@
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-# v0.3.0 ✨
+# v0.4.0 ✨
 
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
 
@@ -53,7 +53,7 @@ We provide few examples of exploring starndard IEEE bus models using GLIMPSE. Fr
 
 **To re-uplaod files after visualization, click on the HOME button**
 
-![image](https://github.com/pnnl/glm_viz/assets/4779453/5c74d781-6491-49a9-afec-7fcf13a2ba56)
+![Screenshot 2024-09-30 171457](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
 
 ## Cite as
 
