@@ -50,7 +50,7 @@
       },
       "interaction": {
          "hover": true,
-         "hideEdgesOnDrag": false,
+         "hideEdgesOnDrag": true,
          "hideEdgesOnZoom": false,
          "navigationButtons": true
       },

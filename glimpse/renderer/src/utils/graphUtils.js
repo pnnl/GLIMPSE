@@ -287,7 +287,12 @@ export const updateVisObjects = (updateData, data) => {
       const edge = data.edges.get(updateDataStream.id);
       if ("animation" in updateDataStream.updates) {
          const { animation, ...rest } = updateDataStream.updates;
-         edge.attributes.animation = animation;
+         try {
+            edge.attributes.animation = animation;
+         } catch (msg) {
+            console.error(msg);
+         }
+         // console.log(edge.attributes.animation);
          data.edges.update({ ...edge, ...rest });
       } else {
          data.edges.update({ ...edge, ...updateDataStream.updates });

@@ -410,7 +410,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          id: formObj.edgeID,
          from: formObj.from,
          to: formObj.to,
-         title: `Object Type: ${formObj.edgeType}\nFrom: ${formObj.from}\nTo: ${formObj.to}`,
+         attributes: {
+            animation: false,
+         },
+         // title is tooltip popup
+         title: `Object Type: ${formObj.edgeType}\nID: ${formObj.edgeID}\nFrom: ${formObj.from}\nTo: ${formObj.to}`,
          type: formObj.edgeType,
          color: edgeOptions[formObj.edgeType].color,
          width: edgeOptions[formObj.edgeType].width,
@@ -638,7 +642,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             // This will result in a array of unique community IDs and establish the networkx object in server
             communityIDsSet = await establishNetworkxGraph([GLIMPSE_OBJECT, true]);
             establishCommunities = true;
-            graphOptions.interaction.hideEdgesOnDrag = true;
             graphOptions.physics.barnesHut.damping = 0.7;
          } else {
             // this will create and establish the networkx object in the
@@ -691,6 +694,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                if (edgesToAnimate.length > 0) {
                   for (let edge of edgesToAnimate) {
                      const canvasEdge = glmNetwork.body.edges[edge.id];
+                     console.log(canvasEdge);
                      const { from: start, to: end } = canvasEdge;
 
                      // Calculate the circle's position along the edge
