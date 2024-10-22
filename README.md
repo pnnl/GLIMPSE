@@ -53,7 +53,7 @@ We provide few examples of exploring starndard IEEE bus models using GLIMPSE. Fr
 
 **To re-uplaod files after visualization, click on the HOME button**
 
-![Screenshot 2024-09-30 171457](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
+![ui](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
 
 ## Cite as
 

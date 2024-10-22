@@ -10,6 +10,8 @@ import {
    Divider,
    Stack,
    Autocomplete,
+   FormControlLabel,
+   Checkbox,
 } from "@mui/material";
 import { CustomButton } from "../../utils/CustomComponents";
 import ReactDOM from "react-dom";
@@ -19,6 +21,7 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
    const [newConnectionFields, setNewConnectionFields] = useState({
       edgeID: "",
       edgeType: 0,
+      animate: false,
       from: "",
       to: "",
    });
@@ -41,6 +44,15 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
       }));
    };
 
+   const handleChecked = (e) => {
+      const { name, checked } = e.target;
+
+      setNewConnectionFields((previousFields) => ({
+         ...previousFields,
+         [name]: checked,
+      }));
+   };
+
    const handleClose = () => {
       setOpen(false);
    };
@@ -50,12 +62,12 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
    });
 
    return ReactDOM.createPortal(
-      <Dialog fullWidth maxWidth="sm" open={open}>
+      <Dialog maxWidth={false} open={open}>
          <DialogTitle>New Connection</DialogTitle>
          <DialogContent dividers>
             <FormControl fullWidth>
                <TextField
-                  sx={{ mt: 2 }}
+                  sx={{ width: "28rem" }}
                   name="edgeID"
                   id="edge-label"
                   onChange={handleChange}
@@ -64,7 +76,7 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
                   variant="outlined"
                />
                <TextField
-                  sx={{ mt: 2 }}
+                  sx={{ mt: 2, width: "28rem" }}
                   select
                   name="edgeType"
                   label="Edge Type"
@@ -82,7 +94,7 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
                </TextField>
             </FormControl>
             <Divider sx={{ mt: 1 }} />
-            <Stack sx={{ mt: 1 }} direction="row" spacing={2}>
+            <Stack sx={{ mt: 1, width: "28rem" }} direction="row" spacing={2}>
                <FormControl fullWidth>
                   <Autocomplete
                      options={nodes()}
@@ -93,7 +105,12 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
                         }))
                      }
                      renderInput={(params) => (
-                        <TextField value={newConnectionFields.from} {...params} label="From" />
+                        <TextField
+                           name="from"
+                           value={newConnectionFields.from}
+                           {...params}
+                           label="From"
+                        />
                      )}
                   />
                </FormControl>
@@ -107,10 +124,25 @@ export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {
                         }))
                      }
                      renderInput={(params) => (
-                        <TextField value={newConnectionFields.to} {...params} label="To" />
+                        <TextField
+                           name="to"
+                           value={newConnectionFields.to}
+                           {...params}
+                           label="To"
+                        />
                      )}
                   />
                </FormControl>
+               <FormControlLabel
+                  control={
+                     <Checkbox
+                        name="animate"
+                        onChange={handleChecked}
+                        checked={newConnectionFields.animate}
+                     />
+                  }
+                  label="Animate"
+               />
             </Stack>
          </DialogContent>
          <DialogActions>

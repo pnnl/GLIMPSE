@@ -9,6 +9,8 @@ const ContextMenu = ({
    openNewEdgeForm,
    deleteNode,
    createCluster,
+   animateEdge,
+   deleteEdge,
 }) => {
    const [contextMenu, setContextMenu] = useState(null);
 
@@ -37,8 +39,18 @@ const ContextMenu = ({
       setContextMenu(null);
    };
 
+   const handleDeleteEdge = () => {
+      deleteEdge(contextMenu.edgeID);
+      setContextMenu(null);
+   };
+
    const handleNewEdge = () => {
       openNewEdgeForm(true);
+      setContextMenu(null);
+   };
+
+   const handleAnimateEdge = () => {
+      animateEdge(contextMenu.edgeID);
       setContextMenu(null);
    };
 
@@ -76,6 +88,8 @@ const ContextMenu = ({
          <>
             <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
             <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
+            <MenuItem onClick={handleDeleteEdge}>Delete Edge</MenuItem>
+            <MenuItem onClick={handleAnimateEdge}>Animate Edge</MenuItem>
          </>
       );
    };

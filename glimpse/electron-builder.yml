@@ -1,26 +1,32 @@
 appId: com.github.pnnl.GLIMPSE
-
 directories:
    output: out
    buildResources: build
-
-win:
-   target:
-      - target: nsis
-        arch:
-           - x64
-
 asar: true
-
+files:
+   - from: ./
+     filter:
+        - "!data${/*}"
+        - "!node_modules${/*}"
+        - "!local-server${/*}"
+        - "!renderer/src${/*}"
+        - "!themes${/*}"
+        - "!config${/*}"
+        - "!out${/*}"
 extraResources:
    - ./themes/**
    - ./data/**
    - ./config/**
    - ./local-server/**
-
+win:
+   target:
+      - target: nsis
+        arch:
+           - x64
+msi:
+   oneClick: false
 nsis:
    oneClick: false
    allowToChangeInstallationDirectory: true
-   installerIcon: ./assets/GLIMPSE_white_icon.ico
-
+   installerIcon: ./assets/GLIMPSE_white_icon.png
 icon: ./assets/GLIMPSE_color_icon.png

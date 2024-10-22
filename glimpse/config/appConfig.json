@@ -61,7 +61,8 @@
             "centralGravity": 0.2,
             "springConstant": 0.5,
             "springLength": 70,
-            "avoidOverlap": 0.4
+            "avoidOverlap": 0.4,
+            "damping": 0.2
          },
          "forceAtlas2Based": {
             "gravitationalConstant": -400,

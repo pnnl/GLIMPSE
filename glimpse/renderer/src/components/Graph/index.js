@@ -410,9 +410,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          id: formObj.edgeID,
          from: formObj.from,
          to: formObj.to,
-         attributes: {
-            animation: false,
-         },
          // title is tooltip popup
          title: `Object Type: ${formObj.edgeType}\nID: ${formObj.edgeID}\nFrom: ${formObj.from}\nTo: ${formObj.to}`,
          type: formObj.edgeType,
@@ -421,8 +418,16 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       };
 
       graphData.edges.add(newEdge);
+      graphData.edges.update({ ...newEdge, attributes: { animation: formObj.animate } });
       objectTypeCount.edges[formObj.edgeType]++;
       getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   };
+
+   const animateEdge = (edgeID) => {
+      const edgeToAnimate = graphData.edges.get(edgeID);
+      edgeToAnimate.attributes.animation = true;
+
+      graphData.edges.update(edgeToAnimate);
    };
 
    /**
@@ -443,6 +448,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       graphData.nodes.remove(nodeID);
       graphData.edges.remove(edgesToDelete);
+
+      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   };
+
+   const deleteEdge = (edgeID) => {
+      const edgeToDelete = graphData.edges.get(edgeID);
+      console.log(edgeToDelete);
+      objectTypeCount.edges[edgeToDelete.type]--;
+      graphData.edges.remove(edgeID);
 
       getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
@@ -694,7 +708,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                if (edgesToAnimate.length > 0) {
                   for (let edge of edgesToAnimate) {
                      const canvasEdge = glmNetwork.body.edges[edge.id];
-                     console.log(canvasEdge);
                      const { from: start, to: end } = canvasEdge;
 
                      // Calculate the circle's position along the edge
@@ -708,7 +721,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
                      // Draw the circle
                      ctx.beginPath();
-                     2;
                      ctx.arc(x, y, 5, 0, 2 * Math.PI);
                      ctx.fillStyle = "red";
                      ctx.fill();
@@ -717,8 +729,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                }
             });
 
-            graphData.edges.on("update", (event, properties, senderId) => {
-               const updatedEdge = graphData.edges.get(properties.items[0]);
+            glmNetwork.on("selectEdge", (params) => {
+               console.log(params);
+               console.log("\n\n", glmNetwork.body.edges[params.edges[0]]);
+            });
+
+            graphData.edges.on("update", (event, props, senderId) => {
+               const updatedEdge = graphData.edges.get(props.items[0]);
                const animateEdge =
                   "animation" in updatedEdge.attributes && updatedEdge.attributes.animation;
 
@@ -739,8 +756,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   edgesToAnimate.slice(edgeIndex, 1);
                   delete positions[updatedEdge.id];
                }
-
-               glmNetwork.redraw();
             });
 
             glmNetwork.on("selectNode", (params) => {
@@ -790,7 +805,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          /* Display the child Context menu component to hide an edge or edge types */
          glmNetwork.on("oncontext", (params) => {
             const contextNodeID = glmNetwork.getNodeAt(params.pointer.DOM);
-            const contextEdgeID = glmNetwork.getNodeAt(params.pointer.DOM);
+            const contextEdgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
 
             if (contextEdgeID && !contextNodeID) {
                setContextMenuData({
@@ -885,6 +900,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             openNewEdgeForm={openNewEdgeForm}
             deleteNode={deleteNode}
             createCluster={createClusterNode}
+            animateEdge={animateEdge}
+            deleteEdge={deleteEdge}
          />
 
          <ActionDrawer
