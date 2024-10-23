@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import "./Nav.css";
-import About from "../About";
+import "../styles/Nav.css";
+import About from "./About";
 import { Stack, Toolbar } from "@mui/material";
 
 const Nav = ({ showHome }) => {

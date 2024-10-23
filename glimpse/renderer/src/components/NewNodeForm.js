@@ -13,7 +13,7 @@ import {
    Autocomplete,
    Stack,
 } from "@mui/material";
-import { CustomButton } from "../../utils/CustomComponents";
+import { CustomButton } from "../utils/CustomComponents";
 
 const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
    const [openForm, setOpenForm] = useState(false);

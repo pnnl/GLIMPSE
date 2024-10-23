@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
 import ReactDom from "react-dom";
-import "./OverlayUpload.css";
+import "../styles/OverlayUpload.css";
 import { useState, useRef } from "react";
-import { readJsonFile } from "../../utils/fileProcessing";
 
 const OverlayUpload = ({ show, overlayFunc, close, setHideRemoveOverlayBtn }) => {
    if (!show) return null;

@@ -1,8 +1,8 @@
-import React, { useCallback, useRef, useState } from "react";
-import "./ThemeBuilder.css";
+import React, { useCallback, useState } from "react";
+import "../styles/ThemeBuilder.css";
 import ReactDom from "react-dom";
 import Draggable from "react-draggable";
-import { CustomButton } from "../../utils/CustomComponents";
+import { CustomButton } from "../utils/CustomComponents";
 import { MuiColorInput } from "mui-color-input";
 import {
    Card,

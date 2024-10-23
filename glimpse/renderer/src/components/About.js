@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDom from "react-dom";
-import "./About.css";
+import "../styles/About.css";
 import { Dialog, DialogContent, Slide } from "@mui/material";
 
 const Transition = React.forwardRef((props, ref) => {

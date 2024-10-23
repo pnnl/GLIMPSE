@@ -3,8 +3,8 @@ import axios from "axios";
 import React, { useEffect, useRef } from "react";
 import { DataSet } from "vis-data";
 import { Network } from "vis-network";
-import "./Graph.css";
-import "../../other-styles/vis-network.css";
+import "../styles/Graph.css";
+import "../other-styles/vis-network.css";
 import {
    currentUploadCounter,
    Export,
@@ -23,16 +23,16 @@ import {
    setGraphData,
    showAttributes,
    updateVisObjects,
-} from "../../utils/graphUtils";
-import ActionDrawer from "../ActionDrawer";
-import ContextMenu from "../ContextMenu";
-import Legend from "../Legend";
-import NewNodeForm from "../NewNodeForm";
-import NodePopup from "../NodePopup";
-import VisActionsDial from "../VisActionsDial";
-import { isGlmFile } from "../../utils/appUtils";
-import { readJsonFile } from "../../utils/fileProcessing";
-import { NewEdgeForm } from "../NewEdgeForm/Index";
+} from "../utils/graphUtils";
+import ActionDrawer from "./ActionDrawer";
+import ContextMenu from "./ContextMenu";
+import Legend from "./Legend";
+import NewNodeForm from "./NewNodeForm";
+import NodePopup from "./NodePopup";
+import VisActionsDial from "./VisActionsDial";
+import { isGlmFile } from "../utils/appUtils";
+import { readJsonFile } from "../utils/fileProcessing";
+import { NewEdgeForm } from "./NewEdgeForm";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians

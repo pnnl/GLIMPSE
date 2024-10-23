@@ -11,11 +11,11 @@ import {
    Tooltip,
 } from "@mui/material";
 import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
-import OverlayUpload from "../OverlayUpload";
-import StatsTableModal from "../StatsTableModal";
-import PlotModal from "../PlotModal";
+import OverlayUpload from "./OverlayUpload";
+import StatsTableModal from "./StatsTableModal";
+import PlotModal from "./PlotModal";
 import axios from "axios";
-import { CustomFab, CustomSwitch, CustomFormControlLabel } from "../../utils/CustomComponents";
+import { CustomFab, CustomSwitch, CustomFormControlLabel } from "../utils/CustomComponents";
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionDrawer = ({
@@ -68,7 +68,7 @@ const ActionDrawer = ({
          const response = await axios.get("http://127.0.0.1:5051/get-stats");
 
          setStats(response.data);
-         
+
          setShowTable(true);
       } else {
          setShowTable(true);

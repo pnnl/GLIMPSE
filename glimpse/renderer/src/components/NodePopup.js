@@ -2,7 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { useState, useEffect } from "react";
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack } from "@mui/material";
-import { CustomButton } from "../../utils/CustomComponents";
+import { CustomButton } from "../utils/CustomComponents";
 
 const NodePopup = ({ onMount, onSave, close }) => {
    const [open, setOpen] = useState(false);

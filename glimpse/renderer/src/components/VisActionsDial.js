@@ -1,7 +1,7 @@
 import React from "react";
 import { SpeedDial, SpeedDialAction, Stack, Tooltip } from "@mui/material";
 import { Adjust, RotateRightSharp, RotateLeftSharp } from "@mui/icons-material";
-import { CustomFab } from "../../utils/CustomComponents";
+import { CustomFab } from "../utils/CustomComponents";
 
 const VisActionsDial = ({ rotateCW, rotateCCW, prev, next }) => {
    return (

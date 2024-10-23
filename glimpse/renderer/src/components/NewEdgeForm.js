@@ -13,7 +13,7 @@ import {
    FormControlLabel,
    Checkbox,
 } from "@mui/material";
-import { CustomButton } from "../../utils/CustomComponents";
+import { CustomButton } from "../utils/CustomComponents";
 import ReactDOM from "react-dom";
 
 export const NewEdgeForm = ({ onMount, nodes, edgeTypes, createEdge }) => {

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Network } from "vis-network";
 import { Box } from "@mui/material";
-import LegendContextMenu from "../LegendContextMenu";
-import "../../other-styles/vis-network.css";
-import ThemeBuilder from "../ThemeBuilder";
+import LegendContextMenu from "./LegendContextMenu";
+import "../other-styles/vis-network.css";
+import ThemeBuilder from "./ThemeBuilder";
 const { legendGraphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const Legend = ({
