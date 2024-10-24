@@ -6,143 +6,44 @@ PORT = 5051
 URL = "http://127.0.0.1"
 
 newNodes = [
-   {
-      "objectType": "Switch", # Like a group or category the node belongs under
+      {
+      "objectType": "load",
       "elementType": "node",
       "attributes": {
-         "id": "switch1",
-         "ipaddress": "192.168.0.2"
+         "id": "load_12345",
       },
       "styles": {
-         "label": "192.168.0.2",
-         "color": "orange", # Can be hex, rgb, rgba, or a named color like "blue"
-         "shape": "triangle",
-         "size": 12
+         "label": "load_12345",
       }
    },
-   {
-      "objectType": "Switch",
+      {
+      "objectType": "load",
       "elementType": "node",
       "attributes": {
-         "id": "switch2",
-         "ipaddress": "192.168.0.1"
+         "id": "load_098",
       },
       "styles": {
-         "label": "192.168.0.1",
-         "color": "orange", 
-         "shape": "triangle",
-         "size": 12
+         "label": "load_098",
       }
    },
-   {
-      "objectType": "Switch",
+      {
+      "objectType": "load",
       "elementType": "node",
       "attributes": {
-         "id": "switch3",
-         "ipaddress": "192.168.0.3"
+         "id": "load_56748",
       },
       "styles": {
-         "label": "192.168.0.3",
-         "color": "orange", 
-         "shape": "triangle",
-         "size": 12
+         "label": "load_56748",
       }
-   },  
-   {
-      "objectType": "Computer",
+   },
+      {
+      "objectType": "load",
       "elementType": "node",
       "attributes": {
-         "id": "computer1",
-         "ipaddress": "192.168.0.103"
+         "id": "load_1029",
       },
       "styles": {
-         "label": "192.168.0.103",
-         "color": "#2B7CE9", 
-         "shape": "dot",
-         "size": 12
-      }
-   },
-   {
-      "objectType": "Computer",
-      "elementType": "node",
-      "attributes": {
-         "id": "computer2",
-         "ipaddress": "192.168.0.100"
-      },
-      "styles": {
-         "label": "192.168.0.100",
-         "color": "#2B7CE9", 
-         "shape": "dot",
-         "size": 12
-      }
-   },
-   {
-      "objectType": "Computer",
-      "elementType": "node",
-      "attributes": {
-         "id": "computer3",
-         "ipaddress": "192.168.0.102"
-      },
-      "styles": {
-         "label": "192.168.0.102",
-         "color": "#2B7CE9", 
-         "shape": "dot",
-         "size": 12
-      }
-   },
-   {
-      "objectType": "Smartphone",
-      "elementType": "node",
-      "attributes": {
-         "id": "phone1",
-         "ipaddress": "192.168.0.230"
-      },
-      "styles": { 
-         "label": "192.168.0.230",
-         "color": "#5A1E5C",
-         "shape": "dot",
-         "size": 10
-      }
-   },
-   {
-      "objectType": "Smartphone",
-      "elementType": "node",
-      "attributes": {
-         "id": "phone2",
-         "ipaddress": "192.168.0.231"
-      },
-      "styles": { 
-         "label": "192.168.0.231",
-         "color": "#5A1E5C",
-         "shape": "dot",
-         "size": 10
-      }
-   },
-   {
-      "objectType": "Server",
-      "elementType": "node",
-      "attributes": {
-         "id": "server1",
-         "ipaddress": "192.168.0.10"
-      },
-      "styles": { 
-         "label": "192.168.0.10",
-         "color": "#C5000B",
-         "shape": "square",
-         "size": 20
-      }
-   },
-   {
-      "objectType": "Internet",
-      "elementType": "node",
-      "attributes": {
-         "id": "internet1",
-      },
-      "styles": { 
-         "label": "internet",
-         "color": "#109618",
-         "shape": "square",
-         "size": 16
+         "label": "load_1029",
       }
    },
     
@@ -155,133 +56,57 @@ keys in the attributes dict and create the edge object
 '''
 newEdges = [
    {
-      "objectType": "connection",
+      "objectType": "overhead_line",
       "elementType": "edge",
       "attributes": {
-         "id": "switch1-switch2",
-         "strength": "strong",
-         "speed": "0.71 mbps",
-         "from": "switch1",
-         "to": "switch2"
+         "id": "load_1029-node_14",
+         "from": "node_14",
+         "to": "load_1029"
       },
       "styles": {
-         "color": "grey",
+         "color": "yellow",
          "width": 4,
-         "label": "0.71 mbps"
       }
    },
    {
-      "objectType": "connection",
+      "objectType": "overhead_line",
       "elementType": "edge",
       "attributes": {
-         "id": "switch2-switch3",
-         "strength": "weak",
-         "speed": "0.55 mbps",
-         "from": "switch2",
-         "to": "switch3"
+         "id": "load_12345-Gen1",
+         "from": "Gen1",
+         "to": "load_12345"
+      },
+      "styles": {
+         "color": "Green",
+         "width": 7,
+      }
+   },
+   {
+      "objectType": "regulator",
+      "elementType": "edge",
+      "attributes": {
+         "id": "load_098-cap_88",
+         "from": "cap_88",
+         "to": "load_098"
+      },
+      "styles": {
+         "color": "pink",
+         "width": 10,
+      }
+   },
+   {
+      "objectType": "overhead_line",
+      "elementType": "edge",
+      "attributes": {
+         "id": "load_56748-trip_shad_inv5",
+         "from": "trip_shad_inv5",
+         "to": "load_56748"
       },
       "styles": {
          "color": "grey",
-         "width": 3,
-         "label": "0.55 mbps"
+         "width": 11,
       }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "computer1-switch1",
-         "from": "computer1",
-         "to": "switch1"
-      },
-      "styles": {
-         "color": "grey",
-         "width": 2,
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "computer2-switch1",
-         "from": "computer2",
-         "to": "switch1"
-      },
-      "styles": {
-         "color": "grey",
-         "width": 2,
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "computer3-switch1",
-         "from": "computer3",
-         "to": "switch1"
-      },
-      "styles": {
-         "color": "red",
-         "width": 2,
-         "label": "error"
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "phone1-switch3",
-         "from": "phone1",
-         "to": "switch3"
-      },
-      "styles": {
-         "color": "grey",
-         "width": 2,
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "phone2-switch3",
-         "from": "phone2",
-         "to": "switch3"
-      },
-      "styles": {
-         "color": "grey",
-         "width": 2,
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "switch2-server1",
-         "from": "switch2",
-         "to": "server1",
-         "strength": "strong"
-      },
-      "styles": {
-         "label": "0.92 mbps",
-         "color": "grey",
-         "width": 6,
-      }
-   },
-   {
-      "objectType": "connection",
-      "elementType": "edge",
-      "attributes": {
-         "id": "switch2-internet1",
-         "from": "switch2",
-         "to": "internet1",
-         "strength": "normal"
-      },
-      "styles": {
-         "color": "grey",
-         "width": 2,
-         "label": "0.63mbps"
-      }
-   },
+   }
 ]
 
 nodes_to_delete = [
@@ -337,15 +162,15 @@ def main():
    sio = socketio.Client()
    sio.connect(f"{URL}:{PORT}")
    
-   # # create new nodes in GLIMPSE with the addNode socket event
-   # for new_node_obj in newNodes: 
-   #    sio.emit("addNode", new_node_obj)
-   #    time.sleep(0.75)
+   # create new nodes in GLIMPSE with the addNode socket event
+   for new_node_obj in newNodes: 
+      sio.emit("addNode", new_node_obj)
+      time.sleep(0.75)
       
-   # # create new edges between the added nodes in GLIMPSE
-   # for new_edge_obj in newEdges: 
-   #    sio.emit("addEdge", new_edge_obj)
-   #    time.sleep(0.75)
+   # create new edges between the added nodes in GLIMPSE
+   for new_edge_obj in newEdges: 
+      sio.emit("addEdge", new_edge_obj)
+      time.sleep(0.75)
       
    # # delete some nodes via the deleteNode socket event
    # for nodeID in nodes_to_delete: 
@@ -357,9 +182,9 @@ def main():
    #    sio.emit("deleteEdge", edgeID)
    #    time.sleep(2)
 
-   for style in styleChanges: 
-      sio.emit("glimpse", style)
-      time.sleep(1.5)
+   # for style in styleChanges: 
+   #    sio.emit("glimpse", style)
+   #    time.sleep(1.5)
    
    # disconect from GLIMPSE WebSocket API      
    sio.disconnect()

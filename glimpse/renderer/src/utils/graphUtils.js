@@ -277,29 +277,6 @@ export const hideEdges = (edgeID, data) => {
    data.edges.update(edgesToHide);
 };
 
-export const updateVisObjects = (updateData, data) => {
-   const updateDataStream = updateData;
-
-   if (updateDataStream.elementType === "node") {
-      const node = data.nodes.get(updateDataStream.id);
-      data.nodes.update({ ...node, ...updateDataStream.updates });
-   } else {
-      const edge = data.edges.get(updateDataStream.id);
-      if ("animation" in updateDataStream.updates) {
-         const { animation, ...rest } = updateDataStream.updates;
-         try {
-            edge.attributes.animation = animation;
-         } catch (msg) {
-            console.error(msg);
-         }
-         // console.log(edge.attributes.animation);
-         data.edges.update({ ...edge, ...rest });
-      } else {
-         data.edges.update({ ...edge, ...updateDataStream.updates });
-      }
-   }
-};
-
 export const showAttributes = (show, data) => {
    if (!show) {
       data.nodes.update(

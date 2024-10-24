@@ -1,7 +1,10 @@
 # Usage
-**Only dependancy needed**
+
+**Only dependancies needed**
+
 ```
 pip install python-socketio
+pip install requests
 ```
 
 The testsocket.py python script contains example code on how to connect to the local web socket server
@@ -12,7 +15,7 @@ and how to send data to the "glimpse" event.
 ```
 cd socket_testing/
 
-python testsocket.py test_update_data.json 
+python testsocket.py test_update_data.json
 ```
 
 **The `test_update_data.json` file contains the structure that GLIMPSE is reading for when updating the visualization**

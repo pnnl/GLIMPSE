@@ -22,7 +22,6 @@ import {
    rotateCW,
    setGraphData,
    showAttributes,
-   updateVisObjects,
 } from "../utils/graphUtils";
 import ActionDrawer from "./ActionDrawer";
 import ContextMenu from "./ContextMenu";
@@ -48,6 +47,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
    let glmNetwork = null; // global network variable
+   let edgesToAnimate = null;
+   let positions = null;
+   let redrawIntervalID = null;
 
    const addedOverlayObjects = {
       nodes: [],
@@ -423,11 +425,64 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
-   const animateEdge = (edgeID) => {
-      const edgeToAnimate = graphData.edges.get(edgeID);
-      edgeToAnimate.attributes.animation = true;
+   const updateVisObjects = (updateData) => {
+      if (updateData.elementType === "node") {
+         const node = graphData.nodes.get(updateData.id);
+         graphData.nodes.update({ ...node, ...updateData.updates });
+      } else {
+         const edge = graphData.edges.get(updateData.id);
+         const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
-      graphData.edges.update(edgeToAnimate);
+         if ("animation" in updateData.updates) {
+            // if the first element of the clustered edges array is not the passed edge ID
+            // then there are clustered edges
+            if (!(clusteredEdges[0] === edge.id)) {
+               // the first element will then be the current visible clustered edge
+               edgesToAnimate.push(clusteredEdges[0]);
+               positions[clusteredEdges[0]] = 0;
+            }
+
+            const { animation, ...rest } = updateData.updates;
+            edge.attributes.animation = animation;
+
+            graphData.edges.update({ ...edge, ...rest });
+
+            if (!redrawIntervalID) {
+               redrawIntervalID = setInterval(() => {
+                  glmNetwork.redraw();
+               }, 10);
+            }
+         } else {
+            graphData.edges.update({ ...edge, ...updateData.updates });
+         }
+      }
+   };
+
+   const animateEdge = (edgeID) => {
+      console.log(edgeID);
+      if (edgeID.includes("clusterEdge")) {
+         edgesToAnimate.push(edgeID);
+         positions[edgeID] = 0;
+
+         if (!redrawIntervalID) {
+            redrawIntervalID = setInterval(() => {
+               glmNetwork.redraw();
+            }, 10);
+         }
+      } else {
+         const edgeToAnimate = graphData.edges.get(edgeID);
+         edgeToAnimate.attributes.animation = true;
+         graphData.edges.update(edgeToAnimate);
+
+         edgesToAnimate.push(edgeID);
+         positions[edgeID] = 0;
+
+         if (!redrawIntervalID) {
+            redrawIntervalID = setInterval(() => {
+               glmNetwork.redraw();
+            }, 10);
+         }
+      }
    };
 
    /**
@@ -576,6 +631,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             graphData.nodes.add({
                id: newNodeData.attributes.id,
                attributes: newNodeData.attributes,
+               group: newNodeData.objectType,
                title: "Type: " + newNodeData.objectType + "\n" + getTitle(newNodeData.attributes),
                ...newNodeData.styles,
             });
@@ -625,7 +681,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    useEffect(() => {
       const circularProgressBar = document.getElementById("circularProgress");
       const circularProgressValue = document.getElementById("progressValue");
-      let intervalID = null;
       let establishCommunities = false;
 
       const establishNetworkxGraph = async (data) => {
@@ -686,19 +741,19 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             }
 
             // get the list of edges that contain the animation value of true
-            const edgesToAnimate = graphData.edges
-               .get()
-               .filter((edge) => edge.attributes.animation);
+            edgesToAnimate = graphData.edges
+               .getIds()
+               .filter((edge) => graphData.edges.get(edge).attributes.animation);
 
             if (edgesToAnimate.length > 0) {
-               intervalID = setInterval(() => {
+               redrawIntervalID = setInterval(() => {
                   glmNetwork.redraw();
                }, 10);
             }
 
             // animate edges if there are any
             // create an object for the positions of each moving circle for each edge
-            const positions = edgesToAnimate.reduce(
+            positions = edgesToAnimate.reduce(
                (previousObj, edge) => ({ ...previousObj, [edge.id]: 0 }),
                {}
             );
@@ -706,61 +761,82 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             // Event listener to draw the moving circle
             glmNetwork.on("afterDrawing", (ctx) => {
                if (edgesToAnimate.length > 0) {
-                  for (let edge of edgesToAnimate) {
-                     const canvasEdge = glmNetwork.body.edges[edge.id];
-                     const { from: start, to: end } = canvasEdge;
+                  try {
+                     for (let edgeID of edgesToAnimate) {
+                        const canvasEdge = glmNetwork.body.edges[edgeID];
+                        const { from: start, to: end } = canvasEdge;
 
-                     // Calculate the circle's position along the edge
-                     positions[edge.id] += 0.01;
-                     if (positions[edge.id] > 1) {
-                        positions[edge.id] = 0;
+                        // Calculate the circle's position along the edge
+                        positions[edgeID] += 0.01;
+                        if (positions[edgeID] > 1) {
+                           positions[edgeID] = 0;
+                        }
+
+                        const x = start.x * (1 - positions[edgeID]) + end.x * positions[edgeID];
+                        const y = start.y * (1 - positions[edgeID]) + end.y * positions[edgeID];
+
+                        // Draw the circle
+                        ctx.beginPath();
+                        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+                        ctx.fillStyle = "red";
+                        ctx.fill();
                      }
-
-                     const x = start.x * (1 - positions[edge.id]) + end.x * positions[edge.id];
-                     const y = start.y * (1 - positions[edge.id]) + end.y * positions[edge.id];
-
-                     // Draw the circle
-                     ctx.beginPath();
-                     ctx.arc(x, y, 5, 0, 2 * Math.PI);
-                     ctx.fillStyle = "red";
-                     ctx.fill();
+                  } catch (msg) {
+                     console.log(msg);
+                     if (redrawIntervalID) clearInterval(redrawIntervalID);
                   }
                   // Redraw the network at set intervals to create the animation
                }
             });
 
             glmNetwork.on("selectEdge", (params) => {
-               console.log(params);
-               console.log("\n\n", glmNetwork.body.edges[params.edges[0]]);
+               const selectedEdge = params.edges[0];
+               const baseEdges = glmNetwork.clustering.getBaseEdges(selectedEdge);
+               const clusteredEdges = glmNetwork.clustering.getClusteredEdges(baseEdges);
+
+               console.log("Selected Edge: " + selectedEdge);
+               console.table(clusteredEdges);
+               console.log("Base Edge: " + baseEdges);
             });
 
-            graphData.edges.on("update", (event, props, senderId) => {
-               const updatedEdge = graphData.edges.get(props.items[0]);
-               const animateEdge =
-                  "animation" in updatedEdge.attributes && updatedEdge.attributes.animation;
+            // graphData.edges.on("update", (event, props, senderId) => {
+            //    const updatedEdge = graphData.edges.get(props.items[0]);
+            //    const animateEdge =
+            //       "animation" in updatedEdge.attributes && updatedEdge.attributes.animation;
 
-               if (animateEdge && !edgesToAnimate.some((edge) => edge.id === updatedEdge.id)) {
-                  edgesToAnimate.push(updatedEdge);
-                  positions[updatedEdge.id] = 0;
+            //    if (animateEdge && !edgesToAnimate.some((edgeID) => edgeID === updatedEdge.id)) {
+            //       edgesToAnimate.push(updatedEdge.id);
+            //       positions[updatedEdge.id] = 0;
 
-                  if (!intervalID) {
-                     intervalID = setInterval(() => {
-                        glmNetwork.redraw();
-                     }, 10);
-                  }
-               } else if (
-                  !animateEdge &&
-                  edgesToAnimate.some((edge) => edge.id === updatedEdge.id)
-               ) {
-                  const edgeIndex = edgesToAnimate.findIndex((edge) => edge.id === updatedEdge.id);
-                  edgesToAnimate.slice(edgeIndex, 1);
-                  delete positions[updatedEdge.id];
-               }
-            });
+            //       if (!redrawIntervalID) {
+            //          redrawIntervalID = setInterval(() => {
+            //             glmNetwork.redraw();
+            //          }, 10);
+            //       }
+            //    } else if (
+            //       !animateEdge &&
+            //       edgesToAnimate.some((edgeID) => edgeID === updatedEdge.id)
+            //    ) {
+            //       const edgeIndex = edgesToAnimate.findIndex((edgeID) => edgeID === updatedEdge.id);
+            //       edgesToAnimate.slice(edgeIndex, 1);
+            //       delete positions[updatedEdge.id];
+            //    }
+            // });
 
             glmNetwork.on("selectNode", (params) => {
                if (params.nodes.length === 1) {
-                  if (glmNetwork.isCluster(params.nodes[0]) === true) {
+                  // const selectedNode = glmNetwork.body.nodes[params.nodes[0]];
+                  // console.log(selectedNode);
+                  // const newAnimateEdge = selectedNode.edges[0];
+                  // const edgeToBeDeleted = selectedNode.edges[1];
+
+                  // edgesToAnimate.splice(edgesToAnimate.indexOf(edgeToBeDeleted), 1);
+                  // delete positions[edgeToBeDeleted];
+
+                  // edgesToAnimate.push(newAnimateEdge);
+                  // positions[newAnimateEdge] = 0;
+
+                  if (glmNetwork.isCluster(params.nodes[0])) {
                      glmNetwork.openCluster(params.nodes[0]);
                   }
                }
@@ -791,6 +867,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                }, 500);
             });
          }
+
+         glmNetwork.on("cluster", (params) => console.log(params));
 
          glmNetwork.on("doubleClick", (params) => {
             if (params.nodes[0] === undefined) {
@@ -857,7 +935,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       initializeGraph();
 
       return () => {
-         if (intervalID) clearInterval(intervalID);
+         if (redrawIntervalID) clearInterval(redrawIntervalID);
          currentUploadCounter.value = 0;
       };
    }, []);
