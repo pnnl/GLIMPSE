@@ -1,0 +1,50 @@
+{
+   "groups": {
+      "power-line": {
+         "shape": "image",
+         "label": "Power Line",
+         "image": "C:\\Users\\mend166\\Documents\\GLIMPSE\\glimpse\\data\\topologies\\imgs\\tower.png",
+         "size": 25
+      },
+      "school": {
+         "shape": "image",
+         "label": "School",
+         "image": "C:\\Users\\mend166\\Documents\\GLIMPSE\\glimpse\\data\\topologies\\imgs\\school.png",
+         "size": 25
+      },
+      "control-center": {
+         "shape": "image",
+         "label": "Control Center",
+         "image": "C:\\Users\\mend166\\Documents\\GLIMPSE\\glimpse\\data\\topologies\\imgs\\control-center.png",
+         "size": 25
+      },
+      "residential": {
+         "shape": "image",
+         "label": "Residential",
+         "image": "C:\\Users\\mend166\\Documents\\GLIMPSE\\glimpse\\data\\topologies\\imgs\\residential.png",
+         "size": 25
+      },
+      "factory": {
+         "shape": "image",
+         "label": "Factory",
+         "image": "C:\\Users\\mend166\\Documents\\GLIMPSE\\glimpse\\data\\topologies\\imgs\\factory.png",
+         "size": 25
+      }
+   },
+   "edgeOptions": {
+      "line": {
+         "color": "lightblue",
+         "width": 1,
+         "arrows": {
+            "to": {
+               "enabled": true,
+               "scaleFactor": 0.5
+            },
+            "from": {
+               "enabled": true,
+               "scaleFactor": 0.5
+            }
+         }
+      }
+   }
+}

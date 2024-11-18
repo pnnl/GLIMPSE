@@ -1,5 +1,4 @@
 from flask import Flask, request as req
-from engineio.async_drivers import gevent
 from flask_socketio import SocketIO
 import networkx as nx
 import glm
@@ -99,7 +98,7 @@ def get_stats():
 
 #------------------------------ Server Routes ------------------------------#
 
-#------------------------------ Socket Events ------------------------------#
+#------------------------------ WebSocket Events ------------------------------#
 @socketio.on("glimpse")
 def glimpse(data):
    socketio.emit("update-data", data)
@@ -120,7 +119,7 @@ def delete_node(nodeID):
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
 
-#------------------------------ Socket Events ------------------------------#
+#------------------------------ WebSocket Events ------------------------------#
 
 #-------------------------- Start WebSocket Server --------------------------#
 

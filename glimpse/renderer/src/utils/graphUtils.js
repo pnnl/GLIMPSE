@@ -566,7 +566,7 @@ export const setGraphData = (
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                         : nodeID,
-                  label: nodeID,
+                  label: "label" in theme.groups[objectType] ? undefined : nodeID,
                   elementType: "node",
                   attributes: attributes,
                   group: objectType,
@@ -593,7 +593,7 @@ export const setGraphData = (
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                         : nodeID,
-                  label: nodeID,
+                  label: "label" in theme.groups[objectType] ? undefined : nodeID,
                   elementType: "node",
                   level: attributes.level,
                   attributes: attributes,
@@ -619,7 +619,7 @@ export const setGraphData = (
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                      : nodeID,
-               label: nodeID,
+               label: "label" in theme.groups[objectType] ? undefined : nodeID,
                elementType: "node",
                communityID: currentUploadCounter.value,
                attributes: attributes,
@@ -642,12 +642,14 @@ export const setGraphData = (
 
             GLIMPSE_OBJECT.objects.push(obj);
 
+            console.log(theme.groups);
+
             return {
                id:
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                      : nodeID,
-               label: nodeID,
+               label: "label" in theme.groups[objectType] ? undefined : nodeID,
                elementType: "node",
                communityID: currentUploadCounter.value,
                level: "level" in attributes ? attributes.level : undefined,

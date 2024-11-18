@@ -27,10 +27,12 @@ const socket = io("http://127.0.0.1:5051");
 socket.on("connect", async () => {
    console.log(socket.connected);
 
-   const updateData = getUpdateData("../data/test_update_dataV2.json");
+   const updateData = getUpdateData(path.join(__dirname, "..", "data", "test_update_dataV2.json"));
 
    for (const updateObj of updateData) {
       socket.emit("glimpse", updateObj);
+
+      // create some delay
       await sleep(750);
    }
 

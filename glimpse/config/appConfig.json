@@ -44,7 +44,6 @@
          "font": {
             "color": "#000",
             "multi": true,
-            "align": "left",
             "bold": "20px arial black"
          }
       },
@@ -104,8 +103,8 @@
          "improvedLayout": false,
          "hierarchical": {
             "enabled": false,
-            "direction": "LR",
-            "levelSeparation": 130,
+            "direction": "UD",
+            "levelSeparation": 120,
             "nodeSpacing": 30
          }
       }

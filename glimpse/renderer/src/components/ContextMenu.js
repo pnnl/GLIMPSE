@@ -104,6 +104,21 @@ const ContextMenu = ({
       );
    };
 
+   const NodeMenuItems = () => {
+      return (
+         <>
+            <MenuItem key="delete-node" onClick={handleDeleteNode}>
+               Delete Node
+            </MenuItem>
+            {"CID" in contextMenu && (
+               <MenuItem key="cluster" onClick={handleReCluster}>
+                  Cluster
+               </MenuItem>
+            )}
+         </>
+      );
+   };
+
    return (
       <Menu
          sx={{ zIndex: 999 }}
@@ -117,16 +132,7 @@ const ContextMenu = ({
          }
       >
          {"nodeID" in contextMenu ? (
-            [
-               <MenuItem key="delete-node" onClick={handleDeleteNode}>
-                  Delete Node
-               </MenuItem>,
-               "CID" in contextMenu && (
-                  <MenuItem key="re-cluster" onClick={handleReCluster}>
-                     Re-Cluster
-                  </MenuItem>
-               ),
-            ]
+            <NodeMenuItems />
          ) : "edgeID" in contextMenu ? (
             <EdgeMenuItems />
          ) : (

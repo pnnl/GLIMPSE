@@ -1,0 +1,132 @@
+{
+   "objects": [
+      {
+         "objectType": "power-line",
+         "elementType": "node",
+         "attributes": {
+            "id": "pwrLine_1"
+         }
+      },
+      {
+         "objectType": "school",
+         "elementType": "node",
+         "attributes": {
+            "id": "school_1"
+         }
+      },
+      {
+         "objectType": "power-line",
+         "elementType": "node",
+         "attributes": {
+            "id": "pwrLine_2"
+         }
+      },
+      {
+         "objectType": "control-center",
+         "elementType": "node",
+         "attributes": {
+            "id": "ctrlCenter_1"
+         }
+      },
+      {
+         "objectType": "residential",
+         "elementType": "node",
+         "attributes": {
+            "id": "residential_1"
+         }
+      },
+      {
+         "objectType": "power-line",
+         "elementType": "node",
+         "attributes": {
+            "id": "pwrLine_3"
+         }
+      },
+      {
+         "objectType": "power-line",
+         "elementType": "node",
+         "attributes": {
+            "id": "pwrLine_4"
+         }
+      },
+      {
+         "objectType": "factory",
+         "elementType": "node",
+         "attributes": {
+            "id": "factory_1"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "pwrLine_1-school_1",
+            "from": "pwrLine_1",
+            "to": "school_1"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "school_1-pwrLine_2",
+            "from": "school_1",
+            "to": "pwrLine_2"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "pwrLine_2-ctrlCenter_1",
+            "from": "pwrLine_2",
+            "to": "ctrlCenter_1"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "ctrlCenter_1-factory_1",
+            "from": "ctrlCenter_1",
+            "to": "factory_1"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "factory_1-pwrLine_3",
+            "from": "factory_1",
+            "to": "pwrLine_3"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "pwrLine_3-pwrLine_4",
+            "from": "pwrLine_3",
+            "to": "pwrLine_4"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "pwrLine_4-residential_1",
+            "from": "pwrLine_4",
+            "to": "residential_1"
+         }
+      },
+      {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": "residential_1-pwrLine_1",
+            "from": "residential_1",
+            "to": "pwrLine_1"
+         }
+      }
+   ]
+}

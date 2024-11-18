@@ -1,14 +1,20 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_data_files
 import sys
+
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
+
+datas = []
+
+datas += collect_data_files("engineio")
 
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=["engineio"],
+    datas=datas,
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
