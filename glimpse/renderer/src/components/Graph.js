@@ -47,8 +47,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
    let glmNetwork = null; // global network variable
-   let edgesToAnimate = null;
-   let positions = null;
+   let edgesToAnimate = [];
+   let positions = {};
    let redrawIntervalID = null;
 
    const addedOverlayObjects = {
@@ -696,7 +696,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          processProperties: (clusterOptions, childNodes, childEdges) => {
             clusterOptions.value = childNodes.length;
             clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
-            clusterOptions.mass = childNodes.length;
+            clusterOptions.mass = childNodes.length / 2;
             return clusterOptions;
          },
          clusterNodeProperties: {
@@ -709,14 +709,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       });
 
       const clusterNode = glmNetwork.body.nodes[clusterValue];
-      console.log(clusterNode);
-
-      //clusteringEdgeReplacingIds
+      //clusteringEdgeReplacingIds;
 
       if (clusterNode.edges.length > 0) {
          const replacedEdgeIDs = clusterNode.edges[0].clusteringEdgeReplacingIds;
-
-         console.log(replacedEdgeIDs);
 
          for (let i = 0; i < replacedEdgeIDs.length; i++) {
             if (!edgesToAnimate.includes(replacedEdgeIDs[i])) continue;
