@@ -6,7 +6,7 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 
 ## Build Instructions
 
-> :warning: **Building the tool on an M3 Macbook currently not working**: Currently working on get a build working on latest MacOS
+> :warning: **Building the tool on an M3 Macbook currently not working**: this is due to the glm parser used has not been updated to be compatible with the latest apple silicon. A solution for this to come soon.
 
 **Download Node and Nim**
 
