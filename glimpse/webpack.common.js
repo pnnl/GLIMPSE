@@ -1,46 +1,48 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-   mode: 'development',
-   entry: './renderer/src/index.js',
-   devtool: 'inline-source-map',
-   target: 'electron-renderer',
+   mode: "development",
+   entry: "./renderer/src/index.js",
+   devtool: "inline-source-map",
+   target: "electron-renderer",
    module: {
       rules: [
          {
             test: /\.js$/,
             exclude: /node_modules/,
             use: {
-               loader: 'babel-loader',
+               loader: "babel-loader",
                options: {
-                  presets: [[
-                  '@babel/preset-env', {
-                     targets: {
-                        esmodules: true
-                     }
-                  }],
-                  '@babel/preset-react']
-               }
-            }
+                  presets: [
+                     [
+                        "@babel/preset-env",
+                        {
+                           targets: {
+                              esmodules: true,
+                           },
+                        },
+                     ],
+                     "@babel/preset-react",
+                  ],
+               },
+            },
          },
          {
-            test: [/\.s[ac]ss$/i, /\.css$/i],
+            test: [/\.css$/i],
             use: [
                // Creates `style` nodes from JS strings
-               'style-loader',
+               "style-loader",
                // Translates CSS into CommonJS
-               'css-loader',
-               // Compiles Sass to CSS
-               'sass-loader',
+               "css-loader",
             ],
-         }
-      ]
+         },
+      ],
    },
    resolve: {
-      extensions: ['.js'],
+      extensions: [".js"],
    },
    output: {
-      filename: 'renderer.js',
-      path: path.resolve(__dirname, 'renderer', 'build'),
+      filename: "renderer.js",
+      path: path.resolve(__dirname, "renderer", "build"),
    },
 };

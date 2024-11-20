@@ -1,20 +1,18 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_submodules
 import sys
 
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
-datas = []
-
-datas += collect_data_files("engineio")
+hiddenimports = collect_submodules('engineio.async_drivers') + collect_submodules('gevent')
 
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
-    hiddenimports=[],
+    datas=[],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

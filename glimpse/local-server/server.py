@@ -1,5 +1,6 @@
 from flask import Flask, request as req
 from flask_socketio import SocketIO
+# from engineio.async_drivers import gevent
 import networkx as nx
 import glm
 import json
@@ -8,7 +9,7 @@ from os import path
 GRAPH = nx.MultiGraph()
 
 #Convert glm file to python dictionary
-def glm_to_dict( file_paths: list ):
+def glm_to_dict( file_paths: list ) -> dict:
    glm_dicts = {}
    for glm_path in file_paths:
       glm_dicts[ path.basename(glm_path).split(".")[0] + ".json" ] = glm.load(glm_path)
@@ -16,11 +17,11 @@ def glm_to_dict( file_paths: list ):
    return glm_dicts
 
 #Converts glm dict to json
-def dict2json( glm_dict: dict ):
+def dict2json( glm_dict: dict ) -> str:
    glm_json = json.dumps( glm_dict, indent= 3 )
    return glm_json
 
-def create_graph(data: dict, set_communities=False):
+def create_graph(data: dict, set_communities: bool=False) -> dict:
    GRAPH.clear()
 
    for obj in data["objects"]:
@@ -37,12 +38,12 @@ def create_graph(data: dict, set_communities=False):
       nx.set_node_attributes(GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=GRAPH, name="glimpse_community_id")
 
-def get_modularity():
+def get_modularity() -> float:
    modularity = nx.community.modularity(GRAPH, nx.community.label_propagation_communities(GRAPH))
    return modularity
 
 # long computation with larger graphs
-def get_avg_betweenness_centrality():
+def get_avg_betweenness_centrality() -> float:
    my_k = int(GRAPH.number_of_nodes()*0.68)
    betweenness_centrality_dict = nx.betweenness_centrality(GRAPH, k=my_k)
    
@@ -65,6 +66,9 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 def hello():
    return {"api": "GLIMPSE flask backend"}
 
+'''
+This endpoint gets the paths of the uploaded glm files to be converted to JSON
+'''
 @app.route("/glm2json", methods=["POST"])
 def glm_to_json():
    paths = req.get_json()
@@ -72,26 +76,33 @@ def glm_to_json():
    
    return dict2json(glm_dict)
 
+'''
+This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
+then most likely there is a true value where this end point needs to return a dict of community IDs
+'''
 @app.route("/create-nx-graph", methods=["POST"])
 def create_nx_graph(): 
    graphData = req.get_json()
 
    if isinstance(graphData, dict):
       create_graph(graphData)
-      return '', 204
+      return "", 204
    elif isinstance(graphData, list):
       #index 0 contains the data and index 1 contains a bool value whether to set the community IDs as well
       community_ids = create_graph(data=graphData[0], set_communities=graphData[1])
       return community_ids
-      
+
+'''
+This endpoint gathers some summary statistics using networkx and the already existing GRAPH object.
+'''
 @app.route("/get-stats", methods=["GET"])
 def get_stats():
    summary_stats = {
-      '#Nodes': GRAPH.number_of_nodes(),
-      '#Edges': GRAPH.number_of_edges(),
-      '#ConnectedComponets': nx.number_connected_components(GRAPH),
-      'modularity': get_modularity(),
-      'avgBetweennessCentrality': get_avg_betweenness_centrality()
+      "#Nodes": GRAPH.number_of_nodes(),
+      "#Edges": GRAPH.number_of_edges(),
+      "#ConnectedComponets": nx.number_connected_components(GRAPH),
+      "modularity": get_modularity(),
+      "avgBetweennessCentrality": get_avg_betweenness_centrality()
    }
    
    return summary_stats

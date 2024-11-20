@@ -199,7 +199,9 @@ const json2glmFunc = async (jsonData) => {
 
    const parsedData = JSON.parse(jsonData);
    const json2glmArg =
-      process.platform == "darwin" ? ".\\tools\\json2glm" : ".\\tools\\json2glm.exe";
+      process.platform == "darwin"
+         ? path.join(__dirname, "tools", "json2glm")
+         : path.join(__dirname, "tools", "json2glm.exe");
 
    // for each json file data, make a json file and turn it to a glm file
    for (const file of Object.keys(parsedData)) {
@@ -373,10 +375,10 @@ const makeSplashWindow = () => {
       resizable: false,
       movable: true,
       roundedCorners: true,
-      icon: "./assets/GLIMPSE_color_icon.ico",
+      icon: path.join(__dirname, "assets", "GLIMPSE_color_icon.ico"),
    });
 
-   splashWindow.loadFile("./splash_window/splash-window.html");
+   splashWindow.loadFile(path.join(__dirname, "splash_window", "splash-window.html"));
    splashWindow.center();
 };
 
@@ -394,7 +396,7 @@ const initiateServer = () => {
          return;
       }
    } else {
-      const python = spawn("python", ["./local-server/server.py"]);
+      const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
       python.stdout.on("data", function (data) {
          console.log("data: ", data.toString("utf8"));
       });

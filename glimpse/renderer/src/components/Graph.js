@@ -717,7 +717,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          for (let i = 0; i < replacedEdgeIDs.length; i++) {
             if (!edgesToAnimate.includes(replacedEdgeIDs[i])) continue;
 
-            // remove the replaced ID from the edges to animate list
+            // remove the replaced/base edge ID from the edges to animate list
             edgesToAnimate.splice(edgesToAnimate.indexOf(replacedEdgeIDs[i]), 1);
             delete positions[replacedEdgeIDs[i]];
          }

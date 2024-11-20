@@ -24,7 +24,7 @@ const About = ({ show, close }) => {
             </div>
             <DialogContent sx={{ maxWidth: "72rem", padding: "0 2rem" }}>
                <div className="about-title">
-                  <h1>GLIMPSE v0.4.0</h1>
+                  <h1>GLIMPSE v0.4.1</h1>
                   <h3>(Grid Layout Interface for Model Preview and System Exploration)</h3>
                </div>
                <div className="description">
@@ -105,6 +105,16 @@ const About = ({ show, close }) => {
                         button to upload additional models or even the same model. Right-clicking on
                         an empty space will now show the option to create a new edge which can be
                         used to create connections between multiple models being visualized.
+                     </li>
+                     <li>
+                        If there are multiple models you can right click on a node that belongs to a
+                        model and cluster that model.
+                     </li>
+                     <li>
+                        Right clicking on an edge will now give you the option to animate that edge.
+                        This animated edge will persist when clustering and de-clustering if the
+                        edge is between models. Right clicking on an animated edge and clicking the
+                        animate edge context menu item will remove the animation.
                      </li>
                      <li>
                         {`Using GLIMPSE's local WebSocket API a key value pair such as {animation: true} can be supplied to an existing edge to show an animation of a small red circle following the edge's path.`}

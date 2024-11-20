@@ -6,18 +6,21 @@ asar: true
 files:
    - from: ./
      filter:
-        - "!data${/*}"
+        - "!socket_testing${/*}"
         - "!node_modules${/*}"
         - "!local-server${/*}"
         - "!renderer/src${/*}"
         - "!themes${/*}"
         - "!config${/*}"
+        - "!data${/*}"
         - "!out${/*}"
 extraResources:
+   - ./GLIMPSE-Event-API.pdf
+   - ./socket_testing/**
+   - ./local-server/server/**
    - ./themes/**
-   - ./data/**
    - ./config/**
-   - ./local-server/**
+   - ./data/**
 win:
    target:
       - target: msi
