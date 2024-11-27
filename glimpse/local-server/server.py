@@ -1,6 +1,5 @@
 from flask import Flask, request as req
 from flask_socketio import SocketIO
-# from engineio.async_drivers import gevent
 import networkx as nx
 import glm
 import json

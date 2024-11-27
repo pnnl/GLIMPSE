@@ -8,7 +8,7 @@
    "scripts": {
       "build-mac": "electron-builder build -m",
       "build-win": "electron-builder build -w",
-      "build-linux": "electron-builder build -l deb tar.gz",
+      "build-linux": "electron-builder build -l",
       "watch": "webpack --config webpack.common.js --watch",
       "publish": "electron-builder -p always",
       "start": "electron-forge start"

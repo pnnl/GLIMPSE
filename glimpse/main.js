@@ -383,8 +383,12 @@ const makeSplashWindow = () => {
 };
 
 const initiateServer = () => {
-   const serverPath = path.join(rootDir, "local-server", "server", "server.exe");
-   if (fs.existsSync(serverPath)) {
+   const serverExecutableName =
+      process.platform === "linux" || process.platform === "darwin" ? "server" : "server.exe";
+
+   const serverExecutablePath = path.join(rootDir, "local-server", "server", serverExecutableName);
+
+   if (fs.existsSync(serverExecutablePath)) {
       try {
          execFile(serverPath, (error, stdout, stderr) => {
             if (error) throw error;

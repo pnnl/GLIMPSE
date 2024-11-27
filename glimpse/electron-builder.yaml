@@ -15,7 +15,6 @@ files:
         - "!data${/*}"
         - "!out${/*}"
 extraResources:
-   - ./GLIMPSE-Event-API.pdf
    - ./socket_testing/**
    - ./local-server/server/**
    - ./themes/**
@@ -26,6 +25,15 @@ win:
       - target: msi
         arch:
            - x64
+linux:
+   target:
+      - deb
+      - tar.gz
+   maintainer: "mendozasanchez166@pnnl.gov"
+   vendor: "pnnl"
+   synopsis: "GLIMPSE is a graph-based web application to visualize and update distribution power grid models."
+   description: "GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python"
+   category: "Utility"
 msi:
    oneClick: false
 nsis:
