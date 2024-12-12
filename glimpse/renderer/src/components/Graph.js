@@ -116,12 +116,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    /**
-    * Turns physics on or off
-    * @param {bool} toggle - True turns on physics, false turns off physics
+    * Turns vis.js' physics on or off
+    * @param {bool} toggle - true turns on physics, false turns off physics
     */
    const TogglePhysics = (toggle) => {
-      if (toggle) glmNetwork.setOptions({ physics: { enabled: true } });
-      else glmNetwork.setOptions({ physics: { enabled: false } });
+      glmNetwork.setOptions({ physics: { enabled: toggle } });
    };
 
    /* ---------------------------- Establish Network --------------------------- */
@@ -145,15 +144,16 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    /* ------------------ Receive Sate Variables from Children ------------------ */
 
    // initiate variables that reference the NodePopup child component state and set state variables
-   let seNode;
-   let setOpenNodePopup;
+   let setNode = null;
+   let setOpenNodePopup = null;
    /**
     * Used to send the set state function from the child to the parent
-    * @param {React.Dispatch<React.SetStateAction<{}>>} setChilNode - The useState function of the NodePopup child component
+    * @param {React.Dispatch<React.SetStateAction<{}>>} setChilNode - The useState function of the NodePopup
+    * child component
     * @param {React.Dispatch<React.SetStateAction<false>>} setOpen - Used to display the node popup form
     */
    const onChildMount = (setChilNode, setOpen) => {
-      seNode = setChilNode;
+      setNode = setChilNode;
       setOpenNodePopup = setOpen;
    };
 
@@ -161,9 +161,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    let contextMenuData;
    let setContextMenuData;
    /**
-    * Takes the state variables of the ContextMenu component so that the parent component may change the state of the child
-    * @param {Object} contextMenuDataState - Null or holds x and y data for placing the context menu on the page with the data of the selected edge
-    * @param {React.Dispatch<React.SetStateAction<*>>} setContextMenuDataState - Sets the state of the child context menu component
+    * Takes the state variables of the ContextMenu component
+    * so that the parent component may change the state of the child
+    * @param {Object} contextMenuDataState - Null or holds x and y data
+    * for placing the context menu on the page with the data of the selected edge
+    * @param {React.Dispatch<React.SetStateAction<*>>} setContextMenuDataState -
+    * Sets the state of the child context menu component
     */
    const onContextMenuChildMount = (contextMenuDataState, setContextMenuDataState) => {
       contextMenuData = contextMenuDataState;
@@ -289,7 +292,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                               id: `${microgrid.name}-${nodeID}`,
                               from: microgrid.name,
                               to: nodeID,
-                              title: `objectType: parentChild\nname: ${microgrid.name}-${nodeID}\nfrom: ${microgrid.name}\nto: ${nodeID}`,
+                              title:
+                                 "objectType: parentChild\n" +
+                                 getTitle({
+                                    name: `${microgrid.name}-${nodeID}`,
+                                    from: microgrid.name,
+                                    to: nodeID,
+                                 }),
                               color: { inherit: true },
                               type: "parentChild",
                               width: 0.15,
@@ -309,7 +318,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                         id: comm_node.name,
                         label: comm_node.name,
                         group: "communication_node",
-                        title: `ObjectType: communication_node\nname: ${comm_node.name}`,
+                        title:
+                           "ObjectType: communication_node\n" + getTitle({ name: comm_node.name }),
                      })[0]
                   );
 
@@ -323,7 +333,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                                  id: `${comm_node.name}-${nodeID}`,
                                  from: comm_node.name,
                                  to: nodeID,
-                                 title: `objectType: parentChild\nname: ${comm_node.name}-${nodeID}\nfrom: ${comm_node.name}\nto: ${nodeID}`,
+                                 title:
+                                    "objectType: parentChild\n" +
+                                    getTitle({
+                                       name: `${comm_node.name}-${nodeID}`,
+                                       from: comm_node.name,
+                                       to: nodeID,
+                                    }),
                                  type: "parentChild",
                                  color: { inherit: true },
                                  width: 0.15,
@@ -408,12 +424,18 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    const addNewEdge = (formObj) => {
+      // "title" key is tooltip popup
       const newEdge = {
          id: formObj.edgeID,
          from: formObj.from,
          to: formObj.to,
-         // title is tooltip popup
-         title: `Object Type: ${formObj.edgeType}\nID: ${formObj.edgeID}\nFrom: ${formObj.from}\nTo: ${formObj.to}`,
+         title:
+            `Object Type: ${formObj.edgeType}\n` +
+            getTitle({
+               ID: formObj.edgeID,
+               from: formObj.from,
+               to: formObj.to,
+            }),
          type: formObj.edgeType,
          color: edgeOptions[formObj.edgeType].color,
          width: edgeOptions[formObj.edgeType].width,
@@ -464,10 +486,14 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    const animateEdges = (ctx) => {
-      if (edgesToAnimate.length > 0) {
+      const edgesToAnimateCpy = structuredClone(edgesToAnimate);
+      if (edgesToAnimateCpy.length > 0) {
          try {
-            for (let edgeID of edgesToAnimate) {
+            for (let edgeID of edgesToAnimateCpy) {
                const canvasEdge = glmNetwork.body.edges[edgeID];
+
+               if (!canvasEdge) continue;
+
                const { from: start, to: end } = canvasEdge;
 
                // Calculate the circle's position along the edge
@@ -486,12 +512,21 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                ctx.fill();
             }
          } catch (msg) {
-            console.log(msg);
+            console.error(msg);
+
             if (redrawIntervalID) {
                clearInterval(redrawIntervalID);
+               redrawIntervalID = null;
             }
+            edgesToAnimate.length = 0;
+            edgesToAnimateCpy.length = 0;
          }
       }
+   };
+
+   const removeEdgeAnimation = (edgeID) => {
+      edgesToAnimate = edgesToAnimate.filter((id) => id !== edgeID);
+      delete positions[edgeID];
    };
 
    const animateEdge = (edgeID) => {
@@ -530,8 +565,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             animatedEdge.attributes.animation = false;
          }
 
-         edgesToAnimate.splice(edgesToAnimate.indexOf(edgeID), 1);
-         delete positions[edgeID];
+         removeEdgeAnimation(edgeID);
 
          // if the edges to animate list is empty clear the redraw interval
          if (edgesToAnimate.length === 0) {
@@ -548,8 +582,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} nodeID the ID of a node to delete
     */
    const deleteNode = (nodeID) => {
+      const nodeObject = graphData.ndoes.get(nodeID);
       // get node obj and subtract from that node type's count
-      objectTypeCount.nodes[graphData.nodes.get(nodeID).group]--;
+      objectTypeCount.nodes[nodeObject.group]--;
 
       const edgesToDelete = [];
       for (let edge of graphData.edges.get()) {
@@ -569,16 +604,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       // check if the edgeID is a cluster edge ID
       if (edgeID.includes("clusterEdge")) {
          // get the base edge of the clustered edge
-         const baseEdge = glmNetwork.clustering.getBaseEdges(edgeID);
+         const [baseEdge] = glmNetwork.clustering.getBaseEdges(edgeID);
 
          // get the edge object from the graph data
          const edgeToDelete = graphData.edges.get(baseEdge);
 
+         delete glmNetwork.body.edges[edgeID];
+
          // if the edge is animated remove animation and clear
          // redraw animation interval if there are no other edges to animate
          if (edgesToAnimate.includes(edgeID)) {
-            edgesToAnimate.splice(edgesToAnimate.indexOf(edgeID), 1);
-            delete positions[edgeID];
+            removeEdgeAnimation(edgeID);
 
             // clear redraw interval if there are no other edges to animate
             if (edgesToAnimate.length === 0) {
@@ -598,8 +634,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          // check if the edge is currently being animated
          if (edgesToAnimate.includes(edgeID)) {
             // remove it from the edges to animate list and the positions tracker object
-            edgesToAnimate.splice(edgesToAnimate.indexOf(edgeID), 1);
-            delete positions[edgeID];
+            removeEdgeAnimation(edgeID);
 
             // clear the redraw interval if there are no more edges to animate
             if (edgesToAnimate.length === 0) {
@@ -709,62 +744,45 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       });
 
       const clusterNode = glmNetwork.body.nodes[clusterValue];
-      //clusteringEdgeReplacingIds;
 
       if (clusterNode.edges.length > 0) {
-         const replacedEdgeIDs = clusterNode.edges[0].clusteringEdgeReplacingIds;
+         for (let i = 0; i < clusterNode.edges.length; i++) {
+            const currentClusteredEdge = clusterNode.edges[i];
+            const [baseEdge] = glmNetwork.clustering.getBaseEdges(currentClusteredEdge.id);
 
-         for (let i = 0; i < replacedEdgeIDs.length; i++) {
-            if (!edgesToAnimate.includes(replacedEdgeIDs[i])) continue;
-
-            // remove the replaced/base edge ID from the edges to animate list
-            edgesToAnimate.splice(edgesToAnimate.indexOf(replacedEdgeIDs[i]), 1);
-            delete positions[replacedEdgeIDs[i]];
+            if (edgesToAnimate.includes(baseEdge)) {
+               removeEdgeAnimation(baseEdge);
+               animateEdge(currentClusteredEdge.id);
+            } else if (
+               edgesToAnimate.includes(currentClusteredEdge.clusteringEdgeReplacingIds[0])
+            ) {
+               const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
+               removeEdgeAnimation(previousClusteredEdge);
+               animateEdge(currentClusteredEdge.id);
+            }
          }
-
-         animateEdge(clusterNode.edges[0].id);
       }
    };
 
-   const handleSelectNode = (params) => {
-      const selectedNodeID = params.nodes[0];
+   const deCluster = (clusterNodeID) => {
+      const { edges: clusteredEdges } = glmNetwork.body.nodes[clusterNodeID];
+      const newEdgesToAnimate = [];
 
-      if (params.nodes.length === 1 && glmNetwork.clustering.isCluster(selectedNodeID)) {
-         const selectedNodeObj = glmNetwork.body.nodes[selectedNodeID];
+      for (let edge of clusteredEdges) {
+         // skip edges that are not animated
+         if (!edgesToAnimate.includes(edge.id)) continue;
 
-         const currentAnimatedEdge = selectedNodeObj.edges.find((edge) =>
-            edgesToAnimate.includes(edge.id)
-         );
+         // remove animation from current clustered edge
+         removeEdgeAnimation(edge.id);
 
-         if (currentAnimatedEdge) {
-            const baseEdge = glmNetwork.clustering.getBaseEdges(currentAnimatedEdge.id);
-
-            const clusteredEdges = glmNetwork.clustering.getClusteredEdges(baseEdge);
-            if (clusteredEdges.length > 2) {
-               const edgeToAnimate = clusteredEdges[1];
-
-               // remove current animated clustered edge from being animated
-               edgesToAnimate.splice(edgesToAnimate.indexOf(currentAnimatedEdge.id), 1);
-               delete positions[currentAnimatedEdge.id];
-
-               // open the selected cluster node
-               glmNetwork.openCluster(selectedNodeID);
-
-               // animate the new clustered edge
-               edgesToAnimate.push(edgeToAnimate);
-               positions[edgeToAnimate] = 0;
-            } else {
-               edgesToAnimate.splice(edgesToAnimate.indexOf(currentAnimatedEdge.id), 1);
-               delete positions[currentAnimatedEdge.id];
-
-               glmNetwork.openCluster(selectedNodeID);
-
-               edgesToAnimate.push(baseEdge);
-               positions[baseEdge] = 0;
-            }
-         } else {
-            glmNetwork.openCluster(selectedNodeID);
-         }
+         // add the edge replacing id to be animated
+         newEdgesToAnimate.push(edge.clusteringEdgeReplacingIds[0]);
+      }
+      // open the clustered node before animating the new edges
+      glmNetwork.openCluster(clusterNodeID);
+      // the animateEdge function will resume the redraw interval
+      if (newEdgesToAnimate.length > 0) {
+         newEdgesToAnimate.forEach((edgeID) => animateEdge(edgeID));
       }
    };
 
@@ -857,6 +875,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                });
 
                graphData.nodes.update(updatedNodes);
+
+               // returns an array of unique community IDs
                return [...new Set(graphData.nodes.map((node) => node.communityID))];
             }
          } catch (err) {
@@ -867,13 +887,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       const initializeGraph = async () => {
          let communityIDsSet = null;
 
-         if (graphData.nodes.length >= 2500) {
+         if (graphData.nodes.length >= 2800) {
             // This will result in a array of unique community IDs and establish the networkx object in server
             communityIDsSet = await establishNetworkxGraph([GLIMPSE_OBJECT, true]);
             establishCommunities = true;
             graphOptions.physics.barnesHut.damping = 0.7;
          } else {
-            // this will create and establish the networkx object in the
+            // this will create and establish the networkx GRAPH object in the
             establishNetworkxGraph(GLIMPSE_OBJECT);
          }
 
@@ -897,9 +917,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
             // Create clusters
             if (establishCommunities) {
-               for (let communityID of communityIDsSet) {
-                  createClusterNode(communityID);
-               }
+               communityIDsSet.forEach((CID) => createClusterNode(CID));
             }
 
             // get the list of edges that contain the animation value of true
@@ -920,7 +938,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             );
 
             // if the selected node is a cluster it will be opened if not nothing will happen
-            glmNetwork.on("selectNode", handleSelectNode);
+            // glmNetwork.on("selectNode", deCluster);
 
             glmNetwork.on("stabilizationProgress", (params) => {
                circularProgressBar.style.display = "flex";
@@ -956,7 +974,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                alert("Double click on a node to edit.");
             } else {
                /* Set the state of the NodePopup component for editing of the selected node's attributes */
-               seNode(graphData.nodes.get(params.nodes[0]));
+               setNode(graphData.nodes.get(params.nodes[0]));
                setOpenNodePopup(true);
             }
          });
@@ -983,10 +1001,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                      nodeID: nodeData.id,
                   });
                }
+            } else if (contextNodeID && glmNetwork.clustering.isCluster(contextNodeID)) {
+               setContextMenuData({
+                  clusterNodeID: contextNodeID,
+               });
             } else {
                setContextMenuData({});
             }
          });
+
          glmNetwork.setOptions({
             configure: {
                filter: (option, path) => {
@@ -996,18 +1019,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                   return false;
                },
                container: document.getElementById("layout-form"),
-            },
-            nodes: {
-               scaling: {
-                  min: 5,
-                  max: 75,
-               },
-            },
-            edges: {
-               scaling: {
-                  min: 5,
-                  max: 20,
-               },
             },
          });
       };
@@ -1061,6 +1072,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             openNewEdgeForm={openNewEdgeForm}
             deleteNode={deleteNode}
             createCluster={createClusterNode}
+            openCluster={(id) => deCluster(id)}
             animateEdge={animateEdge}
             deleteEdge={deleteEdge}
          />

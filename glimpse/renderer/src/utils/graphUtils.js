@@ -122,8 +122,8 @@ export const getLegendData = (typeCounts, theme, edgeOptions, legendData) => {
    });
 
    let x_increment = null;
-   if (currentNodeTypes.length < 6) x_increment = 800 / currentNodeTypes.length;
-   else x_increment = 1100 / currentNodeTypes.length;
+   if (currentNodeTypes.length < 6) x_increment = 800 / 6;
+   else x_increment = 1100 / 6;
 
    let farthest_x = 0;
    let current_x = 0;
@@ -315,7 +315,6 @@ export const showAttributes = (show, data) => {
  * @param {string} type - "node" or "edge"
  */
 export const hideObjects = (objectType, type, data) => {
-   console.log(objectType, type);
    if (type === "node") {
       const nodesToHide = data.nodes.get().map((node) => {
          if (node.group === objectType) {
@@ -641,8 +640,6 @@ export const setGraphData = (
             else objectTypeCount.nodes[objectType] = 1;
 
             GLIMPSE_OBJECT.objects.push(obj);
-
-            console.log(theme.groups);
 
             return {
                id:

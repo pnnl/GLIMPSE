@@ -24,7 +24,7 @@ const About = ({ show, close }) => {
             </div>
             <DialogContent sx={{ maxWidth: "72rem", padding: "0 2rem" }}>
                <div className="about-title">
-                  <h1>GLIMPSE v0.4.1</h1>
+                  <h1>GLIMPSE v0.4.2</h1>
                   <h3>(Grid Layout Interface for Model Preview and System Exploration)</h3>
                </div>
                <div className="description">
@@ -95,10 +95,10 @@ const About = ({ show, close }) => {
                      </li>
                      <li>
                         Uploading larger models and larger networks will be clustered in to
-                        communities allowing for smoother visualization experience. Clicking on
-                        these clustered nodes will release all nodes in that cluster for further
-                        examination utilizing the tools highlighting, exploration, and modification
-                        features.
+                        communities allowing for smoother visualization experience. Right-clicking
+                        on these clustered nodes will give you the option to open the cluster. This
+                        will release all nodes in that cluster for further examination utilizing the
+                        tools highlighting, exploration, and modification features.
                      </li>
                      <li>
                         To upload multiple models or related files simply use the overlay upload
@@ -117,7 +117,8 @@ const About = ({ show, close }) => {
                         animate edge context menu item will remove the animation.
                      </li>
                      <li>
-                        {`Using GLIMPSE's local WebSocket API a key value pair such as {animation: true} can be supplied to an existing edge to show an animation of a small red circle following the edge's path.`}
+                        {`Using GLIMPSE's local WebSocket API a key value pair such as {animation: true} 
+                        can be supplied to an existing edge to show an animation of a small red circle following the edge's path.`}
                      </li>
                   </ul>
                </div>

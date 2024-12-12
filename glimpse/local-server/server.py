@@ -30,7 +30,7 @@ def create_graph(data: dict, set_communities: bool=False) -> dict:
          GRAPH.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
 
    if set_communities : 
-      partition = nx.algorithms.community.louvain_communities(G=GRAPH, max_level=5)
+      partition = nx.algorithms.community.louvain_communities(G=GRAPH, resolution=1, max_level=5)
 
       community_ids = {node: community_id for community_id, community in enumerate(partition) for node in community}
 

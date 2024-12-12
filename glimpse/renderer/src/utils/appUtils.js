@@ -53,21 +53,25 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
          });
       }
    } else if (paths.every(isJsonFile) && selectedTheme === "custom-theme") {
-      let themeData = { groups: {}, edgeOptions: {} };
+      const themeData = { groups: {}, edgeOptions: {} };
 
       if (paths.length > 1) themeData = await getCustomTheme(paths);
 
       setFilesUploaded(true);
       const validFileData = JSON.parse(await window.glimpseAPI.validate(paths));
 
-      if ("error" in validFileData) alert(validFileData.error);
-      else
+      if ("error" in validFileData) {
+         setFilesUploaded(false);
+         setFileData({ loading: false });
+         alert(validFileData.error);
+      } else {
          setFileData({
             visData: validFileData,
             theme: themeData,
             isGlm: false,
             loading: false,
          });
+      }
    } else {
       alert(
          "Upload glm files with the Power Grid theme or any JSON file with the custom theme selected"

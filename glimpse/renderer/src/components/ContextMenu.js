@@ -9,6 +9,7 @@ const ContextMenu = ({
    openNewEdgeForm,
    deleteNode,
    createCluster,
+   openCluster,
    animateEdge,
    deleteEdge,
 }) => {
@@ -83,6 +84,11 @@ const ContextMenu = ({
       setContextMenu(null);
    };
 
+   const handleOpenCluster = () => {
+      openCluster(contextMenu.clusterNodeID);
+      setContextMenu(null);
+   };
+
    const EdgeMenuItems = () => {
       return (
          <>
@@ -115,6 +121,11 @@ const ContextMenu = ({
                   Cluster
                </MenuItem>
             )}
+            {"clusterNodeID" in contextMenu && (
+               <MenuItem key={"open-cluster"} onClick={handleOpenCluster}>
+                  Open Cluster
+               </MenuItem>
+            )}
          </>
       );
    };
@@ -131,7 +142,7 @@ const ContextMenu = ({
                : { top: 0, left: 0 }
          }
       >
-         {"nodeID" in contextMenu ? (
+         {"nodeID" in contextMenu || "clusterNodeID" in contextMenu ? (
             <NodeMenuItems />
          ) : "edgeID" in contextMenu ? (
             <EdgeMenuItems />

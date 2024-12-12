@@ -26,6 +26,10 @@
          "showButton": false
       },
       "edges": {
+         "scaling": {
+            "min": 5,
+            "max": 20
+         },
          "font": {
             "multi": true,
             "align": "horizontal"
@@ -45,6 +49,10 @@
             "color": "#000",
             "multi": true,
             "bold": "20px arial black"
+         },
+         "scaling": {
+            "min": 5,
+            "max": 75
          }
       },
       "interaction": {

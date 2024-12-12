@@ -127,35 +127,35 @@ styleChanges = [
          "animation": True,
          "color": "#4F2FA6",
       }
-   }
-   # {
-   #    "elementType": "node",
-   #    "id": "switch1",
-   #    "updates": {
-   #       "color": "cyan",
-   #       "opacity": 0.2,
-   #       "shape": "triangleDown",
-   #       "size": 90
-   #    }
-   # },
-   #   {
-   #    "elementType": "edge",
-   #    "id": "switch1-switch2",
-   #    "updates": {
-   #       "color": "red",
-   #       "dashed": True,
-   #       "width": 12
-   #    }
-   # },
-   #   {
-   #    "elementType": "edge",
-   #    "id": "switch2-internet1",
-   #    "updates": {
-   #       "color": "purple",
-   #       "width": 15,
-   #       "arrows": "to, from, middle"
-   #    }
-   # },
+   },
+   {
+      "elementType": "node",
+      "id": "switch1",
+      "updates": {
+         "color": "cyan",
+         "opacity": 0.2,
+         "shape": "triangleDown",
+         "size": 90
+      }
+   },
+     {
+      "elementType": "edge",
+      "id": "switch1-switch2",
+      "updates": {
+         "color": "red",
+         "dashed": True,
+         "width": 12
+      }
+   },
+     {
+      "elementType": "edge",
+      "id": "switch2-internet1",
+      "updates": {
+         "color": "purple",
+         "width": 15,
+         "arrows": "to, from, middle"
+      }
+   },
 ]
 
 def main():
@@ -172,19 +172,19 @@ def main():
       sio.emit("addEdge", new_edge_obj)
       time.sleep(0.75)
       
-   # # delete some nodes via the deleteNode socket event
-   # for nodeID in nodes_to_delete: 
-   #    sio.emit("deleteNode", nodeID)
-   #    time.sleep(1)
+   # delete some nodes via the deleteNode socket event
+   for nodeID in nodes_to_delete: 
+      sio.emit("deleteNode", nodeID)
+      time.sleep(1)
   
-   # # delete some edge via the deleteEdge socket event
-   # for edgeID in edges_to_delete: 
-   #    sio.emit("deleteEdge", edgeID)
-   #    time.sleep(2)
+   # delete some edge via the deleteEdge socket event
+   for edgeID in edges_to_delete: 
+      sio.emit("deleteEdge", edgeID)
+      time.sleep(2)
 
-   # for style in styleChanges: 
-   #    sio.emit("glimpse", style)
-   #    time.sleep(1.5)
+   for style in styleChanges: 
+      sio.emit("glimpse", style)
+      time.sleep(1.5)
    
    # disconect from GLIMPSE WebSocket API      
    sio.disconnect()

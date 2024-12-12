@@ -25,6 +25,7 @@ if (!app.isPackaged) {
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
 const socket = io("http://127.0.0.1:5051");
+// const socket2 = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
@@ -133,6 +134,7 @@ const validateJson = (filePaths) => {
    const data = {};
    const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
+   // let edgesKeyName = null;
 
    for (const filePath of filePaths) {
       const fileData = JSON.parse(fs.readFileSync(filePath, { encoding: "utf-8" }));
@@ -143,8 +145,18 @@ const validateJson = (filePaths) => {
          };
 
          for (const node of fileData.nodes) {
+            let objectType = null;
+
+            if ("type" in node && typeof node.type === "object") {
+               objectType = node.type.join("-");
+            } else if ("type" in node) {
+               objectType = node.type;
+            } else {
+               objectType = "node";
+            }
+
             data[path.basename(filePath)].objects.push({
-               objectType: "type" in node ? node.type : "node",
+               objectType: objectType,
                elementType: "node",
                attributes: node,
             });
@@ -390,7 +402,7 @@ const initiateServer = () => {
 
    if (fs.existsSync(serverExecutablePath)) {
       try {
-         execFile(serverPath, (error, stdout, stderr) => {
+         execFile(serverExecutablePath, (error, stdout, stderr) => {
             if (error) throw error;
             if (stderr) throw stderr;
             console.log(stdout);

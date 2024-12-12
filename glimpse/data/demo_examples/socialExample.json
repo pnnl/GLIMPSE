@@ -1,5 +1,5 @@
 {
-   "objects":[
+   "objects": [
       {
          "objectType": "person",
          "elementType": "node",
@@ -58,7 +58,7 @@
       {
          "objectType": "location",
          "elementType": "node",
-         "attributes":{
+         "attributes": {
             "id": "LVIII",
             "event": "Super Bowl",
             "location": "Las Vegas"
@@ -67,7 +67,7 @@
       {
          "objectType": "location",
          "elementType": "node",
-         "attributes":{
+         "attributes": {
             "id": "PNNL1965",
             "location": "Richland WA",
             "locationName": "Pacific Northwest National Laboratory",
