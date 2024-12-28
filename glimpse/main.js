@@ -125,7 +125,9 @@ const validateThemeFile = (filepath) => {
 };
 
 const sendPlot = () => {
-   return fs.readFileSync(path.join(__dirname, "figs", "plot.png"));
+   const plotFilename = path.join(__dirname, "figs", "plot.png");
+   const plotFileData = fs.readFileSync(plotFilename);
+   return plotFileData;
 };
 
 const validateJson = (filePaths) => {
@@ -345,13 +347,24 @@ const makeWindow = () => {
    Menu.setApplicationMenu(menu);
 
    ipcMain.handle("getSelectedTheme", () => {
-      for (const item of Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu
-         .items)
-         if (item.checked) return item.id;
+      const themeMenuItems =
+         Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items;
+      let themeMenuItemID = null;
+
+      for (const item of themeMenuItems) {
+         if (item.checked) {
+            themeMenuItemID = item.id;
+            break;
+         }
+      }
+
+      return themeMenuItemID;
    });
 
    ipcMain.handle("getConfig", () => {
-      return fs.readFileSync(path.join(rootDir, "config", "appConfig.json"), { encoding: "utf-8" });
+      const configFilepath = path.join(rootDir, "config", "appConfig.json");
+      const configFileContent = fs.readFileSync(configFilepath, { encoding: "utf-8" });
+      return configFileContent;
    });
 
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
@@ -360,13 +373,16 @@ const makeWindow = () => {
 
    ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
 
-   ipcMain.handle("getThemeJsonData", (e, filepath) =>
-      JSON.parse(fs.readFileSync(path.join(rootDir, "themes", filepath), { encoding: "utf-8" }))
-   );
+   ipcMain.handle("getThemeJsonData", (e, filepath) => {
+      const themeFilepath = path.join(rootDir, "themes", filepath);
+      const themeFileData = fs.readFileSync(themeFilepath, { encoding: "utf-8" });
+      return JSON.parse(themeFileData);
+   });
 
-   ipcMain.handle("read-json-file", (e, filepath) =>
-      JSON.parse(fs.readFileSync(filepath, { encoding: "utf-8" }))
-   );
+   ipcMain.handle("read-json-file", (e, filepath) => {
+      const jsonFileData = fs.readFileSync(filepath, { encoding: "utf-8" });
+      return JSON.parse(jsonFileData);
+   });
    ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
 
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
@@ -413,8 +429,9 @@ const initiateServer = () => {
       }
    } else {
       const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
-      python.stdout.on("data", function (data) {
-         console.log("data: ", data.toString("utf8"));
+      python.stdout.on("data", (data) => {
+         // console.log("data: ", data.toString("utf8"));
+         console.log("data: ", data);
       });
       python.stderr.on("data", (data) => {
          console.log(`log: ${data}`); // when error

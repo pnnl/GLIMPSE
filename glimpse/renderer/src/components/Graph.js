@@ -371,22 +371,22 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
     */
    const addNewNode = ({ nodeType, nodeID, connectTo, edgeType }) => {
-      const node_types = Object.keys(objectTypeCount.nodes).filter(
+      const nodeTypes = Object.keys(objectTypeCount.nodes).filter(
          (key) => objectTypeCount.nodes[key] > 0
       );
-      const edge_types = Object.keys(objectTypeCount.edges).filter(
+      const edgeTypes = Object.keys(objectTypeCount.edges).filter(
          (key) => objectTypeCount.edges[key] > 0
       );
 
       try {
          const nodesOfsameType = graphData.nodes
             .get()
-            .filter((n) => n.group === node_types[nodeType]);
+            .filter((n) => n.group === nodeTypes[nodeType]);
 
          const [addedNodeID] = graphData.nodes.add({
             id: `${nodeID}`,
             label: `${nodeID}`,
-            group: node_types[nodeType],
+            group: nodeTypes[nodeType],
             attributes: {
                id: `${nodeID}`,
             },
@@ -398,7 +398,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
          const addedNode = graphData.nodes.get(addedNodeID);
          addedNode.title =
-            "Object Type: " + node_types[nodeType] + "\n" + getTitle(addedNode.attributes);
+            "Object Type: " + nodeTypes[nodeType] + "\n" + getTitle(addedNode.attributes);
          objectTypeCount.nodes[addedNode.group]++;
          graphData.nodes.update(addedNode);
 
@@ -406,20 +406,20 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             id: `${connectTo}-${addedNodeID}`,
             from: connectTo,
             to: addedNodeID,
-            type: edge_types[edgeType],
-            color: edgeOptions[edge_types[edgeType]].color,
-            width: edgeOptions[edge_types[edgeType]].width,
+            type: edgeTypes[edgeType],
+            color: edgeOptions[edgeTypes[edgeType]].color,
+            width: edgeOptions[edgeTypes[edgeType]].width,
          });
 
          const { color, width, ...rest } = graphData.edges.get(addedEdgeID);
          const addedEdge = graphData.edges.get(addedEdgeID);
-         addedEdge.title = `Object Type: ${edge_types[edgeType]}\n${getTitle(rest)}`;
+         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
          objectTypeCount.edges[addedEdge.type]++;
          graphData.edges.update(addedEdge);
 
          getLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
-         alert(`${node_types[nodeType]}_${nodeID} already exists...`);
+         alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
       }
    };
 
@@ -436,13 +436,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                from: formObj.from,
                to: formObj.to,
             }),
+         animation: formObj.animate,
          type: formObj.edgeType,
          color: edgeOptions[formObj.edgeType].color,
          width: edgeOptions[formObj.edgeType].width,
       };
 
       graphData.edges.add(newEdge);
-      graphData.edges.update({ ...newEdge, attributes: { animation: formObj.animate } });
       objectTypeCount.edges[formObj.edgeType]++;
 
       if (formObj.animate) {
@@ -453,6 +453,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    const updateVisObjects = (updateData) => {
+      console.log(updateData);
       if (updateData.elementType === "node") {
          const node = graphData.nodes.get(updateData.id);
          graphData.nodes.update({ ...node, ...updateData.updates });
@@ -461,16 +462,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
          if ("animation" in updateData.updates) {
+            const { animation, ...rest } = updateData.updates;
+            edge.animation = animation;
+
             // if the first element of the clustered edges array is not the passed edge ID
             // then there are clustered edges
             if (!(clusteredEdges[0] === edge.id)) {
                // the first element will then be the current visible clustered edge
-               edgesToAnimate.push(clusteredEdges[0]);
-               positions[clusteredEdges[0]] = 0;
+               animateEdge(clusteredEdges[0]);
+            } else {
+               animateEdge(edge.id);
             }
-
-            const { animation, ...rest } = updateData.updates;
-            edge.attributes.animation = animation;
 
             graphData.edges.update({ ...edge, ...rest });
 
@@ -543,7 +545,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          // get the edge object
          const edgeToAnimate = graphData.edges.get(edgeID);
          // set its animation attribute to true
-         edgeToAnimate.attributes.animation = true;
+         edgeToAnimate.animation = true;
          graphData.edges.update(edgeToAnimate);
 
          // add it to the list of edges to animate and the positions object
@@ -562,7 +564,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       } else if (edgesToAnimate.includes(edgeID)) {
          if (!edgeID.includes("clusterEdge")) {
             const animatedEdge = graphData.edges.get(edgeID);
-            animatedEdge.attributes.animation = false;
+            animatedEdge.animation = false;
          }
 
          removeEdgeAnimation(edgeID);
@@ -802,7 +804,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          )
       );
       removeListenerArr.push(
-         window.glimpseAPI.onUpdateData((updateData) => updateVisObjects(updateData, graphData))
+         window.glimpseAPI.onUpdateData((updateData) => updateVisObjects(updateData))
       );
       removeListenerArr.push(
          window.glimpseAPI.onAddNodeEvent((newNodeData) => {
@@ -817,14 +819,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       );
       removeListenerArr.push(
          window.glimpseAPI.onAddEdgeEvent((newEdgeData) => {
-            graphData.edges.add({
-               id: newEdgeData.id,
-               to: newEdgeData.attributes.to,
-               from: newEdgeData.attributes.from,
-               attributes: newEdgeData.attributes,
-               title: "Type: " + newEdgeData.objectType + "\n" + getTitle(newEdgeData.attributes),
-               ...newEdgeData.styles,
-            });
+            graphData.edges.add([
+               {
+                  id: newEdgeData.attributes.id,
+                  to: newEdgeData.attributes.to,
+                  from: newEdgeData.attributes.from,
+                  attributes: newEdgeData.attributes,
+                  title:
+                     "Type: " + newEdgeData.objectType + "\n" + getTitle(newEdgeData.attributes),
+                  ...newEdgeData.styles,
+               },
+            ]);
          })
       );
       removeListenerArr.push(
@@ -923,7 +928,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             // get the list of edges that contain the animation value of true
             edgesToAnimate = graphData.edges
                .getIds()
-               .filter((edge) => graphData.edges.get(edge).attributes.animation);
+               .filter((edge) => graphData.edges.get(edge).animation);
 
             // if there some edges to animate, start the redraw interval
             if (edgesToAnimate.length > 0) {
@@ -977,6 +982,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                setNode(graphData.nodes.get(params.nodes[0]));
                setOpenNodePopup(true);
             }
+         });
+
+         glmNetwork.on("selectEdge", (params) => {
+            const selectedEdge = graphData.edges.get(params.edges[0]);
+            console.log(selectedEdge);
          });
 
          /* Display the child Context menu component to hide an edge or edge types */

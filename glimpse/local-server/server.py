@@ -57,7 +57,7 @@ app = Flask(__name__)
 # socketio = SocketIO(app)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
-#------------------------------ Server ------------------------------#
+#------------------------------ End Server ------------------------------#
 
 #------------------------------ Server Routes ------------------------------#
 
@@ -106,7 +106,7 @@ def get_stats():
    
    return summary_stats
 
-#------------------------------ Server Routes ------------------------------#
+#------------------------------ End Server Routes ------------------------------#
 
 #------------------------------ WebSocket Events ------------------------------#
 @socketio.on("glimpse")
@@ -129,11 +129,11 @@ def delete_node(nodeID):
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
 
-#------------------------------ WebSocket Events ------------------------------#
+#------------------------------ End WebSocket Events ------------------------------#
 
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=False, log_output=True)
+   socketio.run(app, port=5051, debug=True)
    
-#-------------------------- Start WebSocket Server --------------------------#
+#-------------------------- End Start WebSocket Server --------------------------#

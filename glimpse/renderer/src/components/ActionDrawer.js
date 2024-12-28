@@ -9,6 +9,7 @@ import {
    Stack,
    Button,
    Tooltip,
+   Accordion,
 } from "@mui/material";
 import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
 import OverlayUpload from "./OverlayUpload";
