@@ -16,12 +16,13 @@
    "keywords": [],
    "license": "ISC",
    "dependencies": {
-      "@emotion/react": "^11.13.3",
-      "@emotion/styled": "^11.13.0",
-      "@mui/icons-material": "^6.1.7",
-      "@mui/material": "^6.1.7",
+      "@emotion/react": "^11.14.0",
+      "@emotion/styled": "^11.14.0",
+      "@mui/icons-material": "^6.3.1",
+      "@mui/material": "^6.3.1",
+      "@mui/system": "^6.3.1",
       "ajv": "^8.17.1",
-      "axios": "^1.7.7",
+      "axios": "^1.7.9",
       "mui-color-input": "^5.0.1",
       "react": "^18.3.1",
       "react-dom": "^18.3.1",
@@ -46,6 +47,12 @@
       "webpack": "^5.96.1",
       "webpack-cli": "^5.1.4",
       "webpack-dev-server": "^5.1.0"
+   },
+   "eslintConfig": {
+      "extends": [
+         "react-app",
+         "react-app/jest"
+      ]
    },
    "repository": {
       "type": "git",

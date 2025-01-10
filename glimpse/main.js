@@ -430,8 +430,8 @@ const initiateServer = () => {
    } else {
       const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
       python.stdout.on("data", (data) => {
-         // console.log("data: ", data.toString("utf8"));
-         console.log("data: ", data);
+         console.log("data: ", data.toString("utf8"));
+         // console.log("data: ", data);
       });
       python.stderr.on("data", (data) => {
          console.log(`log: ${data}`); // when error

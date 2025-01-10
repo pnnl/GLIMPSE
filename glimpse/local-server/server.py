@@ -129,6 +129,11 @@ def delete_node(nodeID):
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
 
+@socketio.on("natig-config")
+def natig_config(configObj):
+   print(f"data received in backend: {str(configObj)}")
+   return "got your message!! - Server.py"
+
 #------------------------------ End WebSocket Events ------------------------------#
 
 #-------------------------- Start WebSocket Server --------------------------#
