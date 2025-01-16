@@ -10,6 +10,7 @@
       "build-win": "electron-builder build -w",
       "build-linux": "electron-builder build -l",
       "watch": "webpack --config webpack.common.js --watch",
+      "webpack": "webpack --config webpack.common.js",
       "publish": "electron-builder -p always",
       "start": "electron-forge start"
    },
@@ -20,6 +21,7 @@
       "@emotion/styled": "^11.13.0",
       "@mui/icons-material": "^6.1.7",
       "@mui/material": "^6.1.7",
+      "@mui/system": "^6.3.0",
       "ajv": "^8.17.1",
       "axios": "^1.7.7",
       "mui-color-input": "^5.0.1",

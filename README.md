@@ -28,10 +28,9 @@ npm install
 After all node modules are installed run the following command to bundle the source code using webpack:
 
 ```bash
-npm run watch
+npm run webpack
 ```
 
-Then after the source code is bundled `Ctrl+C` to end the dev server that webpack starts.
 After that in `GLIMPSE/glimpse/local-server` create a python environment:
 
 ```

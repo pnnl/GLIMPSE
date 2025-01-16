@@ -134,6 +134,6 @@ def delete_edge(edgeID):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=True)
+   socketio.run(app, port=5051, debug=False)
    
 #-------------------------- End Start WebSocket Server --------------------------#

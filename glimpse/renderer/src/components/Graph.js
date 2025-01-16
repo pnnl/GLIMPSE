@@ -256,11 +256,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       } else {
          try {
             const fileData = await readJsonFile(filePaths[0]);
+            const microGrids = fileData.microgrid;
 
-            const microgrids = fileData.microgrid;
-            const communication_nodes = fileData.communication_nodes;
-
-            const types = [
+            const microGridNodeTypes = new Set([
                "node",
                "load",
                "switch",
@@ -268,90 +266,97 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                "capacitor",
                "regulator",
                "diesel_dg",
+               "triplex_meter",
+               "triplex_node",
+               "triplex_load",
                "microgirds",
                "communication_node",
-            ];
+            ]);
 
-            for (const microgrid of microgrids) {
-               addedOverlayObjects.nodes.push(
-                  graphData.nodes.add({
-                     id: microgrid.name,
-                     label: microgrid.name,
-                     group: "microgrid",
-                     title: `ObjectType: microgrid\nname: ${microgrid.name}`,
-                  })[0]
-               );
+            const newNodes = [];
+            const newEdges = [];
 
+            for (const microGrid of microGrids) {
+               const microGridNode = {
+                  id: microGrid.name,
+                  label: microGrid.name,
+                  group: "microgrid",
+                  title: `ObjectType: microgrid\nname: ${microGrid.name}`,
+               };
+               newNodes.push(microGridNode);
+               addedOverlayObjects.nodes.push(microGrid.name);
                objectTypeCount.nodes.microgrid++;
 
-               for (const type of Object.keys(microgrid)) {
-                  if (types.includes(type)) {
-                     microgrid[type].forEach((nodeID) => {
-                        addedOverlayObjects.edges.push(
-                           graphData.edges.add({
-                              id: `${microgrid.name}-${nodeID}`,
-                              from: microgrid.name,
-                              to: nodeID,
-                              title:
-                                 "objectType: parentChild\n" +
-                                 getTitle({
-                                    name: `${microgrid.name}-${nodeID}`,
-                                    from: microgrid.name,
-                                    to: nodeID,
-                                 }),
-                              color: { inherit: true },
-                              type: "parentChild",
-                              width: 0.15,
-                           })[0]
-                        );
-                     });
+               const types = Object.keys(microGrid);
+               for (const type of types) {
+                  if (!microGridNodeTypes.has(type)) continue;
 
-                     objectTypeCount.edges.parentChild++;
-                  }
-               }
-            }
-
-            if (communication_nodes) {
-               for (const comm_node of communication_nodes) {
-                  addedOverlayObjects.nodes.push(
-                     graphData.nodes.add({
-                        id: comm_node.name,
-                        label: comm_node.name,
-                        group: "communication_node",
+                  for (const nodeID of microGrid[type]) {
+                     const newEdgeID = `${microGrid.name}-${nodeID}`;
+                     const microGridEdge = {
+                        id: newEdgeID,
+                        from: microGrid.name,
+                        to: nodeID,
                         title:
-                           "ObjectType: communication_node\n" + getTitle({ name: comm_node.name }),
-                     })[0]
-                  );
-
-                  objectTypeCount.nodes.communication_node++;
-
-                  for (const type of Object.keys(comm_node)) {
-                     if (types.includes(type)) {
-                        comm_node[type].forEach((nodeID) => {
-                           addedOverlayObjects.edges.push(
-                              graphData.edges.add({
-                                 id: `${comm_node.name}-${nodeID}`,
-                                 from: comm_node.name,
-                                 to: nodeID,
-                                 title:
-                                    "objectType: parentChild\n" +
-                                    getTitle({
-                                       name: `${comm_node.name}-${nodeID}`,
-                                       from: comm_node.name,
-                                       to: nodeID,
-                                    }),
-                                 type: "parentChild",
-                                 color: { inherit: true },
-                                 width: 0.15,
-                              })[0]
-                           );
-                        });
-
-                        objectTypeCount.edges.parentChild++;
-                     }
+                           "objectType: parentChild\n" +
+                           getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
+                        color: { inherit: true },
+                        type: "parentChild",
+                        width: 0.15,
+                     };
+                     newEdges.push(microGridEdge);
+                     addedOverlayObjects.edges.push(newEdgeID);
                   }
+
+                  objectTypeCount.edges.parentChild++;
                }
             }
+
+            // Batch add nodes and edges
+            graphData.nodes.add(newNodes);
+            graphData.edges.add(newEdges);
+
+            // if (communication_nodes) {
+            //    for (const comm_node of communication_nodes) {
+            //       addedOverlayObjects.nodes.push(
+            //          graphData.nodes.add({
+            //             id: comm_node.name,
+            //             label: comm_node.name,
+            //             group: "communication_node",
+            //             title:
+            //                "ObjectType: communication_node\n" + getTitle({ name: comm_node.name }),
+            //          })[0]
+            //       );
+
+            //       objectTypeCount.nodes.communication_node++;
+
+            //       for (const type of Object.keys(comm_node)) {
+            //          if (types.includes(type)) {
+            //             comm_node[type].forEach((nodeID) => {
+            //                addedOverlayObjects.edges.push(
+            //                   graphData.edges.add({
+            //                      id: `${comm_node.name}-${nodeID}`,
+            //                      from: comm_node.name,
+            //                      to: nodeID,
+            //                      title:
+            //                         "objectType: parentChild\n" +
+            //                         getTitle({
+            //                            name: `${comm_node.name}-${nodeID}`,
+            //                            from: comm_node.name,
+            //                            to: nodeID,
+            //                         }),
+            //                      type: "parentChild",
+            //                      color: { inherit: true },
+            //                      width: 0.15,
+            //                   })[0]
+            //                );
+            //             });
+
+            //             objectTypeCount.edges.parentChild++;
+            //          }
+            //       }
+            //    }
+            // }
 
             showRemoveOverlayButton("flex");
             getLegendData(objectTypeCount, theme, edgeOptions, legendData);
@@ -584,7 +589,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} nodeID the ID of a node to delete
     */
    const deleteNode = (nodeID) => {
-      const nodeObject = graphData.ndoes.get(nodeID);
+      const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
       objectTypeCount.nodes[nodeObject.group]--;
 
@@ -733,7 +738,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          processProperties: (clusterOptions, childNodes, childEdges) => {
             clusterOptions.value = childNodes.length;
             clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
-            clusterOptions.mass = childNodes.length / 2;
+            clusterOptions.mass = childNodes.length * 0.1;
             return clusterOptions;
          },
          clusterNodeProperties: {

@@ -458,6 +458,7 @@ app.whenReady()
       socket.on("add-edge", (data) => mainWindow.webContents.send("add-edge", data));
       socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
       socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
+
       // autoUpdater.checkForUpdatesAndNotify();
       app.on("activate", () => {
          if (BrowserWindow.getAllWindows().length === 0) {

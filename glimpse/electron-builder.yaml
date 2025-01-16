@@ -15,14 +15,16 @@ files:
         - "!data${/*}"
         - "!out${/*}"
 extraResources:
-   - ./socket_testing/**
+   - ../socket_testing/**
    - ./local-server/server/**
    - ./themes/**
    - ./config/**
    - ./data/**
 win:
    target:
-      - target: msi
+      - target:
+           - msi
+           - nsis
         arch:
            - x64
 linux:

@@ -1,5 +1,5 @@
 import React from "react";
-import "../Styles/FileUpload.css";
+import "../styles/FileUpload.css";
 import { useState, useRef } from "react";
 
 const FileUpload = ({ onFileUpload }) => {
@@ -49,6 +49,7 @@ const FileUpload = ({ onFileUpload }) => {
             paths.push(file.path);
          }
          e.target.value = "";
+
          onFileUpload(paths);
       }
    };
