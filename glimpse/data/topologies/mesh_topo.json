@@ -65,7 +65,7 @@
          }
       },
       {
-         "objectType": "line",
+         "objectType": "customLine",
          "elementType": "edge",
          "attributes": {
             "id": "pwrLine_1-ctrlCenter_1",

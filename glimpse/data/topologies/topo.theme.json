@@ -45,6 +45,20 @@
                "scaleFactor": 0.5
             }
          }
+      },
+      "customLine": {
+         "color": "green",
+         "width": 2,
+         "arrows": {
+            "to": {
+               "enabled": true,
+               "scaleFactor": 0.25
+            },
+            "from": {
+               "enabled": true,
+               "scaleFactor": 0.25
+            }
+         }
       }
    }
 }

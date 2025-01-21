@@ -36,7 +36,7 @@ const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
 
-const Graph = ({ dataToVis, theme, isGlm }) => {
+const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
    const container = useRef(null);
    const GLIMPSE_OBJECT = { objects: [] };
    const nodeTypes = Object.keys(theme.groups);
@@ -148,12 +148,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    let setOpenNodePopup = null;
    /**
     * Used to send the set state function from the child to the parent
-    * @param {React.Dispatch<React.SetStateAction<{}>>} setChilNode - The useState function of the NodePopup
+    * @param {React.Dispatch<React.SetStateAction<{}>>} setChildNode - The useState function of the NodePopup
     * child component
     * @param {React.Dispatch<React.SetStateAction<false>>} setOpen - Used to display the node popup form
     */
-   const onChildMount = (setChilNode, setOpen) => {
-      setNode = setChilNode;
+   const onChildMount = (setChildNode, setOpen) => {
+      setNode = setChildNode;
       setOpenNodePopup = setOpen;
    };
 
@@ -190,12 +190,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       newEdgeFormSetState(open);
    };
 
-   /** close the node pupup component */
+   /** close the node popup component */
    const closePopUp = () => {
       setOpenNodePopup(false);
    };
 
-   /* ------------------------ End Recive Sate Variables from Children ------------------------ */
+   /* ------------------------ End Receive Sate Variables from Children ------------------------ */
 
    /**
     * Updates the nodes's hover title with the new attributes
@@ -256,11 +256,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       } else {
          try {
             const fileData = await readJsonFile(filePaths[0]);
+            const microGrids = fileData.microgrid;
 
-            const microgrids = fileData.microgrid;
-            const communication_nodes = fileData.communication_nodes;
-
-            const types = [
+            const microGridNodeTypes = new Set([
                "node",
                "load",
                "switch",
@@ -268,90 +266,55 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                "capacitor",
                "regulator",
                "diesel_dg",
+               "triplex_meter",
+               "triplex_node",
+               "triplex_load",
                "microgirds",
                "communication_node",
-            ];
+            ]);
 
-            for (const microgrid of microgrids) {
-               addedOverlayObjects.nodes.push(
-                  graphData.nodes.add({
-                     id: microgrid.name,
-                     label: microgrid.name,
-                     group: "microgrid",
-                     title: `ObjectType: microgrid\nname: ${microgrid.name}`,
-                  })[0]
-               );
+            const newNodes = [];
+            const newEdges = [];
 
+            for (const microGrid of microGrids) {
+               const microGridNode = {
+                  id: microGrid.name,
+                  label: microGrid.name,
+                  group: "microgrid",
+                  title: `ObjectType: microgrid\nname: ${microGrid.name}`,
+               };
+               newNodes.push(microGridNode);
+               addedOverlayObjects.nodes.push(microGrid.name);
                objectTypeCount.nodes.microgrid++;
 
-               for (const type of Object.keys(microgrid)) {
-                  if (types.includes(type)) {
-                     microgrid[type].forEach((nodeID) => {
-                        addedOverlayObjects.edges.push(
-                           graphData.edges.add({
-                              id: `${microgrid.name}-${nodeID}`,
-                              from: microgrid.name,
-                              to: nodeID,
-                              title:
-                                 "objectType: parentChild\n" +
-                                 getTitle({
-                                    name: `${microgrid.name}-${nodeID}`,
-                                    from: microgrid.name,
-                                    to: nodeID,
-                                 }),
-                              color: { inherit: true },
-                              type: "parentChild",
-                              width: 0.15,
-                           })[0]
-                        );
-                     });
+               const types = Object.keys(microGrid);
+               for (const type of types) {
+                  if (!microGridNodeTypes.has(type)) continue;
 
-                     objectTypeCount.edges.parentChild++;
-                  }
-               }
-            }
-
-            if (communication_nodes) {
-               for (const comm_node of communication_nodes) {
-                  addedOverlayObjects.nodes.push(
-                     graphData.nodes.add({
-                        id: comm_node.name,
-                        label: comm_node.name,
-                        group: "communication_node",
+                  for (const nodeID of microGrid[type]) {
+                     const newEdgeID = `${microGrid.name}-${nodeID}`;
+                     const microGridEdge = {
+                        id: newEdgeID,
+                        from: microGrid.name,
+                        to: nodeID,
                         title:
-                           "ObjectType: communication_node\n" + getTitle({ name: comm_node.name }),
-                     })[0]
-                  );
-
-                  objectTypeCount.nodes.communication_node++;
-
-                  for (const type of Object.keys(comm_node)) {
-                     if (types.includes(type)) {
-                        comm_node[type].forEach((nodeID) => {
-                           addedOverlayObjects.edges.push(
-                              graphData.edges.add({
-                                 id: `${comm_node.name}-${nodeID}`,
-                                 from: comm_node.name,
-                                 to: nodeID,
-                                 title:
-                                    "objectType: parentChild\n" +
-                                    getTitle({
-                                       name: `${comm_node.name}-${nodeID}`,
-                                       from: comm_node.name,
-                                       to: nodeID,
-                                    }),
-                                 type: "parentChild",
-                                 color: { inherit: true },
-                                 width: 0.15,
-                              })[0]
-                           );
-                        });
-
-                        objectTypeCount.edges.parentChild++;
-                     }
+                           "objectType: parentChild\n" +
+                           getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
+                        color: { inherit: true },
+                        type: "parentChild",
+                        width: 0.15,
+                     };
+                     newEdges.push(microGridEdge);
+                     addedOverlayObjects.edges.push(newEdgeID);
                   }
+
+                  objectTypeCount.edges.parentChild++;
                }
             }
+
+            // Batch add nodes and edges
+            graphData.nodes.add(newNodes);
+            graphData.edges.add(newEdges);
 
             showRemoveOverlayButton("flex");
             getLegendData(objectTypeCount, theme, edgeOptions, legendData);
@@ -584,7 +547,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} nodeID the ID of a node to delete
     */
    const deleteNode = (nodeID) => {
-      const nodeObject = graphData.ndoes.get(nodeID);
+      const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
       objectTypeCount.nodes[nodeObject.group]--;
 
@@ -731,9 +694,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             return childOptions.communityID === clusterValue;
          },
          processProperties: (clusterOptions, childNodes, childEdges) => {
-            clusterOptions.value = childNodes.length;
+            clusterOptions.value = childNodes.length / 3;
             clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
-            clusterOptions.mass = childNodes.length / 2;
+            clusterOptions.mass = childNodes.length * 0.1;
             return clusterOptions;
          },
          clusterNodeProperties: {
@@ -922,6 +885,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
             // Create clusters
             if (establishCommunities) {
+               glmNetwork.setOptions({ physics: { barnesHut: { springLength: 140 } } });
                communityIDsSet.forEach((CID) => createClusterNode(CID));
             }
 
@@ -984,10 +948,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             }
          });
 
-         glmNetwork.on("selectEdge", (params) => {
-            const selectedEdge = graphData.edges.get(params.edges[0]);
-            console.log(selectedEdge);
-         });
+         // glmNetwork.on("selectEdge", (params) => {
+         //    const selectedEdge = graphData.edges.get(params.edges[0]);
+         //    console.log(selectedEdge);
+         // });
 
          /* Display the child Context menu component to hide an edge or edge types */
          glmNetwork.on("oncontext", (params) => {
@@ -1034,6 +998,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       };
 
       initializeGraph();
+
+      onMount((modelNumber) => console.log("got the model number: " + modelNumber));
 
       return () => {
          if (redrawIntervalID) {

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../styles/Nav.css";
 import About from "./About";
 import {
@@ -20,7 +20,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { ArrowRight } from "@mui/icons-material";
 import NatigConfigModal from "./NatigConfigModal";
 
-const Nav = ({ showHome }) => {
+const Nav = ({ showHome, modelNumber, applyOverlay }) => {
    const [openAbout, setOpenAbout] = useState(false);
    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
    const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
@@ -63,10 +63,6 @@ const Nav = ({ showHome }) => {
          setThemesSubMenuAnchorEl(null);
       }
    };
-
-   /*    useEffect(() => {
-      onMount(theme);
-   }) */
 
    return (
       <>
@@ -126,7 +122,11 @@ const Nav = ({ showHome }) => {
          </Toolbar>
 
          <About show={openAbout} close={() => setOpenAbout(false)} />
-         <NatigConfigModal onMount={getNatigFormStateSetter} />
+         <NatigConfigModal
+            onMount={getNatigFormStateSetter}
+            modelNumber={modelNumber}
+            applyOverlay={applyOverlay}
+         />
       </>
    );
 };

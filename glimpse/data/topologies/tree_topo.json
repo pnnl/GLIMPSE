@@ -83,7 +83,7 @@
          }
       },
       {
-         "objectType": "line",
+         "objectType": "customLine",
          "elementType": "edge",
          "attributes": {
             "id": "ctrlCenter_1-pwrLine_3",
@@ -137,7 +137,7 @@
          }
       },
       {
-         "objectType": "line",
+         "objectType": "customLine",
          "elementType": "edge",
          "attributes": {
             "id": "pwrLine_3-school_1",

@@ -7,6 +7,7 @@ import {
    DialogActions,
    DialogContent,
    DialogTitle,
+   Divider,
    FormControl,
    InputAdornment,
    InputLabel,
@@ -16,15 +17,18 @@ import {
    TextField,
    Tooltip,
 } from "@mui/material";
+
 import { ExpandMore } from "@mui/icons-material";
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from "../utils/CustomComponents";
 import { sendNatigConfig } from "../utils/webSocketClientUtils";
 
 const packetSizeOptions = [500, 1280, 1500];
+const topologyNames = ["mesh", "ring"];
 
-const NatigConfigModal = ({ onMount }) => {
+const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
    const [openForm, setOpenForm] = useState(false);
    const [expanded, setExpanded] = useState(false);
+   const [topology, setTopology] = useState({ name: "" });
    const [generalConfig, setGeneralConfig] = useState({
       SimTime: {
          label: "Simulation Time",
@@ -85,6 +89,8 @@ const NatigConfigModal = ({ onMount }) => {
       },
    });
 
+   console.log(applyOverlay);
+
    const handleGeneralConfig = (e) => {
       const { name, value, type, checked } = e.target;
 
@@ -109,6 +115,17 @@ const NatigConfigModal = ({ onMount }) => {
       });
    };
 
+   const handleTopologySelect = async (e) => {
+      const { value: topoName } = e.target;
+
+      if (modelNumber) {
+         const response = await fetch(`../topologies/feeder_${modelNumber}/${topoName}.json`);
+         setTopology({ name: topoName, data: await response.json() });
+      } else {
+         setTopology({ name: topoName });
+      }
+   };
+
    const getSendObj = (formConfigObj) => {
       return Object.entries(formConfigObj).reduce(
          (o, [key, val]) => ({ ...o, [key]: val.value }),
@@ -120,11 +137,14 @@ const NatigConfigModal = ({ onMount }) => {
       const natigGeneralConfig = {
          ...getSendObj(generalConfig),
          ...getSendObj(DDosConfig),
+         topology: { ...topology },
       };
 
       console.log(natigGeneralConfig);
 
       sendNatigConfig(natigGeneralConfig);
+
+      setOpenForm(false);
    };
 
    const handleExpand = (panelName) => (e, isExpanded) => {
@@ -140,6 +160,31 @@ const NatigConfigModal = ({ onMount }) => {
          <Dialog open={openForm}>
             <DialogTitle>NATIG Configuration</DialogTitle>
             <DialogContent dividers>
+               <Stack direction={"row"} spacing={1}>
+                  <Tooltip title={"Choose a topology for uploaded model"} placement="left" arrow>
+                     <FormControl fullWidth>
+                        <InputLabel>Topology</InputLabel>
+                        <Select
+                           label={"Topology"}
+                           name={"topology"}
+                           value={topology.name}
+                           onChange={handleTopologySelect}
+                        >
+                           {topologyNames.map((name, index) => (
+                              <MenuItem key={index} value={name}>
+                                 {name}
+                              </MenuItem>
+                           ))}
+                        </Select>
+                     </FormControl>
+                  </Tooltip>
+                  <Tooltip title={"Apply topology to visualization"} placement="right" arrow>
+                     <CustomButton onClick={() => applyOverlay.current(modelNumber)}>
+                        Apply
+                     </CustomButton>
+                  </Tooltip>
+               </Stack>
+               <Divider sx={{ m: "0.5rem 0" }} />
                <Accordion
                   expanded={expanded === "General Settings"}
                   onChange={handleExpand("General Settings")}

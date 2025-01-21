@@ -24,6 +24,24 @@ export const isGlmFile = (path) => path.split(".").pop() === "glm";
 const isJsonFile = (path) => path.split(".").pop() === "json";
 
 /**
+ *
+ * @param {Array} paths List of paths
+ * @returns {Number | null} Returns null if the files don't contain a the numbers 123, 3000, 9500
+ */
+const extractModelNumber = (paths) => {
+   const regex = /(123|3000|9500)/;
+
+   for (let path of paths) {
+      const match = path.match(regex);
+      if (match) {
+         return match[0];
+      }
+   }
+
+   return null;
+};
+
+/**
  * This function will get the paths of the uploaded files and send them to the
  * main process to then read the files, parse them, and evalute them.
  * @param {Array} paths - An array of paths from the uploaded files
@@ -34,6 +52,7 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
 
    if (paths.every(isGlmFile) && selectedTheme === "power-grid-theme") {
       setFilesUploaded(true);
+      const modelNumber = extractModelNumber(paths);
       const data = await window.glimpseAPI.glm2json(paths);
 
       if (!data) {
@@ -50,10 +69,11 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
             theme: await window.glimpseAPI.getThemeJsonData("PowerGrid.theme.json"),
             isGlm: true,
             loading: false,
+            modelNumber: modelNumber,
          });
       }
    } else if (paths.every(isJsonFile) && selectedTheme === "custom-theme") {
-      const themeData = { groups: {}, edgeOptions: {} };
+      let themeData = { groups: {}, edgeOptions: {} };
 
       if (paths.length > 1) themeData = await getCustomTheme(paths);
 

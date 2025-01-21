@@ -51,8 +51,8 @@
             "bold": "20px arial black"
          },
          "scaling": {
-            "min": 5,
-            "max": 75
+            "min": 10,
+            "max": 55
          }
       },
       "interaction": {
@@ -94,18 +94,17 @@
          },
          "stabilization": {
             "enabled": true,
-            "iterations": 1000,
+            "iterations": 1050,
             "updateInterval": 1,
             "onlyDynamicEdges": false,
             "fit": true
          },
+         "maxVelocity": 50,
+         "minVelocity": 0.1,
          "solver": "barnesHut",
          "timestep": 0.25,
          "adaptiveTimestep": false,
-         "wind": {
-            "x": 0,
-            "y": 0
-         }
+         "wind": { "x": 0, "y": 0 }
       },
       "layout": {
          "improvedLayout": false,
