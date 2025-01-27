@@ -80,7 +80,9 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
                      <ArrowRight />
                   </ListItemIcon>
                </MenuItem>
-               <MenuItem onClick={() => setOpenNatigConfigForm(true)}>NATIG Configuration</MenuItem>
+               <MenuItem onClick={() => setOpenNatigConfigForm(true)}>
+                  Scenario Configuration
+               </MenuItem>
             </Menu>
             <Menu
                id="themes-submenu"

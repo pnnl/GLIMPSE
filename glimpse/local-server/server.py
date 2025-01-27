@@ -131,6 +131,8 @@ def delete_edge(edgeID):
 
 @socketio.on("natig-config")
 def natig_config(configObj):
+   # send config 
+   socketio.emit("newNatigConfig", configObj)
    print(f"data received in backend: {str(configObj)}")
    return "got your message!! - Server.py"
 

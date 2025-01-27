@@ -225,6 +225,130 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
    };
 
    /**
+    *
+    * @param {object} overlayFileData already acquired overlay data
+    * @param {Number} modelNumber model number to get the right grid.json to overlay
+    */
+   const applyOverlay = async (overlayFileData, modelNumber = -1, topology) => {
+      console.log(topology);
+
+      let microGrids = null;
+      if (modelNumber !== -1) {
+         const res = await fetch(`../grids/feeder_${modelNumber}/grid.json`);
+         microGrids = await res.json();
+         microGrids = microGrids.microgrid;
+      } else {
+         microGrids = overlayFileData.microgrid;
+      }
+
+      console.log(microGrids);
+
+      // const microGrids = overlayFileData.microgrid;
+
+      const microGridNodeTypes = new Set([
+         "node",
+         "load",
+         "switch",
+         "inverter",
+         "capacitor",
+         "regulator",
+         "diesel_dg",
+         "triplex_meter",
+         "triplex_node",
+         "triplex_load",
+         "microgirds",
+         "communication_node",
+      ]);
+
+      const newNodes = [];
+      const newEdges = [];
+
+      for (const microGrid of microGrids) {
+         const microGridNode = {
+            id: microGrid.name,
+            label: microGrid.name,
+            group: "microgrid",
+            title: `ObjectType: microgrid\nname: ${microGrid.name}`,
+         };
+         newNodes.push(microGridNode);
+         addedOverlayObjects.nodes.push(microGrid.name);
+         objectTypeCount.nodes.microgrid++;
+
+         const types = Object.keys(microGrid);
+         for (const type of types) {
+            if (!microGridNodeTypes.has(type)) continue;
+
+            for (const nodeID of microGrid[type]) {
+               const newEdgeID = `${microGrid.name}-${nodeID}`;
+               const microGridEdge = {
+                  id: newEdgeID,
+                  from: microGrid.name,
+                  to: nodeID,
+                  title:
+                     "objectType: parentChild\n" +
+                     getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
+                  color: { inherit: true },
+                  type: "parentChild",
+                  width: 0.15,
+               };
+               newEdges.push(microGridEdge);
+               addedOverlayObjects.edges.push(newEdgeID);
+            }
+
+            objectTypeCount.edges.parentChild++;
+         }
+      }
+
+      for (let commNode of topology.Node) {
+         const commNodeID = `comm${commNode.name + 1}`;
+
+         newNodes.push({
+            id: commNodeID,
+            label: commNodeID,
+            group: "communication_node",
+         });
+
+         newEdges.push({
+            id: `${commNodeID}-SS_${commNode.name + 1}`,
+            from: commNodeID,
+            to: `SS_${commNode.name + 1}`,
+            title:
+               "objectType: parentChild\n" +
+               getTitle({
+                  name: `${commNodeID}-SS_${commNode.name + 1}`,
+                  from: commNodeID,
+                  to: `SS_${commNode.name + 1}`,
+               }),
+            color: { inherit: true },
+            type: "parentChild",
+            width: 0.15,
+         });
+
+         for (let connection of commNode.connections) {
+            const commEdgeID = `${commNodeID}-comm${connection + 1}`;
+
+            newEdges.push({
+               id: commEdgeID,
+               from: commNodeID,
+               to: `comm${connection + 1}`,
+               title:
+                  "objectType: parentChild\n" +
+                  getTitle({ name: commEdgeID, from: commNodeID, to: `comm${connection + 1}` }),
+               color: { inherit: true },
+               type: "parentChild",
+               width: 0.15,
+            });
+         }
+      }
+
+      // Batch add nodes and edges
+      graphData.nodes.add(newNodes);
+      graphData.edges.add(newEdges);
+
+      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   };
+
+   /**
     * Adds new nodes and edges based on the overlay json file data
     * @param {Object} fileData - the json object read from the file
     */
@@ -256,68 +380,9 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
       } else {
          try {
             const fileData = await readJsonFile(filePaths[0]);
-            const microGrids = fileData.microgrid;
-
-            const microGridNodeTypes = new Set([
-               "node",
-               "load",
-               "switch",
-               "inverter",
-               "capacitor",
-               "regulator",
-               "diesel_dg",
-               "triplex_meter",
-               "triplex_node",
-               "triplex_load",
-               "microgirds",
-               "communication_node",
-            ]);
-
-            const newNodes = [];
-            const newEdges = [];
-
-            for (const microGrid of microGrids) {
-               const microGridNode = {
-                  id: microGrid.name,
-                  label: microGrid.name,
-                  group: "microgrid",
-                  title: `ObjectType: microgrid\nname: ${microGrid.name}`,
-               };
-               newNodes.push(microGridNode);
-               addedOverlayObjects.nodes.push(microGrid.name);
-               objectTypeCount.nodes.microgrid++;
-
-               const types = Object.keys(microGrid);
-               for (const type of types) {
-                  if (!microGridNodeTypes.has(type)) continue;
-
-                  for (const nodeID of microGrid[type]) {
-                     const newEdgeID = `${microGrid.name}-${nodeID}`;
-                     const microGridEdge = {
-                        id: newEdgeID,
-                        from: microGrid.name,
-                        to: nodeID,
-                        title:
-                           "objectType: parentChild\n" +
-                           getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
-                        color: { inherit: true },
-                        type: "parentChild",
-                        width: 0.15,
-                     };
-                     newEdges.push(microGridEdge);
-                     addedOverlayObjects.edges.push(newEdgeID);
-                  }
-
-                  objectTypeCount.edges.parentChild++;
-               }
-            }
-
-            // Batch add nodes and edges
-            graphData.nodes.add(newNodes);
-            graphData.edges.add(newEdges);
 
             showRemoveOverlayButton("flex");
-            getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+            applyOverlay(fileData);
          } catch (msg) {
             console.log(msg);
             alert("File currently not compatible... Check file and re-upload");
@@ -999,7 +1064,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
 
       initializeGraph();
 
-      onMount((modelNumber) => console.log("got the model number: " + modelNumber));
+      onMount(applyOverlay);
 
       return () => {
          if (redrawIntervalID) {

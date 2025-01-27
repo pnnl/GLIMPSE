@@ -151,6 +151,10 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
       setExpanded(isExpanded ? panelName : false);
    };
 
+   const appyTopology = async () => {
+      await applyOverlay.current(undefined, modelNumber, topology.data);
+   };
+
    useEffect(() => {
       onMount(setOpenForm);
    }, [onMount]);
@@ -158,7 +162,7 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
    return ReactDOM.createPortal(
       <>
          <Dialog open={openForm}>
-            <DialogTitle>NATIG Configuration</DialogTitle>
+            <DialogTitle>Scenario Configuration </DialogTitle>
             <DialogContent dividers>
                <Stack direction={"row"} spacing={1}>
                   <Tooltip title={"Choose a topology for uploaded model"} placement="left" arrow>
@@ -179,9 +183,7 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
                      </FormControl>
                   </Tooltip>
                   <Tooltip title={"Apply topology to visualization"} placement="right" arrow>
-                     <CustomButton onClick={() => applyOverlay.current(modelNumber)}>
-                        Apply
-                     </CustomButton>
+                     <CustomButton onClick={appyTopology}>Apply</CustomButton>
                   </Tooltip>
                </Stack>
                <Divider sx={{ m: "0.5rem 0" }} />
