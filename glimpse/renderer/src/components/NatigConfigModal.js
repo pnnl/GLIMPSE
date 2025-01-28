@@ -24,6 +24,17 @@ import { sendNatigConfig } from "../utils/webSocketClientUtils";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
+const rates = [
+   "100 Kbps",
+   "500 Kbps",
+   "10 Mbps",
+   "80 Mbps",
+   "100 Mbps",
+   "500 Mbps",
+   "1 Gbps",
+   "10 Gbps",
+];
+const nodeTypes = ["Microgrid", "Communciation Node", "Control Center"];
 
 const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
    const [openForm, setOpenForm] = useState(false);
@@ -87,9 +98,22 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
          desc: "Controls the maximum transmissible unit the attackers link is set to",
          value: 500,
       },
+      Rate: {
+         label: "Rate",
+         desc: "bytes sent per second by the attacker",
+         value: "100 Kbps",
+      },
+      NodeType: {
+         label: "DDoS Entry Point",
+         desc: "The type of node that the DDoS will be connected to",
+         value: "",
+      },
+      endPoint: {
+         label: "DDoS End Point",
+         desc: "The type of node that will be targeted by the bot's application",
+         value: "",
+      },
    });
-
-   console.log(applyOverlay);
 
    const handleGeneralConfig = (e) => {
       const { name, value, type, checked } = e.target;
@@ -134,6 +158,11 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
    };
 
    const send = () => {
+      topology.data.Node.map((commNode) => {
+         commNode.name = `comm${commNode.name + 1}`;
+         commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
+      });
+
       const natigGeneralConfig = {
          ...getSendObj(generalConfig),
          ...getSendObj(DDosConfig),
@@ -353,6 +382,61 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
                                     {packetSizeOptions.map((size, index) => (
                                        <MenuItem key={index} value={size}>
                                           {`${size} bytes`}
+                                       </MenuItem>
+                                    ))}
+                                 </Select>
+                              </FormControl>
+                           </Tooltip>
+                           <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
+                              <FormControl>
+                                 <InputLabel>{DDosConfig.Rate.label}</InputLabel>
+                                 <Select
+                                    label={DDosConfig.Rate.label}
+                                    name={"Rate"}
+                                    value={DDosConfig.Rate.value}
+                                    onChange={handleDDosConfig}
+                                 >
+                                    {rates.map((rate, index) => (
+                                       <MenuItem key={index} value={rate}>
+                                          {rate}
+                                       </MenuItem>
+                                    ))}
+                                 </Select>
+                              </FormControl>
+                           </Tooltip>
+                           <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
+                              <FormControl>
+                                 <InputLabel>{DDosConfig.NodeType.label}</InputLabel>
+                                 <Select
+                                    label={DDosConfig.NodeType.label}
+                                    name={"NodeType"}
+                                    value={DDosConfig.NodeType.value}
+                                    onChange={handleDDosConfig}
+                                 >
+                                    {nodeTypes.map((type, index) => (
+                                       <MenuItem key={index} value={type}>
+                                          {type}
+                                       </MenuItem>
+                                    ))}
+                                 </Select>
+                              </FormControl>
+                           </Tooltip>
+                           <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
+                              <FormControl>
+                                 <InputLabel>{DDosConfig.endPoint.label}</InputLabel>
+                                 <Select
+                                    label={DDosConfig.endPoint.label}
+                                    name={"endPoint"}
+                                    value={DDosConfig.endPoint.value}
+                                    onChange={handleDDosConfig}
+                                 >
+                                    {nodeTypes.map((type, index) => (
+                                       <MenuItem
+                                          disabled={type === DDosConfig.NodeType.value}
+                                          key={index}
+                                          value={type}
+                                       >
+                                          {type}
                                        </MenuItem>
                                     ))}
                                  </Select>

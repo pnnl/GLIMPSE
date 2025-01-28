@@ -68,7 +68,7 @@
          "size": 12,
          "color": "#6b9080",
          "shape": "circularImage",
-         "image": "./imgs/microgrid.svg"
+         "image": "./imgs/microgrid.jpg"
       }
    },
    "edgeOptions": {
@@ -102,23 +102,19 @@
       },
       "parentChild": {
          "width": 2,
-         "color": {
-            "inherit": true
-         }
+         "color": { "inherit": true }
       },
       "mapping": {
-         "width": 0.30,
+         "width": 0.3,
          "color": "lightgrey"
       },
       "communication": {
          "width": 2,
-         "color": {
-            "inherit": false
-         }
+         "color": { "inherit": true }
       },
       "microgrid_connection": {
-         "width": 0.30,
-         "color": "cyan"
+         "width": 0.25,
+         "color": { "inherit": true }
       }
    }
 }

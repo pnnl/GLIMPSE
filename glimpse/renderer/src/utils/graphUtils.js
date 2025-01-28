@@ -467,6 +467,8 @@ export const Prev = (glmNetwork, highlightedNodes, counter) => {
 };
 
 export const rotateCCW = (data, network, angle) => {
+   // console.log(network.body.nodes);
+
    const rotatedNodes = data.nodes.get().map((node) => {
       const coordinates = network.getPositions(node.id);
 

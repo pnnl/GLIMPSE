@@ -108,7 +108,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          }
       });
 
-      glmNetwork.setOptions({ groups: theme.groups });
+      // glmNetwork.setOptions({ groups: theme.groups });
       graphData.nodes.update(nodesResetMap);
       graphData.edges.update(edgeItems);
       glmNetwork.fit();
@@ -285,17 +285,16 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
                   from: microGrid.name,
                   to: nodeID,
                   title:
-                     "objectType: parentChild\n" +
+                     "objectType: microgrid_connection\n" +
                      getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
                   color: { inherit: true },
-                  type: "parentChild",
-                  width: 0.15,
+                  type: "microgrid_connection",
+                  width: 0.25,
                };
                newEdges.push(microGridEdge);
                addedOverlayObjects.edges.push(newEdgeID);
+               objectTypeCount.edges.microgrid_connection++;
             }
-
-            objectTypeCount.edges.parentChild++;
          }
       }
 
@@ -308,24 +307,31 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
             group: "communication_node",
          });
 
+         addedOverlayObjects.nodes.push(commNodeID);
+         objectTypeCount.nodes.communication_node++;
+
+         let commEdgeID = `${commNodeID}-SS_${commNode.name + 1}`;
          newEdges.push({
-            id: `${commNodeID}-SS_${commNode.name + 1}`,
+            id: commEdgeID,
             from: commNodeID,
             to: `SS_${commNode.name + 1}`,
             title:
                "objectType: parentChild\n" +
                getTitle({
-                  name: `${commNodeID}-SS_${commNode.name + 1}`,
+                  name: commEdgeID,
                   from: commNodeID,
                   to: `SS_${commNode.name + 1}`,
                }),
             color: { inherit: true },
-            type: "parentChild",
-            width: 0.15,
+            type: "communication",
+            width: 2,
          });
 
+         addedOverlayObjects.edges.push(commEdgeID);
+         objectTypeCount.edges.communication++;
+
          for (let connection of commNode.connections) {
-            const commEdgeID = `${commNodeID}-comm${connection + 1}`;
+            commEdgeID = `${commNodeID}-comm${connection + 1}`;
 
             newEdges.push({
                id: commEdgeID,
@@ -335,9 +341,12 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
                   "objectType: parentChild\n" +
                   getTitle({ name: commEdgeID, from: commNodeID, to: `comm${connection + 1}` }),
                color: { inherit: true },
-               type: "parentChild",
-               width: 0.15,
+               type: "communication",
+               width: 2,
             });
+
+            addedOverlayObjects.edges.push(commEdgeID);
+            objectTypeCount.edges.communication++;
          }
       }
 
