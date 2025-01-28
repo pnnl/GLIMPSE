@@ -10,6 +10,7 @@
       "build-win": "electron-builder build -w",
       "build-linux": "electron-builder build -l",
       "watch": "webpack --config webpack.common.js --watch",
+      "webpack": "webpack --config webpack.common.js",
       "publish": "electron-builder -p always",
       "start": "electron-forge start"
    },

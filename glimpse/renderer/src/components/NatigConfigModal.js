@@ -36,7 +36,7 @@ const rates = [
 ];
 const nodeTypes = ["Microgrid", "Communciation Node", "Control Center"];
 
-const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
+const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => {
    const [openForm, setOpenForm] = useState(false);
    const [expanded, setExpanded] = useState(false);
    const [topology, setTopology] = useState({ name: "" });
@@ -158,22 +158,25 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
    };
 
    const send = () => {
-      topology.data.Node.map((commNode) => {
-         commNode.name = `comm${commNode.name + 1}`;
-         commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
-      });
+      if ("data" in topology) {
+         topology.data.Node.map((commNode) => {
+            commNode.name = `comm${commNode.name + 1}`;
+            commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
+         });
+         const natigGeneralConfig = {
+            ...getSendObj(generalConfig),
+            ...getSendObj(DDosConfig),
+            topology: { ...topology },
+         };
 
-      const natigGeneralConfig = {
-         ...getSendObj(generalConfig),
-         ...getSendObj(DDosConfig),
-         topology: { ...topology },
-      };
+         console.log(natigGeneralConfig);
 
-      console.log(natigGeneralConfig);
+         sendNatigConfig(natigGeneralConfig);
 
-      sendNatigConfig(natigGeneralConfig);
-
-      setOpenForm(false);
+         setOpenForm(false);
+      } else {
+         alert("Upload a feeder model ex: ieee3000_Feeder3.glm");
+      }
    };
 
    const handleExpand = (panelName) => (e, isExpanded) => {
@@ -449,7 +452,14 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay }) => {
             </DialogContent>
             <DialogActions>
                <CustomButton onClick={send}>Send</CustomButton>
-               <CustomButton onClick={() => setOpenForm(false)}>close</CustomButton>
+               <CustomButton
+                  onClick={() => {
+                     closeMenu();
+                     setOpenForm(false);
+                  }}
+               >
+                  close
+               </CustomButton>
             </DialogActions>
          </Dialog>
       </>,

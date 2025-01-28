@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import "../styles/Nav.css";
 import About from "./About";
 import {
@@ -71,7 +71,7 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
                <MenuIcon />
             </IconButton>
             <Menu id="nav-menu" anchorEl={menuAnchorEl} open={openMenu} onClose={closeMenu}>
-               <MenuItem ref={parentMenuRef} onClick={showThemesSubmenu}>
+               <MenuItem disabled ref={parentMenuRef} onClick={showThemesSubmenu}>
                   <ListItemText>Themes</ListItemText>
                   <ListItemIcon
                      sx={{ justifyContent: "flex-end" }}
@@ -128,6 +128,7 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
             onMount={getNatigFormStateSetter}
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
+            closeMenu={closeMenu}
          />
       </>
    );
