@@ -589,12 +589,21 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     * @param {string} nodeID the ID of a node to delete
     */
    const deleteNode = (nodeID) => {
+      // delete from file data
+      Object.keys(dataToVis).forEach((filename) => {
+         console.log(filename);
+         const objects = dataToVis[filename].objects;
+
+         dataToVis[filename].objects = objects.filter((obj) => obj.attributes.name !== nodeID);
+      });
+
       const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
       objectTypeCount.nodes[nodeObject.group]--;
 
       const edgesToDelete = [];
-      for (let edge of graphData.edges.get()) {
+      const graphEdges = graphData.edges.get();
+      for (let edge of graphEdges) {
          if (edge.from === nodeID || edge.to === nodeID) {
             edgesToDelete.push(edge.id);
             objectTypeCount.edges[edge.type]--;
@@ -603,6 +612,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       graphData.nodes.remove(nodeID);
       graphData.edges.remove(edgesToDelete);
+
+      console.log("DELETED: " + nodeID);
 
       getLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };

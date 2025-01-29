@@ -122,7 +122,8 @@ export const getLegendData = (typeCounts, theme, edgeOptions, legendData) => {
    });
 
    let x_increment = null;
-   if (currentNodeTypes.length < 6) x_increment = 800 / 6;
+   if (currentNodeTypes.length === 5) x_increment = 800 / 5;
+   else if (currentNodeTypes.length === 2) x_increment = 400;
    else x_increment = 1100 / 6;
 
    let farthest_x = 0;

@@ -51,8 +51,8 @@
             "bold": "20px arial black"
          },
          "scaling": {
-            "min": 5,
-            "max": 75
+            "min": 10,
+            "max": 55
          }
       },
       "interaction": {
@@ -131,6 +131,10 @@
             "size": 30,
             "strokeWidth": 5,
             "strokeColor": "white"
+         },
+         "smooth": {
+            "enabled": false,
+            "type": "continuous"
          }
       },
       "interaction": {
