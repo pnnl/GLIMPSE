@@ -8,7 +8,7 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 
 > :warning: **Building the tool on an M3 Macbook currently not working**: this is due to the glm parser used has not been updated to be compatible with the latest apple silicon. A solution for this to come soon.
 
-**Download Node and Nim**
+## Download Node and Nim
 
 - [Node.js](https://nodejs.org/en)
 - [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
@@ -81,7 +81,7 @@ npm run start
 
 ## GLM (GridLAB-D Model)
 
-### Examples:
+### Examples
 
 We provide few examples of exploring standard IEEE bus models using GLIMPSE. From the home page, upload all the `.glm` files from `GLIMPSE/glimpse/data/123-bus-model`.
 

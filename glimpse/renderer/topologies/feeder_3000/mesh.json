@@ -2,7 +2,7 @@
    "Node": [
       {
          "name": 0,
-         "connections": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+         "connections": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -12,7 +12,7 @@
       },
       {
          "name": 1,
-         "connections": [0, 2, 3, 4, 5, 6, 7, 8, 9],
+         "connections": [0, 2, 3, 4, 5, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -22,7 +22,7 @@
       },
       {
          "name": 2,
-         "connections": [0, 1, 3, 4, 5, 6, 7, 8, 9],
+         "connections": [0, 1, 3, 4, 5, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -32,7 +32,7 @@
       },
       {
          "name": 3,
-         "connections": [0, 1, 2, 4, 5, 6, 7, 8, 9],
+         "connections": [0, 1, 2, 4, 5, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -42,7 +42,7 @@
       },
       {
          "name": 4,
-         "connections": [0, 1, 2, 3, 5, 6, 7, 8, 9],
+         "connections": [0, 1, 2, 3, 5, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -52,7 +52,7 @@
       },
       {
          "name": 5,
-         "connections": [0, 1, 2, 3, 4, 6, 7, 8, 9],
+         "connections": [0, 1, 2, 3, 4, 6, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -62,7 +62,7 @@
       },
       {
          "name": 6,
-         "connections": [0, 1, 2, 3, 4, 5, 7, 8, 9],
+         "connections": [0, 1, 2, 3, 4, 5, 7, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -72,7 +72,7 @@
       },
       {
          "name": 7,
-         "connections": [0, 1, 2, 3, 4, 5, 6, 8, 9],
+         "connections": [0, 1, 2, 3, 4, 5, 6, 8, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -82,7 +82,7 @@
       },
       {
          "name": 8,
-         "connections": [0, 1, 2, 3, 4, 5, 6, 7, 9],
+         "connections": [0, 1, 2, 3, 4, 5, 6, 7, 9, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
@@ -92,10 +92,20 @@
       },
       {
          "name": 9,
-         "connections": [0, 1, 2, 3, 4, 5, 6, 7, 8],
+         "connections": [0, 1, 2, 3, 4, 5, 6, 7, 8, 10],
          "UseCSMA": 0,
          "MTU": 1500,
          "UseWifi": 1,
+         "x": 17,
+         "y": 36,
+         "error": "0.001"
+      },
+      {
+         "name": 10,
+         "connections": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+         "UseCSMA": 0,
+         "MTU": 1500,
+         "UseWifi": 0,
          "x": 17,
          "y": 36,
          "error": "0.001"

@@ -92,6 +92,16 @@
       },
       {
          "name": 9,
+         "connections": [10],
+         "UseCSMA": 0,
+         "MTU": 1500,
+         "UseWifi": 1,
+         "x": 17,
+         "y": 36,
+         "error": "0.001"
+      },
+      {
+         "name": 10,
          "connections": [0],
          "UseCSMA": 0,
          "MTU": 1500,
