@@ -10,22 +10,16 @@ const Transition = React.forwardRef((props, ref) => {
 const About = ({ show, close }) => {
    return ReactDom.createPortal(
       <>
-         <Dialog
-            sx={{ "& .MuiDialog-paper": { alignItems: "center" } }}
-            fullScreen
-            hideBackdrop={true}
-            open={show}
-            TransitionComponent={Transition}
-         >
+         <Dialog fullScreen hideBackdrop={true} open={show} TransitionComponent={Transition}>
             <div className="about-banner">
                <button className="close-about-btn" onClick={close}>
                   Close
                </button>
             </div>
-            <DialogContent sx={{ maxWidth: "72rem", padding: "0 2rem" }}>
+            <DialogContent sx={{ maxWidth: "72rem", margin: "0 auto" }}>
                <div className="about-title">
                   <h1>GLIMPSE v0.4.2</h1>
-                  <h3>(Grid Layout Interface for Model Preview and System Exploration)</h3>
+                  <h3>[Grid Layout Interface for Model Preview and System Exploration]</h3>
                </div>
                <div className="description">
                   <p>

@@ -1,6 +1,6 @@
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-# v0.4.2 ✨
+# v0.4.2-capstone ✨
 
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
 
@@ -10,8 +10,8 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 
 **Download Node and Nim**
 
--  [Node.js](https://nodejs.org/en)
--  [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
+- [Node.js](https://nodejs.org/en)
+- [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
 
 In a directory of your choice clone the repository :
 
@@ -34,7 +34,7 @@ npm run watch
 Then after the source code is bundled `Ctrl+C` to end the dev server that webpack starts.
 After that in `GLIMPSE/glimpse/local-server` create a python environment:
 
-```
+```bash
 python -m venv glimpse-server
 ```
 
@@ -71,13 +71,13 @@ npm run start
 
 1. GLIMPSE's data structure which is based on the [glm2json](https://github.com/NREL/glm) parser used by GLIMPSE.
    Examples:
-   -  [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
-   -  [example 2](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/levelExample.json)
-   -  [example 3](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/socialExample.json)
-   -  [example 4](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/test.json)
+   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
+   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/levelExample.json)
+   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/socialExample.json)
+   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/test.json)
 2. Networkx's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
    Example:
-   -  [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
+   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
 
 ## GLM (GridLAB-D Model)
 
@@ -90,7 +90,7 @@ We provide few examples of exploring standard IEEE bus models using GLIMPSE. Fro
 
 ## Cite as
 
-```
+```yaml
 @inproceedings{sanchez2024glimpse,
   title={GLIMPSE of Future Power Grid Models},
   author={Sanchez, Armando Mendoza and Purohit, Sumit},

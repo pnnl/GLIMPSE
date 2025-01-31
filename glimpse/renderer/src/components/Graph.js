@@ -299,28 +299,40 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
       }
 
       for (let commNode of topology.Node) {
-         const commNodeID = `comm${commNode.name + 1}`;
+         let commNodeID = null;
+         let mgNumber = null;
+
+         if (typeof commNode.name === "string") {
+            commNodeID = commNode.name;
+            mgNumber = parseInt(commNode.name.match(/\d+$/)[0], 10);
+         } else {
+            commNodeID = `comm${commNode.name + 1}`;
+            mgNumber = commNode.name + 1;
+         }
+
+         console.log(mgNumber);
 
          newNodes.push({
             id: commNodeID,
             label: commNodeID,
             group: "communication_node",
+            title: `ObjectType: communication_node\nname: ${commNodeID}`,
          });
 
          addedOverlayObjects.nodes.push(commNodeID);
          objectTypeCount.nodes.communication_node++;
 
-         let commEdgeID = `${commNodeID}-SS_${commNode.name + 1}`;
+         let commEdgeID = `${commNodeID}-SS_${mgNumber}`;
          newEdges.push({
             id: commEdgeID,
             from: commNodeID,
-            to: `SS_${commNode.name + 1}`,
+            to: `SS_${mgNumber}`,
             title:
                "objectType: parentChild\n" +
                getTitle({
                   name: commEdgeID,
                   from: commNodeID,
-                  to: `SS_${commNode.name + 1}`,
+                  to: `SS_${mgNumber}`,
                }),
             color: { inherit: true },
             type: "communication",
@@ -331,15 +343,23 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          objectTypeCount.edges.communication++;
 
          for (let connection of commNode.connections) {
-            commEdgeID = `${commNodeID}-comm${connection + 1}`;
+            let to = null;
+
+            if (typeof connection === "string") {
+               commEdgeID = `${commNodeID}-${connection}`;
+               to = connection;
+            } else {
+               commEdgeID = `${commNodeID}-comm${connection + 1}`;
+               to = `comm${connection + 1}`;
+            }
 
             newEdges.push({
                id: commEdgeID,
                from: commNodeID,
-               to: `comm${connection + 1}`,
+               to: to,
                title:
                   "objectType: parentChild\n" +
-                  getTitle({ name: commEdgeID, from: commNodeID, to: `comm${connection + 1}` }),
+                  getTitle({ name: commEdgeID, from: commNodeID, to: to }),
                color: { inherit: true },
                type: "communication",
                width: 2,
@@ -499,24 +519,24 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
          if ("animation" in updateData.updates) {
-            const { animation, ...rest } = updateData.updates;
+            const { animation, increment, ...rest } = updateData.updates;
+
             edge.animation = animation;
+            edge.increment = increment;
 
             // if the first element of the clustered edges array is not the passed edge ID
             // then there are clustered edges
             if (!(clusteredEdges[0] === edge.id)) {
                // the first element will then be the current visible clustered edge
-               animateEdge(clusteredEdges[0]);
+               animateEdge(clusteredEdges[0], increment);
             } else {
-               animateEdge(edge.id);
+               animateEdge(edge.id, increment);
             }
 
             graphData.edges.update({ ...edge, ...rest });
 
             if (!redrawIntervalID) {
-               redrawIntervalID = setInterval(() => {
-                  glmNetwork.redraw();
-               }, 10);
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 17);
             }
          } else {
             graphData.edges.update({ ...edge, ...updateData.updates });
@@ -525,24 +545,24 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
    };
 
    const animateEdges = (ctx) => {
-      const edgesToAnimateCpy = structuredClone(edgesToAnimate);
-      if (edgesToAnimateCpy.length > 0) {
+      if (edgesToAnimate.length > 0) {
          try {
-            for (let edgeID of edgesToAnimateCpy) {
-               const canvasEdge = glmNetwork.body.edges[edgeID];
+            for (let edge of edgesToAnimate) {
+               const canvasEdge = glmNetwork.body.edges[edge.id];
 
                if (!canvasEdge) continue;
 
-               const { from: start, to: end } = canvasEdge;
+               const start = canvasEdge.from;
+               const end = canvasEdge.to;
 
                // Calculate the circle's position along the edge
-               positions[edgeID] += 0.01;
-               if (positions[edgeID] > 1) {
-                  positions[edgeID] = 0;
+               edge.position += edge.increment;
+               if (edge.position > 1) {
+                  edge.position = 0;
                }
 
-               const x = start.x * (1 - positions[edgeID]) + end.x * positions[edgeID];
-               const y = start.y * (1 - positions[edgeID]) + end.y * positions[edgeID];
+               const x = start.x * (1 - edge.position) + end.x * edge.position;
+               const y = start.y * (1 - edge.position) + end.y * edge.position;
 
                // Draw the new circle at the new x and y points
                ctx.beginPath();
@@ -558,26 +578,30 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
                redrawIntervalID = null;
             }
             edgesToAnimate.length = 0;
-            edgesToAnimateCpy.length = 0;
          }
       }
    };
 
    const removeEdgeAnimation = (edgeID) => {
-      edgesToAnimate = edgesToAnimate.filter((id) => id !== edgeID);
-      delete positions[edgeID];
+      edgesToAnimate = edgesToAnimate.filter((edge) => edge.id !== edgeID);
    };
 
-   const animateEdge = (edgeID) => {
+   /**
+    *
+    * @param {string} edgeID The ID of an edge to animate
+    * @param {float} value An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
+    */
+   const animateEdge = (edgeID, value = 0.01) => {
+      if (value === undefined) value = 0.01;
+
       // if the edge to animate is a clustered edge animate as normal
-      if (edgeID.includes("clusterEdge") && !edgesToAnimate.includes(edgeID)) {
-         edgesToAnimate.push(edgeID);
-         positions[edgeID] = 0;
+      if (edgeID.includes("clusterEdge") && !edgesToAnimate.some((edge) => edge.id === edgeID)) {
+         edgesToAnimate.push({ id: edgeID, position: 0, increment: value });
 
          if (!redrawIntervalID) {
-            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
+            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 17);
          }
-      } else if (!edgesToAnimate.includes(edgeID)) {
+      } else if (!edgesToAnimate.some((edge) => edge.id === edgeID)) {
          // if the edgeID is not in the edges to animate list
          // get the edge object
          const edgeToAnimate = graphData.edges.get(edgeID);
@@ -586,19 +610,18 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          graphData.edges.update(edgeToAnimate);
 
          // add it to the list of edges to animate and the positions object
-         edgesToAnimate.push(edgeID);
-         positions[edgeID] = 0;
+         edgesToAnimate.push({ id: edgeID, position: 0, increment: value });
 
          // if this was the first edge to be animated create a new
          // redraw interval
          if (!redrawIntervalID) {
-            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
+            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 17);
             console.log(redrawIntervalID);
          }
 
          // If the edge ID is already in the edges to animate list
          // remove it
-      } else if (edgesToAnimate.includes(edgeID)) {
+      } else if (edgesToAnimate.some((edge) => edge.id === edgeID)) {
          if (!edgeID.includes("clusterEdge")) {
             const animatedEdge = graphData.edges.get(edgeID);
             animatedEdge.animation = false;
@@ -652,7 +675,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
 
          // if the edge is animated remove animation and clear
          // redraw animation interval if there are no other edges to animate
-         if (edgesToAnimate.includes(edgeID)) {
+         if (edgesToAnimate.some((edge) => edge.id === edgeID)) {
             removeEdgeAnimation(edgeID);
 
             // clear redraw interval if there are no other edges to animate
@@ -671,7 +694,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          const { type: edgeType } = graphData.edges.get(edgeID);
 
          // check if the edge is currently being animated
-         if (edgesToAnimate.includes(edgeID)) {
+         if (edgesToAnimate.some((edge) => edge.id === edgeID)) {
             // remove it from the edges to animate list and the positions tracker object
             removeEdgeAnimation(edgeID);
 
@@ -775,7 +798,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          },
          clusterNodeProperties: {
             id: clusterValue,
-            borderWidth: 3,
+            borderWidth: 2,
             shape: "hexagon",
             label: `Community-${clusterValue}`,
             group: clusterValue,
@@ -789,11 +812,13 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
             const currentClusteredEdge = clusterNode.edges[i];
             const [baseEdge] = glmNetwork.clustering.getBaseEdges(currentClusteredEdge.id);
 
-            if (edgesToAnimate.includes(baseEdge)) {
+            if (edgesToAnimate.some((edge) => edge.id === baseEdge)) {
                removeEdgeAnimation(baseEdge);
                animateEdge(currentClusteredEdge.id);
             } else if (
-               edgesToAnimate.includes(currentClusteredEdge.clusteringEdgeReplacingIds[0])
+               edgesToAnimate.some(
+                  (edge) => edge.id === currentClusteredEdge.clusteringEdgeReplacingIds[0]
+               )
             ) {
                const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
                removeEdgeAnimation(previousClusteredEdge);
@@ -807,15 +832,15 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
       const { edges: clusteredEdges } = glmNetwork.body.nodes[clusterNodeID];
       const newEdgesToAnimate = [];
 
-      for (let edge of clusteredEdges) {
+      for (let clusteredEdge of clusteredEdges) {
          // skip edges that are not animated
-         if (!edgesToAnimate.includes(edge.id)) continue;
+         if (!edgesToAnimate.some((edge) => edge.id === clusteredEdge.id)) continue;
 
          // remove animation from current clustered edge
-         removeEdgeAnimation(edge.id);
+         removeEdgeAnimation(clusteredEdge.id);
 
          // add the edge replacing id to be animated
-         newEdgesToAnimate.push(edge.clusteringEdgeReplacingIds[0]);
+         newEdgesToAnimate.push(clusteredEdge.clusteringEdgeReplacingIds[0]);
       }
       // open the clustered node before animating the new edges
       glmNetwork.openCluster(clusterNodeID);
@@ -970,7 +995,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
 
             // if there some edges to animate, start the redraw interval
             if (edgesToAnimate.length > 0) {
-               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 17);
             }
 
             // animate edges if there are any

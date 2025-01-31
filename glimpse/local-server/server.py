@@ -75,6 +75,17 @@ def glm_to_json():
    
    return dict2json(glm_dict)
 
+@app.route("/update", methods=["POST"])
+def update():
+   obj = req.get_json()
+   socketio.emit(obj[0], obj)
+   # global output = str(obj)
+   return obj
+
+""" @app.route("/getOBJ", methods=["GET"])
+def read_obj():
+   return output """
+
 '''
 This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
 then most likely there is a true value where this end point needs to return a dict of community IDs

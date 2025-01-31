@@ -159,11 +159,14 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
 
    const send = () => {
       if ("data" in topology) {
-         topology.data.Node.map((commNode) => {
-            commNode.name = `comm${commNode.name + 1}`;
-            commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
-         });
+         if (topology.data.Node.every((node) => typeof node.name === "number")) {
+            topology.data.Node.map((commNode) => {
+               commNode.name = `comm${commNode.name + 1}`;
+               commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
+            });
+         }
          const natigGeneralConfig = {
+            modelNumber: modelNumber,
             ...getSendObj(generalConfig),
             ...getSendObj(DDosConfig),
             topology: { ...topology },
