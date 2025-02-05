@@ -24,16 +24,7 @@ import { sendNatigConfig } from "../utils/webSocketClientUtils";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
-const rates = [
-   "100 Kbps",
-   "500 Kbps",
-   "10 Mbps",
-   "80 Mbps",
-   "100 Mbps",
-   "500 Mbps",
-   "1 Gbps",
-   "10 Gbps",
-];
+const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
 const nodeTypes = ["Microgrid", "Communciation Node", "Control Center"];
 
 const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => {
@@ -101,7 +92,7 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
       Rate: {
          label: "Rate",
          desc: "bytes sent per second by the attacker",
-         value: "100 Kbps",
+         value: "100Kbps",
       },
       NodeType: {
          label: "DDoS Entry Point",

@@ -428,7 +428,7 @@ const initiateServer = () => {
          return;
       }
    } else {
-      const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
+      const python = spawn("python", [path.join(__dirname, "local-server", "server_test.py")]);
       python.stdout.on("data", (data) => {
          console.log("data: ", data.toString("utf8"));
          // console.log("data: ", data);

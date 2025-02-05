@@ -5,7 +5,7 @@
          "connections": [1],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 2,
          "y": 50,
          "error": "0.001"
@@ -15,7 +15,7 @@
          "connections": [2],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 9,
          "y": 4,
          "error": "0.001"
@@ -25,7 +25,7 @@
          "connections": [3],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 4,
          "y": 60,
          "error": "0.001"
@@ -35,7 +35,7 @@
          "connections": [4],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 11,
          "y": 12,
          "error": "0.001"
@@ -45,7 +45,7 @@
          "connections": [5],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 6,
          "y": 70,
          "error": "0.001"
@@ -55,7 +55,7 @@
          "connections": [6],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 13,
          "y": 20,
          "error": "0.001"
@@ -65,7 +65,7 @@
          "connections": [7],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 8,
          "y": 80,
          "error": "0.001"
@@ -75,7 +75,7 @@
          "connections": [8],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 15,
          "y": 28,
          "error": "0.001"
@@ -85,7 +85,7 @@
          "connections": [9],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 10,
          "y": 90,
          "error": "0.001"
@@ -95,7 +95,7 @@
          "connections": [10],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 17,
          "y": 36,
          "error": "0.001"
@@ -105,7 +105,7 @@
          "connections": [0],
          "UseCSMA": 0,
          "MTU": 1500,
-         "UseWifi": 1,
+         "UseWifi": 0,
          "x": 17,
          "y": 36,
          "error": "0.001"
