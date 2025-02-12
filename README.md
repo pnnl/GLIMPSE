@@ -1,12 +1,10 @@
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-# v0.4.2 ✨
+# v0.4.3 ✨
 
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
 
 ## Build Instructions
-
-> :warning: **Building the tool on an M3 Macbook currently not working**: this is due to the glm parser used has not been updated to be compatible with the latest apple silicon. A solution for this to come soon.
 
 **Download Node and Nim**
 
@@ -33,7 +31,7 @@ npm run webpack
 
 After that in `GLIMPSE/glimpse/local-server` create a python environment:
 
-```
+```bash
 python -m venv glimpse-server
 ```
 
@@ -56,7 +54,35 @@ Next install the server's requirements:
 pip install -r requirements.txt
 ```
 
-Finally in `GLIMPSE/glimpse/` start the application with the following command:
+### Additional Instructions for MacOS with Apple Silicon
+
+In `glimpse/local-server/` clone the glm parser repository.
+
+```bash
+git clone https://github.com/NREL/glm.git
+```
+
+Then in `glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
+
+```bash
+nim c -d:release --opt:size --cpu:arm64 --passC:"-flto -target arm64-apple-macos11" --passL:"-flto -target arm64-apple-macos11" --app:lib --out:lib/_glm.so src/glm.nim
+```
+
+Next run the following command to create the glm python library wheel
+
+```bash
+python setup.py bdist_wheel --plat-name=macosx_11_0_arm64
+```
+
+Once that is done, in `glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
+
+```bash
+python -m pip install ./dist/glm-0.4.4-py2.py3-none-macosx_11_0_arm64.whl
+```
+
+## Start GLIMPSE
+
+In `GLIMPSE/glimpse/` start the application with the following command:
 
 ```bash
 npm run start

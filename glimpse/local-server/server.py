@@ -65,22 +65,40 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 def hello():
    return {"api": "GLIMPSE flask backend"}
 
-'''
-This endpoint gets the paths of the uploaded glm files to be converted to JSON
-'''
+
 @app.route("/glm2json", methods=["POST"])
 def glm_to_json():
+   '''
+   This endpoint gets the paths of the uploaded glm files to be converted to JSON
+   '''
    paths = req.get_json()
    glm_dict = glm_to_dict(paths)
    
    return dict2json(glm_dict)
 
-'''
-This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
-then most likely there is a true value where this end point needs to return a dict of community IDs
-'''
+@app.route("/json2glm", methods=["POST"])
+def json_to_glm():
+   """
+   converts json GLD model representation back to GLD model (.glm)
+   """
+   if (req.is_json):
+      req_data = req.get_json()
+      data = req_data["data"]
+      save_dir = req_data["saveDir"]
+
+      for filename in data.keys():
+         with open(path.join(save_dir, filename), "w") as glm_file:
+            glm.dump(data[filename], glm_file)
+            glm_file.close()
+
+   return "", 204
+   
 @app.route("/create-nx-graph", methods=["POST"])
 def create_nx_graph(): 
+   '''
+   This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
+   then most likely there is a true value where this end point needs to return a dict of community IDs
+   '''
    graphData = req.get_json()
 
    if isinstance(graphData, dict):
@@ -91,11 +109,11 @@ def create_nx_graph():
       community_ids = create_graph(data=graphData[0], set_communities=graphData[1])
       return community_ids
 
-'''
-This endpoint gathers some summary statistics using networkx and the already existing GRAPH object.
-'''
 @app.route("/get-stats", methods=["GET"])
 def get_stats():
+   '''
+   This endpoint gathers some summary statistics using networkx and the already existing GRAPH object.
+   '''
    summary_stats = {
       "#Nodes": GRAPH.number_of_nodes(),
       "#Edges": GRAPH.number_of_edges(),
@@ -134,6 +152,6 @@ def delete_edge(edgeID):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=False)
+   socketio.run(app, port=5051, debug=True)
    
 #-------------------------- End Start WebSocket Server --------------------------#

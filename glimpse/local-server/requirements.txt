@@ -5,3 +5,5 @@ gevent-websocket
 glm
 networkx
 requests
+wheel
+setuptools

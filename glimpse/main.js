@@ -6,12 +6,12 @@ const {
    Menu,
    globalShortcut,
    nativeImage,
+   Notification,
 } = require("electron");
-const { execSync, execFile, spawn } = require("child_process");
+const { execFile, spawn } = require("child_process");
 const path = require("path");
 const { io } = require("socket.io-client");
 const fs = require("fs");
-const kill = require("tree-kill");
 const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
@@ -25,7 +25,6 @@ if (!app.isPackaged) {
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
 const socket = io("http://127.0.0.1:5051");
-// const socket2 = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
@@ -212,23 +211,31 @@ const json2glmFunc = async (jsonData) => {
    dir2save = dir2save.filePaths[0];
 
    const parsedData = JSON.parse(jsonData);
-   const json2glmArg =
-      process.platform == "darwin"
-         ? path.join(__dirname, "tools", "json2glm")
-         : path.join(__dirname, "tools", "json2glm.exe");
 
-   // for each json file data, make a json file and turn it to a glm file
-   for (const file of Object.keys(parsedData)) {
-      const newFilename = file.split(".")[0] + ".glm";
-      const args = `${json2glmArg} --path-to-file ${path.join(dir2save, file)} > ${path.join(
-         dir2save,
-         newFilename
-      )}`;
+   Object.keys(parsedData).forEach((filename) => {
+      delete Object.assign(parsedData, {
+         [filename.replace(".json", ".glm")]: parsedData[filename],
+      })[filename];
+   });
 
-      fs.writeFileSync(path.join(dir2save, file), JSON.stringify(parsedData[file], null, 3));
-      execSync(args);
-      fs.rmSync(path.join(dir2save, file));
-   }
+   const sendObj = {
+      saveDir: dir2save,
+      data: parsedData,
+   };
+
+   const res = await fetch("http://127.0.0.1:5051/json2glm", {
+      method: "POST",
+      headers: {
+         "content-type": "application/json",
+      },
+      body: JSON.stringify(sendObj),
+   });
+
+   if (res.ok)
+      new Notification({
+         title: "Export Notification",
+         body: "GLM files saved at: " + dir2save,
+      }).show();
 };
 
 const makeWindow = () => {
@@ -443,7 +450,7 @@ app.whenReady()
    .then(() => {
       makeSplashWindow();
       globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
-      initiateServer();
+      // initiateServer();
    })
    .then(() => {
       socket.on("connect", () => {
@@ -468,12 +475,16 @@ app.whenReady()
       });
    });
 
-app.on("quit", () => {
-   kill(process.pid);
-});
-
 app.on("window-all-closed", () => {
    if (process.platform !== "darwin") {
-      kill(process.pid);
+      app.quit();
+   }
+});
+
+app.on("activate", () => {
+   // On macOS it's common to re-create a window in the app when the
+   // dock icon is clicked and there are no other windows open.
+   if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
    }
 });

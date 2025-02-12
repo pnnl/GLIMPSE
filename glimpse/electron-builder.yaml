@@ -22,11 +22,15 @@ extraResources:
    - ./data/**
 win:
    target:
-      - target:
-           - msi
-           - nsis
+      - target: msi
         arch:
            - x64
+mac:
+   target:
+      - target: dmg
+        arch:
+           - arm64
+
 linux:
    target:
       - deb
