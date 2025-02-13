@@ -7,7 +7,6 @@ from os import path
 
 GRAPH = nx.MultiGraph()
 
-#Convert glm file to python dictionary
 def glm_to_dict( file_paths: list ) -> dict:
    glm_dicts = {}
    for glm_path in file_paths:
@@ -15,7 +14,6 @@ def glm_to_dict( file_paths: list ) -> dict:
 
    return glm_dicts
 
-#Converts glm dict to json
 def dict2json( glm_dict: dict ) -> str:
    glm_json = json.dumps( glm_dict, indent= 3 )
    return glm_json
@@ -152,6 +150,6 @@ def delete_edge(edgeID):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=True)
+   socketio.run(app, port=5051, debug=False)
    
 #-------------------------- End Start WebSocket Server --------------------------#

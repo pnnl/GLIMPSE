@@ -13,6 +13,7 @@ const path = require("path");
 const { io } = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
+// const kill = require("tree-kill");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
@@ -437,8 +438,8 @@ const initiateServer = () => {
    } else {
       const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
       python.stdout.on("data", (data) => {
-         // console.log("data: ", data.toString("utf8"));
-         console.log("data: ", data);
+         console.log("data: ", data.toString("utf8"));
+         // console.log("data: ", data);
       });
       python.stderr.on("data", (data) => {
          console.log(`log: ${data}`); // when error
@@ -475,10 +476,10 @@ app.whenReady()
       });
    });
 
+// app.on("before-quit", () => kill(process.pid));
+
 app.on("window-all-closed", () => {
-   if (process.platform !== "darwin") {
-      app.quit();
-   }
+   app.quit();
 });
 
 app.on("activate", () => {

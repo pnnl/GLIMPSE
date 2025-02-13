@@ -27,7 +27,7 @@ win:
            - x64
 mac:
    target:
-      - target: dmg
+      - target: pkg
         arch:
            - arm64
 
