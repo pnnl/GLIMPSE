@@ -591,9 +591,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const deleteNode = (nodeID) => {
       // delete from file data
       Object.keys(dataToVis).forEach((filename) => {
-         console.log(filename);
          const objects = dataToVis[filename].objects;
-
          dataToVis[filename].objects = objects.filter((obj) => obj.attributes.name !== nodeID);
       });
 
