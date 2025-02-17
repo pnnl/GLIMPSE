@@ -8,7 +8,7 @@ const {
    nativeImage,
    Notification,
 } = require("electron");
-const { execFile, spawn } = require("child_process");
+const { spawn } = require("child_process");
 const path = require("path");
 const { io } = require("socket.io-client");
 const fs = require("fs");
@@ -25,6 +25,7 @@ if (!app.isPackaged) {
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
+const { kill } = require("process");
 const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
@@ -419,32 +420,37 @@ const makeSplashWindow = () => {
 };
 
 const initiateServer = () => {
+   let serverProcess = null;
    const serverExecutableName =
       process.platform === "linux" || process.platform === "darwin" ? "server" : "server.exe";
 
    const serverExecutablePath = path.join(rootDir, "local-server", "server", serverExecutableName);
 
    if (fs.existsSync(serverExecutablePath)) {
-      try {
-         execFile(serverExecutablePath, (error, stdout, stderr) => {
-            if (error) throw error;
-            if (stderr) throw stderr;
-            console.log(stdout);
-         });
-      } catch (error) {
-         console.log(error);
-         return;
-      }
+      serverProcess = spawn(serverExecutablePath);
+      serverProcess.stdout.on("data", (data) => {
+         console.log(data.toString("utf8"));
+      });
+      serverProcess.stderr.on("data", (data) => {
+         console.error(`Server error: ${data}`);
+      });
    } else {
-      const python = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
-      python.stdout.on("data", (data) => {
+      serverProcess = spawn("python", [path.join(__dirname, "local-server", "server.py")]);
+      serverProcess.stdout.on("data", (data) => {
          console.log("data: ", data.toString("utf8"));
          // console.log("data: ", data);
       });
-      python.stderr.on("data", (data) => {
+      serverProcess.stderr.on("data", (data) => {
          console.log(`log: ${data}`); // when error
       });
    }
+
+   app.on("before-quit", () => {
+      if (serverProcess) {
+         serverProcess.kill("SIGTERM");
+         serverProcess = null;
+      }
+   });
 };
 
 app.whenReady()
