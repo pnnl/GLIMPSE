@@ -24,8 +24,17 @@ import { sendNatigConfig } from "../utils/webSocketClientUtils";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
-const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
-const nodeTypes = ["Microgrid", "Communciation Node", "Control Center"];
+const rates = [
+   "100Kbps",
+   "500Kbps",
+   "10Mbps",
+   "80Mbps",
+   "100Mbps",
+   "500Mbps",
+   "1Gbps",
+   "10Gbps",
+];
+const nodeTypes = ["Microgrid", "Communication Node", "Control Center"];
 
 const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => {
    const [openForm, setOpenForm] = useState(false);
@@ -72,37 +81,37 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
       threadsPerAttacker: {
          label: "Number of Attackers",
          desc: "Control the number of attackers",
-         value: 0,
+         value: 2,
       },
       Start: {
          label: "Start",
          desc: "Number of seconds after the start of the simulation when the attack starts",
-         value: 0,
+         value: 2,
       },
       End: {
          label: "End",
          desc: "Number of seconds after the start of the simulation when the attack stops",
-         value: 0,
+         value: 4,
       },
       PacketSize: {
          label: "Packet Size",
          desc: "Controls the maximum transmissible unit the attackers link is set to",
-         value: 500,
+         value: 1500,
       },
       Rate: {
          label: "Rate",
          desc: "bytes sent per second by the attacker",
-         value: "100Kbps",
+         value: "80Mbps",
       },
       NodeType: {
          label: "DDoS Entry Point",
          desc: "The type of node that the DDoS will be connected to",
-         value: "",
+         value: "Microgrid",
       },
       endPoint: {
          label: "DDoS End Point",
          desc: "The type of node that will be targeted by the bot's application",
-         value: "",
+         value: "Communication Node",
       },
    });
 

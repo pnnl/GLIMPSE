@@ -1,4 +1,5 @@
 appId: com.github.pnnl.GLIMPSE
+name: GLIMPSE
 directories:
    output: out
    buildResources: build

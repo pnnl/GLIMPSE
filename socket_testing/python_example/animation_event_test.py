@@ -30,7 +30,8 @@ animate_edges = [
       "id": "XFMR1",
       "updates": {
          "animation": True,
-         "increment": 0.01 # normal speed
+         "increment": 0.01, # normal speed
+         "startFrom": "target"
       }
    },
    {
@@ -38,7 +39,8 @@ animate_edges = [
       "id": "Reg1",
       "updates": {
          "animation": True,
-         "increment": 0.001 # slowest speed
+         "increment": 0.001, # slowest speed
+         "startFrom": "target"
       }
    },
    {

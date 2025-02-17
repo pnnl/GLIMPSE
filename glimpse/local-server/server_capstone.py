@@ -6,10 +6,36 @@ import json
 from os import path
 
 import socket
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024*10)
-client_socket.settimeout(2.0)
-natig_server_addr = ("localhost", 65432)
+#client_socket = socket.socket() #socket.AF_INET, socket.SOCK_DGRAM)
+#client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 1024*10)
+#client_socket.settimeout(2.0)
+#natig_server_addr = ("localhost", 8080)
+
+def start_client(message):
+    # Create socket
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.settimeout(2.0)
+    # Connection details
+    host = '127.0.0.1'  # Connect to localhost
+    port = 65432
+
+    try:
+        # Connect to server
+        client_socket.connect((host, port))
+        print(f"Connected to server at {host}:{port}")
+
+        # Send message to server
+        #message = "Hello from client!"
+        client_socket.send(message.encode('utf-8'))
+
+        # Receive response
+        response = client_socket.recv(1024)
+        print(f"Server response: {response.decode('utf-8')}")
+
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        client_socket.close()
 
 GRAPH = nx.MultiGraph()
 
@@ -51,12 +77,12 @@ def get_modularity() -> float:
 def get_avg_betweenness_centrality() -> float:
    my_k = int(GRAPH.number_of_nodes()*0.68)
    betweenness_centrality_dict = nx.betweenness_centrality(GRAPH, k=my_k)
-
+   
    centrality_sum = sum(betweenness_centrality_dict.values())
    avg = centrality_sum/len(betweenness_centrality_dict)
 
    return avg
-
+        
 #------------------------------ Server ------------------------------#
 
 app = Flask(__name__)
@@ -78,7 +104,7 @@ This endpoint gets the paths of the uploaded glm files to be converted to JSON
 def glm_to_json():
    paths = req.get_json()
    glm_dict = glm_to_dict(paths)
-
+   
    return dict2json(glm_dict)
 
 @app.route("/update", methods=["POST"])
@@ -120,7 +146,7 @@ def get_stats():
       "modularity": get_modularity(),
       "avgBetweennessCentrality": get_avg_betweenness_centrality()
    }
-
+   
    return summary_stats
 
 #------------------------------ End Server Routes ------------------------------#
@@ -141,7 +167,7 @@ def add_edge(newEdgeData):
 @socketio.on("deleteNode")
 def delete_node(nodeID):
    socketio.emit("delete-node", nodeID)
-
+   
 @socketio.on("deleteEdge")
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
@@ -157,9 +183,10 @@ def natig_config(configObj):
       natig_config_str = natig_config_str.replace("'", '"')
       natig_config_str = natig_config_str.replace("False", "false")
       natig_config_str = natig_config_str.replace("True", "true")
-      client_socket.sendto(natig_config_str.encode(), natig_server_addr)
-      response, _ = client_socket.recvfrom(1024*10)
-      print(f"Natig server response: {response.decode()}")
+      start_client(natig_config_str)
+      #client_socket.sendto(natig_config_str.encode(), natig_server_addr)
+      #response, _ = client_socket.recvfrom(1024*10)
+      #print(f"Natig server response: {response.decode()}")
    except Exception as e:
       return "did not send {0}".format(e)
 
@@ -171,5 +198,5 @@ def natig_config(configObj):
 
 if __name__ == "__main__":
    socketio.run(app, port=5051, debug=True)
-
+   
 #-------------------------- End Start WebSocket Server --------------------------#

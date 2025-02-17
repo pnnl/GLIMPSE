@@ -519,10 +519,11 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
          if ("animation" in updateData.updates) {
-            const { animation, increment, ...rest } = updateData.updates;
+            const { animation, increment, startFrom, ...rest } = updateData.updates;
 
             edge.animation = animation;
             edge.increment = increment;
+            edge.startFrom = startFrom;
 
             // if the first element of the clustered edges array is not the passed edge ID
             // then there are clustered edges
@@ -530,7 +531,7 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
                // the first element will then be the current visible clustered edge
                animateEdge(clusteredEdges[0], increment);
             } else {
-               animateEdge(edge.id, increment);
+               animateEdge(edge.id, increment, startFrom);
             }
 
             graphData.edges.update({ ...edge, ...rest });
@@ -545,6 +546,9 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
    };
 
    const animateEdges = (ctx) => {
+      let start = null;
+      let end = null;
+
       if (edgesToAnimate.length > 0) {
          try {
             for (let edge of edgesToAnimate) {
@@ -552,8 +556,13 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
 
                if (!canvasEdge) continue;
 
-               const start = canvasEdge.from;
-               const end = canvasEdge.to;
+               if (edge.startFrom === "target") {
+                  start = canvasEdge.to;
+                  end = canvasEdge.from;
+               } else {
+                  start = canvasEdge.from;
+                  end = canvasEdge.to;
+               }
 
                // Calculate the circle's position along the edge
                edge.position += edge.increment;
@@ -590,13 +599,15 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
     *
     * @param {string} edgeID The ID of an edge to animate
     * @param {float} value An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
+    * @param {string} startFrom start the animation of an edge from its `"source"` or `"target"`
     */
-   const animateEdge = (edgeID, value = 0.01) => {
+   const animateEdge = (edgeID, value = 0.01, startFrom = "source") => {
       if (value === undefined) value = 0.01;
+      if (startFrom === undefined) startFrom = "source";
 
       // if the edge to animate is a clustered edge animate as normal
       if (edgeID.includes("clusterEdge") && !edgesToAnimate.some((edge) => edge.id === edgeID)) {
-         edgesToAnimate.push({ id: edgeID, position: 0, increment: value });
+         edgesToAnimate.push({ id: edgeID, position: 0, increment: value, startFrom: startFrom });
 
          if (!redrawIntervalID) {
             redrawIntervalID = setInterval(() => glmNetwork.redraw(), 17);
@@ -605,12 +616,11 @@ const Graph = ({ onMount, dataToVis, theme, isGlm }) => {
          // if the edgeID is not in the edges to animate list
          // get the edge object
          const edgeToAnimate = graphData.edges.get(edgeID);
-         // set its animation attribute to true
          edgeToAnimate.animation = true;
          graphData.edges.update(edgeToAnimate);
 
          // add it to the list of edges to animate and the positions object
-         edgesToAnimate.push({ id: edgeID, position: 0, increment: value });
+         edgesToAnimate.push({ id: edgeID, position: 0, increment: value, startFrom: startFrom });
 
          // if this was the first edge to be animated create a new
          // redraw interval

@@ -2,6 +2,6 @@ Flask
 Flask-SocketIO
 gevent
 gevent-websocket
-glm==0.4.3
+glm
 networkx
 requests

@@ -428,7 +428,7 @@ const initiateServer = () => {
          return;
       }
    } else {
-      const python = spawn("python", [path.join(__dirname, "local-server", "server_test.py")]);
+      const python = spawn("python", [path.join(__dirname, "local-server", "server_capstone.py")]);
       python.stdout.on("data", (data) => {
          console.log("data: ", data.toString("utf8"));
          // console.log("data: ", data);
@@ -472,7 +472,5 @@ app.on("quit", () => {
 });
 
 app.on("window-all-closed", () => {
-   if (process.platform !== "darwin") {
-      kill(process.pid);
-   }
+   kill(process.pid);
 });
