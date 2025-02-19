@@ -7,16 +7,20 @@ import {
    Divider,
    TextField,
    Stack,
-   Button,
    Tooltip,
-   Accordion,
 } from "@mui/material";
 import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
 import OverlayUpload from "./OverlayUpload";
 import StatsTableModal from "./StatsTableModal";
 import PlotModal from "./PlotModal";
 import axios from "axios";
-import { CustomFab, CustomSwitch, CustomFormControlLabel } from "../utils/CustomComponents";
+import {
+   CustomFab,
+   CustomSwitch,
+   CustomFormControlLabel,
+   CustomButton,
+} from "../utils/CustomComponents";
+import NatigConfigModal from "./NatigConfigModal";
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionDrawer = ({
@@ -26,6 +30,8 @@ const ActionDrawer = ({
    attachOverlay,
    removeOverlay,
    reset,
+   modelNumber,
+   applyOverlay,
 }) => {
    const nodes = getNodeIds();
    const [nodeID, setNodeID] = useState("");
@@ -36,6 +42,7 @@ const ActionDrawer = ({
    const [showPlot, setShowPlot] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [stats, setStats] = useState(null);
+   const [openNatigConfig, setOpenNatigConfig] = useState(false);
 
    /**
     * Trigger the find function from the Graph component to focus on the selected node ID
@@ -141,10 +148,9 @@ const ActionDrawer = ({
             anchor="left"
             open={openDrawer}
             onClose={closeDrawer}
-            onMouseLeave={closeDrawer}
             sx={{
                flexShrink: 0,
-               [`& .MuiDrawer-paper`]: { width: 240, top: "66px", boxSizing: "border-box" },
+               [`& .MuiDrawer-paper`]: { width: 240, top: "65px", boxSizing: "border-box" },
             }}
          >
             <div>
@@ -192,17 +198,21 @@ const ActionDrawer = ({
 
             <Divider />
 
-            <Button
+            <CustomButton
+               sx={{ borderRadius: "0" }}
                variant="text"
                onClick={() => setShowOverlayUpload(true)}
-               sx={{
-                  borderRadius: "0px",
-                  color: "#333",
-                  ":hover": { backgroundColor: "#333", color: "#FFF" },
-               }}
             >
                Attach Overlay
-            </Button>
+            </CustomButton>
+            <Divider />
+            <CustomButton
+               sx={{ borderRadius: "0" }}
+               variant="text"
+               onClick={() => setOpenNatigConfig(true)}
+            >
+               Scenario Configuration
+            </CustomButton>
 
             <Divider />
          </Drawer>
@@ -211,6 +221,12 @@ const ActionDrawer = ({
             setHideRemoveOverlayBtn={setHideRemoveOverlayBtn}
             overlayFunc={attachOverlay}
             close={() => setShowOverlayUpload(false)}
+         />
+         <NatigConfigModal
+            open={openNatigConfig}
+            close={() => setOpenNatigConfig(false)}
+            modelNumber={modelNumber}
+            applyOverlay={applyOverlay}
          />
          <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
          <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)} />

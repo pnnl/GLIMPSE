@@ -31,7 +31,7 @@ animate_edges = [
       "updates": {
          "animation": True,
          "increment": 0.01, # normal speed
-         "startFrom": "target"
+         "startFrom": "target",
       }
    },
    {

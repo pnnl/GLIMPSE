@@ -466,42 +466,27 @@ export const Prev = (glmNetwork, highlightedNodes, counter) => {
    }
 };
 
-export const rotateCCW = (data, network, angle) => {
-   // console.log(network.body.nodes);
+export const rotateCCW = (network, angle) => {
+   // loop through the node IDs of the currently drawn nodes in the canvas
+   for (const nodeID of network.body.nodeIndices) {
+      const pos = network.getPosition(nodeID);
 
-   const rotatedNodes = data.nodes.get().map((node) => {
-      const coordinates = network.getPositions(node.id);
+      const newX = pos.x * Math.cos(-angle) - pos.y * Math.sin(-angle);
+      const newY = pos.x * Math.sin(-angle) + pos.y * Math.cos(-angle);
 
-      const newX =
-         coordinates[node.id].x * Math.cos(-angle) - coordinates[node.id].y * Math.sin(-angle);
-      const newY =
-         coordinates[node.id].x * Math.sin(-angle) + coordinates[node.id].y * Math.cos(-angle);
-
-      node.x = newX.toFixed(0);
-      node.y = newY.toFixed(0);
-
-      return node;
-   });
-
-   data.nodes.update(rotatedNodes);
+      network.moveNode(nodeID, newX.toFixed(0), newY.toFixed(0));
+   }
 };
 
-export const rotateCW = (data, network, angle) => {
-   const rotatedNodes = data.nodes.get().map((node) => {
-      const coordinates = network.getPositions(node.id);
+export const rotateCW = (network, angle) => {
+   for (const nodeID of network.body.nodeIndices) {
+      const pos = network.getPosition(nodeID);
 
-      const newX =
-         coordinates[node.id].x * Math.cos(angle) - coordinates[node.id].y * Math.sin(angle);
-      const newY =
-         coordinates[node.id].x * Math.sin(angle) + coordinates[node.id].y * Math.cos(angle);
+      const newX = pos.x * Math.cos(angle) - pos.y * Math.sin(angle);
+      const newY = pos.x * Math.sin(angle) + pos.y * Math.cos(angle);
 
-      node.x = newX.toFixed(0);
-      node.y = newY.toFixed(0);
-
-      return node;
-   });
-
-   data.nodes.update(rotatedNodes);
+      network.moveNode(nodeID, newX.toFixed(0), newY.toFixed(0));
+   }
 };
 
 // used to keep track of the amount of uploads

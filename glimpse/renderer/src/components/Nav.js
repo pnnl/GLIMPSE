@@ -18,9 +18,8 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import { ArrowRight } from "@mui/icons-material";
-import NatigConfigModal from "./NatigConfigModal";
 
-const Nav = ({ showHome, modelNumber, applyOverlay }) => {
+const Nav = ({ showHome }) => {
    const [openAbout, setOpenAbout] = useState(false);
    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
    const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
@@ -28,11 +27,6 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
    const parentMenuRef = useRef(null);
    const openMenu = Boolean(menuAnchorEl);
    const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
-   let setOpenNatigConfigForm = null;
-
-   const getNatigFormStateSetter = (natigFormStateSetter) => {
-      setOpenNatigConfigForm = natigFormStateSetter;
-   };
 
    const handleMenuClick = (e) => {
       setMenuAnchorEl(e.currentTarget);
@@ -80,9 +74,6 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
                      <ArrowRight />
                   </ListItemIcon>
                </MenuItem>
-               <MenuItem onClick={() => setOpenNatigConfigForm(true)}>
-                  Scenario Configuration
-               </MenuItem>
             </Menu>
             <Menu
                id="themes-submenu"
@@ -124,12 +115,6 @@ const Nav = ({ showHome, modelNumber, applyOverlay }) => {
          </Toolbar>
 
          <About show={openAbout} close={() => setOpenAbout(false)} />
-         <NatigConfigModal
-            onMount={getNatigFormStateSetter}
-            modelNumber={modelNumber}
-            applyOverlay={applyOverlay}
-            closeMenu={closeMenu}
-         />
       </>
    );
 };

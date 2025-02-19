@@ -10,10 +10,6 @@ export const App = () => {
    const [filesUploaded, setFilesUploaded] = useState(false);
    let applyOverlay = useRef(null);
 
-   const setApplyOverlayFunction = (overlayFunction) => {
-      applyOverlay.current = overlayFunction;
-   };
-
    const showHome = () => {
       setFilesUploaded(false);
       setFileData({ loading: false });
@@ -36,10 +32,10 @@ export const App = () => {
 
          {filesUploaded && !fileData.loading && (
             <Graph
-               onMount={setApplyOverlayFunction}
                dataToVis={fileData.visData}
                theme={fileData.theme}
                isGlm={fileData.isGlm}
+               modelNumber={fileData.modelNumber}
             />
          )}
       </>

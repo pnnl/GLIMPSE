@@ -24,20 +24,10 @@ import { sendNatigConfig } from "../utils/webSocketClientUtils";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
-const rates = [
-   "100Kbps",
-   "500Kbps",
-   "10Mbps",
-   "80Mbps",
-   "100Mbps",
-   "500Mbps",
-   "1Gbps",
-   "10Gbps",
-];
+const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
 const nodeTypes = ["Microgrid", "Communication Node", "Control Center"];
 
-const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => {
-   const [openForm, setOpenForm] = useState(false);
+const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
    const [expanded, setExpanded] = useState(false);
    const [topology, setTopology] = useState({ name: "" });
    const [generalConfig, setGeneralConfig] = useState({
@@ -176,7 +166,7 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
 
          sendNatigConfig(natigGeneralConfig);
 
-         setOpenForm(false);
+         close();
       } else {
          alert("Upload a feeder model ex: ieee3000_Feeder3.glm");
       }
@@ -187,16 +177,12 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
    };
 
    const appyTopology = async () => {
-      await applyOverlay.current(undefined, modelNumber, topology.data);
+      await applyOverlay(undefined, modelNumber, topology.data);
    };
-
-   useEffect(() => {
-      onMount(setOpenForm);
-   }, [onMount]);
 
    return ReactDOM.createPortal(
       <>
-         <Dialog open={openForm}>
+         <Dialog open={open}>
             <DialogTitle>Scenario Configuration </DialogTitle>
             <DialogContent dividers>
                <Stack direction={"row"} spacing={1}>
@@ -455,14 +441,7 @@ const NatigConfigModal = ({ onMount, modelNumber, applyOverlay, closeMenu }) => 
             </DialogContent>
             <DialogActions>
                <CustomButton onClick={send}>Send</CustomButton>
-               <CustomButton
-                  onClick={() => {
-                     closeMenu();
-                     setOpenForm(false);
-                  }}
-               >
-                  close
-               </CustomButton>
+               <CustomButton onClick={close}>close</CustomButton>
             </DialogActions>
          </Dialog>
       </>,
