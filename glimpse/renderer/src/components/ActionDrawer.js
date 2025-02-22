@@ -166,7 +166,7 @@ const ActionDrawer = ({
                size="small"
                id="autocomplete-nodeID-search"
                options={getNodeIds()}
-               onChange={(even, ID) => setNodeID(ID)}
+               onChange={(event, ID) => setNodeID(ID)}
                renderInput={(params) => (
                   <Stack sx={{ m: 1 }} direction="row" spacing={1}>
                      <TextField

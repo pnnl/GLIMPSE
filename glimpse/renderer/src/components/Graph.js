@@ -8,7 +8,7 @@ import "../other-styles/vis-network.css";
 import {
    currentUploadCounter,
    Export,
-   getLegendData,
+   setLegendData,
    getTitle,
    hideEdge,
    hideEdges,
@@ -50,6 +50,13 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    let edgesToAnimate = {};
    let edgesToAnimateCount = 0;
    let redrawIntervalID = null;
+
+   let setNode = null;
+   let setOpenNodePopup = null;
+   let newNodeFormSetState = null;
+   let contextMenuData = null;
+   let setContextMenuData = null;
+   let newEdgeFormSetState = null;
 
    const addedOverlayObjects = {
       nodes: [],
@@ -136,7 +143,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       graphOptions
    );
    /* ---------------------------- Establish Network --------------------------- */
-   getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   setLegendData(objectTypeCount, theme, edgeOptions, legendData);
 
    console.log("Number of Nodes: " + graphData.nodes.length);
    console.log("Number of Edges: " + graphData.edges.length);
@@ -144,8 +151,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    /* ------------------ Receive Sate Variables from Children ------------------ */
 
    // initiate variables that reference the NodePopup child component state and set state variables
-   let setNode = null;
-   let setOpenNodePopup = null;
+
    /**
     * Used to send the set state function from the child to the parent
     * @param {React.Dispatch<React.SetStateAction<{}>>} setChildNode - The useState function of the NodePopup
@@ -157,9 +163,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       setOpenNodePopup = setOpen;
    };
 
-   // initiate variables that reference the context menu child component state and set state variables
-   let contextMenuData;
-   let setContextMenuData;
    /**
     * Takes the state variables of the ContextMenu component
     * so that the parent component may change the state of the child
@@ -173,12 +176,10 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       setContextMenuData = setContextMenuDataState;
    };
 
-   let newNodeFormSetState;
    const onNewNodeFormMount = (setOpenNewNodeForm) => {
       newNodeFormSetState = setOpenNewNodeForm;
    };
 
-   let newEdgeFormSetState;
    const onNewEdgeFormMount = (setNewEdgeFormState) => {
       newEdgeFormSetState = setNewEdgeFormState;
    };
@@ -293,66 +294,41 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          }
       }
 
-      for (const commNode of topology.Node) {
-         let commNodeID = null;
-         let mgNumber = null;
+      if (topology) {
+         for (const commNode of topology.Node) {
+            let commNodeID = null;
+            let mgNumber = null;
 
-         if (typeof commNode.name === "string") {
-            commNodeID = commNode.name;
-            mgNumber = parseInt(commNode.name.match(/\d+$/)[0], 10);
-         } else {
-            commNodeID = `comm${commNode.name + 1}`;
-            mgNumber = commNode.name + 1;
-         }
-
-         newNodes.push({
-            id: commNodeID,
-            label: commNodeID,
-            group: "communication_node",
-            title: `ObjectType: communication_node\nname: ${commNodeID}`,
-         });
-
-         addedOverlayObjects.nodes.push(commNodeID);
-         objectTypeCount.nodes.communication_node++;
-
-         let commEdgeID = `${commNodeID}-SS_${mgNumber}`;
-         newEdges.push({
-            id: commEdgeID,
-            from: commNodeID,
-            to: `SS_${mgNumber}`,
-            title:
-               "objectType: parentChild\n" +
-               getTitle({
-                  name: commEdgeID,
-                  from: commNodeID,
-                  to: `SS_${mgNumber}`,
-               }),
-            color: { inherit: true },
-            type: "communication",
-            width: 2,
-         });
-
-         addedOverlayObjects.edges.push(commEdgeID);
-         objectTypeCount.edges.communication++;
-
-         for (const connection of commNode.connections) {
-            let to = null;
-
-            if (typeof connection === "string") {
-               commEdgeID = `${commNodeID}-${connection}`;
-               to = connection;
+            if (typeof commNode.name === "string") {
+               commNodeID = commNode.name;
+               mgNumber = parseInt(commNode.name.match(/\d+$/)[0], 10);
             } else {
-               commEdgeID = `${commNodeID}-comm${connection + 1}`;
-               to = `comm${connection + 1}`;
+               commNodeID = `comm${commNode.name + 1}`;
+               mgNumber = commNode.name + 1;
             }
 
+            newNodes.push({
+               id: commNodeID,
+               label: commNodeID,
+               group: "communication_node",
+               title: `ObjectType: communication_node\nname: ${commNodeID}`,
+            });
+
+            addedOverlayObjects.nodes.push(commNodeID);
+            objectTypeCount.nodes.communication_node++;
+
+            let commEdgeID = `${commNodeID}-SS_${mgNumber}`;
             newEdges.push({
                id: commEdgeID,
                from: commNodeID,
-               to: to,
+               to: `SS_${mgNumber}`,
                title:
                   "objectType: parentChild\n" +
-                  getTitle({ name: commEdgeID, from: commNodeID, to: to }),
+                  getTitle({
+                     name: commEdgeID,
+                     from: commNodeID,
+                     to: `SS_${mgNumber}`,
+                  }),
                color: { inherit: true },
                type: "communication",
                width: 2,
@@ -360,14 +336,40 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
             addedOverlayObjects.edges.push(commEdgeID);
             objectTypeCount.edges.communication++;
+
+            for (const connection of commNode.connections) {
+               let to = null;
+
+               if (typeof connection === "string") {
+                  commEdgeID = `${commNodeID}-${connection}`;
+                  to = connection;
+               } else {
+                  commEdgeID = `${commNodeID}-comm${connection + 1}`;
+                  to = `comm${connection + 1}`;
+               }
+
+               newEdges.push({
+                  id: commEdgeID,
+                  from: commNodeID,
+                  to: to,
+                  title:
+                     "objectType: parentChild\n" +
+                     getTitle({ name: commEdgeID, from: commNodeID, to: to }),
+                  color: { inherit: true },
+                  type: "communication",
+                  width: 2,
+               });
+
+               addedOverlayObjects.edges.push(commEdgeID);
+               objectTypeCount.edges.communication++;
+            }
          }
       }
-
       // Batch add nodes and edges
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    /**
@@ -397,7 +399,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                graphOptions
             );
 
-            getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+            setLegendData(objectTypeCount, theme, edgeOptions, legendData);
          }
       } else {
          try {
@@ -468,7 +470,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          objectTypeCount.edges[addedEdge.type]++;
          graphData.edges.update(addedEdge);
 
-         getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+         setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
          alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
       }
@@ -499,7 +501,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          animateEdge(newEdge.id);
       }
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const updateVisObjects = (updateData) => {
@@ -604,6 +606,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       if (value === undefined) value = 0.01;
       if (startFrom === undefined) startFrom = "source";
 
+      console.log(`Animating edge: ${edgeID}`);
+
       try {
          // if the edge to animate is a clustered edge animate as normal
          if (edgeID.includes("clusterEdge") && !(edgeID in edgesToAnimate)) {
@@ -618,8 +622,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
             }
          } else if (!(edgeID in edgesToAnimate)) {
-            console.log(`Animating edge: ${edgeID}`);
-
             // add it to the list of edges to animate and the positions object
             edgesToAnimate[edgeID] = {
                position: 0,
@@ -646,21 +648,28 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             };
          }
       } catch (err) {
+         console.log(`Could not animate edge: ${edgeID}`);
          console.error(err);
       }
    };
-
    /**
     * Delete a node along with the edges connected to it and updating the legend
     * @param {string} nodeID the ID of a node to delete
     */
    const deleteNode = (nodeID) => {
+      // delete from file data
+      Object.keys(dataToVis).forEach((filename) => {
+         const objects = dataToVis[filename].objects;
+         dataToVis[filename].objects = objects.filter((obj) => obj.attributes.name !== nodeID);
+      });
+
       const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
       objectTypeCount.nodes[nodeObject.group]--;
 
       const edgesToDelete = [];
-      for (let edge of graphData.edges.get()) {
+      const graphEdges = graphData.edges.get();
+      for (let edge of graphEdges) {
          if (edge.from === nodeID || edge.to === nodeID) {
             edgesToDelete.push(edge.id);
             objectTypeCount.edges[edge.type]--;
@@ -670,7 +679,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       graphData.nodes.remove(nodeID);
       graphData.edges.remove(edgesToDelete);
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      console.log("DELETED: " + nodeID);
+
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const deleteEdge = (edgeID) => {
@@ -722,7 +733,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       }
 
       // update the legend to reflect the new number of edges after deleting
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    /**
@@ -764,7 +775,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       addedOverlayObjects.nodes.length = 0;
       addedOverlayObjects.edges.length = 0;
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    /**
@@ -793,7 +804,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          })
       );
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const createClusterNode = (clusterValue) => {
@@ -852,7 +863,11 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       // open the clustered node before animating the new edges
       glmNetwork.openCluster(clusterNodeID);
       // the animateEdge function will resume the redraw interval
-      if (edgesToAnimateCount > 0) for (const edgeID of newEdgesToAnimate) animateEdge(edgeID);
+      if (edgesToAnimateCount > 0) {
+         for (const edgeID of newEdgesToAnimate) {
+            animateEdge(edgeID);
+         }
+      }
    };
 
    /* ------ Establish Listeners Between Main process and renderer process ----- */
@@ -993,11 +1008,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                communityIDsSet.forEach((CID) => createClusterNode(CID));
             }
 
-            // get the list of edges that contain the animation value of true
-            //edgesToAnimate = graphData.edges
-            //   .getIds()
-            //   .filter((edge) => graphData.edges.get(edge).animation);
-
             glmNetwork.on("stabilizationProgress", (params) => {
                circularProgressBar.style.display = "flex";
                /* Math for determining the radius of the circular progress bar based on the stabilization progress */
@@ -1036,10 +1046,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                setOpenNodePopup(true);
             }
          });
-
-         // glmNetwork.on("click", () => {
-         //    console.log(glmNetwork.body.nodes);
-         // });
 
          /* Display the child Context menu component to hide an edge or edge types */
          glmNetwork.on("oncontext", (params) => {
