@@ -25,7 +25,7 @@ if (!app.isPackaged) {
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
-const { kill } = require("process");
+// const { kill } = require("process");
 const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
@@ -457,7 +457,7 @@ app.whenReady()
    .then(() => {
       makeSplashWindow();
       globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
-      initiateServer();
+      // initiateServer();
    })
    .then(() => {
       socket.on("connect", () => {

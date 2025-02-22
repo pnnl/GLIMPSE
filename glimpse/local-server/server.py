@@ -21,22 +21,30 @@ def dict2json( glm_dict: dict ) -> str:
 def create_graph(data: dict, set_communities: bool=False) -> dict:
    GRAPH.clear()
 
+   community_ids = {}
+      
    for obj in data["objects"]:
       if obj["elementType"] == "node":
          GRAPH.add_node(obj["attributes"]["id"], objectType = obj["objectType"], attributes = obj["attributes"])
       else:
          GRAPH.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], obj["attributes"]["id"])
 
-   if set_communities : 
+   if set_communities :
+      # favor smaller communities and stop at 151 communities
+      # partition = nx.algorithms.community.greedy_modularity_communities(G=GRAPH, resolution=1.42, best_n=151)
       partition = nx.algorithms.community.louvain_communities(G=GRAPH, resolution=1, max_level=5)
 
-      community_ids = {node: community_id for community_id, community in enumerate(partition) for node in community}
+      # print(f"Number of communities: {len(partition)}")
 
+      for community_id, community in enumerate(partition):
+         for node in community:
+            community_ids[node] = community_id
+      
       nx.set_node_attributes(GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=GRAPH, name="glimpse_community_id")
 
 def get_modularity() -> float:
-   modularity = nx.community.modularity(GRAPH, nx.community.label_propagation_communities(GRAPH))
+   modularity = nx.algorithms.community.modularity(GRAPH, nx.community.label_propagation_communities(GRAPH))
    return modularity
 
 # long computation with larger graphs

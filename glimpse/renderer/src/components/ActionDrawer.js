@@ -9,7 +9,6 @@ import {
    Stack,
    Button,
    Tooltip,
-   Accordion,
 } from "@mui/material";
 import { ChevronLeft, SearchRounded, TuneRounded } from "@mui/icons-material";
 import OverlayUpload from "./OverlayUpload";
@@ -141,10 +140,9 @@ const ActionDrawer = ({
             anchor="left"
             open={openDrawer}
             onClose={closeDrawer}
-            onMouseLeave={closeDrawer}
             sx={{
                flexShrink: 0,
-               [`& .MuiDrawer-paper`]: { width: 240, top: "66px", boxSizing: "border-box" },
+               [`& .MuiDrawer-paper`]: { width: 240, top: "65px", boxSizing: "border-box" },
             }}
          >
             <div>
@@ -160,7 +158,7 @@ const ActionDrawer = ({
                size="small"
                id="autocomplete-nodeID-search"
                options={getNodeIds()}
-               onChange={(even, ID) => setNodeID(ID)}
+               onChange={(event, ID) => setNodeID(ID)}
                renderInput={(params) => (
                   <Stack sx={{ m: 1 }} direction="row" spacing={1}>
                      <TextField

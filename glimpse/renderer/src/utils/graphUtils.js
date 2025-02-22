@@ -106,7 +106,7 @@ export const NodeFocus = (node, glmNetwork) => {
  * @param {Object} typeCounts - containes the counts of node and edge types
  * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
  */
-export const getLegendData = (typeCounts, theme, edgeOptions, legendData) => {
+export const setLegendData = (typeCounts, theme, edgeOptions, legendData) => {
    legendData.nodes.clear();
    legendData.edges.clear();
 
@@ -124,7 +124,7 @@ export const getLegendData = (typeCounts, theme, edgeOptions, legendData) => {
    let x_increment = null;
    if (currentNodeTypes.length === 5) x_increment = 800 / 5;
    else if (currentNodeTypes.length === 2) x_increment = 400;
-   else x_increment = 1100 / 6;
+   else x_increment = 925 / 6;
 
    let farthest_x = 0;
    let current_x = 0;
@@ -467,40 +467,26 @@ export const Prev = (glmNetwork, highlightedNodes, counter) => {
    }
 };
 
-export const rotateCCW = (data, network, angle) => {
-   const rotatedNodes = data.nodes.get().map((node) => {
-      const coordinates = network.getPositions(node.id);
+export const rotateCCW = (network, angle) => {
+   for (const nodeID of network.body.nodeIndices) {
+      const pos = network.getPosition(nodeID);
 
-      const newX =
-         coordinates[node.id].x * Math.cos(-angle) - coordinates[node.id].y * Math.sin(-angle);
-      const newY =
-         coordinates[node.id].x * Math.sin(-angle) + coordinates[node.id].y * Math.cos(-angle);
+      const newX = pos.x * Math.cos(-angle) - pos.y * Math.sin(-angle);
+      const newY = pos.x * Math.sin(-angle) + pos.y * Math.cos(-angle);
 
-      node.x = newX.toFixed(0);
-      node.y = newY.toFixed(0);
-
-      return node;
-   });
-
-   data.nodes.update(rotatedNodes);
+      network.moveNode(nodeID, newX.toFixed(0), newY.toFixed(0));
+   }
 };
 
-export const rotateCW = (data, network, angle) => {
-   const rotatedNodes = data.nodes.get().map((node) => {
-      const coordinates = network.getPositions(node.id);
+export const rotateCW = (network, angle) => {
+   for (const nodeID of network.body.nodeIndices) {
+      const pos = network.getPosition(nodeID);
 
-      const newX =
-         coordinates[node.id].x * Math.cos(angle) - coordinates[node.id].y * Math.sin(angle);
-      const newY =
-         coordinates[node.id].x * Math.sin(angle) + coordinates[node.id].y * Math.cos(angle);
+      const newX = pos.x * Math.cos(angle) - pos.y * Math.sin(angle);
+      const newY = pos.x * Math.sin(angle) + pos.y * Math.cos(angle);
 
-      node.x = newX.toFixed(0);
-      node.y = newY.toFixed(0);
-
-      return node;
-   });
-
-   data.nodes.update(rotatedNodes);
+      network.moveNode(nodeID, newX.toFixed(0), newY.toFixed(0));
+   }
 };
 
 // used to keep track of the amount of uploads

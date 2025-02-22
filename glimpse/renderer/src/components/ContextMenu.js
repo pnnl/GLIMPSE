@@ -11,6 +11,8 @@ const ContextMenu = ({
    createCluster,
    openCluster,
    animateEdge,
+   removeAnimation,
+   isEdgeAnimated,
    deleteEdge,
 }) => {
    const [contextMenu, setContextMenu] = useState(null);
@@ -55,6 +57,11 @@ const ContextMenu = ({
       setContextMenu(null);
    };
 
+   const handleRemoveAnimation = () => {
+      removeAnimation(contextMenu.edgeID);
+      setContextMenu(null);
+   }
+
    const handleDeleteNode = () => {
       deleteNode(contextMenu.nodeID);
       setContextMenu(null);
@@ -95,7 +102,11 @@ const ContextMenu = ({
             <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
             <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
             <MenuItem onClick={handleDeleteEdge}>Delete Edge</MenuItem>
-            <MenuItem onClick={handleAnimateEdge}>Animate Edge</MenuItem>
+            {isEdgeAnimated(contextMenu.edgeID) ? (
+               <MenuItem onClick={handleRemoveAnimation}>Remove Animation</MenuItem>
+            ) : (
+               <MenuItem onClick={handleAnimateEdge}>Animate Edge</MenuItem>
+            )}
          </>
       );
    };

@@ -8,7 +8,7 @@ import "../other-styles/vis-network.css";
 import {
    currentUploadCounter,
    Export,
-   getLegendData,
+   setLegendData,
    getTitle,
    hideEdge,
    hideEdges,
@@ -47,9 +47,16 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
    let glmNetwork = null; // global network variable
-   let edgesToAnimate = [];
-   let positions = {};
+   let edgesToAnimate = {};
+   let edgesToAnimateCount = 0;
    let redrawIntervalID = null;
+
+   let setNode = null;
+   let setOpenNodePopup = null;
+   let newNodeFormSetState = null;
+   let contextMenuData = null;
+   let setContextMenuData = null;
+   let newEdgeFormSetState = null;
 
    const addedOverlayObjects = {
       nodes: [],
@@ -136,16 +143,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       graphOptions
    );
    /* ---------------------------- Establish Network --------------------------- */
-   getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   setLegendData(objectTypeCount, theme, edgeOptions, legendData);
 
    console.log("Number of Nodes: " + graphData.nodes.length);
    console.log("Number of Edges: " + graphData.edges.length);
 
    /* ------------------ Receive Sate Variables from Children ------------------ */
 
-   // initiate variables that reference the NodePopup child component state and set state variables
-   let setNode = null;
-   let setOpenNodePopup = null;
    /**
     * Used to send the set state function from the child to the parent
     * @param {React.Dispatch<React.SetStateAction<{}>>} setChilNode - The useState function of the NodePopup
@@ -157,9 +161,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       setOpenNodePopup = setOpen;
    };
 
-   // initiate variables that reference the context menu child component state and set state variables
-   let contextMenuData;
-   let setContextMenuData;
    /**
     * Takes the state variables of the ContextMenu component
     * so that the parent component may change the state of the child
@@ -173,12 +174,10 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       setContextMenuData = setContextMenuDataState;
    };
 
-   let newNodeFormSetState;
    const onNewNodeFormMount = (setOpenNewNodeForm) => {
       newNodeFormSetState = setOpenNewNodeForm;
    };
 
-   let newEdgeFormSetState;
    const onNewEdgeFormMount = (setNewEdgeFormState) => {
       newEdgeFormSetState = setNewEdgeFormState;
    };
@@ -225,6 +224,153 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    /**
+    *
+    * @param {object} overlayFileData already acquired overlay data
+    * @param {Number} modelNumber model number to get the right grid.json to overlay
+    */
+   const applyOverlay = async (overlayFileData, modelNumber = -1, topology) => {
+      let microGrids = null;
+
+      if (modelNumber !== -1) {
+         const res = await fetch(`../grids/feeder_${modelNumber}/grid.json`);
+         microGrids = await res.json();
+         microGrids = microGrids.microgrid;
+      } else {
+         microGrids = overlayFileData.microgrid;
+      }
+
+      const microGridNodeTypes = new Set([
+         "node",
+         "load",
+         "switch",
+         "inverter",
+         "capacitor",
+         "regulator",
+         "diesel_dg",
+         "triplex_meter",
+         "triplex_node",
+         "triplex_load",
+         "microgirds",
+         "communication_node",
+      ]);
+
+      const newNodes = [];
+      const newEdges = [];
+
+      for (const microGrid of microGrids) {
+         const microGridNode = {
+            id: microGrid.name,
+            label: microGrid.name,
+            group: "microgrid",
+            title: `ObjectType: microgrid\nname: ${microGrid.name}`,
+         };
+         newNodes.push(microGridNode);
+         addedOverlayObjects.nodes.push(microGrid.name);
+         objectTypeCount.nodes.microgrid++;
+
+         const types = Object.keys(microGrid);
+         for (const type of types) {
+            if (!microGridNodeTypes.has(type)) continue;
+
+            for (const nodeID of microGrid[type]) {
+               const newEdgeID = `${microGrid.name}-${nodeID}`;
+               const microGridEdge = {
+                  id: newEdgeID,
+                  from: microGrid.name,
+                  to: nodeID,
+                  title:
+                     "objectType: microgrid_connection\n" +
+                     getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
+                  color: { inherit: true },
+                  type: "microgrid_connection",
+                  width: 0.25,
+               };
+               newEdges.push(microGridEdge);
+               addedOverlayObjects.edges.push(newEdgeID);
+               objectTypeCount.edges.microgrid_connection++;
+            }
+         }
+      }
+
+      if (topology) {
+         for (const commNode of topology.Node) {
+            let commNodeID = null;
+            let mgNumber = null;
+
+            if (typeof commNode.name === "string") {
+               commNodeID = commNode.name;
+               mgNumber = parseInt(commNode.name.match(/\d+$/)[0], 10);
+            } else {
+               commNodeID = `comm${commNode.name + 1}`;
+               mgNumber = commNode.name + 1;
+            }
+
+            newNodes.push({
+               id: commNodeID,
+               label: commNodeID,
+               group: "communication_node",
+               title: `ObjectType: communication_node\nname: ${commNodeID}`,
+            });
+
+            addedOverlayObjects.nodes.push(commNodeID);
+            objectTypeCount.nodes.communication_node++;
+
+            let commEdgeID = `${commNodeID}-SS_${mgNumber}`;
+            newEdges.push({
+               id: commEdgeID,
+               from: commNodeID,
+               to: `SS_${mgNumber}`,
+               title:
+                  "objectType: parentChild\n" +
+                  getTitle({
+                     name: commEdgeID,
+                     from: commNodeID,
+                     to: `SS_${mgNumber}`,
+                  }),
+               color: { inherit: true },
+               type: "communication",
+               width: 2,
+            });
+
+            addedOverlayObjects.edges.push(commEdgeID);
+            objectTypeCount.edges.communication++;
+
+            for (const connection of commNode.connections) {
+               let to = null;
+
+               if (typeof connection === "string") {
+                  commEdgeID = `${commNodeID}-${connection}`;
+                  to = connection;
+               } else {
+                  commEdgeID = `${commNodeID}-comm${connection + 1}`;
+                  to = `comm${connection + 1}`;
+               }
+
+               newEdges.push({
+                  id: commEdgeID,
+                  from: commNodeID,
+                  to: to,
+                  title:
+                     "objectType: parentChild\n" +
+                     getTitle({ name: commEdgeID, from: commNodeID, to: to }),
+                  color: { inherit: true },
+                  type: "communication",
+                  width: 2,
+               });
+
+               addedOverlayObjects.edges.push(commEdgeID);
+               objectTypeCount.edges.communication++;
+            }
+         }
+      }
+      // Batch add nodes and edges
+      graphData.nodes.add(newNodes);
+      graphData.edges.add(newEdges);
+
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+   };
+
+   /**
     * Adds new nodes and edges based on the overlay json file data
     * @param {Object} fileData - the json object read from the file
     */
@@ -251,115 +397,13 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                graphOptions
             );
 
-            getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+            setLegendData(objectTypeCount, theme, edgeOptions, legendData);
          }
       } else {
          try {
             const fileData = await readJsonFile(filePaths[0]);
-            const microGrids = fileData.microgrid;
-
-            const microGridNodeTypes = new Set([
-               "node",
-               "load",
-               "switch",
-               "inverter",
-               "capacitor",
-               "regulator",
-               "diesel_dg",
-               "triplex_meter",
-               "triplex_node",
-               "triplex_load",
-               "microgirds",
-               "communication_node",
-            ]);
-
-            const newNodes = [];
-            const newEdges = [];
-
-            for (const microGrid of microGrids) {
-               const microGridNode = {
-                  id: microGrid.name,
-                  label: microGrid.name,
-                  group: "microgrid",
-                  title: `ObjectType: microgrid\nname: ${microGrid.name}`,
-               };
-               newNodes.push(microGridNode);
-               addedOverlayObjects.nodes.push(microGrid.name);
-               objectTypeCount.nodes.microgrid++;
-
-               const types = Object.keys(microGrid);
-               for (const type of types) {
-                  if (!microGridNodeTypes.has(type)) continue;
-
-                  for (const nodeID of microGrid[type]) {
-                     const newEdgeID = `${microGrid.name}-${nodeID}`;
-                     const microGridEdge = {
-                        id: newEdgeID,
-                        from: microGrid.name,
-                        to: nodeID,
-                        title:
-                           "objectType: parentChild\n" +
-                           getTitle({ name: newEdgeID, from: microGrid.name, to: nodeID }),
-                        color: { inherit: true },
-                        type: "parentChild",
-                        width: 0.15,
-                     };
-                     newEdges.push(microGridEdge);
-                     addedOverlayObjects.edges.push(newEdgeID);
-                  }
-
-                  objectTypeCount.edges.parentChild++;
-               }
-            }
-
-            // Batch add nodes and edges
-            graphData.nodes.add(newNodes);
-            graphData.edges.add(newEdges);
-
-            // if (communication_nodes) {
-            //    for (const comm_node of communication_nodes) {
-            //       addedOverlayObjects.nodes.push(
-            //          graphData.nodes.add({
-            //             id: comm_node.name,
-            //             label: comm_node.name,
-            //             group: "communication_node",
-            //             title:
-            //                "ObjectType: communication_node\n" + getTitle({ name: comm_node.name }),
-            //          })[0]
-            //       );
-
-            //       objectTypeCount.nodes.communication_node++;
-
-            //       for (const type of Object.keys(comm_node)) {
-            //          if (types.includes(type)) {
-            //             comm_node[type].forEach((nodeID) => {
-            //                addedOverlayObjects.edges.push(
-            //                   graphData.edges.add({
-            //                      id: `${comm_node.name}-${nodeID}`,
-            //                      from: comm_node.name,
-            //                      to: nodeID,
-            //                      title:
-            //                         "objectType: parentChild\n" +
-            //                         getTitle({
-            //                            name: `${comm_node.name}-${nodeID}`,
-            //                            from: comm_node.name,
-            //                            to: nodeID,
-            //                         }),
-            //                      type: "parentChild",
-            //                      color: { inherit: true },
-            //                      width: 0.15,
-            //                   })[0]
-            //                );
-            //             });
-
-            //             objectTypeCount.edges.parentChild++;
-            //          }
-            //       }
-            //    }
-            // }
-
+            applyOverlay(fileData);
             showRemoveOverlayButton("flex");
-            getLegendData(objectTypeCount, theme, edgeOptions, legendData);
          } catch (msg) {
             console.log(msg);
             alert("File currently not compatible... Check file and re-upload");
@@ -422,7 +466,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          objectTypeCount.edges[addedEdge.type]++;
          graphData.edges.update(addedEdge);
 
-         getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+         setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
          alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
       }
@@ -454,7 +498,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          animateEdge(newEdge.id);
       }
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const updateVisObjects = (updateData) => {
@@ -467,24 +511,21 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
          if ("animation" in updateData.updates) {
-            const { animation, ...rest } = updateData.updates;
-            edge.animation = animation;
+            const { animation, increment, startFrom, ...rest } = updateData.updates;
 
             // if the first element of the clustered edges array is not the passed edge ID
             // then there are clustered edges
             if (!(clusteredEdges[0] === edge.id)) {
                // the first element will then be the current visible clustered edge
-               animateEdge(clusteredEdges[0]);
+               animateEdge(clusteredEdges[0], increment, startFrom);
             } else {
-               animateEdge(edge.id);
+               animateEdge(edge.id, increment, startFrom);
             }
 
             graphData.edges.update({ ...edge, ...rest });
 
             if (!redrawIntervalID) {
-               redrawIntervalID = setInterval(() => {
-                  glmNetwork.redraw();
-               }, 10);
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
             }
          } else {
             graphData.edges.update({ ...edge, ...updateData.updates });
@@ -493,29 +534,71 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    const animateEdges = (ctx) => {
-      const edgesToAnimateCpy = structuredClone(edgesToAnimate);
-      if (edgesToAnimateCpy.length > 0) {
+      let start = null;
+      let end = null;
+
+      if (edgesToAnimateCount > 0) {
          try {
-            for (let edgeID of edgesToAnimateCpy) {
+            for (const edgeID in edgesToAnimate) {
+               const edge = edgesToAnimate[edgeID];
+
                const canvasEdge = glmNetwork.body.edges[edgeID];
 
                if (!canvasEdge) continue;
 
-               const { from: start, to: end } = canvasEdge;
-
-               // Calculate the circle's position along the edge
-               positions[edgeID] += 0.01;
-               if (positions[edgeID] > 1) {
-                  positions[edgeID] = 0;
+               if (edge.startFrom === "target") {
+                  start = canvasEdge.to;
+                  end = canvasEdge.from;
+               } else {
+                  start = canvasEdge.from;
+                  end = canvasEdge.to;
                }
 
-               const x = start.x * (1 - positions[edgeID]) + end.x * positions[edgeID];
-               const y = start.y * (1 - positions[edgeID]) + end.y * positions[edgeID];
+               // Calculate the circle's position along the edge
+               edge.position += edge.increment;
+               if (edge.position > 1) {
+                  edge.position = 0;
+               }
+
+               const x = start.x * (1 - edge.position) + end.x * edge.position;
+               const y = start.y * (1 - edge.position) + end.y * edge.position;
+               const sideLength = 7;
+
+               // Calculate the height of the triangle
+               const triangleHeight = (Math.sqrt(3) / 2) * sideLength;
+
+               const trianglePoints = [
+                  {
+                     // Top point
+                     x: x,
+                     y: y - (2 / 3) * triangleHeight,
+                  },
+                  {
+                     // Bottom left point
+                     x: x - sideLength / 2,
+                     y: y + (1 / 3) * triangleHeight,
+                  },
+                  {
+                     // Bottom right point
+                     x: x + sideLength / 2,
+                     y: y + (1 / 3) * triangleHeight,
+                  },
+               ];
 
                // Draw the new circle at the new x and y points
                ctx.beginPath();
-               ctx.arc(x, y, 5, 0, 2 * Math.PI);
-               ctx.fillStyle = "red";
+               ctx.moveTo(trianglePoints[0].x, trianglePoints[0].y);
+
+               // Draw the triangle
+               for (let i = 1; i < trianglePoints.length; i++) {
+                  ctx.lineTo(trianglePoints[i].x, trianglePoints[i].y);
+               }
+               ctx.closePath();
+
+               ctx.strokeStyle = "black";
+               ctx.stroke();
+               // ctx.arc(x, y, 5, 0, 2 * Math.PI);
+               ctx.fillStyle = "orange";
                ctx.fill();
             }
          } catch (msg) {
@@ -525,62 +608,83 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                clearInterval(redrawIntervalID);
                redrawIntervalID = null;
             }
-            edgesToAnimate.length = 0;
-            edgesToAnimateCpy.length = 0;
+            edgesToAnimate = {};
          }
       }
    };
 
+   /**
+    * Removes the edge from the list of edges to animate.
+    * @param {string} edgeID The ID of an animated edge
+    */
    const removeEdgeAnimation = (edgeID) => {
-      edgesToAnimate = edgesToAnimate.filter((id) => id !== edgeID);
-      delete positions[edgeID];
+      delete edgesToAnimate[edgeID];
+      edgesToAnimateCount--;
+
+      console.log(`Animation removed from: ${edgeID}`);
+
+      if (edgesToAnimateCount === 0) {
+         clearInterval(redrawIntervalID);
+         console.log(`Redraw interval removed: ${redrawIntervalID}`);
+         glmNetwork.redraw();
+         redrawIntervalID = null;
+      }
    };
 
-   const animateEdge = (edgeID) => {
-      // if the edge to animate is a clustered edge animate as normal
-      if (edgeID.includes("clusterEdge") && !edgesToAnimate.includes(edgeID)) {
-         edgesToAnimate.push(edgeID);
-         positions[edgeID] = 0;
+   /**
+    *
+    * @param {string} edgeID The ID of an edge to animate
+    * @param {float} value An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
+    * @param {string} startFrom start the animation of an edge from its `"source"` or `"target"`
+    */
+   const animateEdge = (edgeID, value = 0.01, startFrom = "source") => {
+      if (value === undefined) value = 0.01;
+      if (startFrom === undefined) startFrom = "source";
 
-         if (!redrawIntervalID) {
-            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
+      console.log(`Animating edge: ${edgeID}`);
+
+      try {
+         // if the edge to animate is a clustered edge animate as normal
+         if (edgeID.includes("clusterEdge") && !(edgeID in edgesToAnimate)) {
+            edgesToAnimate[edgeID] = {
+               position: 0,
+               increment: value,
+               startFrom: startFrom,
+            };
+            edgesToAnimateCount++;
+
+            if (!redrawIntervalID) {
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
+            }
+         } else if (!(edgeID in edgesToAnimate)) {
+            // add it to the list of edges to animate and the positions object
+            edgesToAnimate[edgeID] = {
+               position: 0,
+               increment: value,
+               startFrom: startFrom,
+            };
+
+            edgesToAnimateCount++;
+
+            // if this was the first edge to be animated create a new
+            // redraw interval
+            if (!redrawIntervalID) {
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
+               console.log(redrawIntervalID);
+            }
+
+            // If the edge ID is already in the edges to animate list
+            // remove it
+         } else {
+            edgesToAnimate[edgeID] = {
+               ...edgesToAnimate[edgeID],
+               increment: value,
+               startFrom: startFrom,
+            };
          }
-      } else if (!edgesToAnimate.includes(edgeID)) {
-         // if the edgeID is not in the edges to animate list
-         // get the edge object
-         const edgeToAnimate = graphData.edges.get(edgeID);
-         // set its animation attribute to true
-         edgeToAnimate.animation = true;
-         graphData.edges.update(edgeToAnimate);
-
-         // add it to the list of edges to animate and the positions object
-         edgesToAnimate.push(edgeID);
-         positions[edgeID] = 0;
-
-         // if this was the first edge to be animated create a new
-         // redraw interval
-         if (!redrawIntervalID) {
-            redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
-            console.log(redrawIntervalID);
-         }
-
-         // If the edge ID is already in the edges to animate list
-         // remove it
-      } else if (edgesToAnimate.includes(edgeID)) {
-         if (!edgeID.includes("clusterEdge")) {
-            const animatedEdge = graphData.edges.get(edgeID);
-            animatedEdge.animation = false;
-         }
-
-         removeEdgeAnimation(edgeID);
-
-         // if the edges to animate list is empty clear the redraw interval
-         if (edgesToAnimate.length === 0) {
-            glmNetwork.redraw();
-            clearInterval(redrawIntervalID);
-            redrawIntervalID = null;
-            console.log(`Redraw interval removed: ${redrawIntervalID}`);
-         }
+      } catch (err) {
+         console.log(`Could not animate edge: ${edgeID}`);
+         console.error(err);
       }
    };
 
@@ -613,7 +717,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       console.log("DELETED: " + nodeID);
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const deleteEdge = (edgeID) => {
@@ -629,11 +733,11 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
          // if the edge is animated remove animation and clear
          // redraw animation interval if there are no other edges to animate
-         if (edgesToAnimate.includes(edgeID)) {
+         if (edgeID in edgesToAnimate) {
             removeEdgeAnimation(edgeID);
 
             // clear redraw interval if there are no other edges to animate
-            if (edgesToAnimate.length === 0) {
+            if (edgesToAnimateCount === 0) {
                clearInterval(redrawIntervalID);
                redrawIntervalID = null;
                glmNetwork.redraw();
@@ -648,12 +752,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const { type: edgeType } = graphData.edges.get(edgeID);
 
          // check if the edge is currently being animated
-         if (edgesToAnimate.includes(edgeID)) {
+         if (edgeID in edgesToAnimate) {
             // remove it from the edges to animate list and the positions tracker object
             removeEdgeAnimation(edgeID);
 
             // clear the redraw interval if there are no more edges to animate
-            if (edgesToAnimate.length === 0) {
+            if (edgesToAnimateCount === 0) {
                clearInterval(redrawIntervalID);
                redrawIntervalID = null;
                glmNetwork.redraw();
@@ -665,7 +769,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       }
 
       // update the legend to reflect the new number of edges after deleting
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    /**
@@ -707,7 +811,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       addedOverlayObjects.nodes.length = 0;
       addedOverlayObjects.edges.length = 0;
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    /**
@@ -736,7 +840,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          })
       );
 
-      getLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const createClusterNode = (clusterValue) => {
@@ -765,14 +869,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          for (let i = 0; i < clusterNode.edges.length; i++) {
             const currentClusteredEdge = clusterNode.edges[i];
             const [baseEdge] = glmNetwork.clustering.getBaseEdges(currentClusteredEdge.id);
+            const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
 
-            if (edgesToAnimate.includes(baseEdge)) {
+            if (baseEdge in edgesToAnimate) {
                removeEdgeAnimation(baseEdge);
                animateEdge(currentClusteredEdge.id);
-            } else if (
-               edgesToAnimate.includes(currentClusteredEdge.clusteringEdgeReplacingIds[0])
-            ) {
-               const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
+            } else if (previousClusteredEdge in edgesToAnimate) {
                removeEdgeAnimation(previousClusteredEdge);
                animateEdge(currentClusteredEdge.id);
             }
@@ -784,21 +886,23 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       const { edges: clusteredEdges } = glmNetwork.body.nodes[clusterNodeID];
       const newEdgesToAnimate = [];
 
-      for (let edge of clusteredEdges) {
+      for (const clusteredEdge of clusteredEdges) {
          // skip edges that are not animated
-         if (!edgesToAnimate.includes(edge.id)) continue;
+         if (!clusteredEdge.id in edgesToAnimate) continue;
 
          // remove animation from current clustered edge
-         removeEdgeAnimation(edge.id);
+         removeEdgeAnimation(clusteredEdge.id);
 
          // add the edge replacing id to be animated
-         newEdgesToAnimate.push(edge.clusteringEdgeReplacingIds[0]);
+         newEdgesToAnimate.push(clusteredEdge.clusteringEdgeReplacingIds[0]);
       }
       // open the clustered node before animating the new edges
       glmNetwork.openCluster(clusterNodeID);
       // the animateEdge function will resume the redraw interval
-      if (newEdgesToAnimate.length > 0) {
-         newEdgesToAnimate.forEach((edgeID) => animateEdge(edgeID));
+      if (edgesToAnimateCount > 0) {
+         for (const edgeID of newEdgesToAnimate) {
+            animateEdge(edgeID);
+         }
       }
    };
 
@@ -936,28 +1040,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
             // Create clusters
             if (establishCommunities) {
-               communityIDsSet.forEach((CID) => createClusterNode(CID));
+               glmNetwork.setOptions({ physics: { barnesHut: { springLength: 140 } } });
+               for (const communityID of communityIDsSet) createClusterNode(communityID);
             }
-
-            // get the list of edges that contain the animation value of true
-            edgesToAnimate = graphData.edges
-               .getIds()
-               .filter((edge) => graphData.edges.get(edge).animation);
-
-            // if there some edges to animate, start the redraw interval
-            if (edgesToAnimate.length > 0) {
-               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 10);
-            }
-
-            // animate edges if there are any
-            // create an object for the positions of each moving circle for each edge
-            positions = edgesToAnimate.reduce(
-               (previousObj, edge) => ({ ...previousObj, [edge.id]: 0 }),
-               {}
-            );
-
-            // if the selected node is a cluster it will be opened if not nothing will happen
-            // glmNetwork.on("selectNode", deCluster);
 
             glmNetwork.on("stabilizationProgress", (params) => {
                circularProgressBar.style.display = "flex";
@@ -988,6 +1073,38 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          // after drawing animate edges if there are any to animate
          glmNetwork.on("afterDrawing", (ctx) => animateEdges(ctx));
 
+         glmNetwork.on("startStabilizing", () => {
+            if (redrawIntervalID) {
+               clearInterval(redrawIntervalID);
+               redrawIntervalID = null;
+            }
+
+            glmNetwork.on("dragEnd", () => {});
+
+            glmNetwork.on("dragStart", () => {});
+         });
+
+         glmNetwork.on("stabilized", () => {
+            if (edgesToAnimateCount > 0 && !redrawIntervalID) {
+               redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
+               console.log(`Redraw Interval Value: ${redrawIntervalID}`);
+            }
+
+            glmNetwork.on("dragEnd", () => {
+               if (edgesToAnimateCount > 0 && !redrawIntervalID) {
+                  redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
+                  console.log(`Redraw Interval Value: ${redrawIntervalID}`);
+               }
+            });
+
+            glmNetwork.on("dragStart", () => {
+               if (redrawIntervalID) {
+                  clearInterval(redrawIntervalID);
+                  redrawIntervalID = null;
+               }
+            });
+         });
+
          glmNetwork.on("doubleClick", (params) => {
             if (params.nodes[0] === undefined) {
                alert("Double click on a node to edit.");
@@ -998,9 +1115,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             }
          });
 
-         glmNetwork.on("selectEdge", (params) => {
-            const selectedEdge = graphData.edges.get(params.edges[0]);
-            console.log(selectedEdge);
+         glmNetwork.on("click", () => {
+            console.log(`Community Count: ${glmNetwork.body.nodeIndices.length}`);
          });
 
          /* Display the child Context menu component to hide an edge or edge types */
@@ -1097,6 +1213,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             deleteNode={deleteNode}
             createCluster={createClusterNode}
             openCluster={(id) => deCluster(id)}
+            removeAnimation={removeEdgeAnimation}
+            isEdgeAnimated={(id) => id in edgesToAnimate}
             animateEdge={animateEdge}
             deleteEdge={deleteEdge}
          />
@@ -1142,8 +1260,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          </Stack>
 
          <VisActionsDial
-            rotateCW={() => rotateCW(graphData, glmNetwork, ANGLE)}
-            rotateCCW={() => rotateCCW(graphData, glmNetwork, ANGLE)}
+            rotateCW={() => rotateCW(glmNetwork, ANGLE)}
+            rotateCCW={() => rotateCCW(glmNetwork, ANGLE)}
             prev={() => Prev(glmNetwork, highlightedNodes, counter)}
             next={() => Next(glmNetwork, highlightedNodes, counter)}
          />
