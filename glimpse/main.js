@@ -457,7 +457,7 @@ app.whenReady()
    .then(() => {
       makeSplashWindow();
       globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
-      // initiateServer();
+      initiateServer();
    })
    .then(() => {
       socket.on("connect", () => {
