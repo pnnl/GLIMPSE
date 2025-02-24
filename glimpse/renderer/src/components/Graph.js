@@ -565,10 +565,42 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
                const x = start.x * (1 - edge.position) + end.x * edge.position;
                const y = start.y * (1 - edge.position) + end.y * edge.position;
+               const sideLength = 7;
+
+               // Calculate the height of the triangle
+               const triangleHeight = (Math.sqrt(3) / 2) * sideLength;
+
+               const trianglePoints = [
+                  {
+                     // Top point
+                     x: x,
+                     y: y - (2 / 3) * triangleHeight,
+                  },
+                  {
+                     // Bottom left point
+                     x: x - sideLength / 2,
+                     y: y + (1 / 3) * triangleHeight,
+                  },
+                  {
+                     // Bottom right point
+                     x: x + sideLength / 2,
+                     y: y + (1 / 3) * triangleHeight,
+                  },
+               ];
 
                // Draw the new circle at the new x and y points
                ctx.beginPath();
-               ctx.arc(x, y, 5, 0, 2 * Math.PI);
+               ctx.moveTo(trianglePoints[0].x, trianglePoints[0].y);
+
+               // Draw the triangle
+               for (let i = 1; i < trianglePoints.length; i++) {
+                  ctx.lineTo(trianglePoints[i].x, trianglePoints[i].y);
+               }
+               ctx.closePath();
+
+               ctx.strokeStyle = "black";
+               ctx.stroke();
+               // ctx.arc(x, y, 5, 0, 2 * Math.PI);
                ctx.fillStyle = "orange";
                ctx.fill();
             }
@@ -1086,9 +1118,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                redrawIntervalID = null;
             }
 
-            glmNetwork.on("dragEnd", () => {});
+            glmNetwork.on("dragEnd", () => { });
 
-            glmNetwork.on("dragStart", () => {});
+            glmNetwork.on("dragStart", () => { });
          });
 
          glmNetwork.on("stabilized", () => {
