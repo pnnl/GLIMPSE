@@ -46,6 +46,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
+
    let glmNetwork = null; // global network variable
    let edgesToAnimate = {};
    let edgesToAnimateCount = 0;
@@ -86,8 +87,12 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     * Reset all nodes and edges back to their original styles
     */
    const Reset = () => {
+      edgesToAnimateCount = 0;
+      edgesToAnimate = {};
+
       highlightedNodes.current.length = 0;
       highlightedEdges.current.length = 0;
+
       const nodesResetMap = graphData.nodes.map((node) => {
          delete node.size;
          delete node.color;
@@ -365,9 +370,12 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             }
          }
       }
+
       // Batch add nodes and edges
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
+
+      glmNetwork.setOptions({ physics: { enabled: true } });
 
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
@@ -544,7 +552,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          try {
             for (const edgeID in edgesToAnimate) {
                const edge = edgesToAnimate[edgeID];
-
                const canvasEdge = glmNetwork.body.edges[edgeID];
 
                if (!canvasEdge) continue;
@@ -563,50 +570,55 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                   edge.position = 0;
                }
 
+               // Interpolate the position along the edge
                const x = start.x * (1 - edge.position) + end.x * edge.position;
                const y = start.y * (1 - edge.position) + end.y * edge.position;
-               const sideLength = 7;
 
-               // Calculate the height of the triangle
-               const triangleHeight = (Math.sqrt(3) / 2) * sideLength;
+               // Calculate the direction vector
+               const dx = end.x - start.x;
+               const dy = end.y - start.y;
 
+               // Calculate the angle of rotation
+               const angle = Math.atan2(dy, dx);
+
+               // Define the triangle dimensions
+               const sideLength = 7; // Base width of the triangle
+               const triangleHeight = (Math.sqrt(3) / 2) * sideLength; // Height of the triangle
+
+               // Define the triangle points relative to the origin (0, 0)
+               // The triangle is initially pointing to the right (positive x-axis)
                const trianglePoints = [
-                  {
-                     // Top point
-                     x: x,
-                     y: y - (2 / 3) * triangleHeight,
-                  },
-                  {
-                     // Bottom left point
-                     x: x - sideLength / 2,
-                     y: y + (1 / 3) * triangleHeight,
-                  },
-                  {
-                     // Bottom right point
-                     x: x + sideLength / 2,
-                     y: y + (1 / 3) * triangleHeight,
-                  },
+                  { x: triangleHeight * (2 / 3), y: 0 }, // Top point (front of the arrow)
+                  { x: -triangleHeight * (1 / 3), y: -sideLength / 2 }, // Bottom left point
+                  { x: -triangleHeight * (1 / 3), y: sideLength / 2 }, // Bottom right point
                ];
 
-               // Draw the new circle at the new x and y points
-               ctx.beginPath();
-               ctx.moveTo(trianglePoints[0].x, trianglePoints[0].y);
+               // Rotate and translate the triangle points
+               const rotatedPoints = trianglePoints.map((point) => {
+                  const rotatedX = point.x * Math.cos(angle) - point.y * Math.sin(angle);
+                  const rotatedY = point.x * Math.sin(angle) + point.y * Math.cos(angle);
+                  return {
+                     x: rotatedX + x,
+                     y: rotatedY + y,
+                  };
+               });
 
                // Draw the triangle
-               for (let i = 1; i < trianglePoints.length; i++) {
-                  ctx.lineTo(trianglePoints[i].x, trianglePoints[i].y);
-               }
-               ctx.closePath();
+               ctx.beginPath();
+               ctx.moveTo(rotatedPoints[0].x, rotatedPoints[0].y);
 
+               for (let i = 1; i < rotatedPoints.length; i++) {
+                  ctx.lineTo(rotatedPoints[i].x, rotatedPoints[i].y);
+               }
+
+               ctx.closePath();
                ctx.strokeStyle = "black";
                ctx.stroke();
-               // ctx.arc(x, y, 5, 0, 2 * Math.PI);
                ctx.fillStyle = "orange";
                ctx.fill();
             }
          } catch (msg) {
             console.error(msg);
-
             if (redrawIntervalID) {
                clearInterval(redrawIntervalID);
                redrawIntervalID = null;
@@ -801,11 +813,12 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
          objectTypeCount.edges[edge.type]--;
       });
+
       graphData.nodes.remove(addedOverlayObjects.nodes);
       graphData.edges.remove(addedOverlayObjects.edges);
 
-      addedOverlayObjects.nodes.length = 0;
-      addedOverlayObjects.edges.length = 0;
+      addedOverlayObjects.nodes = [];
+      addedOverlayObjects.edges = [];
 
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
@@ -1032,6 +1045,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             }
 
             graphOptions.groups = theme.groups;
+            console.log(graphOptions);
             glmNetwork = new Network(container.current, graphData, graphOptions);
 
             // Create clusters
@@ -1118,9 +1132,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                redrawIntervalID = null;
             }
 
-            glmNetwork.on("dragEnd", () => { });
+            glmNetwork.off("dragEnd");
 
-            glmNetwork.on("dragStart", () => { });
+            glmNetwork.off("dragStart");
          });
 
          glmNetwork.on("stabilized", () => {

@@ -13,8 +13,8 @@
    ],
    "microgrid": [
       {
-         "name": "mg1",
-         "dest": "ns3/mg1",
+         "name": "SS_1",
+         "dest": "ns3/SS_1",
          "node": ["node_36", "node_40", "node_44", "node_135", "node_151"],
          "load": [
             "load_35",
@@ -36,8 +36,8 @@
          "inverter": ["trip_shad_inv1", "trip_shad_inv4"]
       },
       {
-         "name": "mg2",
-         "dest": "ns3/mg2",
+         "name": "SS_2",
+         "dest": "ns3/SS_2",
          "node": ["node_101", "node_105", "node_108", "node_110", "node_197", "node_300"],
          "load": [
             "load_102",
@@ -54,8 +54,8 @@
          "switch": ["switch_300-350", "microgrid_switch4"]
       },
       {
-         "name": "mg3",
-         "dest": "ns3/mg3",
+         "name": "SS_3",
+         "dest": "ns3/SS_3",
          "node": [
             "node_67",
             "node_72",
@@ -114,8 +114,8 @@
          "diesel_dg": ["Gen3"]
       },
       {
-         "name": "substation",
-         "dest": "ns3/substation",
+         "name": "SS_4",
+         "dest": "ns3/SS_4",
          "node": [
             "node_3",
             "node_8",

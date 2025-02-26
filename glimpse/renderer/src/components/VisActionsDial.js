@@ -41,10 +41,10 @@ const VisActionsDial = ({ rotateCW, rotateCCW, prev, next }) => {
                />
             </SpeedDial>
          </Tooltip>
-         <CustomFab variant="extended" onClick={prev}>
+         <CustomFab size="medium" variant="extended" onClick={prev}>
             Prev
          </CustomFab>
-         <CustomFab variant="extended" onClick={next}>
+         <CustomFab size="medium" variant="extended" onClick={next}>
             Next
          </CustomFab>
       </Stack>

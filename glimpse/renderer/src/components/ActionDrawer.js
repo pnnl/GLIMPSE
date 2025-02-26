@@ -126,16 +126,17 @@ const ActionDrawer = ({
       <Box>
          <Stack spacing={1} direction={"row"} sx={{ position: "absolute", margin: 1 }}>
             <Tooltip title="Vis Options" placement="bottom-end">
-               <CustomFab variant="extended" onClick={() => setOpenDrawer(true)}>
+               <CustomFab size="medium" variant="extended" onClick={() => setOpenDrawer(true)}>
                   <TuneRounded />
                </CustomFab>
             </Tooltip>
 
-            <CustomFab onClick={reset} variant="extended">
+            <CustomFab size="medium" onClick={reset} variant="extended">
                Reset
             </CustomFab>
 
             <CustomFab
+               size="medium"
                sx={{ display: hideRemoveOverlayBtn }}
                variant="extended"
                onClick={handleRemoveOverlay}
@@ -227,6 +228,7 @@ const ActionDrawer = ({
             close={() => setOpenNatigConfig(false)}
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
+            showRemoveOverlayBtn={setHideRemoveOverlayBtn}
          />
          <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
          <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)} />

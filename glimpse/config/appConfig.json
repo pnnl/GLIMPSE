@@ -58,7 +58,7 @@
       "interaction": {
          "hover": true,
          "hideEdgesOnDrag": true,
-         "hideEdgesOnZoom": false,
+         "hideEdgesOnZoom": true,
          "navigationButtons": true
       },
       "physics": {

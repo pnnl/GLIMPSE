@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import {
    Accordion,
@@ -21,13 +21,14 @@ import {
 import { ExpandMore } from "@mui/icons-material";
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from "../utils/CustomComponents";
 import { sendNatigConfig } from "../utils/webSocketClientUtils";
+import { Box } from "@mui/system";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
 const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
 const nodeTypes = ["Microgrid", "Communication Node", "Control Center"];
 
-const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
+const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOverlayBtn }) => {
    const [expanded, setExpanded] = useState(false);
    const [topology, setTopology] = useState({ name: "" });
    const [generalConfig, setGeneralConfig] = useState({
@@ -177,13 +178,18 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
    };
 
    const appyTopology = async () => {
+      showRemoveOverlayBtn("flex");
       await applyOverlay(undefined, modelNumber, topology.data);
    };
 
    return ReactDOM.createPortal(
       <>
-         <Dialog open={open}>
-            <DialogTitle>Scenario Configuration </DialogTitle>
+         <Dialog fullWidth open={open}>
+            <DialogTitle
+               sx={{ color: "#ffffff", backgroundColor: "rgba(51,51,51, 0.8)", fontWeight: "bold" }}
+            >
+               Model and Scenario Setup
+            </DialogTitle>
             <DialogContent dividers>
                <Stack direction={"row"} spacing={1}>
                   <Tooltip title={"Choose a topology for uploaded model"} placement="left" arrow>
@@ -212,7 +218,9 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
                   expanded={expanded === "General Settings"}
                   onChange={handleExpand("General Settings")}
                >
-                  <AccordionSummary expandIcon={<ExpandMore />}>General Settings</AccordionSummary>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                     Simulation Settings
+                  </AccordionSummary>
                   <Stack sx={{ margin: "1rem" }} direction={"column"} spacing={1}>
                      <Tooltip title={generalConfig.SimTime.desc} placement="left" arrow>
                         <TextField
@@ -305,27 +313,41 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
                      )}
                   </Stack>
                </Accordion>
+
+               <Divider sx={{ m: "0.5rem 0" }} />
                <Accordion
                   expanded={expanded === "DDoS Settings"}
                   onChange={handleExpand("DDoS Settings")}
                >
-                  <AccordionSummary expandIcon={<ExpandMore />}>DDoS Settings</AccordionSummary>
-                  <Stack sx={{ margin: "1rem" }} direction={"column"} spacing={1}>
-                     <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
-                        <CustomFormControlLabel
-                           control={
-                              <CustomSwitch
-                                 name={"Active"}
-                                 checked={DDosConfig.Active.value}
-                                 value={DDosConfig.Active.value}
-                                 size="medium"
-                                 onChange={handleDDosConfig}
-                              />
-                           }
-                           label={DDosConfig.Active.label}
-                           labelPlacement="start"
-                        />
-                     </Tooltip>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                     Attack Scenario Settings
+                  </AccordionSummary>
+                  <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
+                     <CustomFormControlLabel
+                        sx={{ width: "100%", padding: "0 3rem" }}
+                        control={
+                           <CustomSwitch
+                              name={"Active"}
+                              checked={DDosConfig.Active.value}
+                              value={DDosConfig.Active.value}
+                              size="medium"
+                              onChange={handleDDosConfig}
+                           />
+                        }
+                        label={DDosConfig.Active.label}
+                        labelPlacement="start"
+                     />
+                  </Tooltip>
+                  <Box
+                     component={"form"}
+                     sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        justifyContent: "space-evenly",
+                        mb: 1,
+                        "& .MuiTextField-root": { mt: 1, width: "13rem", height: "3.5rem" },
+                     }}
+                  >
                      {DDosConfig.Active.value && (
                         <>
                            <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
@@ -363,80 +385,72 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay }) => {
                               />
                            </Tooltip>
                            <Tooltip title={DDosConfig.PacketSize.desc} placement="left" arrow>
-                              <FormControl>
-                                 <InputLabel>{DDosConfig.PacketSize.label}</InputLabel>
-                                 <Select
-                                    label={DDosConfig.PacketSize.label}
-                                    name={"PacketSize"}
-                                    value={DDosConfig.PacketSize.value}
-                                    onChange={handleDDosConfig}
-                                 >
-                                    {packetSizeOptions.map((size, index) => (
-                                       <MenuItem key={index} value={size}>
-                                          {`${size} bytes`}
-                                       </MenuItem>
-                                    ))}
-                                 </Select>
-                              </FormControl>
+                              <TextField
+                                 select
+                                 label={DDosConfig.PacketSize.label}
+                                 name={"PacketSize"}
+                                 value={DDosConfig.PacketSize.value}
+                                 onChange={handleDDosConfig}
+                              >
+                                 {packetSizeOptions.map((size, index) => (
+                                    <MenuItem key={index} value={size}>
+                                       {`${size} bytes`}
+                                    </MenuItem>
+                                 ))}
+                              </TextField>
                            </Tooltip>
                            <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
-                              <FormControl>
-                                 <InputLabel>{DDosConfig.Rate.label}</InputLabel>
-                                 <Select
-                                    label={DDosConfig.Rate.label}
-                                    name={"Rate"}
-                                    value={DDosConfig.Rate.value}
-                                    onChange={handleDDosConfig}
-                                 >
-                                    {rates.map((rate, index) => (
-                                       <MenuItem key={index} value={rate}>
-                                          {rate}
-                                       </MenuItem>
-                                    ))}
-                                 </Select>
-                              </FormControl>
+                              <TextField
+                                 select
+                                 label={DDosConfig.Rate.label}
+                                 name={"Rate"}
+                                 value={DDosConfig.Rate.value}
+                                 onChange={handleDDosConfig}
+                              >
+                                 {rates.map((rate, index) => (
+                                    <MenuItem key={index} value={rate}>
+                                       {rate}
+                                    </MenuItem>
+                                 ))}
+                              </TextField>
                            </Tooltip>
                            <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
-                              <FormControl>
-                                 <InputLabel>{DDosConfig.NodeType.label}</InputLabel>
-                                 <Select
-                                    label={DDosConfig.NodeType.label}
-                                    name={"NodeType"}
-                                    value={DDosConfig.NodeType.value}
-                                    onChange={handleDDosConfig}
-                                 >
-                                    {nodeTypes.map((type, index) => (
-                                       <MenuItem key={index} value={type}>
-                                          {type}
-                                       </MenuItem>
-                                    ))}
-                                 </Select>
-                              </FormControl>
+                              <TextField
+                                 select
+                                 label={DDosConfig.NodeType.label}
+                                 name={"NodeType"}
+                                 value={DDosConfig.NodeType.value}
+                                 onChange={handleDDosConfig}
+                              >
+                                 {nodeTypes.map((type, index) => (
+                                    <MenuItem key={index} value={type}>
+                                       {type}
+                                    </MenuItem>
+                                 ))}
+                              </TextField>
                            </Tooltip>
                            <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
-                              <FormControl>
-                                 <InputLabel>{DDosConfig.endPoint.label}</InputLabel>
-                                 <Select
-                                    label={DDosConfig.endPoint.label}
-                                    name={"endPoint"}
-                                    value={DDosConfig.endPoint.value}
-                                    onChange={handleDDosConfig}
-                                 >
-                                    {nodeTypes.map((type, index) => (
-                                       <MenuItem
-                                          disabled={type === DDosConfig.NodeType.value}
-                                          key={index}
-                                          value={type}
-                                       >
-                                          {type}
-                                       </MenuItem>
-                                    ))}
-                                 </Select>
-                              </FormControl>
+                              <TextField
+                                 select
+                                 label={DDosConfig.endPoint.label}
+                                 value={DDosConfig.endPoint.value}
+                                 name={"endPoint"}
+                                 onChange={handleDDosConfig}
+                              >
+                                 {nodeTypes.map((type, index) => (
+                                    <MenuItem
+                                       disabled={type === DDosConfig.NodeType.value}
+                                       key={index}
+                                       value={type}
+                                    >
+                                       {type}
+                                    </MenuItem>
+                                 ))}
+                              </TextField>
                            </Tooltip>
                         </>
                      )}
-                  </Stack>
+                  </Box>
                </Accordion>
             </DialogContent>
             <DialogActions>
