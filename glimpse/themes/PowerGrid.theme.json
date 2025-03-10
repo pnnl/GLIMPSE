@@ -77,7 +77,7 @@
             "border": "red"
          },
          "shape": "circularImage",
-         "image": ""
+         "image": "./imgs/attacker.jpg"
       }
    },
    "edgeOptions": {
