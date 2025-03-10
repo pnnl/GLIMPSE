@@ -935,6 +935,11 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       );
       removeListenerArr.push(
          window.glimpseAPI.onAddNodeEvent((newNodeData) => {
+            if (newNodeData.objectType in objectTypeCount) {
+               objectTypeCount[newNodeData.objectType]++;
+               setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+            }
+
             graphData.nodes.add({
                id: newNodeData.attributes.id,
                attributes: newNodeData.attributes,
