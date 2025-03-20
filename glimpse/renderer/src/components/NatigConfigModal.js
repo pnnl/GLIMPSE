@@ -18,7 +18,8 @@ import {
    Tooltip,
 } from "@mui/material";
 
-import { ExpandMore } from "@mui/icons-material";
+import { ExpandMore, HelpOutline } from "@mui/icons-material";
+import IconButton from "@mui/material/IconButton";
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from "../utils/CustomComponents";
 import { sendNatigConfig } from "../utils/webSocketClientUtils";
 import { Box } from "@mui/system";
@@ -186,9 +187,14 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
       <>
          <Dialog fullWidth open={open}>
             <DialogTitle
-               sx={{ color: "#ffffff", backgroundColor: "rgba(51,51,51, 0.8)", fontWeight: "bold" }}
+               sx={{ color: "#ffffff", backgroundColor: "rgba(51,51,51, 0.8)", fontWeight: "bold", display: "flex", alignItems: "center", justifyContent: "space-between" }}
             >
                Model and Scenario Setup
+               <Tooltip title="This form allows you to configure the model and scenario settings for the simulation." placement="top" arrow>
+                  <IconButton sx={{ color: "#ffffff" }}>
+                     <HelpOutline />
+                  </IconButton>
+               </Tooltip>
             </DialogTitle>
             <DialogContent dividers>
                <Stack direction={"row"} spacing={1}>

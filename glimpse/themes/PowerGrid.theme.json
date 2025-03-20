@@ -36,9 +36,12 @@
          "image": "./imgs/meter.jpg"
       },
       "node": {
-         "size": 4,
          "color": "#219ebc",
          "shape": "dot"
+      },
+      "cluster": {
+         "color": "#219ebc",
+         "shape": "hexagon"
       },
       "meter": {
          "size": 12,

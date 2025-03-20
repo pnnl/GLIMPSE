@@ -262,6 +262,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       ]);
 
       const newNodes = [];
+      const updatedMGNodes = [];
+      const updatedTPNodes = [];
       const newEdges = [];
 
       for (const microGrid of microGrids) {
@@ -295,6 +297,19 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                newEdges.push(microGridEdge);
                addedOverlayObjects.edges.push(newEdgeID);
                objectTypeCount.edges.microgrid_connection++;
+               const connectedMGNode = {
+                  id: nodeID,
+                  label: nodeID,
+                  group: `group_${microGrid.name}`,
+                  title: `ObjectType: ${type}\nname: ${nodeID}`,
+               };
+               if (graphData.nodes.get(nodeID)) {
+                  updatedMGNodes.push(connectedMGNode);
+               } else {
+                  // newNodes.push(connectedMGNode);
+                  // addedOverlayObjects.nodes.push(nodeID);
+                  // objectTypeCount.nodes[type] = (objectTypeCount.nodes[type] || 0) + 1;
+               }
             }
          }
       }
@@ -315,7 +330,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             newNodes.push({
                id: commNodeID,
                label: commNodeID,
-               group: "communication_node",
+               group: `group_comm_${mgNumber}`,
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
             });
 
@@ -339,6 +354,11 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                width: 2,
             });
 
+            const connectedTPNode = {
+               id: `SS_${mgNumber}`,
+               group: `group_comm_${mgNumber}`,
+            };
+            updatedTPNodes.push(connectedTPNode);
             addedOverlayObjects.edges.push(commEdgeID);
             objectTypeCount.edges.communication++;
 
@@ -374,6 +394,24 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       // Batch add nodes and edges
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
+      graphData.nodes.update(updatedMGNodes);
+
+      const updatedTPConnectedNodes = [];
+      for (const tpNode of updatedTPNodes) {
+         console.log(tpNode);
+         const connectedNodeIDs = glmNetwork.getConnectedNodes(tpNode.id);
+         for (const connectedNodeID of connectedNodeIDs) {
+            if (glmNetwork.clustering.isCluster(connectedNodeID)) {
+               const connectedTPNode = {
+                  id: connectedNodeID,
+                  group: tpNode.group,
+               };
+               updatedTPConnectedNodes.push(connectedTPNode);
+            }
+         }
+      }
+      graphData.nodes.update(updatedTPNodes);
+      graphData.nodes.update(updatedTPConnectedNodes);
 
       glmNetwork.setOptions({ physics: { enabled: true } });
 
@@ -445,8 +483,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
          const [addedNodeID] = graphData.nodes.add({
             id: `${nodeID}`,
+            // color: "#219ebc",
             label: `${nodeID}`,
-            group: nodeTypes[nodeType],
+            group: "node",
             attributes: {
                id: `${nodeID}`,
             },
@@ -865,10 +904,11 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          },
          clusterNodeProperties: {
             id: clusterValue,
+            // color: "#219ebc",
             borderWidth: 2,
             shape: "hexagon",
             label: `Community-${clusterValue}`,
-            group: clusterValue,
+            group: "cluster",
          },
       });
 
