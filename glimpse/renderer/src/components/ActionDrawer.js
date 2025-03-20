@@ -32,6 +32,7 @@ const ActionDrawer = ({
    reset,
    modelNumber,
    applyOverlay,
+   getSwitches,
 }) => {
    const nodes = getNodeIds();
    const [nodeID, setNodeID] = useState("");
@@ -229,6 +230,7 @@ const ActionDrawer = ({
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
             showRemoveOverlayBtn={setHideRemoveOverlayBtn}
+            getSwitches={getSwitches}
          />
          <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
          <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)} />

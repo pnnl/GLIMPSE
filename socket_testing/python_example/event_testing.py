@@ -5,48 +5,61 @@ import time
 PORT = 5051
 URL = "http://127.0.0.1"
 
-newNodes = [
-      {
-      "objectType": "load",
-      "elementType": "node",
-      "attributes": {
-         "id": "load_12345",
-      },
-      "styles": {
-         "label": "load_12345",
-      }
-   },
-      {
-      "objectType": "load",
-      "elementType": "node",
-      "attributes": {
-         "id": "load_098",
-      },
-      "styles": {
-         "label": "load_098",
-      }
-   },
-      {
-      "objectType": "load",
-      "elementType": "node",
-      "attributes": {
-         "id": "load_56748",
-      },
-      "styles": {
-         "label": "load_56748",
-      }
-   },
-      {
-      "objectType": "load",
-      "elementType": "node",
-      "attributes": {
-         "id": "load_1029",
-      },
-      "styles": {
-         "label": "load_1029",
-      }
-   },
+# newNodes = [
+#       {
+#       "objectType": "load",
+#       "elementType": "node",
+#       "attributes": {
+#          "id": "load_12345",
+#       },
+#       "styles": {
+#          "label": "load_12345",
+#       }
+#    },
+#       {
+#       "objectType": "load",
+#       "elementType": "node",
+#       "attributes": {
+#          "id": "load_098",
+#       },
+#       "styles": {
+#          "label": "load_098",
+#       }
+#    },
+#       {
+#       "objectType": "load",
+#       "elementType": "node",
+#       "attributes": {
+#          "id": "load_56748",
+#       },
+#       "styles": {
+#          "label": "load_56748",
+#       }
+#    },
+#       {
+#       "objectType": "load",
+#       "elementType": "node",
+#       "attributes": {
+#          "id": "load_1029",
+#       },
+#       "styles": {
+#          "label": "load_1029",
+#       }
+#    },
     
+# ]
+
+newNodes =[
+   {
+      "objectType": "attacker",
+      "elementType": "node",
+      "attributes": {
+         "id": "attacker1"
+      },
+      "styles": {
+         "label": "attacker1"
+      }
+   }
 ]
 
 '''
@@ -168,23 +181,23 @@ def main():
       time.sleep(0.75)
       
    # create new edges between the added nodes in GLIMPSE
-   for new_edge_obj in newEdges: 
-      sio.emit("addEdge", new_edge_obj)
-      time.sleep(0.75)
+   # for new_edge_obj in newEdges: 
+   #    sio.emit("addEdge", new_edge_obj)
+   #    time.sleep(0.75)
       
-   # delete some nodes via the deleteNode socket event
-   for nodeID in nodes_to_delete: 
-      sio.emit("deleteNode", nodeID)
-      time.sleep(1)
+   # # delete some nodes via the deleteNode socket event
+   # for nodeID in nodes_to_delete: 
+   #    sio.emit("deleteNode", nodeID)
+   #    time.sleep(1)
   
-   # delete some edge via the deleteEdge socket event
-   for edgeID in edges_to_delete: 
-      sio.emit("deleteEdge", edgeID)
-      time.sleep(2)
+   # # delete some edge via the deleteEdge socket event
+   # for edgeID in edges_to_delete: 
+   #    sio.emit("deleteEdge", edgeID)
+   #    time.sleep(2)
 
-   for style in styleChanges: 
-      sio.emit("glimpse", style)
-      time.sleep(1.5)
+   # for style in styleChanges: 
+   #    sio.emit("glimpse", style)
+   #    time.sleep(1.5)
    
    # disconect from GLIMPSE WebSocket API      
    sio.disconnect()

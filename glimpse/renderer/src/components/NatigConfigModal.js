@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import {
    Accordion,
@@ -16,21 +17,31 @@ import {
    Stack,
    TextField,
    Tooltip,
+   Autocomplete,
+   Box,
+   FormLabel,
 } from "@mui/material";
 
 import { ExpandMore } from "@mui/icons-material";
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from "../utils/CustomComponents";
 import { sendNatigConfig } from "../utils/webSocketClientUtils";
-import { Box } from "@mui/system";
 
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
 const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
 const nodeTypes = ["Microgrid", "Communication Node", "Control Center"];
 
-const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOverlayBtn }) => {
+const NatigConfigModal = ({
+   open,
+   close,
+   modelNumber,
+   applyOverlay,
+   showRemoveOverlayBtn,
+   getSwitches,
+}) => {
    const [expanded, setExpanded] = useState(false);
    const [topology, setTopology] = useState({ name: "" });
+
    const [generalConfig, setGeneralConfig] = useState({
       SimTime: {
          label: "Simulation Time",
@@ -63,6 +74,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
          value: 0,
       },
    });
+
    const [DDosConfig, setDDosConfig] = useState({
       Active: {
          label: "Enable DDoS Attack",
@@ -106,6 +118,33 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
       },
    });
 
+   const [MIMConfig, setMIMConfig] = useState({
+      includeMIM: {
+         label: "Enable MIM Attack",
+         desc: "Controls whether or not the MIM attack will be active during the simulation",
+         value: false,
+      },
+      ListOfAttackedSwitches: {
+         label: "Enter ID of nodes that are under attacked",
+         desc: "List the IDs as represented in gridlabd of the nodes that will be attacked",
+         value: [],
+      },
+      StartOfAttack: {
+         label: "Start",
+         desc: "Start of the Attack",
+      },
+      EndOfAttack: {
+         label: "End",
+         desc: "This list should contain when you want the attack to end",
+      },
+      AttackPoint: {
+         label: "Attack Point",
+         desc: "Where to attack",
+      },
+   });
+
+   const switches = getSwitches();
+
    const handleGeneralConfig = (e) => {
       const { name, value, type, checked } = e.target;
 
@@ -130,6 +169,36 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
       });
    };
 
+   const handleValueChange = (e, switchId) => {
+      const { name, value } = e.target;
+
+      // Update the specific switch object in the ListOfAttackedSwitches array
+      const updatedSwitches = MIMConfig.ListOfAttackedSwitches.value.map((swObj) =>
+         swObj.id === switchId ? { ...swObj, [name]: value } : swObj
+      );
+
+      // Update the state with the modified array
+      setMIMConfig({
+         ...MIMConfig,
+         ListOfAttackedSwitches: {
+            ...MIMConfig.ListOfAttackedSwitches,
+            value: updatedSwitches,
+         },
+      });
+   };
+
+   const handleMIMConfig = (e) => {
+      const { name, value, type, checked } = e.target;
+
+      setMIMConfig({
+         ...MIMConfig,
+         [name]: {
+            ...MIMConfig[name],
+            value: type === "checkbox" ? checked : value,
+         },
+      });
+   };
+
    const handleTopologySelect = async (e) => {
       const { value: topoName } = e.target;
 
@@ -141,11 +210,72 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
       }
    };
 
+   const handleSwitchesSelect = (switches) => {
+      const currentSwitches = MIMConfig.ListOfAttackedSwitches.value;
+
+      if (currentSwitches.length === 0) {
+         setMIMConfig({
+            ...MIMConfig,
+            ListOfAttackedSwitches: {
+               ...MIMConfig.ListOfAttackedSwitches,
+               value: switches.map((id) => ({ id: id, start: 0, end: 0, attackPoint: "" })),
+            },
+         });
+      } else if (switches.length > currentSwitches.length) {
+         const newSwitches = switches.filter(
+            (id) => !currentSwitches.find((swObj) => swObj.id === id)
+         );
+
+         setMIMConfig({
+            ...MIMConfig,
+            ListOfAttackedSwitches: {
+               ...MIMConfig.ListOfAttackedSwitches,
+               value: [
+                  ...currentSwitches,
+                  ...newSwitches.map((id) => ({ id: id, start: 0, end: 0, attackPoint: "" })),
+               ],
+            },
+         });
+      } else {
+         const removedSwitches = currentSwitches.filter((swObj) => !switches.includes(swObj.id));
+
+         setMIMConfig({
+            ...MIMConfig,
+            ListOfAttackedSwitches: {
+               ...MIMConfig.ListOfAttackedSwitches,
+               value: currentSwitches.filter((swObj) => !removedSwitches.includes(swObj)),
+            },
+         });
+      }
+   };
+
    const getSendObj = (formConfigObj) => {
       return Object.entries(formConfigObj).reduce(
          (o, [key, val]) => ({ ...o, [key]: val.value }),
          {}
       );
+   };
+
+   const getMIMSendObj = () => {
+      if (!MIMConfig.includeMIM.value) {
+         return {
+            includeMIM: formConfigObj.includeMIM.value,
+         };
+      }
+
+      const switchesObjs = MIMConfig.ListOfAttackedSwitches.value;
+
+      const sendSwitchesList = switchesObjs.map((swObj) => swObj.id);
+      const sendStartTimes = switchesObjs.map((swObj) => swObj.start);
+      const sendEndTimes = switchesObjs.map((swObj) => swObj.end);
+      const sendAttackPoints = switchesObjs.map((swObj) => swObj.attackPoint);
+
+      return {
+         StartOfAttack: sendStartTimes.join(","),
+         EndOfAttack: sendEndTimes.join(","),
+         AttackPoint: sendAttackPoints.join(","),
+         ListOfAttackedSwitches: sendSwitchesList.join(","),
+      };
    };
 
    const send = () => {
@@ -156,10 +286,12 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
                commNode.connections = commNode.connections.map((id) => `comm${id + 1}`);
             });
          }
+
          const natigGeneralConfig = {
             modelNumber: modelNumber,
             ...getSendObj(generalConfig),
             ...getSendObj(DDosConfig),
+            ...getMIMSendObj(),
             topology: { ...topology },
          };
 
@@ -315,6 +447,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
                </Accordion>
 
                <Divider sx={{ m: "0.5rem 0" }} />
+
                <Accordion
                   expanded={expanded === "DDoS Settings"}
                   onChange={handleExpand("DDoS Settings")}
@@ -322,6 +455,93 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
                   <AccordionSummary expandIcon={<ExpandMore />}>
                      Attack Scenario Settings
                   </AccordionSummary>
+                  <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
+                     <CustomFormControlLabel
+                        sx={{ width: "100%", padding: "0 3rem" }}
+                        control={
+                           <CustomSwitch
+                              name={"includeMIM"}
+                              checked={MIMConfig.includeMIM.value}
+                              value={MIMConfig.includeMIM.value}
+                              size="medium"
+                              onChange={handleMIMConfig}
+                           />
+                        }
+                        label={MIMConfig.includeMIM.label}
+                        labelPlacement="start"
+                     />
+                  </Tooltip>
+                  {MIMConfig.includeMIM.value && (
+                     <Box
+                        sx={{
+                           m: 1,
+                           display: "flex",
+                           flexDirection: "column",
+                        }}
+                     >
+                        <Tooltip
+                           title={MIMConfig.ListOfAttackedSwitches.desc}
+                           placement="left"
+                           arrow
+                        >
+                           <Autocomplete
+                              sx={{ width: "inherit" }}
+                              multiple
+                              limitTags={2}
+                              options={switches}
+                              value={MIMConfig.ListOfAttackedSwitches.value.map(
+                                 (swObj) => swObj.id
+                              )}
+                              onChange={(e, selectedSwitches) =>
+                                 handleSwitchesSelect(selectedSwitches)
+                              }
+                              renderInput={(parameters) => (
+                                 <TextField {...parameters} label="Select Switches To Attack" />
+                              )}
+                           />
+                        </Tooltip>
+                        {MIMConfig.ListOfAttackedSwitches.value.length > 0 && (
+                           <>
+                              {MIMConfig.ListOfAttackedSwitches.value.map((switchObj, index) => (
+                                 <FormControl margin={"dense"} key={index}>
+                                    <FormLabel sx={{ mb: 1 }}>{switchObj.id}</FormLabel>
+                                    <Stack direction={"row"} spacing={1}>
+                                       <TextField
+                                          fullWidth
+                                          size="small"
+                                          type="number"
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.start}
+                                          name="start"
+                                          label={MIMConfig.StartOfAttack.label}
+                                       />
+                                       <TextField
+                                          fullWidth
+                                          size="small"
+                                          type="number"
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.end}
+                                          name="end"
+                                          label={MIMConfig.EndOfAttack.label}
+                                       />
+                                       <TextField
+                                          fullWidth
+                                          size="small"
+                                          select
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.attackPoint}
+                                          name="attackPoint"
+                                          label={MIMConfig.AttackPoint.label}
+                                       >
+                                          <MenuItem value="status">status</MenuItem>
+                                       </TextField>
+                                    </Stack>
+                                 </FormControl>
+                              ))}
+                           </>
+                        )}
+                     </Box>
+                  )}
                   <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
                      <CustomFormControlLabel
                         sx={{ width: "100%", padding: "0 3rem" }}
@@ -338,119 +558,113 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, showRemoveOv
                         labelPlacement="start"
                      />
                   </Tooltip>
-                  <Box
-                     component={"form"}
-                     sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "space-evenly",
-                        mb: 1,
-                        "& .MuiTextField-root": { mt: 1, width: "13rem", height: "3.5rem" },
-                     }}
-                  >
-                     {DDosConfig.Active.value && (
-                        <>
-                           <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
-                              <TextField
-                                 variant="outlined"
-                                 value={DDosConfig.Start.value}
-                                 name="Start"
-                                 type="number"
-                                 label={DDosConfig.Start.label}
-                                 onChange={handleDDosConfig}
-                              />
-                           </Tooltip>
-                           <Tooltip title={DDosConfig.End.desc} placement="left" arrow>
-                              <TextField
-                                 variant="outlined"
-                                 value={DDosConfig.End.value}
-                                 name="End"
-                                 type="number"
-                                 label={DDosConfig.End.label}
-                                 onChange={handleDDosConfig}
-                              />
-                           </Tooltip>
-                           <Tooltip
-                              title={DDosConfig.threadsPerAttacker.desc}
-                              placement="left"
-                              arrow
+                  {DDosConfig.Active.value && (
+                     <Box
+                        component={"form"}
+                        sx={{
+                           display: "flex",
+                           flexWrap: "wrap",
+                           justifyContent: "space-evenly",
+                           mb: 1,
+                           "& .MuiTextField-root": { mt: 1, width: "13rem", height: "3.5rem" },
+                        }}
+                     >
+                        <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.Start.value}
+                              name="Start"
+                              type="number"
+                              label={DDosConfig.Start.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.End.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.End.value}
+                              name="End"
+                              type="number"
+                              label={DDosConfig.End.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.threadsPerAttacker.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.threadsPerAttacker.value}
+                              name="threadsPerAttacker"
+                              type="number"
+                              label={DDosConfig.threadsPerAttacker.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.PacketSize.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.PacketSize.label}
+                              name={"PacketSize"}
+                              value={DDosConfig.PacketSize.value}
+                              onChange={handleDDosConfig}
                            >
-                              <TextField
-                                 variant="outlined"
-                                 value={DDosConfig.threadsPerAttacker.value}
-                                 name="threadsPerAttacker"
-                                 type="number"
-                                 label={DDosConfig.threadsPerAttacker.label}
-                                 onChange={handleDDosConfig}
-                              />
-                           </Tooltip>
-                           <Tooltip title={DDosConfig.PacketSize.desc} placement="left" arrow>
-                              <TextField
-                                 select
-                                 label={DDosConfig.PacketSize.label}
-                                 name={"PacketSize"}
-                                 value={DDosConfig.PacketSize.value}
-                                 onChange={handleDDosConfig}
-                              >
-                                 {packetSizeOptions.map((size, index) => (
-                                    <MenuItem key={index} value={size}>
-                                       {`${size} bytes`}
-                                    </MenuItem>
-                                 ))}
-                              </TextField>
-                           </Tooltip>
-                           <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
-                              <TextField
-                                 select
-                                 label={DDosConfig.Rate.label}
-                                 name={"Rate"}
-                                 value={DDosConfig.Rate.value}
-                                 onChange={handleDDosConfig}
-                              >
-                                 {rates.map((rate, index) => (
-                                    <MenuItem key={index} value={rate}>
-                                       {rate}
-                                    </MenuItem>
-                                 ))}
-                              </TextField>
-                           </Tooltip>
-                           <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
-                              <TextField
-                                 select
-                                 label={DDosConfig.NodeType.label}
-                                 name={"NodeType"}
-                                 value={DDosConfig.NodeType.value}
-                                 onChange={handleDDosConfig}
-                              >
-                                 {nodeTypes.map((type, index) => (
-                                    <MenuItem key={index} value={type}>
-                                       {type}
-                                    </MenuItem>
-                                 ))}
-                              </TextField>
-                           </Tooltip>
-                           <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
-                              <TextField
-                                 select
-                                 label={DDosConfig.endPoint.label}
-                                 value={DDosConfig.endPoint.value}
-                                 name={"endPoint"}
-                                 onChange={handleDDosConfig}
-                              >
-                                 {nodeTypes.map((type, index) => (
-                                    <MenuItem
-                                       disabled={type === DDosConfig.NodeType.value}
-                                       key={index}
-                                       value={type}
-                                    >
-                                       {type}
-                                    </MenuItem>
-                                 ))}
-                              </TextField>
-                           </Tooltip>
-                        </>
-                     )}
-                  </Box>
+                              {packetSizeOptions.map((size, index) => (
+                                 <MenuItem key={index} value={size}>
+                                    {`${size} bytes`}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.Rate.label}
+                              name={"Rate"}
+                              value={DDosConfig.Rate.value}
+                              onChange={handleDDosConfig}
+                           >
+                              {rates.map((rate, index) => (
+                                 <MenuItem key={index} value={rate}>
+                                    {rate}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.NodeType.label}
+                              name={"NodeType"}
+                              value={DDosConfig.NodeType.value}
+                              onChange={handleDDosConfig}
+                           >
+                              {nodeTypes.map((type, index) => (
+                                 <MenuItem key={index} value={type}>
+                                    {type}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.endPoint.label}
+                              value={DDosConfig.endPoint.value}
+                              name={"endPoint"}
+                              onChange={handleDDosConfig}
+                           >
+                              {nodeTypes.map((type, index) => (
+                                 <MenuItem
+                                    disabled={type === DDosConfig.NodeType.value}
+                                    key={index}
+                                    value={type}
+                                 >
+                                    {type}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                     </Box>
+                  )}
                </Accordion>
             </DialogContent>
             <DialogActions>

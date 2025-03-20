@@ -431,17 +431,13 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
     */
    const addNewNode = ({ nodeType, nodeID, connectTo, edgeType }) => {
-      const nodeTypes = Object.keys(objectTypeCount.nodes).filter(
-         (key) => objectTypeCount.nodes[key] > 0
-      );
-      const edgeTypes = Object.keys(objectTypeCount.edges).filter(
-         (key) => objectTypeCount.edges[key] > 0
-      );
+      const nodeTypes = Object.keys(objectTypeCount.nodes);
+      const edgeTypes = Object.keys(objectTypeCount.edges);
 
       try {
-         const nodesOfsameType = graphData.nodes
-            .get()
-            .filter((n) => n.group === nodeTypes[nodeType]);
+         // const nodesOfsameType = graphData.nodes
+         //    .get()
+         //    .filter((n) => n.group === nodeTypes[nodeType]);
 
          const [addedNodeID] = graphData.nodes.add({
             id: `${nodeID}`,
@@ -450,10 +446,10 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             attributes: {
                id: `${nodeID}`,
             },
-            level:
-               "level" in nodesOfsameType[0].attributes
-                  ? nodesOfsameType[0].attributes.level
-                  : undefined,
+            // level:
+            //    "level" in nodesOfsameType[0].attributes
+            //       ? nodesOfsameType[0].attributes.level
+            //       : undefined,
          });
 
          const addedNode = graphData.nodes.get(addedNodeID);
@@ -463,9 +459,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          graphData.nodes.update(addedNode);
 
          const [addedEdgeID] = graphData.edges.add({
-            id: `${connectTo}-${addedNodeID}`,
-            from: connectTo,
-            to: addedNodeID,
+            id: `${addedNodeID}-${connectTo}`,
+            from: addedNodeID,
+            to: connectTo,
             type: edgeTypes[edgeType],
             color: edgeOptions[edgeTypes[edgeType]].color,
             width: edgeOptions[edgeTypes[edgeType]].width,
@@ -480,6 +476,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
          setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
+         console.error(err);
          alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
       }
    };
@@ -1205,12 +1202,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             onMount={onNewNodeFormMount}
             nodes={() => graphData.nodes.getIds()}
             addNode={addNewNode}
-            nodeTypes={Object.keys(objectTypeCount.nodes).filter(
-               (key) => objectTypeCount.nodes[key] > 0
-            )}
-            edgeTypes={Object.keys(objectTypeCount.edges).filter(
-               (key) => objectTypeCount.edges[key] > 0
-            )}
+            nodeTypes={Object.keys(objectTypeCount.nodes)}
+            edgeTypes={Object.keys(objectTypeCount.edges)}
          />
 
          <div id="circularProgress">
@@ -1241,6 +1234,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             reset={Reset}
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
+            getSwitches={() => graphData.edges.getIds({ filter: (edge) => edge.type === "switch" })}
          />
 
          <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>
