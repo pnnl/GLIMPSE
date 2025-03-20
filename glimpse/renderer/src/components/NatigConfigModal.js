@@ -259,7 +259,7 @@ const NatigConfigModal = ({
    const getMIMSendObj = () => {
       if (!MIMConfig.includeMIM.value) {
          return {
-            includeMIM: formConfigObj.includeMIM.value,
+            includeMIM: MIMConfig.includeMIM.value,
          };
       }
 
