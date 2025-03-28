@@ -25,8 +25,8 @@ export const CustomSwitch = styled(Switch)({
 });
 
 export const CustomFormControlLabel = styled(FormControlLabel)({
-   marginLeft: 0,
-   marginRight: 0,
-   padding: "0 0 0 1rem",
+   width: "100%",
+   margin: "0",
+   padding: "0 1rem",
    justifyContent: "space-between",
 });

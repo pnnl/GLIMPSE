@@ -141,6 +141,18 @@ const NatigConfigModal = ({
          label: "Attack Point",
          desc: "Where to attack",
       },
+      AttackValue: {
+         label: "Attack Value",
+         desc: "What value the attacker sets during the attack",
+      },
+      RealValue: {
+         label: "Real Value",
+         desc: "What value should the point be set to after the attack. NA means it will keep the same value as the one set during the attack",
+      },
+      isInt: {
+         label: "Attack Type",
+         desc: "Is the attack value an integer",
+      },
    });
 
    const switches = getSwitches();
@@ -218,7 +230,15 @@ const NatigConfigModal = ({
             ...MIMConfig,
             ListOfAttackedSwitches: {
                ...MIMConfig.ListOfAttackedSwitches,
-               value: switches.map((id) => ({ id: id, start: 0, end: 0, attackPoint: "" })),
+               value: switches.map((id) => ({
+                  id: id,
+                  start: 0,
+                  end: 0,
+                  attackPoint: "",
+                  attackValue: "",
+                  realValue: "",
+                  isInt: "",
+               })),
             },
          });
       } else if (switches.length > currentSwitches.length) {
@@ -232,7 +252,15 @@ const NatigConfigModal = ({
                ...MIMConfig.ListOfAttackedSwitches,
                value: [
                   ...currentSwitches,
-                  ...newSwitches.map((id) => ({ id: id, start: 0, end: 0, attackPoint: "" })),
+                  ...newSwitches.map((id) => ({
+                     id: id,
+                     start: 0,
+                     end: 0,
+                     attackPoint: "",
+                     attackValue: "",
+                     realValue: "",
+                     isInt: "",
+                  })),
                ],
             },
          });
@@ -269,11 +297,18 @@ const NatigConfigModal = ({
       const sendStartTimes = switchesObjs.map((swObj) => swObj.start);
       const sendEndTimes = switchesObjs.map((swObj) => swObj.end);
       const sendAttackPoints = switchesObjs.map((swObj) => swObj.attackPoint);
+      const sendAttackValues = switchesObjs.map((swObj) => swObj.attackValue);
+      const sendRealValues = switchesObjs.map((swObj) => swObj.realValue);
+      const sendAttckScenario = switchesObjs.map((swObj) => swObj.isInt);
 
       return {
+         includeMIM: MIMConfig.includeMIM.value,
          StartOfAttack: sendStartTimes.join(","),
          EndOfAttack: sendEndTimes.join(","),
          AttackPoint: sendAttackPoints.join(","),
+         AttackValue: sendAttackValues.join(","),
+         RealValue: sendRealValues.join(","),
+         attackType: sendAttckScenario.join(","),
          ListOfAttackedSwitches: sendSwitchesList.join(","),
       };
    };
@@ -457,7 +492,6 @@ const NatigConfigModal = ({
                   </AccordionSummary>
                   <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
                      <CustomFormControlLabel
-                        sx={{ width: "100%", padding: "0 3rem" }}
                         control={
                            <CustomSwitch
                               name={"includeMIM"}
@@ -485,9 +519,11 @@ const NatigConfigModal = ({
                            arrow
                         >
                            <Autocomplete
-                              sx={{ width: "inherit" }}
+                              sx={{ padding: "0 1.5rem", margin: "0 0 1rem 0" }}
+                              size="small"
+                              fullWidth
                               multiple
-                              limitTags={2}
+                              limitTags={3}
                               options={switches}
                               value={MIMConfig.ListOfAttackedSwitches.value.map(
                                  (swObj) => swObj.id
@@ -495,19 +531,37 @@ const NatigConfigModal = ({
                               onChange={(e, selectedSwitches) =>
                                  handleSwitchesSelect(selectedSwitches)
                               }
-                              renderInput={(parameters) => (
-                                 <TextField {...parameters} label="Select Switches To Attack" />
+                              renderInput={(params) => (
+                                 <TextField
+                                    {...params}
+                                    size="small"
+                                    label="Select Switches To Attack"
+                                 />
                               )}
                            />
                         </Tooltip>
                         {MIMConfig.ListOfAttackedSwitches.value.length > 0 && (
                            <>
                               {MIMConfig.ListOfAttackedSwitches.value.map((switchObj, index) => (
-                                 <FormControl margin={"dense"} key={index}>
-                                    <FormLabel sx={{ mb: 1 }}>{switchObj.id}</FormLabel>
-                                    <Stack direction={"row"} spacing={1}>
+                                 <Accordion
+                                    slotProps={{ transition: { unmountOnExit: true } }}
+                                    key={index}
+                                 >
+                                    <AccordionSummary expandIcon={<ExpandMore />}>
+                                       {switchObj.id}
+                                    </AccordionSummary>
+                                    <Stack
+                                       spacing={1}
+                                       sx={{
+                                          padding: 1,
+                                          flexWrap: "wrap",
+                                          justifyContent: "center",
+                                          "& .MuiTextField-root": { width: "13rem" },
+                                       }}
+                                       direction={"row"}
+                                       useFlexGap
+                                    >
                                        <TextField
-                                          fullWidth
                                           size="small"
                                           type="number"
                                           onChange={(e) => handleValueChange(e, switchObj.id)}
@@ -516,7 +570,6 @@ const NatigConfigModal = ({
                                           label={MIMConfig.StartOfAttack.label}
                                        />
                                        <TextField
-                                          fullWidth
                                           size="small"
                                           type="number"
                                           onChange={(e) => handleValueChange(e, switchObj.id)}
@@ -525,7 +578,6 @@ const NatigConfigModal = ({
                                           label={MIMConfig.EndOfAttack.label}
                                        />
                                        <TextField
-                                          fullWidth
                                           size="small"
                                           select
                                           onChange={(e) => handleValueChange(e, switchObj.id)}
@@ -535,8 +587,40 @@ const NatigConfigModal = ({
                                        >
                                           <MenuItem value="status">status</MenuItem>
                                        </TextField>
+                                       <TextField
+                                          size="small"
+                                          select
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.attackValue}
+                                          name="attackValue"
+                                          label={MIMConfig.AttackValue.label}
+                                       >
+                                          <MenuItem value="TRIP">TRIP</MenuItem>
+                                       </TextField>
+                                       <TextField
+                                          size="small"
+                                          select
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.realValue}
+                                          name="realValue"
+                                          label={MIMConfig.RealValue.label}
+                                       >
+                                          <MenuItem value="NA">NA</MenuItem>
+                                          <MenuItem value="CLOSE">CLOSE</MenuItem>
+                                       </TextField>
+                                       <TextField
+                                          size="small"
+                                          select
+                                          onChange={(e) => handleValueChange(e, switchObj.id)}
+                                          value={switchObj.isInt}
+                                          name="isInt"
+                                          label={MIMConfig.isInt.label}
+                                       >
+                                          <MenuItem value="3">Not Int</MenuItem>
+                                          <MenuItem value="4">Int</MenuItem>
+                                       </TextField>
                                     </Stack>
-                                 </FormControl>
+                                 </Accordion>
                               ))}
                            </>
                         )}
@@ -544,7 +628,6 @@ const NatigConfigModal = ({
                   )}
                   <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
                      <CustomFormControlLabel
-                        sx={{ width: "100%", padding: "0 3rem" }}
                         control={
                            <CustomSwitch
                               name={"Active"}
@@ -559,15 +642,16 @@ const NatigConfigModal = ({
                      />
                   </Tooltip>
                   {DDosConfig.Active.value && (
-                     <Box
-                        component={"form"}
+                     <Stack
+                        spacing={1}
                         sx={{
-                           display: "flex",
+                           padding: 1,
                            flexWrap: "wrap",
-                           justifyContent: "space-evenly",
-                           mb: 1,
-                           "& .MuiTextField-root": { mt: 1, width: "13rem", height: "3.5rem" },
+                           justifyContent: "center",
+                           "& .MuiTextField-root": { width: "13rem" },
                         }}
+                        direction={"row"}
+                        useFlexGap
                      >
                         <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
                            <TextField
@@ -663,7 +747,7 @@ const NatigConfigModal = ({
                               ))}
                            </TextField>
                         </Tooltip>
-                     </Box>
+                     </Stack>
                   )}
                </Accordion>
             </DialogContent>
