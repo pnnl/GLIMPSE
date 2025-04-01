@@ -38,7 +38,7 @@ def create_graph(data: dict, set_communities: bool=False) -> dict:
 
       for community_id, community in enumerate(partition):
          for node in community:
-            community_ids[node] = community_id
+            community_ids[node] = f"CID_{community_id}" 
       
       nx.set_node_attributes(GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=GRAPH, name="glimpse_community_id")

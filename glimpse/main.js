@@ -1,5 +1,6 @@
 const {
    app,
+   shell,
    BrowserWindow,
    ipcMain,
    dialog,
@@ -256,6 +257,11 @@ const makeWindow = () => {
          enableRemoteModule: false,
          preload: path.join(__dirname, "preload.js"),
       },
+   });
+
+   mainWindow.webContents.on("will-navigate", (event, url) => {
+      event.preventDefault(); // Prevent the Electron app from navigating
+      shell.openExternal(url); // Open the URL in the default browser
    });
 
    mainWindow.setIcon(

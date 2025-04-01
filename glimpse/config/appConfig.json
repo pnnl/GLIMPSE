@@ -1,5 +1,5 @@
 {
-   "docs": "",
+   "docs": "https://github.com/pnnl/GLIMPSE/tree/master/Docs",
    "appOptions": {
       "title": "GLIMPSE",
       "nav": {
@@ -13,7 +13,7 @@
          "addOverlayBtn": "ATTACH OVERLAY",
          "showStatsBtn": "SHOW STATS",
          "layoutLbl": "Auto Layout",
-         "searchLbl": "Node ID",
+         "searchLbl": "ID Search",
          "previousBtn": "PREV",
          "nextBtn": "NEXT",
          "resetBtn": "RESET",

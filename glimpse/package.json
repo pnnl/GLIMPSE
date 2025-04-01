@@ -1,6 +1,6 @@
 {
    "productName": "GLIMPSE",
-   "version": "0.4.3",
+   "version": "0.4.4",
    "main": "main.js",
    "description": "A lightweight graph-based power grid model visualization tool",
    "author": "Armando Mendoza Sanchez",
@@ -12,7 +12,7 @@
       "watch": "webpack --config webpack.common.js --watch",
       "webpack": "webpack --config webpack.common.js",
       "publish": "electron-builder -p always",
-      "start": "electron-forge start"
+      "start": "electron ."
    },
    "keywords": [],
    "license": "ISC",
@@ -37,7 +37,6 @@
       "@babel/core": "^7.26.0",
       "@babel/preset-env": "^7.22.20",
       "@babel/preset-react": "^7.22.15",
-      "@electron-forge/cli": "^7.5.0",
       "babel-loader": "^9.2.1",
       "css-loader": "^7.1.2",
       "electron": "^26.4.0",

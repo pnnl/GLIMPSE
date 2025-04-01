@@ -16,12 +16,13 @@ import {
    HighlightEdges,
    HighlightGroup,
    Next,
-   NodeFocus,
+   nodeFocus,
    Prev,
    rotateCCW,
    rotateCW,
    setGraphData,
    showAttributes,
+   edgeFocus,
 } from "../utils/graphUtils";
 import ActionDrawer from "./ActionDrawer";
 import ContextMenu from "./ContextMenu";
@@ -507,6 +508,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
    const updateVisObjects = (updateData) => {
       console.log(updateData);
+
       if (updateData.elementType === "node") {
          const node = graphData.nodes.get(updateData.id);
          graphData.nodes.update({ ...node, ...updateData.updates });
@@ -536,7 +538,6 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          }
       }
    };
-
 
    const animateEdges = (ctx) => {
       let start = null;
@@ -853,8 +854,14 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
    };
 
    const createClusterNode = (clusterValue) => {
+      if (typeof clusterValue === "number") clusterValue = `CID_${clusterValue}`;
+
       glmNetwork.cluster({
          joinCondition: (childOptions) => {
+            if (typeof childOptions.communityID === "number")
+               return `CID_${childOptions.communityID}` === clusterValue;
+
+            // if the communityID is a string then it has a cluster value of CID_[n]
             return childOptions.communityID === clusterValue;
          },
          processProperties: (clusterOptions, childNodes, childEdges) => {
@@ -867,8 +874,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             id: clusterValue,
             borderWidth: 3,
             shape: "hexagon",
-            label: `Community-${clusterValue}`,
-            group: clusterValue,
+            label: clusterValue,
+            color: "#246CAB",
          },
       });
 
@@ -897,7 +904,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       for (const clusteredEdge of clusteredEdges) {
          // skip edges that are not animated
-         if (!clusteredEdge.id in edgesToAnimate) continue;
+         if (!(clusteredEdge.id in edgesToAnimate)) continue;
 
          // remove animation from current clustered edge
          removeEdgeAnimation(clusteredEdge.id);
@@ -908,7 +915,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       // open the clustered node before animating the new edges
       glmNetwork.openCluster(clusterNodeID);
       // the animateEdge function will resume the redraw interval
-      if (edgesToAnimateCount > 0) {
+      if (newEdgesToAnimate.length > 0) {
          for (const edgeID of newEdgesToAnimate) {
             animateEdge(edgeID);
          }
@@ -1124,14 +1131,12 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             }
          });
 
-         glmNetwork.on("click", () => {
-            console.log(`Community Count: ${glmNetwork.body.nodeIndices.length}`);
-         });
-
          /* Display the child Context menu component to hide an edge or edge types */
          glmNetwork.on("oncontext", (params) => {
             const contextNodeID = glmNetwork.getNodeAt(params.pointer.DOM);
             const contextEdgeID = glmNetwork.getEdgeAt(params.pointer.DOM);
+
+            console.log(contextNodeID);
 
             if (contextEdgeID && !contextNodeID) {
                setContextMenuData({
@@ -1229,8 +1234,9 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          />
 
          <ActionDrawer
-            findNode={(id) => NodeFocus(graphData.nodes.get(id), glmNetwork)}
-            getNodeIds={() => graphData.nodes.getIds()}
+            findNode={(node) => nodeFocus(node, glmNetwork)}
+            findEdge={(edge) => edgeFocus(edge, glmNetwork)}
+            getGraphData={() => ({ nodes: graphData.nodes.get(), edges: graphData.edges.get() })}
             physicsToggle={TogglePhysics}
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}
