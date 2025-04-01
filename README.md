@@ -1,15 +1,17 @@
-![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
+# GLIMPSE v0.4.4 ✨
 
-# v0.4.3 ✨
+![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
 
+**NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
+
 ## Build Instructions
 
-**Download Node and Nim**
+### Download Node and Nim
 
--  [Node.js](https://nodejs.org/en)
--  [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
+- [Node.js](https://nodejs.org/en)
+- [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
 
 In a directory of your choice clone the repository :
 
@@ -88,34 +90,29 @@ In `GLIMPSE/glimpse/` start the application with the following command:
 npm run start
 ```
 
-# Supported Files
+## Supported Input Files
 
-## JSON
+GLIMPSE supports two different JSON file formats for custom graph visualizations.
 
-### GLIMPSE supports two different JSON file structures:
-
-1. GLIMPSE's data structure which is based on the [glm2json](https://github.com/NREL/glm) parser used by GLIMPSE.
-   Examples:
-   -  [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
-   -  [example 2](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/levelExample.json)
-   -  [example 3](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/socialExample.json)
-   -  [example 4](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/test.json)
+1. GLIMPSE's data structure based off the [glm2json](https://github.com/NREL/glm) parser output used by GLIMPSE.
+   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
+   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/levelExample.json)
+   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/socialExample.json)
+   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/test.json)
 2. Networkx's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
-   Example:
-   -  [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
+   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
 
-## GLM (GridLAB-D Model)
+GLIMPSE of course supports glm (GridLAB-D Model) files.
 
-### Examples:
+1. To get started upload all the `.glm` files in the `GLIMPSE/glimpse/data/123-bus-model/` folder
+2. Feel free to also upload the 3000, 8500, and 9500 model `.glm` files to experience GLIMPSE's scalability through community detection and node clustering.
+3. To re-upload files after visualization, click on the `HOME` button at the top right of the app.
 
-We provide few examples of exploring standard IEEE bus models using GLIMPSE. From the home page, upload all the `.glm` files from `GLIMPSE/glimpse/data/123-bus-model`.
-
-**To re-upload files after visualization, click on the HOME button**
 ![ui](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
 
 ## Cite as
 
-```
+```BibTeX
 @inproceedings{sanchez2024glimpse,
   title={GLIMPSE of Future Power Grid Models},
   author={Sanchez, Armando Mendoza and Purohit, Sumit},
