@@ -14,7 +14,6 @@ const path = require("path");
 const { io } = require("socket.io-client");
 const fs = require("fs");
 const Ajv = require("ajv");
-// const kill = require("tree-kill");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
@@ -26,14 +25,11 @@ if (!app.isPackaged) {
 
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
-// const { kill } = require("process");
 const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
-let rootDir = __dirname;
-
-if (app.isPackaged) rootDir = process.resourcesPath;
+let rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -376,11 +372,7 @@ const makeWindow = () => {
       return themeMenuItemID;
    });
 
-   ipcMain.handle("getConfig", () => {
-      const configFilepath = path.join(rootDir, "config", "appConfig.json");
-      const configFileContent = fs.readFileSync(configFilepath, { encoding: "utf-8" });
-      return configFileContent;
-   });
+   ipcMain.handle("getConfig", () => JSON.stringify(require("./config/appConfig.json")));
 
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
 
@@ -398,6 +390,7 @@ const makeWindow = () => {
       const jsonFileData = fs.readFileSync(filepath, { encoding: "utf-8" });
       return JSON.parse(jsonFileData);
    });
+
    ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
 
    ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));

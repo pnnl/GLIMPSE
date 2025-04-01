@@ -53,7 +53,7 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
          });
       }
    } else if (paths.every(isJsonFile) && selectedTheme === "custom-theme") {
-      const themeData = { groups: {}, edgeOptions: {} };
+      let themeData = { groups: {}, edgeOptions: {} };
 
       if (paths.length > 1) themeData = await getCustomTheme(paths);
 
