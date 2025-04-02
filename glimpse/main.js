@@ -6,6 +6,7 @@ const {
    Menu,
    globalShortcut,
    nativeImage,
+   shell,
 } = require("electron");
 const { execSync, execFile, spawn } = require("child_process");
 const path = require("path");
@@ -25,13 +26,10 @@ if (!app.isPackaged) {
 const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
 const socket = io("http://127.0.0.1:5051");
-// const socket2 = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
+const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
 let splashWindow = null;
-let rootDir = __dirname;
-
-if (app.isPackaged) rootDir = process.resourcesPath;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -249,6 +247,11 @@ const makeWindow = () => {
       },
    });
 
+   mainWindow.webContents.on("will-navigate", (event, url) => {
+      event.preventDefault(); // Prevent the Electron app from navigating
+      shell.openExternal(url); // Open the URL in the default browser
+   });
+
    mainWindow.setIcon(
       nativeImage.createFromPath(path.join(__dirname, "assets", "GLIMPSE_color_icon.ico"))
    );
@@ -361,11 +364,9 @@ const makeWindow = () => {
       return themeMenuItemID;
    });
 
-   ipcMain.handle("getConfig", () => {
-      const configFilepath = path.join(rootDir, "config", "appConfig.json");
-      const configFileContent = fs.readFileSync(configFilepath, { encoding: "utf-8" });
-      return configFileContent;
-   });
+   ipcMain.handle("getConfig", () =>
+      JSON.stringify(require(path.join(rootDir, "config", "appConfig.json")))
+   );
 
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
 

@@ -84,7 +84,7 @@ export const renameKeys = (keysMap, obj) => {
  * Zooms in on a node that maches the provided ID
  * @param {string} nodeID - the ID of a node
  */
-export const NodeFocus = (node, glmNetwork) => {
+export const nodeFocus = (node, network) => {
    const options = {
       scale: 3,
       locked: false,
@@ -94,10 +94,49 @@ export const NodeFocus = (node, glmNetwork) => {
       },
    };
 
-   if ("communityID" in node && glmNetwork.clustering.isCluster(node.communityID)) {
-      glmNetwork.focus(node.communityID, options);
+   if (typeof node.communityID !== "number" && network.clustering.isCluster(node.communityID)) {
+      network.focus(node.communityID, options);
+      return;
+   } else if (
+      typeof node.communityID === "number" &&
+      network.clustering.isCluster(`CID_${node.communityID}`)
+   ) {
+      network.focus(`CID_${node.communityID}`, options);
+      return;
    } else {
-      glmNetwork.focus(node.id, options);
+      network.focus(node.id, options);
+   }
+};
+
+export const edgeFocus = (edge, network) => {
+   let edgeID = edge.id;
+   const options = {
+      scale: 3,
+      locked: false,
+      animation: {
+         duration: 1500,
+         easing: "easeInOytQuart",
+      },
+   };
+
+   const clusteredEdges = network.clustering.getClusteredEdges(edgeID);
+   if (clusteredEdges.length > 1) {
+      edgeID = clusteredEdges[0];
+   } else if (network.clustering.findNode(edge.from).length > 1) {
+      console.log(network.body.nodes[edge.from].options.communityID);
+      nodeFocus(
+         { id: edge.from, communityID: network.body.nodes[edge.from].options.communityID },
+         network
+      );
+   } else {
+      const x_1 = network.body.edges[edgeID].from.x;
+      const y_1 = network.body.edges[edgeID].from.y;
+      const x_2 = network.body.edges[edgeID].to.x;
+      const y_2 = network.body.edges[edgeID].to.y;
+
+      const midPoint = { x: (x_1 + x_2) / 2, y: (y_1 + y_2) / 2 };
+
+      network.moveTo({ position: midPoint, ...options });
    }
 };
 

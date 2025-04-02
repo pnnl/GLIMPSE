@@ -16,7 +16,8 @@ import {
    HighlightEdges,
    HighlightGroup,
    Next,
-   NodeFocus,
+   nodeFocus,
+   edgeFocus,
    Prev,
    rotateCCW,
    rotateCW,
@@ -850,22 +851,26 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    };
 
    const createClusterNode = (clusterValue) => {
+      if (typeof clusterValue === "number") clusterValue = `CID_${clusterValue}`;
+
       glmNetwork.cluster({
          joinCondition: (childOptions) => {
+            if (typeof childOptions.communityID === "number")
+               return `CID_${childOptions.communityID}` === clusterValue;
+
+            // if the communityID is a string then it has a cluster value of CID_[n]
             return childOptions.communityID === clusterValue;
          },
          processProperties: (clusterOptions, childNodes, childEdges) => {
-            clusterOptions.value = childNodes.length / 3;
+            clusterOptions.value = childNodes.length;
             clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
             clusterOptions.mass = childNodes.length * 0.1;
             return clusterOptions;
          },
          clusterNodeProperties: {
             id: clusterValue,
-            borderWidth: 2,
-            shape: "hexagon",
-            label: `Community-${clusterValue}`,
-            group: clusterValue,
+            label: clusterValue,
+            group: "clusterNode",
          },
       });
 
@@ -894,7 +899,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       for (const clusteredEdge of clusteredEdges) {
          // skip edges that are not animated
-         if (!clusteredEdge.id in edgesToAnimate) continue;
+         if (!(clusteredEdge.id in edgesToAnimate)) continue;
 
          // remove animation from current clustered edge
          removeEdgeAnimation(clusteredEdge.id);
@@ -1047,7 +1052,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             }
 
             graphOptions.groups = theme.groups;
-            console.log(graphOptions);
             glmNetwork = new Network(container.current, graphData, graphOptions);
 
             // Create clusters
@@ -1226,8 +1230,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          />
 
          <ActionDrawer
-            findNode={(id) => NodeFocus(graphData.nodes.get(id), glmNetwork)}
-            getNodeIds={() => graphData.nodes.getIds()}
+            findNode={(node) => nodeFocus(node, glmNetwork)}
+            findEdge={(edge) => edgeFocus(edge, glmNetwork)}
+            getGraphData={() => ({ nodes: graphData.nodes.get(), edges: graphData.edges.get() })}
             physicsToggle={TogglePhysics}
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}

@@ -54,6 +54,7 @@ def dict2json( glm_dict: dict ) -> str:
 
 def create_graph(data: dict, set_communities: bool=False) -> dict:
    GRAPH.clear()
+   community_ids = {}
 
    for obj in data["objects"]:
       if obj["elementType"] == "node":
@@ -64,7 +65,9 @@ def create_graph(data: dict, set_communities: bool=False) -> dict:
    if set_communities : 
       partition = nx.algorithms.community.louvain_communities(G=GRAPH, resolution=1, max_level=5)
 
-      community_ids = {node: community_id for community_id, community in enumerate(partition) for node in community}
+      for community_id, community in enumerate(partition):
+         for node in community:
+            community_ids[node] = f"CID_{community_id}" 
 
       nx.set_node_attributes(GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=GRAPH, name="glimpse_community_id")
