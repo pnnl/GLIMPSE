@@ -10,9 +10,13 @@ files:
         - "!node_modules${/*}"
         - "!local-server${/*}"
         - "!renderer/src${/*}"
+        - "!embeddings${/*}"
+        - "!metrics${/*}"
+        - "!assets${/*}"
         - "!themes${/*}"
         - "!config${/*}"
         - "!data${/*}"
+        - "!jar${/*}"
         - "!out${/*}"
 extraResources:
    - ../socket_testing/**
@@ -31,7 +35,6 @@ mac:
       - target: pkg
         arch:
            - arm64
-
 linux:
    target:
       - target: tar.gz
