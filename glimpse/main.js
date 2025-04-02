@@ -372,7 +372,9 @@ const makeWindow = () => {
       return themeMenuItemID;
    });
 
-   ipcMain.handle("getConfig", () => JSON.stringify(require("./config/appConfig.json")));
+   ipcMain.handle("getConfig", () =>
+      JSON.stringify(require(path.join(rootDir, "config", "appConfig.json")))
+   );
 
    ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
 
