@@ -303,7 +303,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                   group: `group_${microGrid.name}`,
                   title: `ObjectType: ${type}\nname: ${nodeID}`,
                };
-               if (graphData.nodes.get(nodeID)) {
+               if (glmNetwork.body.nodes[nodeID]) {
                   updatedMGNodes.push(connectedMGNode);
                } else {
                   // newNodes.push(connectedMGNode);
@@ -398,20 +398,28 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       const updatedTPConnectedNodes = [];
       for (const tpNode of updatedTPNodes) {
-         console.log(tpNode);
-         const connectedNodeIDs = glmNetwork.getConnectedNodes(tpNode.id);
-         for (const connectedNodeID of connectedNodeIDs) {
-            if (glmNetwork.clustering.isCluster(connectedNodeID)) {
-               const connectedTPNode = {
-                  id: connectedNodeID,
-                  group: tpNode.group,
-               };
-               updatedTPConnectedNodes.push(connectedTPNode);
+         const tpNodeFull = glmNetwork.body.nodes[tpNode.id];
+         if (tpNodeFull) {
+            tpNodeFull.group = tpNode.group;
+            updatedTPConnectedNodes.push(tpNodeFull);
+            const connectedNodeIDs = glmNetwork.getConnectedNodes(tpNode.id);
+            for (const connectedNodeID of connectedNodeIDs) {
+               if (glmNetwork.clustering.isCluster(connectedNodeID)) {
+                  const connectedTPNode = glmNetwork.body.nodes[connectedNodeID];
+                  if (connectedTPNode) {
+                     // connectedTPNode.group = tpNode.group;
+                     const clusterTheme = theme.groups["cluster"];
+                     console.log("clusterTheme");
+                     console.log(clusterTheme);
+                     glmNetwork.clustering.updateClusteredNode(connectedTPNode.id, {"group": tpNode.group})
+                     // updatedTPConnectedNodes.push(connectedTPNode);
+                  }
+               }
             }
          }
       }
-      graphData.nodes.update(updatedTPNodes);
-      graphData.nodes.update(updatedTPConnectedNodes);
+      // graphData.nodes.update(updatedTPNodes);
+      // graphData.nodes.update(updatedTPConnectedNodes);
 
       glmNetwork.setOptions({ physics: { enabled: true } });
 

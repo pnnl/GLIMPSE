@@ -39,6 +39,10 @@
          "color": "#219ebc",
          "shape": "dot"
       },
+      "node_attacked": {
+         "color": "#ff0000",
+         "shape": "dot"
+      },
       "cluster": {
          "color": "#219ebc",
          "shape": "hexagon"
