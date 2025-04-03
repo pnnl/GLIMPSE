@@ -27,9 +27,9 @@ const jsonUploadSchema = require("./schemas/json_upload.schema.json");
 const themeUploadSchema = require("./schemas/theme_upload.schema.json");
 const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
+const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
 let splashWindow = null;
-let rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;

@@ -107,7 +107,7 @@
          }
       },
       "mapping": {
-         "width": 0.30,
+         "width": 0.3,
          "color": "lightgrey"
       },
       "communication": {
@@ -117,7 +117,7 @@
          }
       },
       "microgrid_connection": {
-         "width": 0.30,
+         "width": 0.3,
          "color": "cyan"
       }
    }

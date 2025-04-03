@@ -17,12 +17,12 @@ import {
    HighlightGroup,
    Next,
    nodeFocus,
+   edgeFocus,
    Prev,
    rotateCCW,
    rotateCW,
    setGraphData,
    showAttributes,
-   edgeFocus,
 } from "../utils/graphUtils";
 import ActionDrawer from "./ActionDrawer";
 import ContextMenu from "./ContextMenu";
@@ -1122,8 +1122,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          });
 
          glmNetwork.on("doubleClick", (params) => {
-            if (params.nodes[0] === undefined) {
-               alert("Double click on a node to edit.");
+            if (params.nodes[0] === undefined || glmNetwork.clustering.isCluster(params.nodes[0])) {
+               alert("Double click on a base node to edit.");
             } else {
                /* Set the state of the NodePopup component for editing of the selected node's attributes */
                setNode(graphData.nodes.get(params.nodes[0]));

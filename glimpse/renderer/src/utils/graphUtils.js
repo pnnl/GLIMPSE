@@ -94,13 +94,15 @@ export const nodeFocus = (node, network) => {
       },
    };
 
-   if ("communityID" in node && network.clustering.isCluster(node.communityID)) {
-      if (typeof node.communityID !== "number") {
-         network.focus(node.communityID, options);
-         return;
-      }
-
-      network.focus(`CID_${node.communityID}`);
+   if (typeof node.communityID !== "number" && network.clustering.isCluster(node.communityID)) {
+      network.focus(node.communityID, options);
+      return;
+   } else if (
+      typeof node.communityID === "number" &&
+      network.clustering.isCluster(`CID_${node.communityID}`)
+   ) {
+      network.focus(`CID_${node.communityID}`, options);
+      return;
    } else {
       network.focus(node.id, options);
    }
@@ -560,12 +562,12 @@ export const setGraphData = (
    */
    const keys = ["id", "objectType", "name"];
    const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);
+   const newNodes = [];
+   const newEdges = [];
 
    // get nodes
    for (const file of files) {
-      const objs = file.objects;
-
-      const newObjs = objs.map((obj) => {
+      for (let obj of file.objects) {
          const attributes = obj.attributes;
          // get the key that is at the top of the object which can be "name" or "objectType"
          const nameForObjType = keys.find((key) => key in obj);
@@ -586,7 +588,7 @@ export const setGraphData = (
                if (!("color" in theme.groups[objectType]))
                   theme.groups[objectType].color = getRandomColor();
 
-               return {
+               newNodes.push({
                   id:
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -598,7 +600,9 @@ export const setGraphData = (
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes),
                   x: parseInt(attributes.x, 10),
                   y: parseInt(attributes.y, 10),
-               };
+               });
+
+               continue;
             } else if ("level" in attributes) {
                if (!graphOptions.layout.hierarchical.enabled)
                   graphOptions.layout.hierarchical.enabled = true;
@@ -613,7 +617,7 @@ export const setGraphData = (
                if (!("color" in theme.groups[objectType]))
                   theme.groups[objectType].color = getRandomColor();
 
-               return {
+               newNodes.push({
                   id:
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -624,7 +628,9 @@ export const setGraphData = (
                   attributes: attributes,
                   group: objectType,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-               };
+               });
+
+               continue;
             }
 
             objectTypeCount.nodes[objectType]++;
@@ -639,7 +645,7 @@ export const setGraphData = (
             if (!("color" in theme.groups[objectType]))
                theme.groups[objectType].color = getRandomColor();
 
-            return {
+            newNodes.push({
                id:
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -650,7 +656,9 @@ export const setGraphData = (
                attributes: attributes,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
+
+            continue;
          } else if ("elementType" in obj && obj.elementType === "node") {
             if (!(objectType in theme.groups)) {
                theme.groups[objectType] = {
@@ -667,7 +675,7 @@ export const setGraphData = (
 
             GLIMPSE_OBJECT.objects.push(obj);
 
-            return {
+            newNodes.push({
                id:
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -679,20 +687,14 @@ export const setGraphData = (
                attributes: attributes,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
          }
-
-         return obj;
-      });
-
-      data.nodes.add(newObjs.filter((obj) => obj.elementType === "node"));
+      }
    }
 
    // get edges
    for (const file of files) {
-      const objs = file.objects;
-
-      const newObjs = objs.map((obj) => {
+      for (let obj of file.objects) {
          const attributes = obj.attributes;
          const nameForObjType = keys.find((key) => Object.keys(obj).includes(key));
          const objectType = obj[nameForObjType];
@@ -720,7 +722,7 @@ export const setGraphData = (
                },
             });
 
-            return {
+            newEdges.push({
                id: `${parent}-${nodeID}`,
                from: parent,
                to: nodeID,
@@ -730,7 +732,9 @@ export const setGraphData = (
                attributes: { to: parent, from: nodeID },
                title: getTitle({ objectType: "parentChild", to: parent, from: nodeID }),
                color: { inherit: true },
-            };
+            });
+
+            continue;
          } else if (edgeTypes.includes(objectType)) {
             const edgeFrom =
                currentUploadCounter.value > 0
@@ -752,7 +756,7 @@ export const setGraphData = (
 
             GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "edge" });
 
-            return {
+            newEdges.push({
                id: edgeID,
                from: edgeFrom,
                to: edgeTo,
@@ -761,7 +765,9 @@ export const setGraphData = (
                attributes: attributes,
                ...edgeOptions[objectType],
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
+
+            continue;
          } else if ("elementType" in obj && obj.elementType === "edge") {
             const edgeFrom =
                currentUploadCounter.value > 0
@@ -784,7 +790,7 @@ export const setGraphData = (
 
             GLIMPSE_OBJECT.objects.push(obj);
 
-            return {
+            newEdges.push({
                id: edgeID,
                from: edgeFrom,
                to: edgeTo,
@@ -793,14 +799,12 @@ export const setGraphData = (
                attributes: attributes,
                ...edgeOptions[objectType],
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
          }
-
-         return obj;
-      });
-
-      data.edges.add(newObjs.filter((obj) => obj.elementType === "edge"));
+      }
    }
 
+   data.nodes.add(newNodes);
+   data.edges.add(newEdges);
    currentUploadCounter.value++;
 };

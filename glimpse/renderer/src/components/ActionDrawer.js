@@ -45,8 +45,7 @@ const ActionDrawer = ({
    const [stats, setStats] = useState(null);
 
    /**
-    * Trigger the find function from the Graph component to focus on the selected node ID
-    * @param {Event} e
+    * Trigger the find function from the Graph component to focus on the selected ID
     */
    const handleSearch = (e) => {
       e.preventDefault();
