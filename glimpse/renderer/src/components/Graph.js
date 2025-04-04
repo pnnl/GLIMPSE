@@ -93,17 +93,15 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       highlightedNodes.current.length = 0;
       highlightedEdges.current.length = 0;
 
-      const nodesResetMap = graphData.nodes.map((node) => {
-         delete node.size;
-         delete node.color;
-         delete node.shape;
+      const nodesToReset = graphData.nodes.map((node) => {
+         node.group = node.type;
          node.hidden = false;
          node.label = node.id;
 
          return node;
       });
 
-      const edgeItems = graphData.edges.map((edge) => {
+      const edgesToReset = graphData.edges.map((edge) => {
          const edgeType = edge.type;
 
          if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
@@ -121,8 +119,8 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       });
 
       glmNetwork.setOptions({ groups: theme.groups });
-      graphData.nodes.update(nodesResetMap);
-      graphData.edges.update(edgeItems);
+      graphData.nodes.update(nodesToReset);
+      graphData.edges.update(edgesToReset);
       glmNetwork.fit();
       counter.value = -1;
    };
@@ -266,6 +264,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          const microGridNode = {
             id: microGrid.name,
             label: microGrid.name,
+            type: "microgrid",
             group: "microgrid",
             title: `ObjectType: microgrid\nname: ${microGrid.name}`,
          };
@@ -313,6 +312,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
             newNodes.push({
                id: commNodeID,
                label: commNodeID,
+               type: "communication_node",
                group: "communication_node",
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
             });
@@ -435,12 +435,17 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
       try {
          const nodesOfsameType = graphData.nodes
             .get()
-            .filter((n) => n.group === nodeTypes[nodeType]);
+            .filter((n) => n.type === nodeTypes[nodeType]);
 
-         const [addedNodeID] = graphData.nodes.add({
+         const newNodeCID = graphData.nodes.get(connectTo).communityID;
+
+         const newNode = {
             id: `${nodeID}`,
             label: `${nodeID}`,
+            type: nodeTypes[nodeType],
             group: nodeTypes[nodeType],
+            communityID: newNodeCID,
+            elementType: "node",
             attributes: {
                id: `${nodeID}`,
             },
@@ -448,28 +453,27 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
                "level" in nodesOfsameType[0].attributes
                   ? nodesOfsameType[0].attributes.level
                   : undefined,
-         });
+         };
 
-         const addedNode = graphData.nodes.get(addedNodeID);
-         addedNode.title =
-            "Object Type: " + nodeTypes[nodeType] + "\n" + getTitle(addedNode.attributes);
-         objectTypeCount.nodes[addedNode.group]++;
-         graphData.nodes.update(addedNode);
+         newNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(newNode.attributes)}`;
+         objectTypeCount.nodes[newNode.type]++;
 
-         const [addedEdgeID] = graphData.edges.add({
-            id: `${connectTo}-${addedNodeID}`,
+         graphData.nodes.add(newNode);
+
+         const newEdge = {
+            id: `${connectTo}-${newNode.id}`,
             from: connectTo,
-            to: addedNodeID,
+            to: newNode.id,
             type: edgeTypes[edgeType],
+            elementType: "edge",
             color: edgeOptions[edgeTypes[edgeType]].color,
             width: edgeOptions[edgeTypes[edgeType]].width,
-         });
+         };
 
-         const { color, width, ...rest } = graphData.edges.get(addedEdgeID);
-         const addedEdge = graphData.edges.get(addedEdgeID);
-         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
-         objectTypeCount.edges[addedEdge.type]++;
-         graphData.edges.update(addedEdge);
+         const { color, width, elementType, type, ...rest } = newEdge;
+         newEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+         objectTypeCount.edges[newEdge.type]++;
+         graphData.edges.add(newEdge);
 
          setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
@@ -483,6 +487,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          id: formObj.edgeID,
          from: formObj.from,
          to: formObj.to,
+         elementType: "edge",
          title:
             `Object Type: ${formObj.edgeType}\n` +
             getTitle({
@@ -711,7 +716,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
 
       const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
-      objectTypeCount.nodes[nodeObject.group]--;
+      objectTypeCount.nodes[nodeObject.type]--;
 
       const edgesToDelete = [];
       const graphEdges = graphData.edges.get();
@@ -809,7 +814,7 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
     */
    const removeOverlay = () => {
       graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
-         objectTypeCount.nodes[node.group]--;
+         objectTypeCount.nodes[node.type]--;
       });
 
       graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
@@ -944,26 +949,27 @@ const Graph = ({ dataToVis, theme, isGlm }) => {
          window.glimpseAPI.onAddNodeEvent((newNodeData) => {
             graphData.nodes.add({
                id: newNodeData.attributes.id,
+               label: newNodeData.attributes.id,
+               elementType: "node",
                attributes: newNodeData.attributes,
+               type: newNodeData.objectType,
                group: newNodeData.objectType,
-               title: "Type: " + newNodeData.objectType + "\n" + getTitle(newNodeData.attributes),
+               title: `ObjectType: ${newNodeData.objectType}\n${getTitle(newNodeData.attributes)}`,
                ...newNodeData.styles,
             });
          })
       );
       removeListenerArr.push(
          window.glimpseAPI.onAddEdgeEvent((newEdgeData) => {
-            graphData.edges.add([
-               {
-                  id: newEdgeData.attributes.id,
-                  to: newEdgeData.attributes.to,
-                  from: newEdgeData.attributes.from,
-                  attributes: newEdgeData.attributes,
-                  title:
-                     "Type: " + newEdgeData.objectType + "\n" + getTitle(newEdgeData.attributes),
-                  ...newEdgeData.styles,
-               },
-            ]);
+            graphData.edges.add({
+               id: newEdgeData.attributes.id,
+               to: newEdgeData.attributes.to,
+               from: newEdgeData.attributes.from,
+               attributes: newEdgeData.attributes,
+               elementType: "edge",
+               title: `Type: ${newEdgeData.objectType}\n${getTitle(newEdgeData.attributes)}`,
+               ...newEdgeData.styles,
+            });
          })
       );
       removeListenerArr.push(

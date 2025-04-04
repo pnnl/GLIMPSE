@@ -27,14 +27,6 @@ const ActionDrawer = ({
    removeOverlay,
    reset,
 }) => {
-   const graphData = getGraphData();
-   const options = useMemo(
-      () => [
-         ...graphData.nodes.sort((a, b) => -b.group.localeCompare(a.group)),
-         ...graphData.edges.sort((a, b) => -b.type.localeCompare(a.type)),
-      ],
-      [graphData.nodes, graphData.edges]
-   );
    const [searchOption, setSearchOption] = useState(null);
    const [showOverlayUpload, setShowOverlayUpload] = useState(false);
    const [openDrawer, setOpenDrawer] = useState(false);
@@ -43,6 +35,16 @@ const ActionDrawer = ({
    const [showPlot, setShowPlot] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [stats, setStats] = useState(null);
+
+   const graphData = getGraphData();
+   const options = useMemo(
+      () => [
+         ...graphData.nodes.sort((a, b) => -b.type.localeCompare(a.type)),
+         ...graphData.edges.sort((a, b) => -b.type.localeCompare(a.type)),
+      ],
+      [graphData.nodes, graphData.edges]
+   );
+   console.log(options);
 
    /**
     * Trigger the find function from the Graph component to focus on the selected ID
@@ -165,10 +167,7 @@ const ActionDrawer = ({
                sx={{ width: "100%" }}
                size="small"
                options={options}
-               groupBy={(option) => {
-                  if ("type" in option) return option.type;
-                  else return option.group;
-               }}
+               groupBy={(option) => option.type}
                getOptionLabel={(option) => option.id}
                onChange={(event, option) => setSearchOption(option)}
                renderInput={(params) => (

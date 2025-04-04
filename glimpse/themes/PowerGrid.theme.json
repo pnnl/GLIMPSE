@@ -69,6 +69,10 @@
          "color": "#6b9080",
          "shape": "circularImage",
          "image": "./imgs/microgrid.svg"
+      },
+      "inactive": {
+         "color": "rgba(200, 200, 200, 0.4)",
+         "shape": "dot"
       }
    },
    "edgeOptions": {

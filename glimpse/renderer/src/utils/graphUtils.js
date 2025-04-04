@@ -119,8 +119,6 @@ export const edgeFocus = (edge, network) => {
       },
    };
 
-   console.log(edge);
-
    const clusteredEdges = network.clustering.getClusteredEdges(edgeID);
    if (clusteredEdges.length > 1) {
       edgeID = clusteredEdges[0];
@@ -359,7 +357,7 @@ export const showAttributes = (show, data) => {
 export const hideObjects = (objectType, type, data) => {
    if (type === "node") {
       const nodesToHide = data.nodes.get().map((node) => {
-         if (node.group === objectType) {
+         if (node.type === objectType) {
             node.hidden = true;
          }
          return node;
@@ -383,8 +381,7 @@ export const hideObjects = (objectType, type, data) => {
 export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, highlightedEdges) => {
    if (highlightedNodes.current.length === 0) {
       const nodeItems = data.nodes.map((node) => {
-         node.shape = "dot";
-         node.color = "rgba(200,200,200,0.4)";
+         node.type = "inactive";
          node.label = " ";
          return node;
       });
@@ -392,28 +389,26 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
       data.nodes.update(nodeItems);
    }
 
-   data.edges.update(
-      data.edges.map((edge) => {
-         if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
-            edge.color = "rgba(200, 200, 200, 0.4)";
-            edge.width = edgeOptions[edge.type].width;
+   const edgesToUpdate = data.edges.map((edge) => {
+      if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
+         edge.color = "rgba(200, 200, 200, 0.4)";
+         edge.width = edgeOptions[edge.type].width;
 
-            highlightedEdges.current = highlightedEdges.current.filter(
-               (edgeid) => edgeid !== edge.id
-            );
-         } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
-            edge.color = "rgba(200, 200, 200, 0.4)";
-            edge.width = edgeOptions[edge.type].width;
-         } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
-            edge.color = edgeOptions[edge.type].color;
-            edge.width = edgeOptions[edge.type].width * 3;
+         highlightedEdges.current = highlightedEdges.current.filter((edgeid) => edgeid !== edge.id);
+      } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
+         edge.color = "rgba(200, 200, 200, 0.4)";
+         edge.width = edgeOptions[edge.type].width;
+      } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
+         edge.color = edgeOptions[edge.type].color;
+         edge.width = edgeOptions[edge.type].width * 3;
 
-            highlightedEdges.current.push(edge.id);
-         }
+         highlightedEdges.current.push(edge.id);
+      }
 
-         return edge;
-      })
-   );
+      return edge;
+   });
+
+   data.edges.update(edgesToUpdate);
 };
 
 /**
@@ -422,20 +417,17 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
  */
 export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdges) => {
    const updateNodes = data.nodes.map((node) => {
-      if (node.group === nodeType && highlightedNodes.current.includes(node.id)) {
-         node.shape = "dot";
-         node.color = "rgba(200, 200, 200, 0.4)";
+      if (node.type === nodeType && highlightedNodes.current.includes(node.id)) {
+         node.group = "inactive";
          node.label = " ";
 
          highlightedNodes.current = highlightedNodes.current.filter((nodeid) => nodeid !== node.id);
-      } else if (node.group !== nodeType && !highlightedNodes.current.includes(node.id)) {
-         node.shape = "dot";
-         node.color = "rgba(200, 200, 200, 0.4)";
+      } else if (node.type !== nodeType && !highlightedNodes.current.includes(node.id)) {
+         node.group = "inactive";
          node.label = " ";
-      } else if (node.group === nodeType && !highlightedNodes.current.includes(node.id)) {
-         if (node.shape === "dot") {
-            delete node.color;
-            delete node.shape;
+      } else if (node.type === nodeType && !highlightedNodes.current.includes(node.id)) {
+         if (node.group === "inactive") {
+            node.group = node.type;
             node.label = node.id;
          }
 
@@ -451,6 +443,7 @@ export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdge
 
          return edge;
       });
+
       data.edges.update(updateEdges);
    }
 
@@ -572,7 +565,7 @@ export const setGraphData = (
          // get the key that is at the top of the object which can be "name" or "objectType"
          const nameForObjType = keys.find((key) => key in obj);
          const objectType = obj[nameForObjType];
-         // get the key that is used for the objects id which can be of course "id" or "name"
+         // get the key that is used for the objects id which can be "id" or "name"
          const nameForObjID = keys.find((key) => key in attributes);
 
          const nodeID = attributes[nameForObjID];
@@ -596,8 +589,9 @@ export const setGraphData = (
                   label: "label" in theme.groups[objectType] ? undefined : nodeID,
                   elementType: "node",
                   attributes: attributes,
+                  type: objectType,
                   group: objectType,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes),
+                  title: `Object Type: ${objectType}\n${getTitle(attributes)}`,
                   x: parseInt(attributes.x, 10),
                   y: parseInt(attributes.y, 10),
                });
@@ -626,6 +620,7 @@ export const setGraphData = (
                   elementType: "node",
                   level: attributes.level,
                   attributes: attributes,
+                  type: objectType,
                   group: objectType,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes),
                });
@@ -654,6 +649,7 @@ export const setGraphData = (
                elementType: "node",
                communityID: currentUploadCounter.value,
                attributes: attributes,
+               type: objectType,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
             });
@@ -685,6 +681,7 @@ export const setGraphData = (
                communityID: currentUploadCounter.value,
                level: "level" in attributes ? attributes.level : undefined,
                attributes: attributes,
+               type: objectType,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
             });
