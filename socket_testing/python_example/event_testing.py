@@ -135,18 +135,24 @@ edges_to_delete = [
 styleChanges = [
    {
       "elementType": "edge",
-      "id": "switch_76-761",
+      "id": "switch_54-94",
       "updates": {
-         "color": "#FF0000",
-         "width": 20,
+         "color": "#123456",
+         "width": 10,
+         "attributes": {
+            "status": "CLOSED"
+         }
       }
    },
    {
       "elementType": "edge",
-      "id": "switch_76-86",
+      "id": "switch_54-94",
       "updates": {
-         "color": "#00FF00",
-         "width": 50,
+         "color": "#654321",
+         "width": 20,
+         "attributes": {
+            "status": "OPEN"
+         }
       }
    },
 ]
