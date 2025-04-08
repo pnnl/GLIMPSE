@@ -88,26 +88,30 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     * Reset all nodes and edges back to their original styles
     */
    const Reset = () => {
-      edgesToAnimateCount = 0;
       edgesToAnimate = {};
+      edgesToAnimateCount = 0;
 
       highlightedNodes.current.length = 0;
       highlightedEdges.current.length = 0;
 
-      const nodesResetMap = graphData.nodes.map((node) => {
-         delete node.size;
-         delete node.color;
-         delete node.shape;
+      const nodesToReset = graphData.nodes.map((node) => {
+         node.group = node.type;
          node.hidden = false;
          node.label = node.id;
 
          return node;
       });
 
-      const edgeItems = graphData.edges.map((edge) => {
+      const edgesToReset = graphData.edges.map((edge) => {
          const edgeType = edge.type;
 
          if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
+            if (edgeType === "switch" && edge.attributes.status === "OPEN") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-open.svg";
+            } else if (edgeType === "switch" && edge.attributes.status === "CLOSED") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-closed.svg";
+            }
+
             Object.assign(edge, edgeOptions[edgeType]);
             edge.hidden = false;
 
@@ -121,9 +125,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          }
       });
 
-      // glmNetwork.setOptions({ groups: theme.groups });
-      graphData.nodes.update(nodesResetMap);
-      graphData.edges.update(edgeItems);
+      glmNetwork.setOptions({ groups: theme.groups });
+      graphData.nodes.update(nodesToReset);
+      graphData.edges.update(edgesToReset);
       glmNetwork.fit();
       counter.value = -1;
    };
@@ -432,52 +436,58 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
     */
    const addNewNode = ({ nodeType, nodeID, connectTo, edgeType }) => {
-      const nodeTypes = Object.keys(objectTypeCount.nodes);
-      const edgeTypes = Object.keys(objectTypeCount.edges);
+      const nodeTypes = Object.keys(objectTypeCount.nodes).filter(
+         (key) => objectTypeCount.nodes[key] > 0
+      );
+      const edgeTypes = Object.keys(objectTypeCount.edges).filter(
+         (key) => objectTypeCount.edges[key] > 0
+      );
 
       try {
-         // const nodesOfsameType = graphData.nodes
-         //    .get()
-         //    .filter((n) => n.group === nodeTypes[nodeType]);
+         const nodesOfsameType = graphData.nodes
+            .get()
+            .filter((n) => n.type === nodeTypes[nodeType]);
 
-         const [addedNodeID] = graphData.nodes.add({
+         const newNodeCID = graphData.nodes.get(connectTo).communityID;
+
+         const newNode = {
             id: `${nodeID}`,
             label: `${nodeID}`,
+            type: nodeTypes[nodeType],
             group: nodeTypes[nodeType],
+            communityID: newNodeCID,
+            elementType: "node",
             attributes: {
                id: `${nodeID}`,
             },
-            // level:
-            //    "level" in nodesOfsameType[0].attributes
-            //       ? nodesOfsameType[0].attributes.level
-            //       : undefined,
-         });
+            level:
+               "level" in nodesOfsameType[0].attributes
+                  ? nodesOfsameType[0].attributes.level
+                  : undefined,
+         };
 
-         const addedNode = graphData.nodes.get(addedNodeID);
-         addedNode.title =
-            "Object Type: " + nodeTypes[nodeType] + "\n" + getTitle(addedNode.attributes);
-         objectTypeCount.nodes[addedNode.group]++;
-         graphData.nodes.update(addedNode);
+         newNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(newNode.attributes)}`;
+         objectTypeCount.nodes[newNode.type]++;
 
-         const [addedEdgeID] = graphData.edges.add({
-            id: `${addedNodeID}-${connectTo}`,
-            from: addedNodeID,
-            to: connectTo,
+         graphData.nodes.add(newNode);
+
+         const newEdge = {
+            id: `${connectTo}-${newNode.id}`,
+            from: connectTo,
+            to: newNode.id,
             type: edgeTypes[edgeType],
+            elementType: "edge",
             color: edgeOptions[edgeTypes[edgeType]].color,
             width: edgeOptions[edgeTypes[edgeType]].width,
-         });
+         };
 
-         const { color, width, ...rest } = graphData.edges.get(addedEdgeID);
-         const addedEdge = graphData.edges.get(addedEdgeID);
-
-         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
-         objectTypeCount.edges[addedEdge.type]++;
-         graphData.edges.update(addedEdge);
+         const { color, width, elementType, type, ...rest } = newEdge;
+         newEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+         objectTypeCount.edges[newEdge.type]++;
+         graphData.edges.add(newEdge);
 
          setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
-         console.error(err);
          alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
       }
    };
@@ -707,7 +717,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
-      objectTypeCount.nodes[nodeObject.group]--;
+      objectTypeCount.nodes[nodeObject.type]--;
 
       const edgesToDelete = [];
       const graphEdges = graphData.edges.get();
@@ -805,7 +815,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     */
    const removeOverlay = () => {
       graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
-         objectTypeCount.nodes[node.group]--;
+         objectTypeCount.nodes[node.type]--;
       });
 
       graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {

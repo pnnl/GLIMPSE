@@ -35,14 +35,6 @@ const ActionDrawer = ({
    applyOverlay,
    getSwitches,
 }) => {
-   const graphData = getGraphData();
-   const options = useMemo(
-      () => [
-         ...graphData.nodes.sort((a, b) => -b.group.localeCompare(a.group)),
-         ...graphData.edges.sort((a, b) => -b.type.localeCompare(a.type)),
-      ],
-      [graphData.nodes, graphData.edges]
-   );
    const [searchOption, setSearchOption] = useState(null);
    const [showOverlayUpload, setShowOverlayUpload] = useState(false);
    const [openDrawer, setOpenDrawer] = useState(false);
@@ -52,6 +44,15 @@ const ActionDrawer = ({
    const [showTable, setShowTable] = useState(false);
    const [stats, setStats] = useState(null);
    const [openNatigConfig, setOpenNatigConfig] = useState(false);
+
+   const graphData = getGraphData();
+   const options = useMemo(
+      () => [
+         ...graphData.nodes.sort((a, b) => -b.type.localeCompare(a.type)),
+         ...graphData.edges.sort((a, b) => -b.type.localeCompare(a.type)),
+      ],
+      [graphData.nodes, graphData.edges]
+   );
 
    const handleSearch = () => {
       if (searchOption.elementType === "node") findNode(searchOption);
@@ -170,10 +171,7 @@ const ActionDrawer = ({
                sx={{ width: "100%" }}
                size="small"
                options={options}
-               groupBy={(option) => {
-                  if ("type" in option) return option.type;
-                  else return option.group;
-               }}
+               groupBy={(option) => option.type}
                getOptionLabel={(option) => option.id}
                onChange={(event, option) => setSearchOption(option)}
                renderInput={(params) => (

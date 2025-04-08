@@ -83,6 +83,10 @@
          },
          "shape": "circularImage",
          "image": "./imgs/attacker.jpg"
+      },
+      "inactive": {
+         "color": "rgba(200, 200, 200, 0.4)",
+         "shape": "dot"
       }
    },
    "edgeOptions": {

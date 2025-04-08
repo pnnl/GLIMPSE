@@ -5,49 +5,49 @@ import time
 PORT = 5051
 URL = "http://127.0.0.1"
 
-# newNodes = [
-#       {
-#       "objectType": "load",
-#       "elementType": "node",
-#       "attributes": {
-#          "id": "load_12345",
-#       },
-#       "styles": {
-#          "label": "load_12345",
-#       }
-#    },
-#       {
-#       "objectType": "load",
-#       "elementType": "node",
-#       "attributes": {
-#          "id": "load_098",
-#       },
-#       "styles": {
-#          "label": "load_098",
-#       }
-#    },
-#       {
-#       "objectType": "load",
-#       "elementType": "node",
-#       "attributes": {
-#          "id": "load_56748",
-#       },
-#       "styles": {
-#          "label": "load_56748",
-#       }
-#    },
-#       {
-#       "objectType": "load",
-#       "elementType": "node",
-#       "attributes": {
-#          "id": "load_1029",
-#       },
-#       "styles": {
-#          "label": "load_1029",
-#       }
-#    },
+newNodes = [
+      {
+      "objectType": "load",
+      "elementType": "node",
+      "attributes": {
+         "id": "load_12345",
+      },
+      "styles": {
+         "label": "load_12345",
+      }
+   },
+      {
+      "objectType": "load",
+      "elementType": "node",
+      "attributes": {
+         "id": "load_098",
+      },
+      "styles": {
+         "label": "load_098",
+      }
+   },
+      {
+      "objectType": "load",
+      "elementType": "node",
+      "attributes": {
+         "id": "load_56748",
+      },
+      "styles": {
+         "label": "load_56748",
+      }
+   },
+      {
+      "objectType": "load",
+      "elementType": "node",
+      "attributes": {
+         "id": "load_1029",
+      },
+      "styles": {
+         "label": "load_1029",
+      }
+   },
     
-# ]
+]
 
 newNodes =[
    {
@@ -135,38 +135,18 @@ edges_to_delete = [
 styleChanges = [
    {
       "elementType": "edge",
-      "id": "sw_123",
+      "id": "switch_76-761",
       "updates": {
-         "animation": True,
-         "color": "#4F2FA6",
+         "color": "#FF0000",
+         "width": 20,
       }
    },
    {
-      "elementType": "node",
-      "id": "switch1",
-      "updates": {
-         "color": "cyan",
-         "opacity": 0.2,
-         "shape": "triangleDown",
-         "size": 90
-      }
-   },
-     {
       "elementType": "edge",
-      "id": "switch1-switch2",
+      "id": "switch_76-86",
       "updates": {
-         "color": "red",
-         "dashed": True,
-         "width": 12
-      }
-   },
-     {
-      "elementType": "edge",
-      "id": "switch2-internet1",
-      "updates": {
-         "color": "purple",
-         "width": 15,
-         "arrows": "to, from, middle"
+         "color": "#00FF00",
+         "width": 50,
       }
    },
 ]
@@ -176,9 +156,9 @@ def main():
    sio.connect(f"{URL}:{PORT}")
    
    # create new nodes in GLIMPSE with the addNode socket event
-   for new_node_obj in newNodes: 
-      sio.emit("addNode", new_node_obj)
-      time.sleep(0.75)
+   # for new_node_obj in newNodes: 
+   #    sio.emit("addNode", new_node_obj)
+   #    time.sleep(0.75)
       
    # create new edges between the added nodes in GLIMPSE
    # for new_edge_obj in newEdges: 
@@ -195,9 +175,9 @@ def main():
    #    sio.emit("deleteEdge", edgeID)
    #    time.sleep(2)
 
-   # for style in styleChanges: 
-   #    sio.emit("glimpse", style)
-   #    time.sleep(1.5)
+   for style in styleChanges: 
+      sio.emit("glimpse", style)
+      time.sleep(1.5)
    
    # disconect from GLIMPSE WebSocket API      
    sio.disconnect()

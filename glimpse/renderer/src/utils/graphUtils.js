@@ -357,7 +357,7 @@ export const showAttributes = (show, data) => {
 export const hideObjects = (objectType, type, data) => {
    if (type === "node") {
       const nodesToHide = data.nodes.get().map((node) => {
-         if (node.group === objectType) {
+         if (node.type === objectType) {
             node.hidden = true;
          }
          return node;
@@ -381,8 +381,7 @@ export const hideObjects = (objectType, type, data) => {
 export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, highlightedEdges) => {
    if (highlightedNodes.current.length === 0) {
       const nodeItems = data.nodes.map((node) => {
-         node.shape = "dot";
-         node.color = "rgba(200,200,200,0.4)";
+         node.group = "inactive";
          node.label = " ";
          return node;
       });
@@ -390,28 +389,26 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
       data.nodes.update(nodeItems);
    }
 
-   data.edges.update(
-      data.edges.map((edge) => {
-         if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
-            edge.color = "rgba(200, 200, 200, 0.4)";
-            edge.width = edgeOptions[edge.type].width;
+   const edgesToUpdate = data.edges.map((edge) => {
+      if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
+         edge.color = "rgba(200, 200, 200, 0.4)";
+         edge.width = edgeOptions[edge.type].width;
 
-            highlightedEdges.current = highlightedEdges.current.filter(
-               (edgeid) => edgeid !== edge.id
-            );
-         } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
-            edge.color = "rgba(200, 200, 200, 0.4)";
-            edge.width = edgeOptions[edge.type].width;
-         } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
-            edge.color = edgeOptions[edge.type].color;
-            edge.width = edgeOptions[edge.type].width * 3;
+         highlightedEdges.current = highlightedEdges.current.filter((edgeid) => edgeid !== edge.id);
+      } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
+         edge.color = "rgba(200, 200, 200, 0.4)";
+         edge.width = edgeOptions[edge.type].width;
+      } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
+         edge.color = edgeOptions[edge.type].color;
+         edge.width = edgeOptions[edge.type].width * 3;
 
-            highlightedEdges.current.push(edge.id);
-         }
+         highlightedEdges.current.push(edge.id);
+      }
 
-         return edge;
-      })
-   );
+      return edge;
+   });
+
+   data.edges.update(edgesToUpdate);
 };
 
 /**
@@ -420,20 +417,17 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
  */
 export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdges) => {
    const updateNodes = data.nodes.map((node) => {
-      if (node.group === nodeType && highlightedNodes.current.includes(node.id)) {
-         node.shape = "dot";
-         node.color = "rgba(200, 200, 200, 0.4)";
+      if (node.type === nodeType && highlightedNodes.current.includes(node.id)) {
+         node.group = "inactive";
          node.label = " ";
 
          highlightedNodes.current = highlightedNodes.current.filter((nodeid) => nodeid !== node.id);
-      } else if (node.group !== nodeType && !highlightedNodes.current.includes(node.id)) {
-         node.shape = "dot";
-         node.color = "rgba(200, 200, 200, 0.4)";
+      } else if (node.type !== nodeType && !highlightedNodes.current.includes(node.id)) {
+         node.group = "inactive";
          node.label = " ";
-      } else if (node.group === nodeType && !highlightedNodes.current.includes(node.id)) {
-         if (node.shape === "dot") {
-            delete node.color;
-            delete node.shape;
+      } else if (node.type === nodeType && !highlightedNodes.current.includes(node.id)) {
+         if (node.group === "inactive") {
+            node.group = node.type;
             node.label = node.id;
          }
 
@@ -449,6 +443,7 @@ export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdge
 
          return edge;
       });
+
       data.edges.update(updateEdges);
    }
 
@@ -561,17 +556,17 @@ export const setGraphData = (
    */
    const keys = ["id", "objectType", "name"];
    const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);
+   const newNodes = [];
+   const newEdges = [];
 
    // get nodes
    for (const file of files) {
-      const objs = file.objects;
-
-      const newObjs = objs.map((obj) => {
+      for (let obj of file.objects) {
          const attributes = obj.attributes;
          // get the key that is at the top of the object which can be "name" or "objectType"
          const nameForObjType = keys.find((key) => key in obj);
          const objectType = obj[nameForObjType];
-         // get the key that is used for the objects id which can be of course "id" or "name"
+         // get the key that is used for the objects id which can be "id" or "name"
          const nameForObjID = keys.find((key) => key in attributes);
 
          const nodeID = attributes[nameForObjID];
@@ -587,7 +582,7 @@ export const setGraphData = (
                if (!("color" in theme.groups[objectType]))
                   theme.groups[objectType].color = getRandomColor();
 
-               return {
+               newNodes.push({
                   id:
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -595,11 +590,14 @@ export const setGraphData = (
                   label: "label" in theme.groups[objectType] ? undefined : nodeID,
                   elementType: "node",
                   attributes: attributes,
+                  type: objectType,
                   group: objectType,
-                  title: "Object Type: " + objectType + "\n" + getTitle(attributes),
+                  title: `Object Type: ${objectType}\n${getTitle(attributes)}`,
                   x: parseInt(attributes.x, 10),
                   y: parseInt(attributes.y, 10),
-               };
+               });
+
+               continue;
             } else if ("level" in attributes) {
                if (!graphOptions.layout.hierarchical.enabled)
                   graphOptions.layout.hierarchical.enabled = true;
@@ -614,7 +612,7 @@ export const setGraphData = (
                if (!("color" in theme.groups[objectType]))
                   theme.groups[objectType].color = getRandomColor();
 
-               return {
+               newNodes.push({
                   id:
                      currentUploadCounter.value > 0
                         ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -623,9 +621,12 @@ export const setGraphData = (
                   elementType: "node",
                   level: attributes.level,
                   attributes: attributes,
+                  type: objectType,
                   group: objectType,
                   title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-               };
+               });
+
+               continue;
             }
 
             objectTypeCount.nodes[objectType]++;
@@ -640,7 +641,7 @@ export const setGraphData = (
             if (!("color" in theme.groups[objectType]))
                theme.groups[objectType].color = getRandomColor();
 
-            return {
+            newNodes.push({
                id:
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -649,9 +650,12 @@ export const setGraphData = (
                elementType: "node",
                communityID: currentUploadCounter.value,
                attributes: attributes,
+               type: objectType,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
+
+            continue;
          } else if ("elementType" in obj && obj.elementType === "node") {
             if (!(objectType in theme.groups)) {
                theme.groups[objectType] = {
@@ -668,7 +672,7 @@ export const setGraphData = (
 
             GLIMPSE_OBJECT.objects.push(obj);
 
-            return {
+            newNodes.push({
                id:
                   currentUploadCounter.value > 0
                      ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -678,28 +682,23 @@ export const setGraphData = (
                communityID: currentUploadCounter.value,
                level: "level" in attributes ? attributes.level : undefined,
                attributes: attributes,
+               type: objectType,
                group: objectType,
                title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+            });
          }
-
-         return obj;
-      });
-
-      data.nodes.add(newObjs.filter((obj) => obj.elementType === "node"));
+      }
    }
 
    // get edges
    for (const file of files) {
-      const objs = file.objects;
-
-      const newObjs = objs.map((obj) => {
+      for (let obj of file.objects) {
          const attributes = obj.attributes;
          const nameForObjType = keys.find((key) => Object.keys(obj).includes(key));
-         const objectType = obj[nameForObjType];
+         const edgeType = obj[nameForObjType];
          const nameForObjID = keys.find((key) => Object.keys(attributes).includes(key));
 
-         if (nodeTypes.includes(objectType) && "parent" in attributes) {
+         if (nodeTypes.includes(edgeType) && "parent" in attributes) {
             const nodeID =
                currentUploadCounter.value > 0
                   ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
@@ -721,7 +720,7 @@ export const setGraphData = (
                },
             });
 
-            return {
+            newEdges.push({
                id: `${parent}-${nodeID}`,
                from: parent,
                to: nodeID,
@@ -731,8 +730,10 @@ export const setGraphData = (
                attributes: { to: parent, from: nodeID },
                title: getTitle({ objectType: "parentChild", to: parent, from: nodeID }),
                color: { inherit: true },
-            };
-         } else if (edgeTypes.includes(objectType)) {
+            });
+
+            continue;
+         } else if (edgeTypes.includes(edgeType)) {
             const edgeFrom =
                currentUploadCounter.value > 0
                   ? `${attributes.from}-${currentUploadCounter.value}`
@@ -746,23 +747,47 @@ export const setGraphData = (
                   ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                   : attributes[nameForObjID];
 
-            objectTypeCount.edges[objectType]++;
+            objectTypeCount.edges[edgeType]++;
 
             obj = renameKeys({ name: "objectType" }, obj);
             obj.attributes = renameKeys({ name: "id" }, obj.attributes);
 
             GLIMPSE_OBJECT.objects.push({ ...obj, elementType: "edge" });
 
-            return {
+            if (edgeType === "switch" && attributes.status === "OPEN") {
+               edgeOptions[edgeType].arrows = {
+                  middle: {
+                     enabled: true,
+                     type: "image",
+                     imageWidth: 32,
+                     imageHeight: 32,
+                     src: "./imgs/switch-open.svg",
+                  },
+               };
+            } else if (edgeType === "switch" && attributes.status === "CLOSED") {
+               edgeOptions[edgeType].arrows = {
+                  middle: {
+                     enabled: true,
+                     type: "image",
+                     imageWidth: 32,
+                     imageHeight: 32,
+                     src: "./imgs/switch-closed.svg",
+                  },
+               };
+            }
+
+            newEdges.push({
                id: edgeID,
                from: edgeFrom,
                to: edgeTo,
                elementType: "edge",
-               type: objectType,
+               type: edgeType,
                attributes: attributes,
-               ...edgeOptions[objectType],
-               title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+               title: `Object Type: ${edgeType}\n${getTitle(attributes)}`,
+               ...edgeOptions[edgeType],
+            });
+
+            continue;
          } else if ("elementType" in obj && obj.elementType === "edge") {
             const edgeFrom =
                currentUploadCounter.value > 0
@@ -777,31 +802,29 @@ export const setGraphData = (
                   ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                   : attributes[nameForObjID];
 
-            if (!(objectType in edgeOptions))
-               edgeOptions[objectType] = { color: getRandomColor(), width: 2 };
+            if (!(edgeType in edgeOptions))
+               edgeOptions[edgeType] = { color: getRandomColor(), width: 2 };
 
-            if (objectType in objectTypeCount.edges) objectTypeCount.edges[objectType]++;
-            else objectTypeCount.edges[objectType] = 1;
+            if (edgeType in objectTypeCount.edges) objectTypeCount.edges[edgeType]++;
+            else objectTypeCount.edges[edgeType] = 1;
 
             GLIMPSE_OBJECT.objects.push(obj);
 
-            return {
+            newEdges.push({
                id: edgeID,
                from: edgeFrom,
                to: edgeTo,
                elementType: "edge",
-               type: objectType,
+               type: edgeType,
                attributes: attributes,
-               ...edgeOptions[objectType],
-               title: "Object Type: " + objectType + "\n" + getTitle(attributes),
-            };
+               title: `Object Type: ${edgeType}\n${getTitle(attributes)}`,
+               ...edgeOptions[edgeType],
+            });
          }
-
-         return obj;
-      });
-
-      data.edges.add(newObjs.filter((obj) => obj.elementType === "edge"));
+      }
    }
 
+   data.nodes.add(newNodes);
+   data.edges.add(newEdges);
    currentUploadCounter.value++;
 };
