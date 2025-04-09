@@ -155,6 +155,13 @@ styleChanges = [
          }
       }
    },
+   {
+      "elementType": "node",
+      "id": "node_123",
+      "updates": {
+        "group": "default"
+      }
+   },
 ]
 
 def main():

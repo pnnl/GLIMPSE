@@ -274,6 +274,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             id: microGrid.name,
             label: microGrid.name,
             group: "microgrid",
+            type: "microgrid",
             title: `ObjectType: microgrid\nname: ${microGrid.name}`,
          };
          newNodes.push(microGridNode);
@@ -321,6 +322,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                id: commNodeID,
                label: commNodeID,
                group: "communication_node",
+               type: "communication_node",
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
             });
 
@@ -540,6 +542,10 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             graphData.nodes.update({ ...node, ...rest });
             return;
          }
+
+         // if ("group" in updateData.updates && updateData.updates.group === "defualt") {
+         //    node.group = node.type;
+         // }
 
          graphData.nodes.update({ ...node, ...updateData.updates });
       } else if (updateData.elementType === "edge") {
@@ -916,6 +922,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             id: clusterValue,
             label: clusterValue,
             group: "clusterNode",
+            type: "clusterNode",
          },
       });
 

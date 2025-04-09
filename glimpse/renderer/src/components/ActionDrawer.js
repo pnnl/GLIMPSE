@@ -35,6 +35,8 @@ const ActionDrawer = ({
    applyOverlay,
    getSwitches,
 }) => {
+   const graphData = getGraphData();
+
    const [searchOption, setSearchOption] = useState(null);
    const [showOverlayUpload, setShowOverlayUpload] = useState(false);
    const [openDrawer, setOpenDrawer] = useState(false);
@@ -45,7 +47,6 @@ const ActionDrawer = ({
    const [stats, setStats] = useState(null);
    const [openNatigConfig, setOpenNatigConfig] = useState(false);
 
-   const graphData = getGraphData();
    const options = useMemo(
       () => [
          ...graphData.nodes.sort((a, b) => -b.type.localeCompare(a.type)),
