@@ -336,7 +336,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             newNodes.push({
                id: commNodeID,
                label: commNodeID,
-               group: `group_comm_${mgNumber}`,
+               group: `communication_node`, // _${mgNumber}
                type: "communication_node",
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
             });
@@ -363,7 +363,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
             const connectedTPNode = {
                id: `SS_${mgNumber}`,
-               group: `group_comm_${mgNumber}`,
+               group: `communication_node_${mgNumber}`,
             };
             updatedTPNodes.push(connectedTPNode);
             addedOverlayObjects.edges.push(commEdgeID);
