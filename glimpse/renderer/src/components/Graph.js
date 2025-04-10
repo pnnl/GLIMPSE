@@ -303,6 +303,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                newEdges.push(microGridEdge);
                addedOverlayObjects.edges.push(newEdgeID);
                objectTypeCount.edges.microgrid_connection++;
+               // create node obj to set the group for coloring
                const connectedMGNode = {
                   id: nodeID,
                   label: nodeID,
@@ -311,10 +312,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                };
                if (glmNetwork.body.nodes[nodeID]) {
                   updatedMGNodes.push(connectedMGNode);
-               } else {
-                  // newNodes.push(connectedMGNode);
-                  // addedOverlayObjects.nodes.push(nodeID);
-                  // objectTypeCount.nodes[type] = (objectTypeCount.nodes[type] || 0) + 1;
                }
             }
          }
@@ -336,6 +333,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             newNodes.push({
                id: commNodeID,
                label: commNodeID,
+               // setting group here changes the shape to an oval?
                group: `communication_node`, // _${mgNumber}
                type: "communication_node",
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
@@ -361,6 +359,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                width: 2,
             });
 
+            // center node that the grouped nodes connect to
             const connectedTPNode = {
                id: `SS_${mgNumber}`,
                group: `communication_node_${mgNumber}`,
@@ -403,6 +402,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       graphData.edges.add(newEdges);
       graphData.nodes.update(updatedMGNodes);
 
+      // iterate through list of nodes connected to the center node
+      // assign to same group
+      // nodes connected will be colored based on the center node
       const updatedTPConnectedNodes = [];
       for (const tpNode of updatedTPNodes) {
          const tpNodeFull = glmNetwork.body.nodes[tpNode.id];
@@ -416,8 +418,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                   if (connectedTPNode) {
                      // connectedTPNode.group = tpNode.group;
                      const clusterTheme = theme.groups["cluster"];
-                     console.log("clusterTheme");
-                     console.log(clusterTheme);
                      glmNetwork.clustering.updateClusteredNode(connectedTPNode.id, {"group": tpNode.group})
                      // updatedTPConnectedNodes.push(connectedTPNode);
                   }
