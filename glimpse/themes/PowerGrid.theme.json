@@ -94,6 +94,10 @@
       "inactive": {
          "color": "rgba(200, 200, 200, 0.4)",
          "shape": "dot"
+      },
+      "attacked": {
+         "color": "red",
+         "borderWidth": 3
       }
    },
    "edgeOptions": {
