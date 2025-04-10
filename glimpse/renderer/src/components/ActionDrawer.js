@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
    Autocomplete,
    Box,
@@ -24,17 +24,18 @@ import NatigConfigModal from "./NatigConfigModal";
 const { appOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ActionDrawer = ({
-   getNodeIds,
+   getGraphData,
    findNode,
+   findEdge,
    physicsToggle,
    attachOverlay,
    removeOverlay,
    reset,
    modelNumber,
    applyOverlay,
+   getSwitches,
 }) => {
-   const nodes = getNodeIds();
-   const [nodeID, setNodeID] = useState("");
+   const [searchOption, setSearchOption] = useState(null);
    const [showOverlayUpload, setShowOverlayUpload] = useState(false);
    const [openDrawer, setOpenDrawer] = useState(false);
    const [hideRemoveOverlayBtn, setHideRemoveOverlayBtn] = useState("none");
@@ -44,14 +45,18 @@ const ActionDrawer = ({
    const [stats, setStats] = useState(null);
    const [openNatigConfig, setOpenNatigConfig] = useState(false);
 
-   /**
-    * Trigger the find function from the Graph component to focus on the selected node ID
-    * @param {Event} e
-    */
-   const handleSubmit = (e) => {
-      e.preventDefault();
+   const graphData = getGraphData();
+   const options = useMemo(
+      () => [
+         ...graphData.nodes.sort((a, b) => -b.type.localeCompare(a.type)),
+         ...graphData.edges.sort((a, b) => -b.type.localeCompare(a.type)),
+      ],
+      [graphData.nodes, graphData.edges]
+   );
 
-      if (nodes.includes(nodeID)) findNode(nodeID);
+   const handleSearch = () => {
+      if (searchOption.elementType === "node") findNode(searchOption);
+      else if (searchOption.elementType === "edge") findEdge(searchOption);
       else alert(`${nodeID} is not in the graph.`);
    };
 
@@ -165,9 +170,10 @@ const ActionDrawer = ({
             <Autocomplete
                sx={{ width: "100%" }}
                size="small"
-               id="autocomplete-nodeID-search"
-               options={getNodeIds()}
-               onChange={(event, ID) => setNodeID(ID)}
+               options={options}
+               groupBy={(option) => option.type}
+               getOptionLabel={(option) => option.id}
+               onChange={(event, option) => setSearchOption(option)}
                renderInput={(params) => (
                   <Stack sx={{ m: 1 }} direction="row" spacing={1}>
                      <TextField
@@ -176,13 +182,15 @@ const ActionDrawer = ({
                         label={appOptions.buttons.searchLbl}
                      />
 
-                     <IconButton onClick={handleSubmit}>
+                     <IconButton onClick={handleSearch}>
                         <SearchRounded />
                      </IconButton>
                   </Stack>
                )}
             />
+
             <Divider />
+
             <CustomFormControlLabel
                control={<CustomSwitch size="medium" onChange={autoLayout} />}
                label={appOptions.buttons.layoutLbl}
@@ -229,6 +237,7 @@ const ActionDrawer = ({
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
             showRemoveOverlayBtn={setHideRemoveOverlayBtn}
+            getSwitches={getSwitches}
          />
          <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
          <PlotModal plot={imgUrl} show={showPlot} close={() => setShowPlot(false)} />

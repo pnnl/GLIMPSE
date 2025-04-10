@@ -16,7 +16,8 @@ import {
    HighlightEdges,
    HighlightGroup,
    Next,
-   NodeFocus,
+   nodeFocus,
+   edgeFocus,
    Prev,
    rotateCCW,
    rotateCW,
@@ -87,26 +88,30 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     * Reset all nodes and edges back to their original styles
     */
    const Reset = () => {
-      edgesToAnimateCount = 0;
       edgesToAnimate = {};
+      edgesToAnimateCount = 0;
 
       highlightedNodes.current.length = 0;
       highlightedEdges.current.length = 0;
 
-      const nodesResetMap = graphData.nodes.map((node) => {
-         delete node.size;
-         delete node.color;
-         delete node.shape;
+      const nodesToReset = graphData.nodes.map((node) => {
+         node.group = node.type;
          node.hidden = false;
          node.label = node.id;
 
          return node;
       });
 
-      const edgeItems = graphData.edges.map((edge) => {
+      const edgesToReset = graphData.edges.map((edge) => {
          const edgeType = edge.type;
 
          if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
+            if (edgeType === "switch" && edge.attributes.status === "OPEN") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-open.svg";
+            } else if (edgeType === "switch" && edge.attributes.status === "CLOSED") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-closed.svg";
+            }
+
             Object.assign(edge, edgeOptions[edgeType]);
             edge.hidden = false;
 
@@ -120,9 +125,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          }
       });
 
-      // glmNetwork.setOptions({ groups: theme.groups });
-      graphData.nodes.update(nodesResetMap);
-      graphData.edges.update(edgeItems);
+      glmNetwork.setOptions({ groups: theme.groups });
+      graphData.nodes.update(nodesToReset);
+      graphData.edges.update(edgesToReset);
       glmNetwork.fit();
       counter.value = -1;
    };
@@ -450,7 +455,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                GLIMPSE_OBJECT,
                theme,
                edgeOptions,
-               graphOptions
+               graphOptions   
             );
 
             setLegendData(objectTypeCount, theme, edgeOptions, legendData);
@@ -487,13 +492,18 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       try {
          const nodesOfsameType = graphData.nodes
             .get()
-            .filter((n) => n.group === nodeTypes[nodeType]);
+            .filter((n) => n.type === nodeTypes[nodeType]);
 
-         const [addedNodeID] = graphData.nodes.add({
+         const newNodeCID = graphData.nodes.get(connectTo).communityID;
+
+         const newNode = {
             id: `${nodeID}`,
             // color: "#219ebc",
             label: `${nodeID}`,
-            group: "node",
+            type: nodeTypes[nodeType],
+            group: nodeTypes[nodeType],
+            communityID: newNodeCID,
+            elementType: "node",
             attributes: {
                id: `${nodeID}`,
             },
@@ -501,29 +511,27 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                "level" in nodesOfsameType[0].attributes
                   ? nodesOfsameType[0].attributes.level
                   : undefined,
-         });
+         };
 
-         const addedNode = graphData.nodes.get(addedNodeID);
-         addedNode.title =
-            "Object Type: " + nodeTypes[nodeType] + "\n" + getTitle(addedNode.attributes);
-         objectTypeCount.nodes[addedNode.group]++;
-         graphData.nodes.update(addedNode);
+         newNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(newNode.attributes)}`;
+         objectTypeCount.nodes[newNode.type]++;
 
-         const [addedEdgeID] = graphData.edges.add({
-            id: `${connectTo}-${addedNodeID}`,
+         graphData.nodes.add(newNode);
+
+         const newEdge = {
+            id: `${connectTo}-${newNode.id}`,
             from: connectTo,
-            to: addedNodeID,
+            to: newNode.id,
             type: edgeTypes[edgeType],
+            elementType: "edge",
             color: edgeOptions[edgeTypes[edgeType]].color,
             width: edgeOptions[edgeTypes[edgeType]].width,
-         });
+         };
 
-         const { color, width, ...rest } = graphData.edges.get(addedEdgeID);
-         const addedEdge = graphData.edges.get(addedEdgeID);
-
-         addedEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
-         objectTypeCount.edges[addedEdge.type]++;
-         graphData.edges.update(addedEdge);
+         const { color, width, elementType, type, ...rest } = newEdge;
+         newEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+         objectTypeCount.edges[newEdge.type]++;
+         graphData.edges.add(newEdge);
 
          setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       } catch (err) {
@@ -552,6 +560,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       graphData.edges.add(newEdge);
       objectTypeCount.edges[formObj.edgeType]++;
+
       if (formObj.animate) {
          animateEdge(newEdge.id);
       }
@@ -561,10 +570,26 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
    const updateVisObjects = (updateData) => {
       console.log(updateData);
+
       if (updateData.elementType === "node") {
          const node = graphData.nodes.get(updateData.id);
+
+         if ("attributes" in updateData.updates) {
+            const { attributes, ...rest } = updateData.updates;
+
+            node.attributes = {
+               ...node.attributes,
+               ...attributes,
+            };
+
+            node.title = getTitle(node.attributes);
+
+            graphData.nodes.update({ ...node, ...rest });
+            return;
+         }
+
          graphData.nodes.update({ ...node, ...updateData.updates });
-      } else {
+      } else if (updateData.elementType === "edge") {
          const edge = graphData.edges.get(updateData.id);
          const clusteredEdges = glmNetwork.clustering.getClusteredEdges(edge.id);
 
@@ -585,93 +610,111 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             if (!redrawIntervalID) {
                redrawIntervalID = setInterval(() => glmNetwork.redraw(), 16.67);
             }
-         } else {
-            graphData.edges.update({ ...edge, ...updateData.updates });
+            return;
+         } else if ("attributes" in updateData.updates) {
+            const { attributes, ...rest } = updateData.updates;
+
+            edge.attributes = {
+               ...edge.attributes,
+               ...attributes,
+            };
+
+            edge.title = getTitle(edge.attributes);
+
+            if (edge.type === "switch" && edge.attributes.status === "OPEN") {
+               edge.arrows.middle.src = "./imgs/switch-open.svg";
+            } else if (edge.type === "switch" && edge.attributes.status === "CLOSED") {
+               edge.arrows.middle.src = "./imgs/switch-closed.svg";
+            }
+            graphData.edges.update({ ...edge, ...rest });
+            return;
          }
+
+         graphData.edges.update({ ...edge, ...updateData.updates });
       }
    };
 
    const animateEdges = (ctx) => {
+      if (edgesToAnimateCount === 0) return;
+
       let start = null;
       let end = null;
 
-      if (edgesToAnimateCount > 0) {
-         try {
-            for (const edgeID in edgesToAnimate) {
-               const edge = edgesToAnimate[edgeID];
-               const canvasEdge = glmNetwork.body.edges[edgeID];
+      try {
+         for (const edgeID in edgesToAnimate) {
+            const edge = edgesToAnimate[edgeID];
+            const canvasEdge = glmNetwork.body.edges[edgeID];
 
-               if (!canvasEdge) continue;
+            if (!canvasEdge) continue;
 
-               if (edge.startFrom === "target") {
-                  start = canvasEdge.to;
-                  end = canvasEdge.from;
-               } else {
-                  start = canvasEdge.from;
-                  end = canvasEdge.to;
-               }
-
-               // Calculate the circle's position along the edge
-               edge.position += edge.increment;
-               if (edge.position > 1) {
-                  edge.position = 0;
-               }
-
-               // Interpolate the position along the edge
-               const x = start.x * (1 - edge.position) + end.x * edge.position;
-               const y = start.y * (1 - edge.position) + end.y * edge.position;
-
-               // Calculate the direction vector
-               const dx = end.x - start.x;
-               const dy = end.y - start.y;
-
-               // Calculate the angle of rotation
-               const angle = Math.atan2(dy, dx);
-
-               // Define the triangle dimensions
-               const sideLength = 7; // Base width of the triangle
-               const triangleHeight = (Math.sqrt(3) / 2) * sideLength; // Height of the triangle
-
-               // Define the triangle points relative to the origin (0, 0)
-               // The triangle is initially pointing to the right (positive x-axis)
-               const trianglePoints = [
-                  { x: triangleHeight * (2 / 3), y: 0 }, // Top point (front of the arrow)
-                  { x: -triangleHeight * (1 / 3), y: -sideLength / 2 }, // Bottom left point
-                  { x: -triangleHeight * (1 / 3), y: sideLength / 2 }, // Bottom right point
-               ];
-
-               // Rotate and translate the triangle points
-               const rotatedPoints = trianglePoints.map((point) => {
-                  const rotatedX = point.x * Math.cos(angle) - point.y * Math.sin(angle);
-                  const rotatedY = point.x * Math.sin(angle) + point.y * Math.cos(angle);
-                  return {
-                     x: rotatedX + x,
-                     y: rotatedY + y,
-                  };
-               });
-
-               // Draw the triangle
-               ctx.beginPath();
-               ctx.moveTo(rotatedPoints[0].x, rotatedPoints[0].y);
-
-               for (let i = 1; i < rotatedPoints.length; i++) {
-                  ctx.lineTo(rotatedPoints[i].x, rotatedPoints[i].y);
-               }
-
-               ctx.closePath();
-               ctx.strokeStyle = "black";
-               ctx.stroke();
-               ctx.fillStyle = "orange";
-               ctx.fill();
+            if (edge.startFrom === "target") {
+               start = canvasEdge.to;
+               end = canvasEdge.from;
+            } else {
+               start = canvasEdge.from;
+               end = canvasEdge.to;
             }
-         } catch (msg) {
-            console.error(msg);
-            if (redrawIntervalID) {
-               clearInterval(redrawIntervalID);
-               redrawIntervalID = null;
+
+            // Calculate the circle's position along the edge
+            edge.position += edge.increment;
+            if (edge.position > 1) {
+               edge.position = 0;
             }
-            edgesToAnimate = {};
+
+            // Interpolate the position along the edge
+            const x = start.x * (1 - edge.position) + end.x * edge.position;
+            const y = start.y * (1 - edge.position) + end.y * edge.position;
+
+            // Calculate the direction vector
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+
+            // Calculate the angle of rotation
+            const angle = Math.atan2(dy, dx);
+
+            // Define the triangle dimensions
+            const sideLength = 7; // Base width of the triangle
+            const triangleHeight = (Math.sqrt(3) / 2) * sideLength; // Height of the triangle
+
+            // Define the triangle points relative to the origin (0, 0)
+            // The triangle is initially pointing to the right (positive x-axis)
+            const trianglePoints = [
+               { x: triangleHeight * (2 / 3), y: 0 }, // Top point (front of the arrow)
+               { x: -triangleHeight * (1 / 3), y: -sideLength / 2 }, // Bottom left point
+               { x: -triangleHeight * (1 / 3), y: sideLength / 2 }, // Bottom right point
+            ];
+
+            // Rotate and translate the triangle points
+            const rotatedPoints = trianglePoints.map((point) => {
+               const rotatedX = point.x * Math.cos(angle) - point.y * Math.sin(angle);
+               const rotatedY = point.x * Math.sin(angle) + point.y * Math.cos(angle);
+               return {
+                  x: rotatedX + x,
+                  y: rotatedY + y,
+               };
+            });
+
+            // Draw the triangle
+            ctx.beginPath();
+            ctx.moveTo(rotatedPoints[0].x, rotatedPoints[0].y);
+
+            for (let i = 1; i < rotatedPoints.length; i++) {
+               ctx.lineTo(rotatedPoints[i].x, rotatedPoints[i].y);
+            }
+
+            ctx.closePath();
+            ctx.strokeStyle = "black";
+            ctx.stroke();
+            ctx.fillStyle = "orange";
+            ctx.fill();
          }
+      } catch (msg) {
+         console.error(msg);
+         if (redrawIntervalID) {
+            clearInterval(redrawIntervalID);
+            redrawIntervalID = null;
+         }
+         edgesToAnimate = {};
       }
    };
 
@@ -690,11 +733,11 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    /**
     *
     * @param {string} edgeID The ID of an edge to animate
-    * @param {float} value An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
+    * @param {float} incrementValue An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
     * @param {string} startFrom start the animation of an edge from its `"source"` or `"target"`
     */
-   const animateEdge = (edgeID, value = 0.01, startFrom = "source") => {
-      if (value === undefined) value = 0.01;
+   const animateEdge = (edgeID, incrementValue = 0.01, startFrom = "source") => {
+      if (incrementValue === undefined) incrementValue = 0.01;
       if (startFrom === undefined) startFrom = "source";
 
       console.log(`Animating edge: ${edgeID}`);
@@ -704,7 +747,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          if (edgeID.includes("clusterEdge") && !(edgeID in edgesToAnimate)) {
             edgesToAnimate[edgeID] = {
                position: 0,
-               increment: value,
+               increment: incrementValue,
                startFrom: startFrom,
             };
             edgesToAnimateCount++;
@@ -716,7 +759,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             // add it to the list of edges to animate and the positions object
             edgesToAnimate[edgeID] = {
                position: 0,
-               increment: value,
+               increment: incrementValue,
                startFrom: startFrom,
             };
 
@@ -734,7 +777,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          } else {
             edgesToAnimate[edgeID] = {
                ...edgesToAnimate[edgeID],
-               increment: value,
+               increment: incrementValue,
                startFrom: startFrom,
             };
          }
@@ -756,7 +799,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       const nodeObject = graphData.nodes.get(nodeID);
       // get node obj and subtract from that node type's count
-      objectTypeCount.nodes[nodeObject.group]--;
+      objectTypeCount.nodes[nodeObject.type]--;
 
       const edgesToDelete = [];
       const graphEdges = graphData.edges.get();
@@ -854,7 +897,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
     */
    const removeOverlay = () => {
       graphData.nodes.get(addedOverlayObjects.nodes).forEach((node) => {
-         objectTypeCount.nodes[node.group]--;
+         objectTypeCount.nodes[node.type]--;
       });
 
       graphData.edges.get(addedOverlayObjects.edges).forEach((edge) => {
@@ -900,12 +943,18 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    };
 
    const createClusterNode = (clusterValue) => {
+      if (typeof clusterValue === "number") clusterValue = `CID_${clusterValue}`;
+
       glmNetwork.cluster({
          joinCondition: (childOptions) => {
+            if (typeof childOptions.communityID === "number")
+               return `CID_${childOptions.communityID}` === clusterValue;
+
+            // if the communityID is a string then it has a cluster value of CID_[n]
             return childOptions.communityID === clusterValue;
          },
          processProperties: (clusterOptions, childNodes, childEdges) => {
-            clusterOptions.value = childNodes.length / 3;
+            clusterOptions.value = childNodes.length;
             clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
             clusterOptions.mass = childNodes.length * 0.1;
             return clusterOptions;
@@ -915,8 +964,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             // color: "#219ebc",
             borderWidth: 2,
             shape: "hexagon",
-            label: `Community-${clusterValue}`,
-            group: "cluster",
+            label: clusterValue,
+            group: "clusterNode",
          },
       });
 
@@ -945,7 +994,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
       for (const clusteredEdge of clusteredEdges) {
          // skip edges that are not animated
-         if (!clusteredEdge.id in edgesToAnimate) continue;
+         if (!(clusteredEdge.id in edgesToAnimate)) continue;
 
          // remove animation from current clustered edge
          removeEdgeAnimation(clusteredEdge.id);
@@ -966,21 +1015,27 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
    /* ------ Establish Listeners Between Main process and renderer process ----- */
    useEffect(() => {
       const removeListenerArr = [];
+
       removeListenerArr.push(window.glimpseAPI.onShowVisOptions(toggleVisOptions));
+
       removeListenerArr.push(
          window.glimpseAPI.onExtract(() => Export(graphData, isGlm, dataToVis))
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onShowAttributes((show) => showAttributes(show, graphData))
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onExportTheme(() =>
             window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3))
          )
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onUpdateData((updateData) => updateVisObjects(updateData))
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onAddNodeEvent((newNodeData) => {
             if (newNodeData.objectType in objectTypeCount) {
@@ -997,6 +1052,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             });
          })
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onAddEdgeEvent((newEdgeData) => {
             graphData.edges.add([
@@ -1012,11 +1068,13 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             ]);
          })
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onDeleteNodeEvent((nodeID) => {
             graphData.nodes.remove(nodeID);
          })
       );
+
       removeListenerArr.push(
          window.glimpseAPI.onDeleteEdgeEvent((edgeID) => {
             graphData.edges.remove(edgeID);
@@ -1098,7 +1156,6 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             }
 
             graphOptions.groups = theme.groups;
-            console.log(graphOptions);
             glmNetwork = new Network(container.current, graphData, graphOptions);
 
             // Create clusters
@@ -1253,12 +1310,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             onMount={onNewNodeFormMount}
             nodes={() => graphData.nodes.getIds()}
             addNode={addNewNode}
-            nodeTypes={Object.keys(objectTypeCount.nodes).filter(
-               (key) => objectTypeCount.nodes[key] > 0
-            )}
-            edgeTypes={Object.keys(objectTypeCount.edges).filter(
-               (key) => objectTypeCount.edges[key] > 0
-            )}
+            nodeTypes={Object.keys(objectTypeCount.nodes)}
+            edgeTypes={Object.keys(objectTypeCount.edges)}
          />
 
          <div id="circularProgress">
@@ -1281,14 +1334,16 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          />
 
          <ActionDrawer
-            findNode={(id) => NodeFocus(graphData.nodes.get(id), glmNetwork)}
-            getNodeIds={() => graphData.nodes.getIds()}
+            findNode={(node) => nodeFocus(node, glmNetwork)}
+            findEdge={(edge) => edgeFocus(edge, glmNetwork)}
+            getGraphData={() => ({ nodes: graphData.nodes.get(), edges: graphData.edges.get() })}
             physicsToggle={TogglePhysics}
             attachOverlay={attachOverlay}
             removeOverlay={removeOverlay}
             reset={Reset}
             modelNumber={modelNumber}
             applyOverlay={applyOverlay}
+            getSwitches={() => graphData.edges.getIds({ filter: (edge) => edge.type === "switch" })}
          />
 
          <Stack sx={{ height: "100%", width: "100%" }} direction={"row"}>

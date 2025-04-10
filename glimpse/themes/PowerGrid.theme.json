@@ -77,6 +77,11 @@
          "shape": "circularImage",
          "image": "./imgs/microgrid.jpg"
       },
+      "clusterNode": {
+         "borderWidth": 3,
+         "color": "#246CAB",
+         "shape": "hexagon"
+      },
       "attacker": {
          "size": 13,
          "color": {
@@ -85,6 +90,10 @@
          },
          "shape": "circularImage",
          "image": "./imgs/attacker.jpg"
+      },
+      "inactive": {
+         "color": "rgba(200, 200, 200, 0.4)",
+         "shape": "dot"
       }
    },
    "edgeOptions": {
