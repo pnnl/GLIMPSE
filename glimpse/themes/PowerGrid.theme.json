@@ -36,16 +36,9 @@
          "image": "./imgs/meter.jpg"
       },
       "node": {
+         "size": 4,
          "color": "#219ebc",
          "shape": "dot"
-      },
-      "DDOS_attacked": {
-         "color": "#ff0000",
-         "shape": "dot"
-      },
-      "cluster": {
-         "color": "#219ebc",
-         "shape": "hexagon"
       },
       "meter": {
          "size": 12,
@@ -94,6 +87,10 @@
       "inactive": {
          "color": "rgba(200, 200, 200, 0.4)",
          "shape": "dot"
+      },
+      "attacked": {
+         "color": "red",
+         "borderWidth": 3
       }
    },
    "edgeOptions": {
