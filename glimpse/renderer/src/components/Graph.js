@@ -267,6 +267,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       ]);
 
       const newNodes = [];
+      const updatedMGNodes = [];
+      const updatedTPNodes = [];
       const newEdges = [];
 
       for (const microGrid of microGrids) {
@@ -301,6 +303,16 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                newEdges.push(microGridEdge);
                addedOverlayObjects.edges.push(newEdgeID);
                objectTypeCount.edges.microgrid_connection++;
+               // create node obj to set the group for coloring
+               const connectedMGNode = {
+                  id: nodeID,
+                  label: nodeID,
+                  group: `group_${microGrid.name}`,
+                  title: `ObjectType: ${type}\nname: ${nodeID}`,
+               };
+               if (glmNetwork.body.nodes[nodeID]) {
+                  updatedMGNodes.push(connectedMGNode);
+               }
             }
          }
       }
@@ -321,7 +333,8 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
             newNodes.push({
                id: commNodeID,
                label: commNodeID,
-               group: "communication_node",
+               // setting group here changes the shape to an oval?
+               group: `communication_node`, // _${mgNumber}
                type: "communication_node",
                title: `ObjectType: communication_node\nname: ${commNodeID}`,
             });
@@ -346,6 +359,12 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                width: 2,
             });
 
+            // center node that the grouped nodes connect to
+            const connectedTPNode = {
+               id: `SS_${mgNumber}`,
+               group: `communication_node_${mgNumber}`,
+            };
+            updatedTPNodes.push(connectedTPNode);
             addedOverlayObjects.edges.push(commEdgeID);
             objectTypeCount.edges.communication++;
 
@@ -381,6 +400,33 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
       // Batch add nodes and edges
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
+      graphData.nodes.update(updatedMGNodes);
+
+      // iterate through list of nodes connected to the center node
+      // assign to same group
+      // nodes connected will be colored based on the center node
+      const updatedTPConnectedNodes = [];
+      for (const tpNode of updatedTPNodes) {
+         const tpNodeFull = glmNetwork.body.nodes[tpNode.id];
+         if (tpNodeFull) {
+            tpNodeFull.group = tpNode.group;
+            updatedTPConnectedNodes.push(tpNodeFull);
+            const connectedNodeIDs = glmNetwork.getConnectedNodes(tpNode.id);
+            for (const connectedNodeID of connectedNodeIDs) {
+               if (glmNetwork.clustering.isCluster(connectedNodeID)) {
+                  const connectedTPNode = glmNetwork.body.nodes[connectedNodeID];
+                  if (connectedTPNode) {
+                     // connectedTPNode.group = tpNode.group;
+                     const clusterTheme = theme.groups["cluster"];
+                     glmNetwork.clustering.updateClusteredNode(connectedTPNode.id, {"group": tpNode.group})
+                     // updatedTPConnectedNodes.push(connectedTPNode);
+                  }
+               }
+            }
+         }
+      }
+      // graphData.nodes.update(updatedTPNodes);
+      // graphData.nodes.update(updatedTPConnectedNodes);
 
       glmNetwork.setOptions({ physics: { enabled: true } });
 
@@ -411,7 +457,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
                GLIMPSE_OBJECT,
                theme,
                edgeOptions,
-               graphOptions
+               graphOptions   
             );
 
             setLegendData(objectTypeCount, theme, edgeOptions, legendData);
@@ -454,6 +500,7 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
 
          const newNode = {
             id: `${nodeID}`,
+            // color: "#219ebc",
             label: `${nodeID}`,
             type: nodeTypes[nodeType],
             group: nodeTypes[nodeType],
@@ -920,6 +967,9 @@ const Graph = ({ dataToVis, theme, isGlm, modelNumber }) => {
          },
          clusterNodeProperties: {
             id: clusterValue,
+            // color: "#219ebc",
+            borderWidth: 2,
+            shape: "hexagon",
             label: clusterValue,
             group: "clusterNode",
             type: "clusterNode",
