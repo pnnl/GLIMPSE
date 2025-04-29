@@ -19,19 +19,13 @@ In a directory of your choice clone the repository :
 git clone http://github.com/pnnl/GLIMPSE
 ```
 
-Then in `GLIMPSE/glimpse`:
+Then in `GLIMPSE/`:
 
 ```bash
 npm install
 ```
 
-After all node modules are installed run the following command to bundle the source code using webpack:
-
-```bash
-npm run webpack
-```
-
-After that in `GLIMPSE/glimpse/local-server` create a python environment:
+After that in `GLIMPSE/local-server` create a python environment:
 
 ```bash
 python -m venv glimpse-server
@@ -58,7 +52,7 @@ pip install -r requirements.txt
 
 ### Additional Instructions for MacOS with Apple Silicon
 
-In `glimpse/local-server/` clone the glm parser repository.
+In `GLIMPSE/local-server/` clone the glm parser repository.
 
 ```bash
 git clone https://github.com/NREL/glm.git
@@ -84,10 +78,10 @@ python -m pip install ./dist/glm-0.4.4-py2.py3-none-macosx_11_0_arm64.whl
 
 ## Start GLIMPSE
 
-In `GLIMPSE/glimpse/` start the application with the following command:
+In `GLIMPSE/` start the application with the following command:
 
 ```bash
-npm run start
+npm run dev
 ```
 
 ## Supported Input Files
