@@ -1,0 +1,146 @@
+{
+  "docs": "https://github.com/pnnl/GLIMPSE/tree/master/Docs",
+  "appOptions": {
+    "title": "GLIMPSE",
+    "nav": {
+      "home": "Home",
+      "about": "About"
+    },
+    "buttons": {
+      "filterBtn": "FILTER",
+      "exportBtn": "EXPORT W/ CHANGES",
+      "plotBtn": "SHOW PLOT",
+      "addOverlayBtn": "ATTACH OVERLAY",
+      "showStatsBtn": "SHOW STATS",
+      "layoutLbl": "Auto Layout",
+      "searchLbl": "ID Search",
+      "previousBtn": "PREV",
+      "nextBtn": "NEXT",
+      "resetBtn": "RESET",
+      "toggleLegendBtn": "TOGGLE LEGEND"
+    }
+  },
+  "graphOptions": {
+    "configure": {
+      "enabled": true,
+      "showButton": false
+    },
+    "edges": {
+      "scaling": {
+        "min": 5,
+        "max": 20
+      },
+      "font": {
+        "multi": true,
+        "align": "horizontal"
+      },
+      "smooth": {
+        "enabled": false,
+        "type": "continuous"
+      }
+    },
+    "nodes": {
+      "size": 15,
+      "borderWidth": 2,
+      "shapeProperties": {
+        "interpolation": false
+      },
+      "font": {
+        "color": "#000",
+        "multi": true,
+        "bold": "20px arial black"
+      },
+      "scaling": {
+        "min": 10,
+        "max": 55
+      }
+    },
+    "interaction": {
+      "hover": true,
+      "hideEdgesOnDrag": true,
+      "hideEdgesOnZoom": false,
+      "navigationButtons": true
+    },
+    "physics": {
+      "enabled": true,
+      "barnesHut": {
+        "gravitationalConstant": -10000,
+        "centralGravity": 0.2,
+        "springConstant": 0.5,
+        "springLength": 70,
+        "avoidOverlap": 0.4,
+        "damping": 0.2
+      },
+      "forceAtlas2Based": {
+        "gravitationalConstant": -400,
+        "centralGravity": 0.01,
+        "springLength": 225,
+        "springConstant": 0.1
+      },
+      "repulsion": {
+        "centralGravity": 0.2,
+        "springLength": 200,
+        "springConstant": 0.05,
+        "nodeDistance": 100,
+        "damping": 0.09
+      },
+      "hierarchicalRepulsion": {
+        "centralGravity": 0.1,
+        "springLength": 100,
+        "springConstant": 0.01,
+        "nodeDistance": 120,
+        "damping": 0.09,
+        "avoidOverlap": 0
+      },
+      "stabilization": {
+        "enabled": true,
+        "iterations": 1000,
+        "updateInterval": 1,
+        "onlyDynamicEdges": false,
+        "fit": true
+      },
+      "solver": "barnesHut",
+      "timestep": 0.25,
+      "adaptiveTimestep": false,
+      "wind": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    "layout": {
+      "improvedLayout": false,
+      "hierarchical": {
+        "enabled": false,
+        "direction": "UD",
+        "levelSeparation": 120,
+        "nodeSpacing": 30
+      }
+    }
+  },
+  "legendGraphOptions": {
+    "nodes": {
+      "borderWidth": 2,
+      "font": {
+        "color": "#000",
+        "size": 20
+      }
+    },
+    "edges": {
+      "font": {
+        "color": "#000",
+        "size": 30,
+        "strokeWidth": 5,
+        "strokeColor": "white"
+      },
+      "smooth": {
+        "enabled": false,
+        "type": "continuous"
+      }
+    },
+    "interaction": {
+      "hover": true,
+      "dragView": false,
+      "zoomView": false
+    }
+  }
+}

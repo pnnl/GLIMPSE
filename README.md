@@ -1,4 +1,4 @@
-# GLIMPSE v0.4.4 - capstone ✨
+# GLIMPSE v0.4.4 ✨
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 

@@ -1,0 +1,36 @@
+{
+  "groups": {
+    "R": {
+      "color": "#FF0000",
+      "shape": "star",
+      "size": 5
+    },
+    "G": {
+      "color": "#00FF00",
+      "shape": "dot",
+      "size": 5
+    },
+    "B": {
+      "color": "#0000FF",
+      "shape": "dot",
+      "size": 5
+    }
+  },
+  "edgeOptions": {
+    "M": {
+      "color": "#FF00FF",
+      "dashes": [5, 5, 3, 3],
+      "width": 3
+    },
+    "Y": {
+      "color": "#FFFF00",
+      "dashes": [3, 3],
+      "width": 5
+    },
+    "C": {
+      "color": "#00FFFF",
+      "dashes": false,
+      "width": 1
+    }
+  }
+}

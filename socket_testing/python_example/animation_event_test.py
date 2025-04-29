@@ -24,59 +24,23 @@ new_edge = {
 """
 Animate the newly created edge in GLIMPSE
 """
-animate_edges = [
-   {
-      "objectType": "edge",
-      "id": "XFMR1",
-      "updates": {
-         "animation": True,
-         "increment": 0.01, # normal speed
-         "startFrom": "target",
-      }
-   },
-   {
-      "objectType": "edge",
-      "id": "Reg1",
-      "updates": {
-         "animation": True,
-         "increment": 0.001, # slowest speed
-         "startFrom": "target"
-      }
-   },
-   {
-      "objectType": "edge",
-      "id": "overhead_line11",
-      "updates": {
-         "animation": True,
-         "increment": 0.1 # fastest speed
-      }
-   },
-   {
-      "objectType": "edge",
-      "id": "overhead_line1",
-      "updates": {
-         "animation": True,
-         "increment": 0.05 # faster than normal
-      }
-   },
-   {
-      "objectType": "edge",
-      "id": "overhead_line3",
-      "updates": {
-         "animation": True,
-         "increment": 0.025 # a bit faster than normal
-      }
-   },
-]
+animate_edge = {
+   "objectType": "edge",
+   "id": "cap_92-load_39",
+   "updates": {
+      "animation": True
+   }
+}
 
 def main(): 
    sio = socketio.Client()
    sio.connect(f"{URL}:{PORT}")
    
    if sio.connected:
-      for edge in animate_edges:
-         sio.emit("glimpse", edge)
-         time.sleep(1)
+      sio.emit("addEdge", new_edge)
+      time.sleep(1.5)
+      sio.emit("glimpse", animate_edge)
+      time.sleep(1)
    else:
       print(f"did not connect to socket server at: {URL}:{PORT}")
    

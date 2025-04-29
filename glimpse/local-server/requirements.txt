@@ -1,7 +1,0 @@
-Flask
-Flask-SocketIO
-gevent
-gevent-websocket
-glm
-networkx
-requests

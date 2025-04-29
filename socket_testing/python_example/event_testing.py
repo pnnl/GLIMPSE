@@ -49,19 +49,6 @@ newNodes = [
     
 ]
 
-newNodes =[
-   {
-      "objectType": "attacker",
-      "elementType": "node",
-      "attributes": {
-         "id": "attacker1"
-      },
-      "styles": {
-         "label": "attacker1"
-      }
-   }
-]
-
 '''
 Setting the element type to "edge" lets GLIMPSE 
 know to look for the "to" and "from" 
@@ -135,31 +122,38 @@ edges_to_delete = [
 styleChanges = [
    {
       "elementType": "edge",
-      "id": "switch_54-94",
+      "id": "sw_123",
       "updates": {
-         "color": "#123456",
-         "width": 10,
-         "attributes": {
-            "status": "CLOSED"
-         }
-      }
-   },
-   {
-      "elementType": "edge",
-      "id": "switch_54-94",
-      "updates": {
-         "color": "#654321",
-         "width": 20,
-         "attributes": {
-            "status": "OPEN"
-         }
+         "animation": True,
+         "color": "#4F2FA6",
       }
    },
    {
       "elementType": "node",
-      "id": "node_123",
+      "id": "switch1",
       "updates": {
-        "group": "default"
+         "color": "cyan",
+         "opacity": 0.2,
+         "shape": "triangleDown",
+         "size": 90
+      }
+   },
+     {
+      "elementType": "edge",
+      "id": "switch1-switch2",
+      "updates": {
+         "color": "red",
+         "dashed": True,
+         "width": 12
+      }
+   },
+     {
+      "elementType": "edge",
+      "id": "switch2-internet1",
+      "updates": {
+         "color": "purple",
+         "width": 15,
+         "arrows": "to, from, middle"
       }
    },
 ]
@@ -169,24 +163,24 @@ def main():
    sio.connect(f"{URL}:{PORT}")
    
    # create new nodes in GLIMPSE with the addNode socket event
-   # for new_node_obj in newNodes: 
-   #    sio.emit("addNode", new_node_obj)
-   #    time.sleep(0.75)
+   for new_node_obj in newNodes: 
+      sio.emit("addNode", new_node_obj)
+      time.sleep(0.75)
       
    # create new edges between the added nodes in GLIMPSE
-   # for new_edge_obj in newEdges: 
-   #    sio.emit("addEdge", new_edge_obj)
-   #    time.sleep(0.75)
+   for new_edge_obj in newEdges: 
+      sio.emit("addEdge", new_edge_obj)
+      time.sleep(0.75)
       
-   # # delete some nodes via the deleteNode socket event
-   # for nodeID in nodes_to_delete: 
-   #    sio.emit("deleteNode", nodeID)
-   #    time.sleep(1)
+   # delete some nodes via the deleteNode socket event
+   for nodeID in nodes_to_delete: 
+      sio.emit("deleteNode", nodeID)
+      time.sleep(1)
   
-   # # delete some edge via the deleteEdge socket event
-   # for edgeID in edges_to_delete: 
-   #    sio.emit("deleteEdge", edgeID)
-   #    time.sleep(2)
+   # delete some edge via the deleteEdge socket event
+   for edgeID in edges_to_delete: 
+      sio.emit("deleteEdge", edgeID)
+      time.sleep(2)
 
    for style in styleChanges: 
       sio.emit("glimpse", style)
