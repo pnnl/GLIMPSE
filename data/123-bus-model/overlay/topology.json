@@ -1,0 +1,95 @@
+{
+  "Channel": [
+    {
+      "P2Pdelay": "2ms",
+      "CSMAdelay": "6560",
+      "dataRate": "5Mbps",
+      "jitterMin": 10,
+      "jitterMax": 100,
+      "WifiPropagationDelay": "ConstantSpeedPropagationDelayModel",
+      "WifiRate": "DsssRate1Mbps",
+      "WifiStandard": "80211b"
+    }
+  ],
+  "Gridlayout": [
+    {
+      "MinX": 0,
+      "MinY": 0,
+      "DeltaX": 500,
+      "DeltaY": 500,
+      "GridWidth": 5,
+      "LayoutType": "RowFirst",
+      "setPos": 1
+    }
+  ],
+  "5GSetup": [
+    {
+      "S1uLinkDelay": 1,
+      "N1Delay": 0.01,
+      "N2Delay": 0.01,
+      "Srs": 5,
+      "numUE": 4,
+      "numEnb": 4,
+      "scenario": "UMi-StreetCanyon",
+      "txPower": 40
+    }
+  ],
+  "Node": [
+    {
+      "name": 0,
+      "connections": [3, 5],
+      "UseCSMA": 0,
+      "UseWifi": 1,
+      "x": 10,
+      "y": 20,
+      "error": "0.001"
+    },
+    {
+      "name": 1,
+      "connections": [0, 2],
+      "UseCSMA": 0,
+      "UseWifi": 1,
+      "x": 100,
+      "y": 200,
+      "error": "0.001"
+    },
+    {
+      "name": 2,
+      "connections": [1, 4],
+      "UseCSMA": 0,
+      "UseWifi": 1,
+      "x": 200,
+      "y": 50,
+      "error": "0.001"
+    },
+    {
+      "name": 3,
+      "connections": [4, 5],
+      "UseCSMA": 0,
+      "MTU": 1500,
+      "UseWifi": 1,
+      "x": 300,
+      "y": 400,
+      "error": "0.001"
+    },
+    {
+      "name": 4,
+      "connections": [1, 5],
+      "UseCSMA": 0,
+      "MTU": 1600,
+      "UseWifi": 1,
+      "x": 50,
+      "y": 350,
+      "error": "0.001"
+    },
+    {
+      "name": 5,
+      "connections": [0, 4],
+      "UseCSMA": 0,
+      "UseWifi": 1,
+      "x": 250,
+      "y": 250,
+      "error": "0.001"
+    }
+  ]
+}

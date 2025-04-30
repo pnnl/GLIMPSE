@@ -1,0 +1,11 @@
+Flask
+Flask-SocketIO
+flask-cors
+gevent
+gevent-websocket
+glm
+networkx
+requests
+wheel
+setuptools
+cim-graph

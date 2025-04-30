@@ -1,0 +1,424 @@
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// System Recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+// This player kicks the system into delta mode early so that all transition transients can settle before the scenario transients are triggered
+object player {
+	name recorder_trigger;
+	parent node_150;
+	file trigger.player;
+	property nominal_voltage;
+	flags DELTAMODE;
+}
+
+object recorder {
+    name recorder_V_node_151;
+	parent node_151;
+    flags DELTAMODE;
+    file "pow/Voltage_151.csv";
+    interval 1;
+    limit 10000000;
+    property voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag;
+};
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Diesel Recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+object recorder {
+	name recorder_Gen_1;
+	parent Gen1;
+	property rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec;
+	flags DELTAMODE;
+	//interval -1;
+	interval 1;
+	file "gen/Gen_1_Speed.csv";
+};
+
+
+object recorder {
+	name recorder_Gen_2;
+	parent Gen2;
+	property rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec;
+	flags DELTAMODE;
+	//interval -1;
+	interval 1;
+	file "gen/Gen_2_Speed.csv";
+};
+	
+
+object recorder {
+	name recorder_Gen_3;
+	parent Gen3;
+	property rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec;
+	flags DELTAMODE;
+	//interval -1;
+	interval 1;
+	file "gen/Gen_3_Speed.csv";
+};
+
+object recorder {
+	name recorder_Gen_4;
+	parent Gen4;
+	property rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec;
+	flags DELTAMODE;
+	//interval -1;
+	interval 1;
+	file "gen/Gen_4_Speed.csv";
+};
+	
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Inverter Recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+object recorder {
+	name recorder_INV_1;
+	parent trip_shad_inv1;
+	property VA_Out.real,VA_Out.imag,V_In,VA_Out,Pref,Qref; //,V_In,VA_Out;
+	//property VA_Out.real,VA_Out.imag,IEEE_1547_trip_method,Pref,Qref,V_In,VA_Out;
+	interval 1;
+	flags DELTAMODE;
+	file "inverter/Inverter_#1_MG1.csv";
+};
+
+object recorder {
+	name recorder_test_Vinv1;
+	parent load_42;
+	property voltage_A, voltage_B, voltage_C; 
+        //remove Qref above if issue arrises
+	flags DELTAMODE;
+	interval 1;
+	file "inverter/Inv_1_load_42.csv";
+};
+
+
+object recorder {
+	name recorder_INV_2;
+	parent trip_shad_inv2;
+	property VA_Out.real,VA_Out.imag,Pref,Qref;
+	interval 1;
+	flags DELTAMODE;
+	file "inverter/Inverter_#2_MG1.csv";
+};
+
+object recorder {
+	name recorder_INV_3;
+	parent trip_shad_inv3;
+	property VA_Out.real,VA_Out.imag,Pref,Qref;
+	interval 1;
+	flags DELTAMODE;
+	file "inverter/Inverter_#3_MG2.csv";
+};
+
+object recorder {
+	name recorder_INV_4;
+	parent trip_shad_inv4;
+	property VA_Out.real,VA_Out.imag,V_In,VA_Out,Pref,Qref;
+	interval 1;
+	flags DELTAMODE;
+	file "inverter/Inverter_#4_MG2.csv";
+};
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Microgrid Freequency Values
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+object recorder {
+	name recorder_MG_1_freq;
+	parent node_150;
+	property "GFA_status,measured_frequency";
+	interval 1;
+	flags DELTAMODE;
+	file "gen/MG_1_GFA_status.csv";
+};
+
+object recorder {
+	name recorder_MG_2_freq;
+	parent load_50;
+	property "GFA_status,measured_frequency";
+	interval 1;
+	flags DELTAMODE;
+	file "gen/MG_2_GFA_status.csv";
+};
+
+// This will be the same values as the GFA loads at node_101_1 below
+object recorder {
+	name recorder_MG_3_freq;
+	parent load_100; //node_101;
+	property "GFA_status,measured_frequency";
+	interval 1;
+	flags DELTAMODE;
+	file "gen/MG_3_GFA_status.csv";
+};
+
+object recorder {
+        name recorder_MG3_76_freq;
+        parent load_76;
+        property "GFA_status,measured_frequency";
+        interval 1;
+        flags DELTAMODE;
+        file "gen/MG_3_node_76_freq.csv";
+}
+
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Switch Recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+ object recorder {
+	name recorder_microgrid_switch0;
+	parent microgrid_switch0;
+	file "switch/microgrid_switch0.csv";
+	property phase_A_state,phase_B_state,phase_C_state;
+	flags DELTAMODE;
+	interval 1;
+};
+
+ object recorder {
+	name recorder_microgrid_switch1;
+	parent microgrid_switch1;
+	file "switch/microgrid_switch1.csv";
+	property phase_A_state,phase_B_state,phase_C_state,current_in_A, current_in_B, current_in_C;
+	flags DELTAMODE;
+	interval 1;
+};
+
+ object recorder {
+	name recorder_microgrid_switch2;
+	parent microgrid_switch2;
+	file "switch/microgrid_switch2.csv";
+	property status,phase_A_state,phase_B_state,phase_C_state,current_out_A;
+	flags DELTAMODE;
+	interval 1;
+};
+	
+ object recorder {
+	name recorder_microgrid_switch3;
+	parent microgrid_switch3;
+	file "switch/microgrid_switch3.csv";
+	property status,phase_A_state,phase_B_state,phase_C_state;
+	flags DELTAMODE;
+	interval 1;
+};
+
+object recorder {
+        name recorder_switch_450-451;
+        parent switch_450-451;
+        file "switch/switch_450-451.csv";
+        property status,phase_A_state,phase_B_state,phase_C_state;
+        flags DELTAMODE;
+        interval 1;
+};
+	
+ object recorder {
+	name recorder_microgrid_switch4;
+	parent microgrid_switch4;
+	file "switch/microgrid_switch4.csv";
+	property status,current_out_A,current_out_B,current_out_C,power_out_A,power_out_B,power_out_C,phase_A_state,phase_B_state,phase_C_state;
+	flags DELTAMODE;
+	interval 1;
+	file "switch/Switch_151_300.csv";
+};
+
+object recorder {
+	name recorder_switch_76-761;
+	parent switch_76-761;
+	file "switch/switch_76-761.csv";
+	property current_out_A,current_out_B,current_out_C, phase_A_state,phase_B_state,phase_C_state;
+	flags DELTAMODE;
+	interval 1;
+};
+
+object recorder {
+	name recorder_switch_100-101;
+	parent switch_100-101;
+	file "switch/switch_100-101.csv";
+	property current_out_A,current_out_B,current_out_C, phase_A_state,phase_B_state,phase_C_state;
+	flags DELTAMODE;
+	interval 1;
+};
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Pref Recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+/////////////////////////////////////////////////////////////////////
+object recorder {
+	name recorder_node150_Pref;
+	parent node_150;
+	property voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag;
+	flags DELTAMODE;
+	interval 1;
+	file "pow/node150_Power.csv";
+};
+
+
+object recorder {
+	name recorder_node150_switch;
+	parent switch_1491-149;
+	property current_out_A.real, current_out_B.real, current_out_C.real;
+	flags DELTAMODE;
+	interval 1;
+	file "switch/node150_switch_Current.csv";
+};
+////////////////////////////////////////////////////////////////////
+
+object recorder {
+	name recorder_Gen2_Pref;
+	parent Gen2;
+	property Pref;
+	flags DELTAMODE;
+	interval 1;
+	file "gen/Gen2_Pref.csv";
+};
+
+object recorder {
+	name recorder_Gen3_Pref;
+	parent Gen3;
+	property Pref;
+	flags DELTAMODE;
+	interval 1;
+	file "gen/Gen3_Pref.csv";
+};
+
+object recorder {
+	name recorder_Gen4_Pref;
+	parent Gen4;
+	property Pref;
+	flags DELTAMODE;
+	interval 1;
+	file "gen/Gen4_Pref.csv";
+};
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Pref Players
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+
+object player {
+	name Player_Gen2_Pref;
+	parent Gen2;
+	property Pref;
+	flags DELTAMODE;
+	file "Gen2_Pref.player";
+};
+
+
+
+object player {
+	name Player_Gen3_Pref;
+	parent Gen3;
+	property Pref;
+	flags DELTAMODE;
+	file "Gen3_Pref.player";
+};
+
+object player {
+	name Player_Gen4_Pref;
+	parent Gen4;
+	property Pref;
+	flags DELTAMODE;
+	file "Gen4_Pref.player";
+};
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Sensor recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+// Device 4,5,6
+object recorder {
+	name recorder_test_V;
+	parent load_100;
+	property voltage_A, voltage_B, voltage_C;
+	flags DELTAMODE;
+	interval 1;
+	file "load/Load_100_Voltage.csv";
+};
+
+object recorder {
+	name recorder_load_76;
+	parent load_76;
+	property voltage_A, voltage_B, voltage_C;
+	flags DELTAMODE;
+	interval 1;
+	file "load/Load_76_Voltage.csv";
+};
+
+// Device 4,5,6
+object recorder {
+	name recorder_test_V1;
+	parent node_101;
+	property voltage_A, voltage_B, voltage_C;
+	flags DELTAMODE;
+	interval 1;
+	file "load/Load_1001_Voltage.csv";
+};
+
+object recorder {
+	name recorder_test_C;
+	parent OH_line_100-450;
+	property current_out_A, current_out_B, current_out_C;
+	flags DELTAMODE;
+	interval 1;
+	file "oh/OH_line_100-450_Current.csv";
+};
+
+//object recorder {
+//        name recorder_OH_line_76-86;
+//        parent OH_line_76-86;
+//        property current_out_A, current_out_B, current_out_C;
+//        flags DELTAMODE;
+//        interval 1;
+//        file "oh/OH_line_76-86_Current.csv";
+//};
+
+object recorder {
+        name recorder_OH_line_76-77;
+        parent OH_line_76-77;
+        property current_out_A, current_out_B, current_out_C;
+        flags DELTAMODE;
+        interval 1;
+        file "oh/OH_line_76-77_Current.csv";
+};
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// Regulator recorders
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+ object recorder {
+	name recorder_regulator_41;
+	parent regulator_4;
+	file regulator_4.csv;
+	property current_in_A, current_in_B, current_in_C;
+	flags DELTAMODE;
+	interval 1;
+};
+
+
+
+
+// XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+// all the voltages of the node and current for overhead lines for one single timestamp
+
+
+object currdump {
+       filename "pow/output_current.csv";
+	   mode POLAR;
+       }
+	   
+object voltdump {
+       filename "pow/output_voltage.csv";
+	   mode POLAR;
+       }	

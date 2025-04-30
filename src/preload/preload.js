@@ -1,0 +1,77 @@
+import { contextBridge, ipcRenderer } from 'electron';
+import { electronAPI } from '@electron-toolkit/preload';
+
+// Custom APIs for renderer
+const api = {
+  getFilePaths: () => ipcRenderer.invoke('get-file-paths'),
+  onShowAttributes: (callback) => {
+    ipcRenderer.on('show-attributes', (_event, showBool) => callback(showBool));
+    return () => ipcRenderer.removeAllListeners('show-attributes');
+  },
+  onUpdateData: (callback) => {
+    ipcRenderer.on('update-data', (_event, data) => callback(data));
+    return () => ipcRenderer.removeAllListeners('update-data');
+  },
+  onAddNodeEvent: (callback) => {
+    ipcRenderer.on('add-node', (_event, newNodeData) => callback(newNodeData));
+    return () => ipcRenderer.removeAllListeners('add-node');
+  },
+  onAddEdgeEvent: (callback) => {
+    ipcRenderer.on('add-edge', (_event, newEdgeData) => callback(newEdgeData));
+    return () => ipcRenderer.removeAllListeners('add-edge');
+  },
+  onDeleteNodeEvent: (callback) => {
+    ipcRenderer.on('delete-node', (_event, nodeID) => callback(nodeID));
+    return () => ipcRenderer.removeAllListeners('delete-node');
+  },
+  onDeleteEdgeEvent: (callback) => {
+    ipcRenderer.on('delete-edge', (_event, edgeID) => callback(edgeID));
+    return () => ipcRenderer.removeAllListeners('delete-edge');
+  },
+  onShowVisOptions: (callback) => {
+    ipcRenderer.on('show-vis-options', () => callback());
+    return () => ipcRenderer.removeAllListeners('show-vis-options');
+  },
+  onExportTheme: (callback) => {
+    ipcRenderer.on('export-theme', () => callback());
+    return () => ipcRenderer.removeAllListeners('export-theme');
+  },
+  validate: (jsonFilePath) => ipcRenderer.invoke('validate', jsonFilePath),
+  onReadJsonFile: (filepath) => ipcRenderer.invoke('read-json-file', filepath),
+  getThemeJsonData: (path) => ipcRenderer.invoke('getThemeJsonData', path),
+  exportTheme: (themeData) => ipcRenderer.send('exportTheme', themeData),
+  onExtract: (callback) => {
+    ipcRenderer.on('extract', () => callback());
+    return () => ipcRenderer.removeAllListeners('extract');
+  },
+  onGetMetrics: (callback) => {
+    ipcRenderer.on('getGraphMetrics', () => callback());
+    return () => ipcRenderer.removeAllListeners('getMetrics');
+  },
+  exportCIM: (CIMobjs) => ipcRenderer.send('exportCIM', CIMobjs),
+  json2glm: (jsonData) => ipcRenderer.send('json2glm', jsonData),
+  glm2json: (paths) => ipcRenderer.invoke('glm2json', paths),
+  cimToGS: (paths) => ipcRenderer.invoke('cimToGS', paths),
+  getTheme: () => ipcRenderer.invoke('getSelectedTheme'),
+  getConfig: () => ipcRenderer.invoke('getConfig'),
+  validateTheme: (jsonFilePath) => ipcRenderer.invoke('validate-theme', jsonFilePath),
+  getEmbeddingsPlot: (callback) => {
+    ipcRenderer.on('embeddings_plot', (e, buffer) => callback(buffer));
+    return () => ipcRenderer.removeAllListeners('embeddings_plot');
+  }
+};
+
+// Use `contextBridge` APIs to expose Electron APIs to
+// renderer only if context isolation is enabled, otherwise
+// just add to the DOM global.
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI);
+    contextBridge.exposeInMainWorld('glimpseAPI', api);
+  } catch (error) {
+    console.error(error);
+  }
+} else {
+  window.Electron = electronAPI;
+  window.glimpseAPI = api;
+}
