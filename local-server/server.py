@@ -702,6 +702,6 @@ def natig_config(configObj):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=False, log_output=True)
+   socketio.run(app, port=5173, debug=False, log_output=True)
 
 #-------------------------- End Start WebSocket Server --------------------------#

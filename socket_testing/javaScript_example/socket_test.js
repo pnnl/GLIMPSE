@@ -22,7 +22,7 @@ const sleep = (ms) => {
   });
 };
 
-const socket = io('http://127.0.0.1:5051');
+const socket = io('http://127.0.0.1:5173');
 
 socket.on('connect', async () => {
   console.log(socket.connected);

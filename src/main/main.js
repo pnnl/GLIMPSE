@@ -20,7 +20,7 @@ const Ajv = require('ajv');
 
 const jsonUploadSchema = require('../../schemas/json_upload.schema.json');
 const themeUploadSchema = require('../../schemas/theme_upload.schema.json');
-const socket = io('http://127.0.0.1:5051');
+const socket = io('http://127.0.0.1:5173');
 const isMac = process.platform === 'darwin';
 const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
@@ -81,7 +81,7 @@ const checkIncludes = (jsonData) => {
 };
 
 const glm2json = async (filePaths) => {
-  const res = await fetch('http://127.0.0.1:5051/glm2json', {
+  const res = await fetch('http://127.0.0.1:5173/glm2json', {
     method: 'post',
     headers: {
       'content-type': 'application/json'
@@ -104,7 +104,7 @@ const glm2json = async (filePaths) => {
 };
 
 const cimToGS = async (filePaths) => {
-  const res = await fetch('http://127.0.0.1:5051/cimg-to-GS', {
+  const res = await fetch('http://127.0.0.1:5173/cimg-to-GS', {
     method: 'post',
     headers: {
       'content-type': 'application/json'
@@ -236,7 +236,7 @@ const json2glmFunc = async (jsonData) => {
     data: parsedData
   };
 
-  const res = await fetch('http://127.0.0.1:5051/json2glm', {
+  const res = await fetch('http://127.0.0.1:5173/json2glm', {
     method: 'POST',
     headers: {
       'content-type': 'application/json'

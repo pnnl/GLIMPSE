@@ -1133,7 +1133,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
     const establishNetworkxGraph = async (data) => {
       try {
-        const res = await axios.post('http://127.0.0.1:5051/create-nx-graph', data, {
+        const res = await axios.post('http://127.0.0.1:5173/create-nx-graph', data, {
           headers: 'application/json'
         });
 

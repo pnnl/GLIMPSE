@@ -60,7 +60,7 @@ const ActionDrawer = ({
    */
   const showStats = async () => {
     if (stats === null) {
-      const response = await axios.get('http://127.0.0.1:5051/get-stats');
+      const response = await axios.get('http://127.0.0.1:5173/get-stats');
 
       setStats(response.data);
 
