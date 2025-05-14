@@ -1,6 +1,6 @@
 .file-upload-form-container {
   display: flex;
-  height: calc(100% - 4rem);
+  height: calc(100% - 4rem - 1px);
   align-items: center;
   justify-content: center;
 }

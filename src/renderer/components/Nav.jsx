@@ -18,34 +18,58 @@ import {
   Autocomplete,
   TextField
 } from '@mui/material';
+import NatigConfigModal from './NatigConfigModal';
 import MenuIcon from '@mui/icons-material/Menu';
 import { SearchRounded } from '@mui/icons-material';
 import { ArrowRight } from '@mui/icons-material';
+import Watch from './Watch';
 
-const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
+const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, applyOverlay }) => {
   const [openAbout, setOpenAbout] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [openConfig, setOpenConfig] = useState(false);
+  const [openWatch, setOpenWatch] = useState(false);
   const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
   const [theme, setTheme] = useState('feeder-model-theme');
+  const [watchData, setWatchData] = useState(null);
   const parentMenuRef = useRef(null);
   const openMenu = Boolean(menuAnchorEl);
   const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
 
-  const options = useMemo(() => {
-    if (!showSearch || !graphData.current) {
+  const sortedEdgeIDs = useMemo(() => {
+    if (!showSearch || !graphData.current || !graphData.current.edges) {
       return [];
     }
+    // console.log('Recalculating sortedEdgeIDs'); // For debugging
+    return graphData.current.edges
+      .get()
+      .slice() // Create a shallow copy before sorting to avoid mutating the original, if applicable
+      .sort((a, b) => -b.type.localeCompare(a.type));
+  }, [showSearch, graphData.current?.edges]); // Depends on showSearch and the edges collection itself
 
-    const sortedEdgeIDs = graphData.current.edges
+  // Memoize sorted nodes
+  const sortedNodeIDs = useMemo(() => {
+    if (!showSearch || !graphData.current || !graphData.current.nodes) {
+      return [];
+    }
+    // console.log('Recalculating sortedNodeIDs'); // For debugging
+    return graphData.current.nodes
       .get()
+      .slice() // Create a shallow copy before sorting
       .sort((a, b) => -b.type.localeCompare(a.type));
-    const sortedNodeIDs = graphData.current.nodes
-      .get()
-      .sort((a, b) => -b.type.localeCompare(a.type));
+  }, [showSearch, graphData.current?.nodes]); // Depends on showSearch and the nodes collection itself
+
+  // Combine memoized sorted lists
+  const options = useMemo(() => {
+    if (!showSearch) {
+      // Primary guard based on visibility
+      return [];
+    }
+    // console.log('Recalculating combined options'); // For debugging
     return [...sortedEdgeIDs, ...sortedNodeIDs];
-  }, [showSearch, graphData]);
+  }, [showSearch, sortedEdgeIDs, sortedNodeIDs]); // Depends on showSearch and the memoized sorted arrays
 
   const handleMenuClick = (e) => {
     setMenuAnchorEl(e.currentTarget);
@@ -89,7 +113,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
 
   return (
     <>
-      <Toolbar variant="dense" sx={{ width: '100%' }}>
+      <Toolbar variant="dense" sx={{ width: '100%', borderBottom: '1px solid lightgrey' }}>
         <IconButton size="medium" onClick={handleMenuClick}>
           <MenuIcon />
         </IconButton>
@@ -100,6 +124,8 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
               <ArrowRight />
             </ListItemIcon>
           </MenuItem>
+          <MenuItem onClick={() => setOpenConfig(true)}>Scenerion Config</MenuItem>
+          <MenuItem onClick={() => setOpenWatch(true)}>Watching</MenuItem>
         </Menu>
         <Menu
           id="themes-submenu"
@@ -150,6 +176,25 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
         </Stack>
       </Toolbar>
 
+      <NatigConfigModal
+        open={openConfig}
+        modelNumber={modelNumber}
+        close={() => {
+          setOpenConfig(false);
+          closeMenu();
+        }}
+        applyOverlay={applyOverlay}
+        graphData={graphData}
+        setWatchData={setWatchData}
+      />
+      <Watch
+        open={openWatch}
+        watchData={setWatchData}
+        close={() => {
+          setOpenWatch(false);
+          closeMenu();
+        }}
+      />
       <About show={openAbout} close={() => setOpenAbout(false)} />
     </>
   );

@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Network } from 'vis-network';
-import { Box } from '@mui/material';
+import { Box, Container } from '@mui/material';
 import LegendContextMenu from './LegendContextMenu';
 import '../other-styles/vis-network.css';
 import ThemeBuilder from './ThemeBuilder';
@@ -12,9 +12,9 @@ const Legend = ({
   hideObjects,
   legendData,
   visTheme,
-  applyTheme
+  applyTheme,
+  legendContainerRef
 }) => {
-  const container = useRef(null);
   const [openThemeBuilder, setOpenThemeBuilder] = useState(false);
   const [themeBuilderContext, setThemeBuilderContext] = useState({
     group: Object.keys(visTheme.groups)[0],
@@ -44,7 +44,7 @@ const Legend = ({
   };
 
   useEffect(() => {
-    const network = new Network(container.current, legendData, legendGraphOptions);
+    const network = new Network(legendContainerRef.current, legendData, legendGraphOptions);
     network.fit();
 
     network.on('doubleClick', (params) => {
@@ -84,9 +84,7 @@ const Legend = ({
       }
     });
 
-    const networkCanvas = document
-      .getElementById('legend-network')
-      .getElementsByTagName('canvas')[0];
+    const networkCanvas = legendContainerRef.current.getElementsByTagName('canvas')[0];
 
     const changeCursor = (newCursorStyle) => {
       networkCanvas.style.cursor = newCursorStyle;
@@ -96,15 +94,13 @@ const Legend = ({
     network.on('blurNode', () => changeCursor('default'));
     network.on('hoverEdge', () => changeCursor('pointer'));
     network.on('blurEdge', () => changeCursor('default'));
-  }, []);
+  });
 
   return (
     <>
       <Box
-        id="legend-network"
-        component={'div'}
         sx={{ height: '100%', width: '28%', borderLeft: '1px solid lightgrey' }}
-        ref={container}
+        ref={legendContainerRef}
         onContextMenu={handleContext}
       />
       <LegendContextMenu

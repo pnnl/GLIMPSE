@@ -28,6 +28,10 @@ const api = {
     ipcRenderer.on('delete-edge', (_event, edgeID) => callback(edgeID));
     return () => ipcRenderer.removeAllListeners('delete-edge');
   },
+  onUpdateWatchItem: (callback) => {
+    ipcRenderer.on('update-watch-item', (_, watchUpdateData) => callback(watchUpdateData));
+    return () => ipcRenderer.removeAllListeners('update-watch-item');
+  },
   onShowVisOptions: (callback) => {
     ipcRenderer.on('show-vis-options', () => callback());
     return () => ipcRenderer.removeAllListeners('show-vis-options');

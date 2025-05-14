@@ -1,6 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { Box, Stack } from '@mui/material';
 import axios from 'axios';
-import React, { useEffect, useRef } from 'react';
 import { DataSet } from 'vis-data';
 import { Network } from 'vis-network';
 import '../styles/Graph.css';
@@ -24,12 +24,11 @@ import {
   setGraphData,
   showAttributes
 } from '../utils/graphUtils';
-import ActionDrawer from './ActionDrawer';
 import ContextMenu from './ContextMenu';
 import Legend from './Legend';
 import NewNodeForm from './NewNodeForm';
 import NodePopup from './NodePopup';
-import VisActionsDial from './VisActionsDial';
+import VisRibbon from './VisRibbon';
 import { isGlmFile } from '../utils/appUtils';
 import { readJsonFile } from '../utils/fileProcessing';
 import { NewEdgeForm } from './NewEdgeForm';
@@ -38,7 +37,10 @@ const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 const ANGLE = Math.PI / 12; // 15 degrees in radians
 
 const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) => {
-  const networkContainer = useRef(null);
+  const networkContainerRef = useRef(null);
+  const layoutFormContainerRef = useRef(null);
+  const legendContainerRef = useRef(null);
+  const circularProgressRef = useRef(null);
   const GLIMPSE_OBJECT = { objects: [] };
   const nodeTypes = Object.keys(theme.groups);
   const edgeTypes = Object.keys(theme.edgeOptions);
@@ -454,7 +456,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    * Adds new nodes and edges based on the overlay json file data
    * @param {Object} fileData - the json object read from the file
    */
-  const setOverlay = async (filePaths, showRemoveOverlayButton) => {
+  const setOverlay = async (filePaths) => {
     if (filePaths.every((file) => isGlmFile(file))) {
       // sed file paths to be parsed and validated in the main process
       const data = await window.glimpseAPI.glm2json(filePaths);
@@ -483,7 +485,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       try {
         const fileData = await readJsonFile(filePaths[0]);
 
-        showRemoveOverlayButton('flex');
         applyOverlay(fileData);
       } catch (msg) {
         console.log(msg);
@@ -904,20 +905,19 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    * Hides the legend container and shows the vis.js layout options form
    */
   const toggleVisOptions = () => {
-    const legend = document.getElementById('legend-network');
-    const layoutForm = document.getElementById('layout-form');
-    const graph = document.getElementById('graph');
-
-    if (layoutForm.style.display === 'none' || layoutForm.style.display === '') {
-      graph.style.width = '72%';
-      layoutForm.style.display = 'flex';
-      legend.style.display = 'none';
+    if (
+      layoutFormContainerRef.current.style.display === 'none' ||
+      layoutFormContainerRef.current.style.display === ''
+    ) {
+      networkContainerRef.current.style.width = '72%';
+      layoutFormContainerRef.current.style.display = 'flex';
+      legendContainerRef.current.style.display = 'none';
     } else {
-      if (graph.style.width === '30%') {
-        graph.style.width = '72%';
+      if (networkContainerRef.current.style.width === '30%') {
+        networkContainerRef.current.style.width = '72%';
       }
-      layoutForm.style.display = 'none';
-      legend.style.display = 'block';
+      layoutFormContainerRef.current.style.display = 'none';
+      legendContainerRef.current.style.display = 'block';
     }
   };
 
@@ -1172,7 +1172,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         graphOptions.physics.enabled = false;
         graphOptions.groups = theme.groups;
         circularProgressBar.style.display = 'none';
-        network = new Network(networkContainer.current, graphData, graphOptions);
+        network = new Network(networkContainerRef.current, graphData, graphOptions);
       } else {
         if (
           graphData.nodes.length > 151 &&
@@ -1183,7 +1183,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         }
 
         graphOptions.groups = theme.groups;
-        network = new Network(networkContainer.current, graphData, graphOptions);
+        network = new Network(networkContainerRef.current, graphData, graphOptions);
 
         // Create clusters
         if (establishCommunities) {
@@ -1198,13 +1198,13 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           const minWidth = 1;
           const widthFactor = params.iterations / params.total;
           const width = Math.max(minWidth, maxWidth * widthFactor);
-          circularProgressBar.style.background = `conic-gradient(#45AB48 ${width}deg, #333 0deg)`;
+          circularProgressBar.style.background = `conic-gradient(#45AB48 ${width}deg, #333333 0deg)`;
           circularProgressValue.innerText = `${Math.round(widthFactor * 100)}%`;
         });
 
         network.once('stabilizationIterationsDone', () => {
           /* Once stabilization is done the circular progress with display 100% for half a second then hide */
-          circularProgressBar.style.background = 'conic-gradient(#45AB48 360deg, #333 0deg)';
+          circularProgressBar.style.background = 'conic-gradient(#45AB48 360deg, #333333 0deg)';
           circularProgressValue.innerText = '100%';
           circularProgressBar.style.opacity = 0.7;
 
@@ -1216,9 +1216,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           }, 500);
         });
       }
-
-      // after drawing animate edges if there are any to animate
-      // glmNetwork.on("afterDrawing", (ctx) => animateEdges(ctx));
 
       network.on('doubleClick', (params) => {
         if (params.nodes[0] === undefined) {
@@ -1291,7 +1288,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
             return false;
           },
-          container: document.getElementById('layout-form')
+          container: layoutFormContainerRef.current
         }
       });
     };
@@ -1299,7 +1296,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     setSearchReqs({
       graphData: graphData,
       findNode: (node) => nodeFocus(node, network),
-      findEdge: (edge) => edgeFocus(edge, network)
+      findEdge: (edge) => edgeFocus(edge, network),
+      applyOverlay: applyOverlay
     });
 
     initializeGraph();
@@ -1315,29 +1313,60 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
   /* ------------------------- End visualization hook ------------------------- */
 
   return (
-    <div className="vis-wrapper">
-      <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
-
-      <NewEdgeForm
-        onMount={onNewEdgeFormMount}
-        nodes={() => graphData.nodes.getIds()}
-        edgeTypes={Object.keys(objectTypeCount.edges).filter(
-          (key) => objectTypeCount.edges[key] > 0
-        )}
-        createEdge={addNewEdge}
+    <>
+      <VisRibbon
+        legendContainerRef={legendContainerRef}
+        networkContainerRef={networkContainerRef}
+        layoutContainerRef={layoutFormContainerRef}
+        circularProgressRef={circularProgressRef}
+        setOverlay={setOverlay}
+        rotateCW={() => rotateCW(network, ANGLE)}
+        rotateCCW={() => rotateCCW(network, ANGLE)}
+        prev={() => Prev(network, highlightedNodes, counter)}
+        next={() => Next(network, highlightedNodes, counter)}
+        physicsToggle={TogglePhysics}
       />
 
-      <NewNodeForm
-        onMount={onNewNodeFormMount}
-        nodes={() => graphData.nodes.getIds()}
-        addNode={addNewNode}
-        nodeTypes={Object.keys(objectTypeCount.nodes)}
-        edgeTypes={Object.keys(objectTypeCount.edges)}
-      />
+      <Stack
+        sx={{ height: 'calc(100% - 8.6rem)', width: '100%', borderTop: '1px solid lightgrey' }}
+        direction={'row'}
+      >
+        {/* <ActionDrawer
 
-      <div id="circularProgress">
+          removeOverlay={removeOverlay}
+          reset={Reset}
+          modelNumber={modelNumber}
+          applyOverlay={applyOverlay}
+          getSwitches={() => graphData.edges.getIds({ filter: (edge) => edge.type === 'switch' })}
+        /> */}
+
+        <Box
+          sx={{ width: '72%', height: '100%' }}
+          ref={networkContainerRef}
+          onContextMenu={handleContextmenu}
+        />
+
+        <Legend
+          highlightNodes={(nodeType) =>
+            HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
+          }
+          highlightEdges={(edgeType) =>
+            HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
+          }
+          hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
+          legendData={legendData}
+          visTheme={theme}
+          applyTheme={applyTheme}
+          legendContainerRef={legendContainerRef}
+        />
+
+        <Box sx={{ display: 'none', width: '32.5rem' }} ref={layoutFormContainerRef} />
+      </Stack>
+
+      <div ref={circularProgressRef} id="circularProgress">
         <span id="progressValue">0%</span>
       </div>
+      <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
 
       <ContextMenu
         onMount={onContextMenuChildMount}
@@ -1355,48 +1384,23 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         watch={addToWatchList}
       />
 
-      <ActionDrawer
-        physicsToggle={TogglePhysics}
-        setOverlay={setOverlay}
-        removeOverlay={removeOverlay}
-        reset={Reset}
-        modelNumber={modelNumber}
-        applyOverlay={applyOverlay}
-        getSwitches={() => graphData.edges.getIds({ filter: (edge) => edge.type === 'switch' })}
+      <NewNodeForm
+        onMount={onNewNodeFormMount}
+        nodes={() => graphData.nodes.getIds()}
+        addNode={addNewNode}
+        nodeTypes={Object.keys(objectTypeCount.nodes)}
+        edgeTypes={Object.keys(objectTypeCount.edges)}
       />
 
-      <Stack sx={{ height: '100%', width: '100%' }} direction={'row'}>
-        <Box
-          id="graph"
-          component={'div'}
-          sx={{ width: '72%', height: '100%' }}
-          ref={networkContainer}
-          onContextMenu={handleContextmenu}
-        />
-
-        <div id="layout-form" />
-
-        <Legend
-          highlightNodes={(nodeType) =>
-            HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
-          }
-          highlightEdges={(edgeType) =>
-            HighlightEdges(edgeType, highlightedNodes, graphData, edgeOptions, highlightedEdges)
-          }
-          hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
-          legendData={legendData}
-          visTheme={theme}
-          applyTheme={applyTheme}
-        />
-      </Stack>
-
-      <VisActionsDial
-        rotateCW={() => rotateCW(network, ANGLE)}
-        rotateCCW={() => rotateCCW(network, ANGLE)}
-        prev={() => Prev(network, highlightedNodes, counter)}
-        next={() => Next(network, highlightedNodes, counter)}
+      <NewEdgeForm
+        onMount={onNewEdgeFormMount}
+        nodes={() => graphData.nodes.getIds()}
+        edgeTypes={Object.keys(objectTypeCount.edges).filter(
+          (key) => objectTypeCount.edges[key] > 0
+        )}
+        createEdge={addNewEdge}
       />
-    </div>
+    </>
   );
 };
 

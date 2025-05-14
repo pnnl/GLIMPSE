@@ -31,11 +31,6 @@ div.vis-configuration-wrapper {
   width: auto;
 }
 
-.vis-wrapper {
-  height: calc(100% - 4rem);
-  border-top: 1px solid lightgrey;
-}
-
 #layout-form {
   display: none;
   height: 100%;

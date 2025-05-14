@@ -11,13 +11,15 @@ const App = () => {
   const graphDataRef = useRef(null);
   const findNodeRef = useRef(null);
   const findEdgeRef = useRef(null);
+  const applyOverlayRef = useRef(null);
   let setShowSearch = null;
 
   // function to get the graphData object form child component
-  const setSearchReqs = ({ graphData, findNode, findEdge }) => {
+  const setSearchReqs = ({ graphData, findNode, findEdge, applyOverlay }) => {
     graphDataRef.current = graphData;
     findNodeRef.current = findNode;
     findEdgeRef.current = findEdge;
+    applyOverlayRef.current = applyOverlay;
     setShowSearch(true);
   };
 
@@ -42,6 +44,7 @@ const App = () => {
         findNode={findNodeRef}
         findEdge={findEdgeRef}
         modelNumber={fileData.modelNumber}
+        applyOverlay={applyOverlayRef}
       />
       {!filesUploaded && (
         <FileUpload
@@ -53,7 +56,6 @@ const App = () => {
           <LinearProgress />
         </Box>
       )}
-
       {filesUploaded && !fileData.loading && (
         <Graph
           dataToVis={fileData.visData}

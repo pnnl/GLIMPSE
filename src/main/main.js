@@ -522,6 +522,10 @@ app
     socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
     socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
     socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
+    socket.on('update-watch-item', (watchData) => {
+      console.log(watchData);
+      // mainWindow.webContents.send('update-watch-item', watchData)
+    });
 
     // autoUpdater.checkForUpdatesAndNotify();
     app.on('activate', () => {

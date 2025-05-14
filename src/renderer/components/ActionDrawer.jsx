@@ -29,7 +29,10 @@ const ActionDrawer = ({
   removeOverlay,
   reset,
   modelNumber,
-  getSwitches
+  getSwitches,
+  networkContainerRef,
+  legendContainerRef,
+  layoutContainerRef
 }) => {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [hideRemoveOverlayBtn, setHideRemoveOverlayBtn] = useState('none');
@@ -75,22 +78,19 @@ const ActionDrawer = ({
   };
 
   const toggleLegend = (e) => {
-    const legend = document.getElementById('legend-network');
-    const graph = document.getElementById('graph');
     const circularProgress = document.getElementById('circularProgress');
-    const layoutForm = document.getElementById('layout-form');
 
     if (e.target.checked) {
-      legend.style.display = 'none';
-      graph.style.width = '100%';
+      legendContainerRef.current.style.display = 'none';
+      networkContainerRef.current.style.width = '100%';
       circularProgress.style.left = '50%';
     } else {
-      if (layoutForm.style.display === 'flex') {
-        layoutForm.style.display = 'none';
+      if (layoutContainerRef.current.style.display === 'flex') {
+        layoutContainerRef.current.style.display = 'none';
       }
-      graph.style.width = '72%';
+      legendContainerRef.current.style.display = 'block';
+      networkContainerRef.current.style.width = '72%';
       circularProgress.style.left = '36%';
-      legend.style.display = 'block';
     }
   };
 
@@ -136,13 +136,13 @@ const ActionDrawer = ({
       </Stack>
       <Drawer
         variant="persistent"
-        anchor="left"
+        anchor="top"
         open={openDrawer}
         onClose={closeDrawer}
-        onPointerLeave={closeDrawer}
+        // onPointerLeave={closeDrawer}
         sx={{
           flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, top: '65px', boxSizing: 'border-box' }
+          [`& .MuiDrawer-paper`]: { width: 240, top: '4rem', boxSizing: 'border-box' }
         }}
       >
         <CustomFormControlLabel

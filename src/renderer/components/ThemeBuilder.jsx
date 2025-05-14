@@ -16,27 +16,27 @@ import {
   Typography
 } from '@mui/material';
 
+const shapes = [
+  'ellipse',
+  'circle',
+  'database',
+  'box',
+  'text',
+  'diamond',
+  'dot',
+  'star',
+  'triangle',
+  'triangleDown',
+  'hexagon',
+  'square',
+  'circularImage'
+];
+
 const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
   if (!open) return null;
 
   const nodeTypes = Object.keys(visTheme.groups);
   const edgeTypes = Object.keys(visTheme.edgeOptions);
-
-  const shapes = [
-    'ellipse',
-    'circle',
-    'database',
-    'box',
-    'text',
-    'diamond',
-    'dot',
-    'star',
-    'triangle',
-    'triangleDown',
-    'hexagon',
-    'square',
-    'circularImage'
-  ];
 
   const [themeBuilderFormFields, setThemeBuilderFormFields] = useState({
     newNodeStyles: {

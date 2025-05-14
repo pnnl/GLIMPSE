@@ -6,7 +6,6 @@ import socket
 import glm
 import json
 import os
-from datetime import datetime
 
 #cim-graph imports
 from cimgraph.models import FeederModel
@@ -592,13 +591,6 @@ def json_to_glm():
 
   return "", 204
 
-@app.route("/update", methods=["POST"])
-def update():
-   obj = req.get_json()
-   socketio.emit(obj[0], obj)
-   # global output = str(obj)
-   return obj
-
 @app.route("/create-nx-graph", methods=["POST"])
 def create_nx_graph():
    """
@@ -660,23 +652,6 @@ def delete_node(nodeID):
 def delete_edge(edgeID):
    socketio.emit("delete-edge", edgeID)
 
-@socketio.on('connect')
-def connect():
-    print(f"{datetime.now().isoformat()} - Client connected")
-
-@socketio.on('csv_data')
-def handle_csv_data(data):
-    """Handler for receiving CSV data from clients"""
-    socketio.emit("update-watch-item", data)
-    # print(f"{datetime.now().isoformat()} - Received data from client:")
-    # print(f"Data: {data}")
-    # socketio.emit("StreamData", data)
-
-@socketio.on('disconnect')
-def disconnect():
-    print(f"{datetime.now().isoformat()} - Client disconnected")
-
-
 @socketio.on("natig-config")
 def natig_config(configObj):
   # send config
@@ -696,6 +671,10 @@ def natig_config(configObj):
     return "did not send {0}".format(e)
 
   return "got your message!! - Server.py"
+
+@socketio.on("watch-update")
+def watch_update(watch_data):
+  print(f"watch data received in backend:\n{json.dumps(watch_data, indent=2)}")
 
 #------------------------------ End WebSocket Events ------------------------------#
 
