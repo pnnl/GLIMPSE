@@ -119,25 +119,29 @@ export const edgeFocus = (edge, network) => {
     }
   };
 
-  const clusteredEdges = network.clustering.getClusteredEdges(edgeID);
-  if (clusteredEdges.length > 1) {
-    edgeID = clusteredEdges[0];
-  } else if (network.clustering.findNode(edge.from).length > 1) {
+  if (network.clustering.findNode(edge.from).length > 1) {
     console.log(network.body.nodes[edge.from].options.communityID);
     nodeFocus(
       { id: edge.from, communityID: network.body.nodes[edge.from].options.communityID },
       network
     );
-  } else {
-    const x_1 = network.body.edges[edgeID].from.x;
-    const y_1 = network.body.edges[edgeID].from.y;
-    const x_2 = network.body.edges[edgeID].to.x;
-    const y_2 = network.body.edges[edgeID].to.y;
 
-    const midPoint = { x: (x_1 + x_2) / 2, y: (y_1 + y_2) / 2 };
-
-    network.moveTo({ position: midPoint, ...options });
+    return null;
   }
+
+  const clusteredEdges = network.clustering.getClusteredEdges(edgeID);
+  if (clusteredEdges.length > 1) {
+    edgeID = clusteredEdges[0];
+  }
+
+  const x_1 = network.body.edges[edgeID].from.x;
+  const y_1 = network.body.edges[edgeID].from.y;
+  const x_2 = network.body.edges[edgeID].to.x;
+  const y_2 = network.body.edges[edgeID].to.y;
+
+  const midPoint = { x: (x_1 + x_2) / 2, y: (y_1 + y_2) / 2 };
+
+  network.moveTo({ position: midPoint, ...options });
 };
 
 /**
@@ -543,7 +547,7 @@ export const setGraphData = (
   edgeOptions,
   graphOptions
 ) => {
-  /* 
+  /*
       acceptable keys object and its attributes ex:
       {
          ["name" || "objectType"]: "load",
@@ -552,7 +556,7 @@ export const setGraphData = (
             ["name" || "id"]: "load_123",
             ...
          }
-      } 
+      }
    */
   const keys = ['id', 'objectType', 'name'];
   const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);

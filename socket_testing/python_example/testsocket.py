@@ -13,7 +13,7 @@ sio.connect(f"{URL}:{PORT}")
 def get_update_data(filepath):
    file = open(filepath, "r")
    file_data = json.loads(file.read())
-   
+
    file.close()
    return file_data["updateData"]
 
@@ -64,18 +64,18 @@ def stream_data(data):
     print("Received: " + str(data))
 
 # ------------------ Connecting to Socket Server ------------------ #
-def main(filepath):
+def main():
    data = sio.emit('connectToServer', {"data": "Hello from client!!"})
 
    #update_data = get_update_data(filepath)
-   
+
    #for update_obj in update_data:
    #   sio.emit("glimpse", update_obj)
    #   time.sleep(0.5)
-      
+
    # sio.disconnect()
 
 if __name__ == "__main__":
    # send in the path of the json file with update data
-   main(sys.argv[1])
+   main()
    sio.wait()

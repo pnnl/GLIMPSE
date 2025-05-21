@@ -189,7 +189,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
       />
       <Watch
         open={openWatch}
-        watchData={setWatchData}
+        watchData={watchData}
         close={() => {
           setOpenWatch(false);
           closeMenu();

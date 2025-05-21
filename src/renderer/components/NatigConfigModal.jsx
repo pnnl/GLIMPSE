@@ -298,7 +298,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
     if (Object.keys(watchList).length === 0) {
       setWatchList({ [itemsToWatch[0]]: switchWatchProporties });
     } else if (itemsToWatch.length > Object.keys(watchList).length) {
-      const newObjID = itemsToWatch.at(-1);
+      const newObjID = itemsToWatch[itemsToWatch.length - 1];
 
       setWatchList({ ...watchList, [newObjID]: switchWatchProporties });
     } else {
@@ -380,6 +380,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
       };
 
       console.log(natigGeneralConfig);
+      console.log('Watch Data:', watchData);
       setWatchData(watchData);
 
       window.glimpseAPI.sendNatigConfig(natigGeneralConfig);
@@ -664,7 +665,6 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                           size="small"
                           select
                           onChange={(e) => handleValueChange(e, switchObj.id)}
-                          value={switchObj.isInt}
                           name="isInt"
                           label={MIMConfig.isInt.label}
                         >

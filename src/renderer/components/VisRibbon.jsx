@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import StatsTableModal from './StatsTableModal';
+import axios from 'axios';
 import {
   Button,
   ButtonGroup,
@@ -22,6 +24,7 @@ const VisRibbon = ({
   rotateCCW,
   next,
   prev,
+  reset,
   legendContainerRef,
   networkContainerRef,
   layoutContainerRef,
@@ -30,6 +33,8 @@ const VisRibbon = ({
   setOverlay
 }) => {
   const [vistOptions, setVisOptions] = useState([]);
+  const [showTable, setShowTable] = useState(false);
+  const [stats, setStats] = useState(null);
 
   const handleToogleChange = (event, newOptions) => {
     if (newOptions.includes('autoLayout')) {
@@ -54,67 +59,104 @@ const VisRibbon = ({
     setVisOptions(newOptions);
   };
 
+  /**
+   * Send the entire graph data object to the main process and extract statistic using networkx
+   */
+  const showStats = async () => {
+    if (stats === null) {
+      const response = await axios.get('http://127.0.0.1:5173/get-stats');
+
+      setStats(response.data);
+
+      setShowTable(true);
+    } else {
+      setShowTable(true);
+    }
+  };
+
   const handleAttachOverlay = async () => {
     const filepaths = await window.glimpseAPI.getFilePaths();
     setOverlay(filepaths);
   };
 
+  useEffect(() => {
+    const removeListenersArr = [];
+    removeListenersArr.push(window.glimpseAPI.onGetMetrics(showStats));
+
+    return () => {
+      for (let removeListener of removeListenersArr) {
+        removeListener();
+      }
+    };
+  });
+
   return (
-    <Paper
-      sx={{
-        display: 'flex',
-        height: '3.5rem',
-        with: '100%',
-        padding: '0.5rem',
-        m: '0.5rem 1rem'
-      }}
-      elevation={2}
-    >
-      <Stack
-        width={'100%'}
-        spacing={1}
-        divider={<Divider orientation="vertical" flexItem />}
-        direction={'row'}
+    <>
+      <Paper
+        sx={{
+          display: 'flex',
+          height: '3.5rem',
+          with: '100%',
+          padding: '0.5rem',
+          m: '0.5rem 1rem'
+        }}
+        elevation={2}
       >
-        <Tooltip title="Add an Overlay">
-          <Button onClick={handleAttachOverlay} color="#333333" variant="outlined" size="small">
-            <Add />
-          </Button>
-        </Tooltip>
-
-        <ToggleButtonGroup value={vistOptions} onChange={handleToogleChange}>
-          <Tooltip title="Auto Layout">
-            <ToggleButton value={'autoLayout'}>
-              <InsightsRounded />
-            </ToggleButton>
-          </Tooltip>
-          <ToggleButton value={'hideLegend'}>
-            <Tooltip title="Hide Legend">
-              <HideSource />
+        <Stack width={'100%'} spacing={1} justifyContent={'space-between'} direction={'row'}>
+          <Stack
+            direction={'row'}
+            spacing={1}
+            divider={<Divider orientation="vertical" flexItem />}
+          >
+            <Tooltip title="Add an Overlay">
+              <Button onClick={handleAttachOverlay} color="#333333" variant="outlined" size="small">
+                <Add />
+              </Button>
             </Tooltip>
-          </ToggleButton>
-        </ToggleButtonGroup>
 
-        <ButtonGroup color="#333333" variant="outlined" size="small">
-          <Tooltip title="Rotate CCW">
-            <Button onClick={rotateCCW}>
-              <RotateLeftSharp />
+            <ToggleButtonGroup value={vistOptions} onChange={handleToogleChange}>
+              <Tooltip title="Auto Layout">
+                <ToggleButton value={'autoLayout'}>
+                  <InsightsRounded />
+                </ToggleButton>
+              </Tooltip>
+              <ToggleButton value={'hideLegend'}>
+                <Tooltip title="Hide Legend">
+                  <HideSource />
+                </Tooltip>
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
+          <Stack
+            direction={'row'}
+            spacing={1}
+            divider={<Divider orientation="vertical" flexItem />}
+          >
+            <ButtonGroup color="#333333" variant="outlined" size="small">
+              <Tooltip title="Rotate CCW">
+                <Button onClick={rotateCCW}>
+                  <RotateLeftSharp />
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Rotate CW">
+                <Button onClick={rotateCW}>
+                  <RotateRightSharp />
+                </Button>
+              </Tooltip>
+            </ButtonGroup>
+            <ButtonGroup color="#333333" variant="outlined" size="small">
+              <Button onClick={prev}>Prev</Button>
+              <Button onClick={next}>Next</Button>
+            </ButtonGroup>
+            <Button color="#333333" variant="outlined" size="small" onClick={reset}>
+              Reset
             </Button>
-          </Tooltip>
-
-          <Tooltip title="Rotate CW">
-            <Button onClick={rotateCW}>
-              <RotateRightSharp />
-            </Button>
-          </Tooltip>
-        </ButtonGroup>
-
-        <ButtonGroup color="#333333" variant="outlined" size="small">
-          <Button onClick={prev}>Prev</Button>
-          <Button onClick={next}>Next</Button>
-        </ButtonGroup>
-      </Stack>
-    </Paper>
+          </Stack>
+        </Stack>
+      </Paper>
+      <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
+    </>
   );
 };
 

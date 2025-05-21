@@ -20,6 +20,7 @@ const Ajv = require('ajv');
 
 const jsonUploadSchema = require('../../schemas/json_upload.schema.json');
 const themeUploadSchema = require('../../schemas/theme_upload.schema.json');
+const { error } = require('console');
 const socket = io('http://127.0.0.1:5173');
 const isMac = process.platform === 'darwin';
 const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
@@ -252,7 +253,11 @@ const json2glmFunc = async (jsonData) => {
 };
 
 const getFilePaths = async () => {
-  const fileSelection = await dialog.showOpenDialog({ properties: ['multiSelections'] });
+  const fileSelectionPromise = dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections']
+  });
+
+  const fileSelection = await fileSelectionPromise;
 
   if (fileSelection.canceled) return null;
 
@@ -475,8 +480,10 @@ const initiateServer = () => {
       console.log(data.toString('utf8'));
     });
     serverProcess.stderr.on('data', (data) => {
-      console.error(`Server error: ${data}`);
+      console.error(`Server error: ${data.toString('utf8')}`);
     });
+    serverProcess.stdout.on('error', (error) => console.log(`Server error: ${error}`));
+    serverProcess.stderr.on('error', (error) => console.log(`Server error: ${error}`));
   } else {
     serverProcess = spawn('python', [join(__dirname, '..', '..', 'local-server', 'server.py')]);
     serverProcess.stdout.on('data', (data) => {
@@ -515,16 +522,16 @@ app
       splashWindow.close();
       makeWindow();
       mainWindow.show();
-    });
 
-    socket.on('update-data', (data) => mainWindow.webContents.send('update-data', data));
-    socket.on('add-node', (data) => mainWindow.webContents.send('add-node', data));
-    socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
-    socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
-    socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
-    socket.on('update-watch-item', (watchData) => {
-      console.log(watchData);
-      // mainWindow.webContents.send('update-watch-item', watchData)
+      socket.on('update-data', (data) => mainWindow.webContents.send('update-data', data));
+      socket.on('add-node', (data) => mainWindow.webContents.send('add-node', data));
+      socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
+      socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
+      socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
+      socket.on('update-watch-item', (watchData) => {
+        console.log(watchData);
+        mainWindow.webContents.send('update-watch-item', watchData);
+      });
     });
 
     // autoUpdater.checkForUpdatesAndNotify();

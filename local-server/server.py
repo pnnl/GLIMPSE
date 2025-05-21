@@ -548,8 +548,8 @@ def cim2GS(cim_filepath: str) -> str:
 
 app = Flask(__name__)
 # socketio = SocketIO(app)
-CORS(app, origins=["http://localhost:5173", "http://localhost:65432"])
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "http://localhost:65432"], async_mode="gevent")
+CORS(app, origins=["http://localhost:5173", "http://localhost:65432", "http://localhost:*"])
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 #------------------------------ End Server ------------------------------#
 
@@ -667,7 +667,10 @@ def connect():
 @socketio.on('csv_data')
 def handle_csv_data(data):
     """Handler for receiving CSV data from clients"""
-    socketio.emit("update-watch-item", data)
+    print(f"{datetime.now().isoformat()} - Received data from client: ")
+    print(json.dumps(data, indent=2))
+    # socketio.emit("update-watch-item", data)
+    socketio.emit("StreamData", data)
     # print(f"{datetime.now().isoformat()} - Received data from client:")
     # print(f"Data: {data}")
     # socketio.emit("StreamData", data)
@@ -681,7 +684,7 @@ def disconnect():
 def natig_config(configObj):
   # send config
   socketio.emit("newNatigConfig", configObj)
-  print(f"data received in backend:\n{json.dumps(configObj, indent=2)}")
+  print(f"data received in backend:\n{json.dumps(configObj, indent=2)}\n--------------------------------")
 
   try:
     natig_config_str = str(configObj)
