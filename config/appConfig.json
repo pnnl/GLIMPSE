@@ -64,12 +64,12 @@
     "physics": {
       "enabled": true,
       "barnesHut": {
-        "gravitationalConstant": -10000,
-        "centralGravity": 0.2,
+        "gravitationalConstant": -15000,
+        "centralGravity": 0.1,
         "springConstant": 0.5,
-        "springLength": 70,
-        "avoidOverlap": 0.4,
-        "damping": 0.2
+        "springLength": 40,
+        "avoidOverlap": 0.1,
+        "damping": 0.09
       },
       "forceAtlas2Based": {
         "gravitationalConstant": -400,
@@ -95,13 +95,15 @@
       "stabilization": {
         "enabled": true,
         "iterations": 1000,
-        "updateInterval": 1,
+        "updateInterval": 50,
         "onlyDynamicEdges": false,
         "fit": true
       },
       "solver": "barnesHut",
-      "timestep": 0.25,
-      "adaptiveTimestep": false,
+      "timestep": 0.5,
+      "maxVelocity": 75,
+      "minVelocity": 0.2,
+      "adaptiveTimestep": true,
       "wind": {
         "x": 0,
         "y": 0

@@ -9,7 +9,6 @@ import {
   currentUploadCounter,
   Export,
   setLegendData,
-  getTitle,
   hideEdge,
   hideEdges,
   hideObjects,
@@ -22,7 +21,8 @@ import {
   rotateCCW,
   rotateCW,
   setGraphData,
-  showAttributes
+  showAttributes,
+  getHtmlTitle
 } from '../utils/graphUtils';
 import ContextMenu from './ContextMenu';
 import Legend from './Legend';
@@ -220,7 +220,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    * @param {Object} selectedNode - The node object that was selected to be edited
    */
   const saveEdits = (selectedNode) => {
-    selectedNode.title = getTitle(selectedNode.attributes);
+    selectedNode.title = getHtmlTitle(selectedNode.attributes);
     graphData.nodes.update(selectedNode);
     setOpenNodePopup(false);
   };
@@ -303,7 +303,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             id: newEdgeID,
             from: microGrid.name,
             to: nodeID,
-            title: getTitle({
+            title: getHtmlTitle({
               objectType: 'microgrid_connection',
               name: newEdgeID,
               from: microGrid.name,
@@ -350,7 +350,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           label: commNodeID,
           group: `communication_node`, // _${mgNumber}
           type: 'communication_node',
-          title: getTitle({ objectType: 'communication_node', name: commNodeID })
+          title: getHtmlTitle({ objectType: 'communication_node', name: commNodeID })
         });
 
         addedOverlayObjects.nodes.push(commNodeID);
@@ -363,7 +363,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           to: `SS_${mgNumber}`,
           title:
             'objectType: parentChild\n' +
-            getTitle({
+            getHtmlTitle({
               name: commEdgeID,
               from: commNodeID,
               to: `SS_${mgNumber}`
@@ -397,7 +397,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             id: commEdgeID,
             from: commNodeID,
             to: to,
-            title: getTitle({
+            title: getHtmlTitle({
               objectType: 'parentChild',
               name: commEdgeID,
               from: commNodeID,
@@ -529,7 +529,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           'level' in nodesOfsameType[0].attributes ? nodesOfsameType[0].attributes.level : undefined
       };
 
-      newNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(newNode.attributes)}`;
+      newNode.title = getHtmlTitle({ ObjectType: nodeTypes[nodeType], ...newNode.attributes });
       objectTypeCount.nodes[newNode.type]++;
 
       graphData.nodes.add(newNode);
@@ -545,7 +545,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       };
 
       const { color, width, elementType, type, ...rest } = newEdge;
-      newEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
+      newEdge.title = getHtmlTitle({ ObjectType: edgeTypes[edgeType], ...rest });
       objectTypeCount.edges[newEdge.type]++;
       graphData.edges.add(newEdge);
 
@@ -561,13 +561,12 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       id: formObj.edgeID,
       from: formObj.from,
       to: formObj.to,
-      title:
-        `Object Type: ${formObj.edgeType}\n` +
-        getTitle({
-          ID: formObj.edgeID,
-          from: formObj.from,
-          to: formObj.to
-        }),
+      title: getHtmlTitle({
+        ObjectType: formObj.edgeType,
+        ID: formObj.edgeID,
+        from: formObj.from,
+        to: formObj.to
+      }),
       animation: formObj.animate,
       type: formObj.edgeType,
       color: edgeOptions[formObj.edgeType].color,
@@ -596,7 +595,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
   };
 
   const updateVisObjects = (updateData) => {
-    console.log(updateData);
+    console.log(`Updating ${updateData.elementType} with ID: ${updateData.id}`);
+    console.log(updateData.updates);
+    console.log('-------------------------------');
 
     if (updateData.elementType === 'node') {
       const node = graphData.nodes.get(updateData.id);
@@ -609,7 +610,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           ...attributes
         };
 
-        node.title = getTitle(node.attributes);
+        node.title = getHtmlTitle(node.attributes);
 
         graphData.nodes.update({ ...node, ...rest });
         return;
@@ -650,11 +651,19 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           ...attributes
         };
 
-        edge.title = getTitle(edge.attributes);
+        edge.title = getHtmlTitle(edge.attributes);
 
-        if (edge.type === 'switch' && edge.attributes.status === 'OPEN') {
+        if (
+          edge.type === 'switch' &&
+          'status' in edge.attributes &&
+          edge.attributes.status === 'OPEN'
+        ) {
           edge.arrows.middle.src = './imgs/switch-open.svg';
-        } else if (edge.type === 'switch' && edge.attributes.status === 'CLOSED') {
+        } else if (
+          edge.type === 'switch' &&
+          'status' in edge.attributes &&
+          edge.attributes.status === 'CLOSED'
+        ) {
           edge.arrows.middle.src = './imgs/switch-closed.svg';
         }
         graphData.edges.update({ ...edge, ...rest });
@@ -1075,7 +1084,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           id: newNodeData.attributes.id,
           attributes: newNodeData.attributes,
           group: newNodeData.objectType,
-          title: 'Type: ' + newNodeData.objectType + '\n' + getTitle(newNodeData.attributes),
+          title: getHtmlTitle({ type: newNodeData.objectType, ...newNodeData.attributes }),
           ...newNodeData.styles
         });
       })
@@ -1089,7 +1098,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             to: newEdgeData.attributes.to,
             from: newEdgeData.attributes.from,
             attributes: newEdgeData.attributes,
-            title: 'Type: ' + newEdgeData.objectType + '\n' + getTitle(newEdgeData.attributes),
+            title: getHtmlTitle({
+              type: newEdgeData.objectType,
+              ...newEdgeData.attributes
+            }),
             ...newEdgeData.styles
           }
         ]);
@@ -1308,6 +1320,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         redrawIntervalID = null;
       }
       currentUploadCounter.value = 0;
+      graphData.nodes.clear();
+      graphData.edges.clear();
+      legendData.edges.clear();
+      legendData.nodes.clear();
     };
   }, []);
   /* ------------------------- End visualization hook ------------------------- */
@@ -1325,6 +1341,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         prev={() => Prev(network, highlightedNodes, counter)}
         next={() => Next(network, highlightedNodes, counter)}
         physicsToggle={TogglePhysics}
+        reset={Reset}
       />
 
       <Stack

@@ -813,9 +813,10 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
             multiple
             limitTags={3}
             options={switches}
+            value={Object.keys(watchList)}
             onChange={(_, swts) => handleWatchSelect(swts)}
-            renderInput={(pms) => (
-              <TextField {...pms} size="small" label="Select Objects to Watch" />
+            renderInput={(params) => (
+              <TextField {...params} size="small" label="Select Objects to Watch" />
             )}
           />
           {Object.keys(watchList).length > 0 && (

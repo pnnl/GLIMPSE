@@ -20,8 +20,17 @@ const Watch = ({ open, close, watchData }) => {
 
     removeListenerArr.push(
       window.glimpseAPI.onUpdateWatchItem((watchObj) => {
-        console.log(watchObj);
-        setWatchUpdates(watchObj);
+        let csvData = null;
+
+        if (typeof watchObj === 'string') csvData = JSON.parse(watchObj)['csv_data'];
+        else csvData = watchObj['csv_data'];
+
+        console.log(csvData);
+
+        // remove the first entry from each array in the csvData object since its a timestamp
+        Object.keys(csvData).forEach((k) => csvData[k].shift());
+
+        setWatchUpdates(csvData);
       })
     );
 
@@ -39,13 +48,13 @@ const Watch = ({ open, close, watchData }) => {
             <>
               {Object.entries(watchData).map(([id, porps], index) => (
                 <>
-                  <Typography gutterBottom variant="h6" key={index}>
+                  <Typography gutterBottom variant="h5" key={index}>
                     {id}
                   </Typography>
                   {porps.map((prop, index) => (
                     <Typography key={index} variant="body2">
                       {prop}:{' '}
-                      {watchUpdates && id in watchUpdates ? watchUpdates[id][index + 1] : 'No data'}
+                      {watchUpdates && id in watchUpdates ? watchUpdates[id][index] : 'No data'}
                     </Typography>
                   ))}
                 </>

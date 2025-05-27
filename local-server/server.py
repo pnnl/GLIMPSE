@@ -667,10 +667,10 @@ def connect():
 @socketio.on('csv_data')
 def handle_csv_data(data):
     """Handler for receiving CSV data from clients"""
-    print(f"{datetime.now().isoformat()} - Received data from client: ")
-    print(json.dumps(data, indent=2))
-    # socketio.emit("update-watch-item", data)
-    socketio.emit("StreamData", data)
+    # print(f"{datetime.now().isoformat()} - Received data from client: ")
+    # print(json.dumps(data, indent=2))
+    socketio.emit("update-watch-item", data)
+    # socketio.emit("StreamData", data)
     # print(f"{datetime.now().isoformat()} - Received data from client:")
     # print(f"Data: {data}")
     # socketio.emit("StreamData", data)

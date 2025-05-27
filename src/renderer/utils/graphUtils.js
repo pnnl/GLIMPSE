@@ -26,6 +26,19 @@ export const getTitle = (attributes) => {
   return title.join('\n');
 };
 
+export const getHtmlTitle = (titleObj) => {
+  const container = document.createElement('div');
+
+  Object.entries(titleObj).forEach(([key, value]) => {
+    const row = document.createElement('div');
+    row.style.marginBottom = '4px';
+    row.innerHTML = `<strong>${key}:</strong> ${value}`;
+    container.appendChild(row);
+  });
+
+  return container;
+};
+
 export const getHtmlLabel = (id, attributes) => {
   return `\t<b>${id}</b>\n\n` + getTitle(attributes);
 };
@@ -595,7 +608,7 @@ export const setGraphData = (
             attributes: attributes,
             type: objectType,
             group: objectType,
-            title: `Object Type: ${objectType}\n${getTitle(attributes)}`,
+            title: getHtmlTitle({ ObjectType: objectType, ...attributes }),
             x: parseInt(attributes.x, 10),
             y: parseInt(attributes.y, 10)
           });
@@ -625,7 +638,7 @@ export const setGraphData = (
             attributes: attributes,
             type: objectType,
             group: objectType,
-            title: 'Object Type: ' + objectType + '\n' + getTitle(attributes)
+            title: getHtmlTitle({ ObjectType: objectType, ...attributes })
           });
 
           continue;
@@ -653,7 +666,7 @@ export const setGraphData = (
           attributes: attributes,
           type: objectType,
           group: objectType,
-          title: 'Object Type: ' + objectType + '\n' + getTitle(attributes)
+          title: getHtmlTitle({ ObjectType: objectType, ...attributes })
         });
 
         continue;
@@ -685,7 +698,7 @@ export const setGraphData = (
           attributes: attributes,
           type: objectType,
           group: objectType,
-          title: 'Object Type: ' + objectType + '\n' + getTitle(attributes)
+          title: getHtmlTitle({ ObjectType: objectType, ...attributes })
         });
       }
     }
@@ -729,7 +742,7 @@ export const setGraphData = (
           type: 'parentChild',
           width: 4,
           attributes: { to: parent, from: nodeID },
-          title: getTitle({ objectType: 'parentChild', to: parent, from: nodeID }),
+          title: getHtmlTitle({ objectType: 'parentChild', to: parent, from: nodeID }),
           color: { inherit: true }
         });
 
@@ -784,7 +797,7 @@ export const setGraphData = (
           elementType: 'edge',
           type: edgeType,
           attributes: attributes,
-          title: `Object Type: ${edgeType}\n${getTitle(attributes)}`,
+          title: getHtmlTitle({ ObjectType: edgeType, ...attributes }),
           ...edgeOptions[edgeType]
         });
 
@@ -818,7 +831,7 @@ export const setGraphData = (
           elementType: 'edge',
           type: edgeType,
           attributes: attributes,
-          title: `Object Type: ${edgeType}\n${getTitle(attributes)}`,
+          title: getHtmlTitle({ ObjectType: edgeType, ...attributes }),
           ...edgeOptions[edgeType]
         });
       }
