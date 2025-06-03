@@ -54,6 +54,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
   let edgesToAnimate = {};
   let edgesToAnimateCount = 0;
   let redrawIntervalID = null;
+  let createdClusterNodeGroups = {};
 
   const watchList = {
     nodes: [],
@@ -66,6 +67,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
   let contextMenuData = null;
   let setContextMenuData = null;
   let newEdgeFormSetState = null;
+  let showRemoveOverlayBtn = null;
 
   const addedOverlayObjects = {
     nodes: [],
@@ -147,26 +149,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     network.setOptions({ physics: { enabled: toggle } });
   };
 
-  /* ---------------------------- Establish Network --------------------------- */
-  setGraphData(
-    graphData,
-    dataToVis,
-    nodeTypes,
-    edgeTypes,
-    objectTypeCount,
-    GLIMPSE_OBJECT,
-    theme,
-    edgeOptions,
-    graphOptions
-  );
-  /* ---------------------------- Establish Network --------------------------- */
-  setLegendData(objectTypeCount, theme, edgeOptions, legendData);
-
-  console.log('Number of Nodes: ' + graphData.nodes.length);
-  console.log('Number of Edges: ' + graphData.edges.length);
-
-  /* ------------------ Receive Sate Variables from Children ------------------ */
-
   // initiate variables that reference the NodePopup child component state and set state variables
 
   /**
@@ -199,6 +181,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
   const onNewEdgeFormMount = (setNewEdgeFormState) => {
     newEdgeFormSetState = setNewEdgeFormState;
+  };
+
+  const onVisRibbonMount = (showRmOvralyBtnSetter) => {
+    showRemoveOverlayBtn = showRmOvralyBtnSetter;
   };
 
   const openNewNodeForm = (open) => {
@@ -261,10 +247,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     const microGridNodeTypes = new Set([
       'node',
       'load',
-      'switch',
       'inverter',
       'capacitor',
-      'regulator',
       'diesel_dg',
       'triplex_meter',
       'triplex_node',
@@ -274,8 +258,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     ]);
 
     const newNodes = [];
-    const updatedMGNodes = [];
-    const updatedTPNodes = [];
     const newEdges = [];
 
     for (const microGrid of microGrids) {
@@ -317,17 +299,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           newEdges.push(microGridEdge);
           addedOverlayObjects.edges.push(newEdgeID);
           objectTypeCount.edges.microgrid_connection++;
-          // create node obj to set the group for coloring
-          const connectedMGNode = {
-            id: nodeID,
-            label: nodeID,
-            group: `group_${microGrid.name}`,
-            title: `ObjectType: ${type}\nname: ${nodeID}`
-          };
-
-          if (network.body.nodes[nodeID]) {
-            updatedMGNodes.push(connectedMGNode);
-          }
         }
       }
     }
@@ -373,12 +344,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
           width: 2
         });
 
-        // center node that the grouped nodes connect to
-        const connectedTPNode = {
-          id: `SS_${mgNumber}`,
-          group: `communication_node_${mgNumber}`
-        };
-        updatedTPNodes.push(connectedTPNode);
         addedOverlayObjects.edges.push(commEdgeID);
         objectTypeCount.edges.communication++;
 
@@ -417,38 +382,29 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     // Batch add nodes and edges
     graphData.nodes.add(newNodes);
     graphData.edges.add(newEdges);
-    graphData.nodes.update(updatedMGNodes);
 
-    // iterate through list of nodes connected to the center node
-    // assign to same group
-    // nodes connected will be colored based on the center node
-    const updatedTPConnectedNodes = [];
-    for (const tpNode of updatedTPNodes) {
-      const tpNodeFull = network.body.nodes[tpNode.id];
+    const microgridNodes = newNodes.filter((n) => n.type === 'microgrid').map((n) => n.id);
 
-      if (tpNodeFull) {
-        tpNodeFull.group = tpNode.group;
-        updatedTPConnectedNodes.push(tpNodeFull);
+    for (const nodeID of network.body.nodeIndices) {
+      if (network.clustering.isCluster(nodeID)) {
+        for (const edgeID of network.getConnectedEdges(nodeID)) {
+          if (
+            microgridNodes.includes(network.body.edges[edgeID].fromId) &&
+            network.body.edges[edgeID].toId === nodeID
+          ) {
+            createdClusterNodeGroups[nodeID] = `microgrid_${network.body.edges[edgeID].fromId}`;
+            network.clustering.updateClusteredNode(nodeID, {
+              group: `microgrid_${network.body.edges[edgeID].fromId}`
+            });
 
-        const connectedNodeIDs = network.getConnectedNodes(tpNode.id);
-        for (const connectedNodeID of connectedNodeIDs) {
-          if (network.clustering.isCluster(connectedNodeID)) {
-            const connectedTPNode = network.body.nodes[connectedNodeID];
-
-            if (connectedTPNode) {
-              network.clustering.updateClusteredNode(connectedTPNode.id, {
-                group: tpNode.group
-              });
-            }
+            break;
           }
         }
       }
     }
-    // graphData.nodes.update(updatedTPNodes);
-    // graphData.nodes.update(updatedTPConnectedNodes);
 
+    showRemoveOverlayBtn(true);
     network.setOptions({ physics: { enabled: true } });
-
     setLegendData(objectTypeCount, theme, edgeOptions, legendData);
   };
 
@@ -483,12 +439,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       }
     } else {
       try {
-        const fileData = await readJsonFile(filePaths[0]);
+        const fileDataPromise = await readJsonFile(filePaths[0]);
+        const fileData = await fileDataPromise;
 
-        applyOverlay(fileData);
+        await applyOverlay(fileData);
+        showRemoveOverlayBtn(true);
       } catch (msg) {
         console.log(msg);
-        alert('File currently not compatible... Check file and re-upload');
+        alert('File may not be compatible... Check file and re-upload');
       }
     }
   };
@@ -644,11 +602,11 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         }
         return;
       } else if ('attributes' in updateData.updates) {
-        const { attributes, ...rest } = updateData.updates;
+        const { attributes: updateAttributes, ...rest } = updateData.updates;
 
         edge.attributes = {
           ...edge.attributes,
-          ...attributes
+          ...updateAttributes
         };
 
         edge.title = getHtmlTitle(edge.attributes);
@@ -656,16 +614,23 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         if (
           edge.type === 'switch' &&
           'status' in edge.attributes &&
-          edge.attributes.status === 'OPEN'
+          updateAttributes.status === 'TRIP'
         ) {
           edge.arrows.middle.src = './imgs/switch-open.svg';
+          edge.attributes.status = 'OPEN';
         } else if (
           edge.type === 'switch' &&
           'status' in edge.attributes &&
-          edge.attributes.status === 'CLOSED'
+          updateAttributes.status === 'CLOSE'
         ) {
+          edge.attributes.status = 'CLOSED';
           edge.arrows.middle.src = './imgs/switch-closed.svg';
         }
+
+        if (clusteredEdges.length > 1) {
+          network.clustering.updateEdge(edge.id, { ...edge, ...rest });
+        }
+
         graphData.edges.update({ ...edge, ...rest });
         return;
       }
@@ -1003,7 +968,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         borderWidth: 2,
         shape: 'hexagon',
         label: clusterValue,
-        group: 'clusterNode',
+        group:
+          clusterValue in createdClusterNodeGroups
+            ? createdClusterNodeGroups[clusterValue]
+            : 'clusterNode',
         type: 'clusterNode'
       }
     });
@@ -1142,6 +1110,26 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     const circularProgressBar = document.getElementById('circularProgress');
     const circularProgressValue = document.getElementById('progressValue');
     let establishCommunities = false;
+
+    /* ---------------------------- Establish Network --------------------------- */
+    setGraphData(
+      graphData,
+      dataToVis,
+      nodeTypes,
+      edgeTypes,
+      objectTypeCount,
+      GLIMPSE_OBJECT,
+      theme,
+      edgeOptions,
+      graphOptions
+    );
+    /* ---------------------------- Establish Network --------------------------- */
+    setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+
+    console.log('Number of Nodes: ' + graphData.nodes.length);
+    console.log('Number of Edges: ' + graphData.edges.length);
+
+    /* ------------------ Receive Sate Variables from Children ------------------ */
 
     const establishNetworkxGraph = async (data) => {
       try {
@@ -1292,6 +1280,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
       network.on('afterDrawing', (ctx) => animateEdges(ctx));
 
+      network.on('selectEdge', (params) => console.log(network.body.edges[params.edges[0]]));
+      network.on('selectNode', (params) => console.log(network.body.nodes[params.nodes[0]]));
+
       network.setOptions({
         configure: {
           filter: (option, path) => {
@@ -1331,32 +1322,25 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
   return (
     <>
       <VisRibbon
+        reset={Reset}
+        setOverlay={setOverlay}
+        onMount={onVisRibbonMount}
+        physicsToggle={TogglePhysics}
+        removeOverlay={removeOverlay}
         legendContainerRef={legendContainerRef}
+        circularProgressRef={circularProgressRef}
+        rotateCW={() => rotateCW(network, ANGLE)}
         networkContainerRef={networkContainerRef}
         layoutContainerRef={layoutFormContainerRef}
-        circularProgressRef={circularProgressRef}
-        setOverlay={setOverlay}
-        rotateCW={() => rotateCW(network, ANGLE)}
         rotateCCW={() => rotateCCW(network, ANGLE)}
         prev={() => Prev(network, highlightedNodes, counter)}
         next={() => Next(network, highlightedNodes, counter)}
-        physicsToggle={TogglePhysics}
-        reset={Reset}
       />
 
       <Stack
         sx={{ height: 'calc(100% - 8.6rem)', width: '100%', borderTop: '1px solid lightgrey' }}
         direction={'row'}
       >
-        {/* <ActionDrawer
-
-          removeOverlay={removeOverlay}
-          reset={Reset}
-          modelNumber={modelNumber}
-          applyOverlay={applyOverlay}
-          getSwitches={() => graphData.edges.getIds({ filter: (edge) => edge.type === 'switch' })}
-        /> */}
-
         <Box
           sx={{ width: '72%', height: '100%' }}
           ref={networkContainerRef}

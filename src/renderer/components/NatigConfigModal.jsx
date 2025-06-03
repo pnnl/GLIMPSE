@@ -25,6 +25,7 @@ import {
 import { ExpandMore, HelpOutline } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from '../utils/CustomComponents';
+
 const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ['mesh', 'ring'];
 const rates = ['100Kbps', '500Kbps', '10Mbps', '80Mbps', '100Mbps', '500Mbps', '1Gbps', '10Gbps'];

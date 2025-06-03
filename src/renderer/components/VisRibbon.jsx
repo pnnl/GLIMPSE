@@ -25,15 +25,18 @@ const VisRibbon = ({
   next,
   prev,
   reset,
+  onMount,
   legendContainerRef,
   networkContainerRef,
   layoutContainerRef,
   circularProgressRef,
   physicsToggle,
-  setOverlay
+  setOverlay,
+  removeOverlay
 }) => {
   const [vistOptions, setVisOptions] = useState([]);
   const [showTable, setShowTable] = useState(false);
+  const [showRemoveOverlay, setShowRemoveOverlay] = useState(false);
   const [stats, setStats] = useState(null);
 
   const handleToogleChange = (event, newOptions) => {
@@ -59,27 +62,35 @@ const VisRibbon = ({
     setVisOptions(newOptions);
   };
 
-  /**
-   * Send the entire graph data object to the main process and extract statistic using networkx
-   */
-  const showStats = async () => {
-    if (stats === null) {
-      const response = await axios.get('http://127.0.0.1:5173/get-stats');
-
-      setStats(response.data);
-
-      setShowTable(true);
-    } else {
-      setShowTable(true);
-    }
+  const handleAttachOverlay = async () => {
+    const filepathsPromise = await window.glimpseAPI.getFilePaths();
+    const filepaths = await filepathsPromise;
+    setOverlay(filepaths, setShowRemoveOverlay);
   };
 
-  const handleAttachOverlay = async () => {
-    const filepaths = await window.glimpseAPI.getFilePaths();
-    setOverlay(filepaths);
+  const handleRemoveOverlay = () => {
+    removeOverlay();
+    setShowRemoveOverlay(false);
   };
 
   useEffect(() => {
+    /**
+     * Send the entire graph data object to the main process and extract statistic using networkx
+     */
+    const showStats = async () => {
+      if (stats === null) {
+        const response = await axios.get('http://127.0.0.1:5173/get-stats');
+
+        setStats(response.data);
+
+        setShowTable(true);
+      } else {
+        setShowTable(true);
+      }
+    };
+
+    onMount(setShowRemoveOverlay);
+
     const removeListenersArr = [];
     removeListenersArr.push(window.glimpseAPI.onGetMetrics(showStats));
 
@@ -88,7 +99,7 @@ const VisRibbon = ({
         removeListener();
       }
     };
-  });
+  }, [setShowRemoveOverlay, onMount, stats]);
 
   return (
     <>
@@ -132,6 +143,11 @@ const VisRibbon = ({
             spacing={1}
             divider={<Divider orientation="vertical" flexItem />}
           >
+            {showRemoveOverlay && (
+              <Button color="#333333" variant="outlined" size="small" onClick={handleRemoveOverlay}>
+                Remove Overlay
+              </Button>
+            )}
             <ButtonGroup color="#333333" variant="outlined" size="small">
               <Tooltip title="Rotate CCW">
                 <Button onClick={rotateCCW}>

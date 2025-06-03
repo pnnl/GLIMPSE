@@ -20,7 +20,6 @@ const Ajv = require('ajv');
 
 const jsonUploadSchema = require('../../schemas/json_upload.schema.json');
 const themeUploadSchema = require('../../schemas/theme_upload.schema.json');
-const { error } = require('console');
 const socket = io('http://127.0.0.1:5173');
 const isMac = process.platform === 'darwin';
 const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
@@ -529,7 +528,6 @@ app
       socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
       socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
       socket.on('update-watch-item', (watchData) => {
-        console.log(watchData);
         mainWindow.webContents.send('update-watch-item', watchData);
       });
     });

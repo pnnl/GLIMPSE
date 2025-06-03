@@ -13,23 +13,29 @@ import { CustomButton } from '../utils/CustomComponents';
 
 const Watch = ({ open, close, watchData }) => {
   const [watchUpdates, setWatchUpdates] = React.useState(null);
-  console.log(watchData);
+  console.log(watchUpdates);
 
   useEffect(() => {
     const removeListenerArr = [];
 
     removeListenerArr.push(
       window.glimpseAPI.onUpdateWatchItem((watchObj) => {
+        if (!watchData) return null;
         let csvData = null;
 
         if (typeof watchObj === 'string') csvData = JSON.parse(watchObj)['csv_data'];
         else csvData = watchObj['csv_data'];
 
         console.log(csvData);
+        for (let props of Object.values(csvData)) {
+          console.log(props.length);
+          if (props.length < 10) {
+            return null;
+          }
+        }
 
         // remove the first entry from each array in the csvData object since its a timestamp
         Object.keys(csvData).forEach((k) => csvData[k].shift());
-
         setWatchUpdates(csvData);
       })
     );

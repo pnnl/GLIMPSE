@@ -8,6 +8,7 @@ import json
 import os
 from datetime import datetime
 
+GRAPH = nx.MultiGraph()
 def start_client(message):
   # Create socket
   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -181,49 +182,41 @@ def cim_to_glimpse():
 #------------------------------ WebSocket Events ------------------------------#
 @socketio.on("glimpse")
 def glimpse(data):
-   socketio.emit("update-data", data)
+  socketio.emit("update-data", data)
 
 @socketio.on("addNode")
 def add_node(newNodeData):
-   socketio.emit("add-node", newNodeData)
+  socketio.emit("add-node", newNodeData)
 
 @socketio.on("addEdge")
 def add_edge(newEdgeData):
-   socketio.emit("add-edge", newEdgeData)
+  socketio.emit("add-edge", newEdgeData)
 
 @socketio.on("deleteNode")
 def delete_node(nodeID):
-   socketio.emit("delete-node", nodeID)
+  socketio.emit("delete-node", nodeID)
 
 @socketio.on("deleteEdge")
 def delete_edge(edgeID):
-   socketio.emit("delete-edge", edgeID)
+  socketio.emit("delete-edge", edgeID)
 
 @socketio.on('connect')
 def connect():
-    print(f"{datetime.now().isoformat()} - Client connected")
+  print(f"{datetime.now().isoformat()} - Client connected")
 
 @socketio.on('csv_data')
 def handle_csv_data(data):
-    """Handler for receiving CSV data from clients"""
-    # print(f"{datetime.now().isoformat()} - Received data from client: ")
-    # print(json.dumps(data, indent=2))
-    socketio.emit("update-watch-item", data)
-    # socketio.emit("StreamData", data)
-    # print(f"{datetime.now().isoformat()} - Received data from client:")
-    # print(f"Data: {data}")
-    # socketio.emit("StreamData", data)
+  socketio.emit("update-watch-item", data)
+
 
 @socketio.on('disconnect')
 def disconnect():
-    print(f"{datetime.now().isoformat()} - Client disconnected")
+  print(f"{datetime.now().isoformat()} - Client disconnected")
 
 
 @socketio.on("natig-config")
 def natig_config(configObj):
-  # send config
   socketio.emit("newNatigConfig", configObj)
-  print(f"data received in backend:\n{json.dumps(configObj, indent=2)}\n--------------------------------")
 
   try:
     natig_config_str = str(configObj)
@@ -244,6 +237,6 @@ def natig_config(configObj):
 #-------------------------- Start WebSocket Server --------------------------#
 
 if __name__ == "__main__":
-   socketio.run(app, port=5173, debug=False, log_output=True)
+  socketio.run(app, port=5173, debug=False)
 
 #-------------------------- End Start WebSocket Server --------------------------#
