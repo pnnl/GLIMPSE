@@ -23,6 +23,7 @@
 .env.production.local
 /dist
 /local-server/virtual-env
+/local-server/CIM-builder
 /local-server/build
 /local-server/server
 npm-debug.log*

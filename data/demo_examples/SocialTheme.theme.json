@@ -1,24 +1,24 @@
 {
-  "groups": {
-    "person": {
-      "size": 15,
-      "image": "./imgs/person.svg",
-      "shape": "image"
-    },
-    "location": {
-      "size": 15,
-      "image": "./imgs/location.svg",
-      "shape": "image"
-    }
-  },
-  "edgeOptions": {
-    "traveling": {
-      "width": 2,
-      "color": "#848484"
-    },
-    "friend": {
-      "width": 2,
-      "color": "#058c42"
-    }
-  }
+   "groups": {
+      "person": {
+         "size": 15,
+         "image": "./imgs/person.svg",
+         "shape": "image"
+      },
+      "location": {
+         "size": 15,
+         "image": "./imgs/location.svg",
+         "shape": "image"
+      }
+   },
+   "edgeOptions": {
+      "traveling": {
+         "width": 2,
+         "color": "#848484"
+      },
+      "friend": {
+         "width": 2,
+         "color": "#058c42"
+      }
+   }
 }

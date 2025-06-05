@@ -7,14 +7,16 @@ const {
    Menu,
    globalShortcut,
    nativeImage,
-   Notification,
+   Notification
 } = require("electron");
 const { electronApp, optimizer, is } = require("@electron-toolkit/utils");
 const { spawn } = require("child_process");
 const { join, basename } = require("path");
 const { io } = require("socket.io-client");
 const { readFileSync, writeFileSync, existsSync } = require("fs");
+const path = require("path");
 const Ajv = require("ajv");
+const axios = require("axios");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
@@ -80,16 +82,14 @@ const checkIncludes = (jsonData) => {
 };
 
 const glm2json = async (filePaths) => {
-   const res = await fetch("http://127.0.0.1:5051/glm2json", {
-      method: "post",
-      headers: {
-         "content-type": "application/json",
-      },
-      body: JSON.stringify(filePaths),
+   const resPormise = axios.post("http://127.0.1:5051/glm2json", JSON.stringify(filePaths), {
+      headers: { "Content-Type": "application/json" }
    });
 
-   if (res.ok) {
-      const output = await res.json();
+   const { status, statusText, data } = await resPormise;
+
+   if (status === 200) {
+      const output = data;
       const valid = checkIncludes(output);
 
       if (!valid) {
@@ -97,25 +97,22 @@ const glm2json = async (filePaths) => {
       }
       return output;
    } else {
-      console.log(res.status);
-      console.log(res);
+      console.log(status);
+      console.log(statusText);
    }
 };
 
 const cimToGS = async (filePaths) => {
-   const res = await fetch("http://127.0.0.1:5051/cimg-to-GS", {
-      method: "post",
-      headers: {
-         "content-type": "application/json",
-      },
-      body: JSON.stringify(filePaths),
+   const resPromise = axios.post("http://127.0.0.1:5051/cimg-to-GS", JSON.stringify(filePaths), {
+      headers: { "Content-Type": "application/json" }
    });
 
-   if (res.ok) {
-      console.log(`Status from Response : ${res.status}`);
-      const gs_output = await res.json();
-      return gs_output;
-   } else {
+   try {
+      const { status, data } = await resPromise;
+      console.log("status: ", status);
+      return data;
+   } catch (error) {
+      console.error("error: ", error);
       return { alert: "Something went wrong with the CIM XML file upload." };
    }
 };
@@ -154,7 +151,7 @@ const validateJson = (filePaths) => {
 
       if (nodeLinkDataKeys.every((key) => key in fileData)) {
          data[basename(filePath)] = {
-            objects: [],
+            objects: []
          };
 
          for (const node of fileData.nodes) {
@@ -171,7 +168,7 @@ const validateJson = (filePaths) => {
             data[basename(filePath)].objects.push({
                objectType: objectType,
                elementType: "node",
-               attributes: node,
+               attributes: node
             });
          }
 
@@ -185,8 +182,8 @@ const validateJson = (filePaths) => {
                   id: `${source}-${target}-${key}`,
                   from: source,
                   to: target,
-                  ...rest,
-               },
+                  ...rest
+               }
             });
          }
       } else {
@@ -226,33 +223,30 @@ const json2glmFunc = async (jsonData) => {
 
    Object.keys(parsedData).forEach((filename) => {
       delete Object.assign(parsedData, {
-         [filename.replace(".json", ".glm")]: parsedData[filename],
+         [filename.replace(".json", ".glm")]: parsedData[filename]
       })[filename];
    });
 
    const sendObj = {
       saveDir: dir2save,
-      data: parsedData,
+      data: parsedData
    };
 
-   const res = await fetch("http://127.0.0.1:5051/json2glm", {
-      method: "POST",
-      headers: {
-         "content-type": "application/json",
-      },
-      body: JSON.stringify(sendObj),
+   const resPromise = axios.post("http://127.0.0.1:5051/json2glm", JSON.stringify(sendObj), {
+      headers: { "Content-Type": "application/json" }
    });
 
-   if (res.ok)
+   const { status } = await resPromise;
+   if (status === 200)
       new Notification({
          title: "Export Notification",
-         body: "GLM files saved at: " + dir2save,
+         body: "GLM files saved at: " + dir2save
       }).show();
 };
 
 const getFilePaths = async () => {
    const fileSelectionPromise = dialog.showOpenDialog({
-      properties: ["openFile", "multiSelections"],
+      properties: ["openFile", "multiSelections"]
    });
 
    const fileSelection = await fileSelectionPromise;
@@ -263,28 +257,63 @@ const getFilePaths = async () => {
 };
 
 const exportCIM = async (CIMobjs) => {
-   let dir2save = await dialog.showOpenDialog({ properties: ["openDirectory"] });
+   const dialogPromise = dialog.showOpenDialog({ properties: ["openDirectory"] });
+   let selectedDir = await dialogPromise;
 
-   if (dir2save.canceled) return null;
-   dir2save = dir2save.filePaths[0];
+   if (selectedDir.canceled) return null;
+   selectedDir = selectedDir.filePaths[0];
 
-   const cimData2Export = {
-      data: CIMobjs,
-      savepath: dir2save,
-   };
-
-   console.log("CIM data to export: ", JSON.stringify(cimData2Export));
-
-   const res = await fetch("http://127.0.0.1:5051/export-cim", {
-      method: "POST",
-      headers: {
-         "content-type": "application/json",
-      },
-      body: JSON.stringify({ savepath: dir2save, data: CIMobjs }),
+   const cimData2Export = JSON.stringify({
+      ...JSON.parse(CIMobjs),
+      savepath: selectedDir
    });
 
-   if (res.ok) {
-      console.log(res.ok);
+   console.log("cimData2Export: ", cimData2Export);
+
+   const resPromise = axios.post("http://127.0.0.1:5051/export-cim", cimData2Export, {
+      headers: { "Content-Type": "application/json" }
+   });
+   const { status, statusText } = await resPromise;
+
+   if (status === 204) {
+      console.log(statusText);
+      new Notification({
+         title: "Export Notification",
+         body: "CIM file saved at: " + selectedDir
+      }).show();
+   }
+};
+
+const exportCIMcoordinates = async (data) => {
+   console.log(typeof data);
+   const fileDialogPromise = dialog.showOpenDialog({ properties: ["openDirectory"] });
+   let saveDir = await fileDialogPromise;
+
+   if (saveDir.canceled) return null;
+   saveDir = saveDir.filePaths[0];
+
+   data.filepath = path.join(
+      saveDir,
+      `${path.basename(data.filepath).split(".")[0]}_w_coordinates.xml`
+   );
+
+   const responsePromise = axios.post(
+      "http://127.0.1:5051/export-cim-coordinates",
+      JSON.stringify(data),
+      {
+         headers: { "Content-Type": "application/json" }
+      }
+   );
+
+   try {
+      const { status, statusText } = await responsePromise;
+      console.log(status, statusText);
+      new Notification({
+         title: "Export Notification",
+         body: "CIM file with coordinates saved at: " + saveDir
+      }).show();
+   } catch (error) {
+      console.error(error);
    }
 };
 
@@ -303,8 +332,8 @@ const makeWindow = () => {
          nodeIntegration: false,
          contextIsolation: true,
          enableRemoteModule: false,
-         preload: join(__dirname, "..", "preload", "preload.js"),
-      },
+         preload: join(__dirname, "..", "preload", "preload.js")
+      }
    });
 
    mainWindow.webContents.on("will-navigate", (event, url) => {
@@ -323,9 +352,9 @@ const makeWindow = () => {
             isMac ? { role: "close" } : { role: "quit" },
             {
                label: "Export",
-               click: () => mainWindow.webContents.send("extract"),
-            },
-         ],
+               click: () => mainWindow.webContents.send("export-data")
+            }
+         ]
       },
       {
          label: "Window",
@@ -337,10 +366,10 @@ const makeWindow = () => {
                     { type: "separator" },
                     { role: "front" },
                     { type: "separator" },
-                    { role: "window" },
+                    { role: "window" }
                  ]
-               : [{ role: "close" }]),
-         ],
+               : [{ role: "close" }])
+         ]
       },
       {
          label: "View",
@@ -353,8 +382,8 @@ const makeWindow = () => {
             { role: "zoomIn" },
             { role: "zoomOut" },
             { type: "separator" },
-            { role: "togglefullscreen" },
-         ],
+            { role: "togglefullscreen" }
+         ]
       },
       {
          label: "Themes",
@@ -363,48 +392,44 @@ const makeWindow = () => {
             {
                label: "Export Theme File",
                type: "normal",
-               click: () => mainWindow.webContents.send("export-theme"),
+               click: () => mainWindow.webContents.send("export-theme")
             },
             { type: "separator" },
             {
                label: "Power Grid [default]",
                id: "power-grid-theme",
                type: "radio",
-               checked: true,
+               checked: true
             },
             {
                label: "Custom",
                id: "custom-theme",
-               type: "radio",
-            },
-         ],
+               type: "radio"
+            }
+         ]
       },
       {
          label: "Graph View",
          submenu: [
             {
                label: "show attributes",
-               click: () => mainWindow.webContents.send("show-attributes", true),
+               click: () => mainWindow.webContents.send("show-attributes", true)
             },
             {
                label: "hide attributes",
-               click: () => mainWindow.webContents.send("show-attributes", false),
-            },
-         ],
+               click: () => mainWindow.webContents.send("show-attributes", false)
+            }
+         ]
       },
       {
          label: "Tools",
          submenu: [
             {
-               label: "Embeddings",
-               click: () => mainWindow.webContents.send("embeddings_plot", sendPlot()),
-            },
-            {
                label: "Graph Metrics",
-               click: () => mainWindow.webContents.send("getGraphMetrics"),
-            },
-         ],
-      },
+               click: () => mainWindow.webContents.send("getGraphMetrics")
+            }
+         ]
+      }
    ]);
 
    Menu.setApplicationMenu(menu);
@@ -435,14 +460,14 @@ const makeWindow = () => {
       return JSON.stringify(require(configFilePath));
    });
 
-   ipcMain.handle("glm2json", (e, paths) => glm2json(paths));
-   ipcMain.handle("cimToGS", (e, paths) => cimToGS(paths));
+   ipcMain.handle("glm2json", (_, paths) => glm2json(paths));
+   ipcMain.handle("cimToGS", (_, paths) => cimToGS(paths));
 
    ipcMain.handle("getPlot", () => sendPlot());
 
-   ipcMain.handle("validate", (e, jsonFilePath) => validateJson(jsonFilePath));
+   ipcMain.handle("validate", (_, jsonFilePath) => validateJson(jsonFilePath));
 
-   ipcMain.handle("getThemeJsonData", (e, filepath) => {
+   ipcMain.handle("getThemeJsonData", (_, filepath) => {
       let themeFilePath = null;
 
       if (app.isPackaged) themeFilePath = join(process.resourcesPath, "themes", filepath);
@@ -452,23 +477,26 @@ const makeWindow = () => {
       return JSON.parse(themeFileData);
    });
 
-   ipcMain.handle("read-json-file", (e, filepath) => {
+   ipcMain.handle("read-json-file", (_, filepath) => {
       const jsonFileData = readFileSync(filepath, { encoding: "utf-8" });
       return JSON.parse(jsonFileData);
    });
 
-   ipcMain.handle("validate-theme", (e, filepath) => validateThemeFile(filepath));
+   ipcMain.handle("validate-theme", (_, filepath) => validateThemeFile(filepath));
 
-   ipcMain.on("json2glm", (e, jsonData) => json2glmFunc(jsonData));
+   ipcMain.on("json2glm", (_, jsonData) => json2glmFunc(jsonData));
 
-   ipcMain.on("exportTheme", (e, themeData) => exportThemeFile(themeData));
+   ipcMain.on("exportTheme", (_, themeData) => exportThemeFile(themeData));
 
-   ipcMain.on("exportCIM", (e, CimObjs) => exportCIM(CimObjs));
+   ipcMain.on("exportCIM", (_, CimObjs) => exportCIM(CimObjs));
+
+   ipcMain.on("exportCoordinates", (_, data) => exportCIMcoordinates(data));
 
    mainWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url);
       return { action: "deny" };
    });
+
    // HMR for renderer base on electron-vite cli.
    // Load the remote URL for development or the local html file for production.
    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
@@ -483,13 +511,12 @@ const makeSplashWindow = () => {
       width: 500,
       height: 300,
       backgroundColor: "white",
-      transparent: true,
       frame: false,
       alwaysOnTop: false,
       resizable: false,
       movable: true,
       roundedCorners: true,
-      icon: join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico"),
+      icon: join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico")
    });
 
    splashWindow.loadFile(join(__dirname, "..", "..", "splash_window", "splash-window.html"));
@@ -546,40 +573,38 @@ const initiateServer = () => {
    });
 };
 
-app.whenReady()
-   .then(() => {
-      makeSplashWindow();
-      globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
-      initiateServer();
-   })
-   .then(() => {
-      // Set app user model id for windows
-      electronApp.setAppUserModelId("com.pnnl.GLIMPSE");
-      app.on("browser-window-created", (_, window) => {
-         optimizer.watchWindowShortcuts(window);
-      });
+app.whenReady().then(() => {
+   makeSplashWindow();
+   globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
+   initiateServer();
 
-      socket.on("connect", () => {
-         console.log("connected to socket server!!");
-         splashWindow.close();
+   // Set app user model id for windows
+   electronApp.setAppUserModelId("com.pnnl.GLIMPSE");
+   app.on("browser-window-created", (_, window) => {
+      optimizer.watchWindowShortcuts(window);
+   });
+
+   socket.on("connect", () => {
+      console.log("connected to socket server!!");
+      splashWindow.close();
+      makeWindow();
+      mainWindow.show();
+   });
+
+   socket.on("update-data", (data) => mainWindow.webContents.send("update-data", data));
+   socket.on("add-node", (data) => mainWindow.webContents.send("add-node", data));
+   socket.on("add-edge", (data) => mainWindow.webContents.send("add-edge", data));
+   socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
+   socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
+
+   // autoUpdater.checkForUpdatesAndNotify();
+   app.on("activate", () => {
+      if (BrowserWindow.getAllWindows().length === 0) {
          makeWindow();
          mainWindow.show();
-      });
-
-      socket.on("update-data", (data) => mainWindow.webContents.send("update-data", data));
-      socket.on("add-node", (data) => mainWindow.webContents.send("add-node", data));
-      socket.on("add-edge", (data) => mainWindow.webContents.send("add-edge", data));
-      socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
-      socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
-
-      // autoUpdater.checkForUpdatesAndNotify();
-      app.on("activate", () => {
-         if (BrowserWindow.getAllWindows().length === 0) {
-            makeWindow();
-            mainWindow.show();
-         }
-      });
+      }
    });
+});
 
 // app.on("before-quit", () => kill(process.pid));
 

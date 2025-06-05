@@ -1,58 +1,58 @@
 appId: com.pnnl.GLIMPSE.app
 productName: GLIMPSE
 directories:
-  output: installers
-  buildResources: build
+   output: installers
+   buildResources: build
 files:
-  - '!{*.doc, *.docx}'
-  - '!**/.vscode/*'
-  - '!src${/*}'
-  - '!electron.vite.config.{js,ts,mjs,cjs}'
-  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md, package-lock.json}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+   - "!{*.doc, *.docx}"
+   - "!**/.vscode/*"
+   - "!src${/*}"
+   - "!electron.vite.config.{js,ts,mjs,cjs}"
+   - "!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md, package-lock.json}"
+   - "!{.env,.env.*,.npmrc,pnpm-lock.yaml}"
 extraResources:
-  - ./socket_testing/**/*
-  - ./local-server/server/**/*
-  - ./config/**
-  - ./data/**/*
-  - ./Docs/**
-  - ./themes
-  - ./GLIMPSE-Event-API.pdf
+   - ./socket_testing/**/*
+   - ./local-server/server/**/*
+   - ./config/**
+   - ./data/**/*
+   - ./Docs/**
+   - ./themes
+   - ./GLIMPSE-Event-API.pdf
 win:
-  icon: ./resources/GLIMPSE_color_icon.ico
-  target:
-    - target: msi
-      arch:
-        - x64
+   icon: ./resources/GLIMPSE_color_icon.ico
+   target:
+      - target: msi
+        arch:
+           - x64
 msi:
-  oneClick: false
-  createDesktopShortcut: true
-  artifactName: ${name}-${version}.${ext}
+   oneClick: false
+   createDesktopShortcut: true
+   artifactName: ${name}-${version}.${ext}
 mac:
-  icon: ./resources/GLIMPSE_color_icon.ico
-  target:
-    - target: pkg
-      arch:
-        - arm64
-  extendInfo:
-    - NSCameraUsageDescription: Application requests access to the device's camera.
-    - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
-    - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
-    - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: false
+   icon: ./resources/GLIMPSE_color_icon.ico
+   target:
+      - target: pkg
+        arch:
+           - arm64
+   extendInfo:
+      - NSCameraUsageDescription: Application requests access to the device's camera.
+      - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
+      - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
+      - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
+   notarize: false
 pkg:
-  artifactName: ${name}-${version}.${ext}
+   artifactName: ${name}-${version}.${ext}
 linux:
-  target:
-    - tar.gz
-  vendor: 'pnnl'
-  maintainer: mendozasanchez166@pnnl.gov
-  synopsis: 'GLIMPSE is a graph-based web application to visualize and update distribution power grid models.'
-  description: 'GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python'
-  category: 'Utility'
+   target:
+      - tar.gz
+   vendor: "pnnl"
+   maintainer: mendozasanchez166@pnnl.gov
+   synopsis: "GLIMPSE is a graph-based web application to visualize and update distribution power grid models."
+   description: "GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python"
+   category: "Utility"
 appImage:
-  artifactName: ${name}-${version}.${ext}
+   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+   provider: generic
+   url: https://example.com/auto-updates

@@ -1,45 +1,40 @@
 #circularProgress {
-  position: absolute;
-  height: 125px;
-  width: 125px;
-  border-radius: 50%;
-  background: conic-gradient(#45ab48 1deg, #333 0deg);
-  display: none;
-  left: 35%;
-  top: 50%;
-  align-items: center;
-  justify-content: center;
+   position: absolute;
+   height: 125px;
+   width: 125px;
+   border-radius: 50%;
+   background: conic-gradient(#45ab48 1deg, #333 0deg);
+   display: none;
+   left: 35%;
+   top: 50%;
+   align-items: center;
+   justify-content: center;
 }
 
 #circularProgress::before {
-  content: '';
-  position: absolute;
-  height: 100px;
-  width: 100px;
-  border-radius: 50%;
-  background-color: white;
+   content: "";
+   position: absolute;
+   height: 100px;
+   width: 100px;
+   border-radius: 50%;
+   background-color: white;
 }
 
 #progressValue {
-  position: relative;
-  font-size: 2rem;
-  font-weight: 600;
-  color: #45ab48;
+   position: relative;
+   font-size: 2rem;
+   font-weight: 600;
+   color: #45ab48;
 }
 
 div.vis-configuration-wrapper {
-  width: auto;
-}
-
-.vis-wrapper {
-  height: calc(100% - 4rem);
-  border-top: 1px solid lightgrey;
+   width: auto;
 }
 
 #layout-form {
-  display: none;
-  height: 100%;
-  width: 28%;
-  padding: 1rem;
-  border-left: 1px solid lightgray;
+   display: none;
+   height: 100%;
+   width: 28%;
+   padding: 1rem;
+   border-left: 1px solid lightgray;
 }

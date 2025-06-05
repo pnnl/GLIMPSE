@@ -4,6 +4,6 @@
  * @returns {Object} - the JSON file data
  */
 export const readJsonFile = async (path) => {
-  const jsonData = await window.glimpseAPI.onReadJsonFile(path);
-  return jsonData;
+   const jsonData = await window.glimpseAPI.onReadJsonFile(path);
+   return jsonData;
 };
