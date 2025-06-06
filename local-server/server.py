@@ -41,6 +41,7 @@ def dict2json( glm_dict: dict ) -> str:
    return glm_json
 
 def create_graph(data: dict, set_communities: bool=False) -> dict:
+   global NX_GRAPH
    NX_GRAPH.clear()
 
    community_ids = {}
@@ -94,14 +95,6 @@ def get_multi_coordinate(coords: list):
          return item
 
 def find_shared_coordinates(node):
-   # Track x and y position occurrences separately
-   # x_positions = {}
-   # y_positions = {}
-
-   # # Track which locations each coordinate appears in
-   # x_locations = {}
-   # y_locations = {}
-
    multi_location_x = []
    multi_location_y = []
 
@@ -116,29 +109,10 @@ def find_shared_coordinates(node):
             # Track x positions
             x = point.xPosition
             multi_location_x.append(x)
-            # if x not in x_positions:
-            #   x_positions[x] = 0
-            #   x_locations[x] = set()
-            # x_positions[x] += 1
-            # x_locations[x].add(location_id)
-
             # Track y positions
             y = point.yPosition
             multi_location_y.append(y)
-            # if y not in y_positions:
-            #   y_positions[y] = 0
-            #   y_locations[y] = set()
-            # y_positions[y] += 1
-            # y_locations[y].add(location_id)
 
-
-   # Find coordinates that appear across multiple locations
-   # multi_location_x = [x for x, locations in x_locations.items() if len(locations) > 1]
-   # multi_location_y = [y for y, locations in y_locations.items() if len(locations) > 1]
-
-   # if len(x_positions) == 1:
-   #   multi_location_x = list(x_positions.keys())[0]
-   #   multi_location_y = list(y_positions.keys())[0]
 
    return {
      "x": get_multi_coordinate(multi_location_x),

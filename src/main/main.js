@@ -328,6 +328,7 @@ const makeWindow = () => {
       autoHideMenuBar: false,
       show: false,
       webPreferences: {
+         webgl: true,
          sandbox: false,
          nodeIntegration: false,
          contextIsolation: true,
@@ -515,11 +516,13 @@ const makeSplashWindow = () => {
       alwaysOnTop: false,
       resizable: false,
       movable: true,
+      show: false,
       roundedCorners: true,
       icon: join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico")
    });
 
    splashWindow.loadFile(join(__dirname, "..", "..", "splash_window", "splash-window.html"));
+   splashWindow.webContents.on("did-finish-load", () => splashWindow.show());
    splashWindow.center();
 };
 

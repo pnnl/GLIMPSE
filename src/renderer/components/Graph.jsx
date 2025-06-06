@@ -1283,6 +1283,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             redrawIntervalID = null;
          }
          currentUploadCounter.value = 0;
+         GLIMPSE_OBJECT.objects.length = 0;
+         graphData.edges.clear();
+         graphData.nodes.clear();
+         network = null;
       };
    }, []);
    /* ------------------------- End visualization hook ------------------------- */

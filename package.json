@@ -2,7 +2,7 @@
    "name": "glimpse",
    "version": "0.5.0",
    "productName": "GLIMPSE",
-   "description": "A lightweigth graph-based power grid model visualization tool",
+   "description": "GLIMPSE",
    "main": "./out/main/main.js",
    "author": "mendozasanchez166@pnnl.gov",
    "homepage": "https://github.com/pnnl/GLIMPSE",
