@@ -63,7 +63,19 @@ def delete_edge(edgeID):
 def stream_data(data):
     print("Received: " + str(data))
 
+# ------------------ Connecting to Socket Server ------------------ #
+def main():
+   data = sio.emit('connectToServer', {"data": "Hello from client!!"})
+
+   #update_data = get_update_data(filepath)
+
+   #for update_obj in update_data:
+   #   sio.emit("glimpse", update_obj)
+   #   time.sleep(0.5)
+
+   # sio.disconnect()
+
 if __name__ == "__main__":
    # send in the path of the json file with update data
-   sio.on("disconnect", lambda e: sio.shutdown())
+   main()
    sio.wait()

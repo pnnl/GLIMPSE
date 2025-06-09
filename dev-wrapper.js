@@ -10,10 +10,13 @@ spawn('npx', ['electron-vite', 'dev'], {
   shell: true
 });
 
-setTimeout(
-  () => spawn('bash', ['simulation.sh', containerName], { stdio: 'inherit', shell: true }),
-  5000
-);
+setTimeout(() => {
+  spawn('bash', ['simulation.sh', containerName], {
+    cwd: './natig/',
+    stdio: 'inherit',
+    shell: true
+  });
+}, 15000);
 
 // Handle SIGINT (Ctrl+C)
 process.on('SIGINT', () => {
@@ -21,12 +24,10 @@ process.on('SIGINT', () => {
 
   // Run the quit docker script
   const cleanup = spawn('bash', ['quiteDocker.sh', containerName], {
+    cwd: './natig/',
     stdio: 'inherit',
     shell: true
   });
 
-  cleanup.on('close', (code) => {
-    console.log(`Cleanup finished with code ${code}`);
-    process.exit(code);
-  });
+  cleanup.on('close', (code) => process.exit(code));
 });

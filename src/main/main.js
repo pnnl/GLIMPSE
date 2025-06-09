@@ -9,7 +9,7 @@ const {
   nativeImage,
   Notification
 } = require('electron');
-const { electronApp, optimizer, is } = require('@electron-toolkit/utils');
+const { optimizer, is } = require('@electron-toolkit/utils');
 const { spawn } = require('child_process');
 const { join, basename } = require('path');
 const { io } = require('socket.io-client');
@@ -502,44 +502,45 @@ const initiateServer = () => {
   });
 };
 
-app
-  .whenReady()
-  .then(() => {
-    makeSplashWindow();
-    globalShortcut.register('ctrl+p', () => mainWindow.webContents.send('show-vis-options'));
-    initiateServer();
-  })
-  .then(() => {
-    // Set app user model id for windows
-    electronApp.setAppUserModelId('com.GLIMPSE');
-    app.on('browser-window-created', (_, window) => {
-      optimizer.watchWindowShortcuts(window);
+app.whenReady().then(() => {
+  globalShortcut.register('ctrl+p', () => mainWindow.webContents.send('show-vis-options'));
+  makeSplashWindow();
+  initiateServer();
+
+  // Set app user model id for windows
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window);
+  });
+
+  socket.on('connect', () => {
+    console.log('connected to socket server!!');
+    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')], {
+      stdio: 'inherit',
+      shell: true
     });
 
-    socket.on('connect', () => {
-      console.log('connected to socket server!!');
-      splashWindow.close();
-      makeWindow();
-      mainWindow.show();
+    splashWindow.close();
+    makeWindow();
+    mainWindow.show();
 
-      socket.on('update-data', (data) => mainWindow.webContents.send('update-data', data));
-      socket.on('add-node', (data) => mainWindow.webContents.send('add-node', data));
-      socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
-      socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
-      socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
-      socket.on('update-watch-item', (watchData) => {
-        mainWindow.webContents.send('update-watch-item', watchData);
-      });
-    });
-
-    // autoUpdater.checkForUpdatesAndNotify();
-    app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        makeWindow();
-        mainWindow.show();
-      }
+    socket.on('update-data', (data) => mainWindow.webContents.send('update-data', data));
+    socket.on('add-node', (data) => mainWindow.webContents.send('add-node', data));
+    socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
+    socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
+    socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
+    socket.on('update-watch-item', (watchData) => {
+      mainWindow.webContents.send('update-watch-item', watchData);
     });
   });
+
+  // autoUpdater.checkForUpdatesAndNotify();
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      makeWindow();
+      mainWindow.show();
+    }
+  });
+});
 
 // app.on("before-quit", () => kill(process.pid));
 

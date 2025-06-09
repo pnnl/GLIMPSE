@@ -257,7 +257,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
             attackPoint: '',
             attackValue: '',
             realValue: '',
-            isInt: ''
+            isInt: '3'
           }))
         }
       });
@@ -277,7 +277,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
               attackPoint: '',
               attackValue: '',
               realValue: '',
-              isInt: ''
+              isInt: '3'
             }))
           ]
         }
@@ -665,6 +665,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                         <TextField
                           size="small"
                           select
+                          value={switchObj.isInt}
                           onChange={(e) => handleValueChange(e, switchObj.id)}
                           name="isInt"
                           label={MIMConfig.isInt.label}
