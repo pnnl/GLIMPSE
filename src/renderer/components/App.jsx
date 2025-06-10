@@ -35,6 +35,10 @@ const App = () => {
     setShowSearch = navSetShowSearch;
   };
 
+  const handleModelFileUpload = (paths) => {
+    handleFileUpload(paths, setFileData, setFilesUploaded);
+  };
+
   return (
     <>
       <Nav
@@ -45,10 +49,11 @@ const App = () => {
         findEdge={findEdgeRef}
         modelNumber={fileData.modelNumber}
         applyOverlay={applyOverlayRef}
+        handleFileUpload={handleModelFileUpload}
       />
       {!filesUploaded && (
         <FileUpload
-          onFileUpload={(paths) => handleFileUpload(paths, setFileData, setFilesUploaded)}
+          onFileUpload={handleModelFileUpload}
         />
       )}
       {fileData.loading && (

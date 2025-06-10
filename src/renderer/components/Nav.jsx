@@ -24,7 +24,7 @@ import { SearchRounded } from '@mui/icons-material';
 import { ArrowRight } from '@mui/icons-material';
 import Watch from './Watch';
 
-const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, applyOverlay }) => {
+const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, applyOverlay, handleFileUpload }) => {
   const [openAbout, setOpenAbout] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchValue, setSearchValue] = useState(null);
@@ -186,6 +186,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
         applyOverlay={applyOverlay}
         graphData={graphData}
         setWatchData={setWatchData}
+        handleFileUpload={handleFileUpload}
       />
       <Watch
         open={openWatch}

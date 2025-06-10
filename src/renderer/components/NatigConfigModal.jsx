@@ -53,9 +53,11 @@ const switchWatchProporties = {
  * @param {object} props.graphData - A useRef function to get the graph data object
  * @returns {JSX.Element} - The NATIG configuration modal
  */
-const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, setWatchData }) => {
+const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, setWatchData, handleFileUpload }) => {
   const [expanded, setExpanded] = useState(false);
   const [topology, setTopology] = useState({ name: '' });
+  const [modelfiles, setModelfiles] = useState([]);
+  const [modelLoaded, setModelLoaded] = useState(false);
   const [watchList, setWatchList] = useState({});
 
   const [generalConfig, setGeneralConfig] = useState({
@@ -400,6 +402,11 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
     await applyOverlay.current(undefined, modelNumber, topology.data);
   };
 
+  const applyModel = async () => {
+    await handleFileUpload(modelfiles);
+    setModelLoaded(true);
+  };
+
   const handleWatchProp = (e, id) => {
     const { name, checked } = e.target;
 
@@ -436,6 +443,44 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Tooltip>
       </DialogTitle>
       <DialogContent dividers>
+        
+        <Stack direction={'row'} spacing={1}>
+          <Tooltip title={'Select model files to upload'} placement="left" arrow>
+            <FormControl fullWidth>
+              <InputLabel>Model</InputLabel>
+              <label htmlFor="model-files-upload">
+                <CustomButton
+                  component="span"
+                  sx={{ mt: 1, mb: 1, width: '100%' }}
+                  variant="outlined"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const filePaths = await window.glimpseAPI.getFilePaths();
+                    if (filePaths && filePaths.length > 0) {
+                      setModelfiles(filePaths);
+                    }
+                  }}
+                >
+                  Select Files
+                </CustomButton>
+                {modelfiles && modelfiles.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    {modelfiles.map((file, idx) => (
+                      <div key={idx} style={{ fontSize: '0.85rem' }}>
+                        {typeof file === 'string' ? file : file.name}
+                      </div>
+                    ))}
+                  </Box>
+                )}
+              </label>
+            </FormControl>
+          </Tooltip>
+          <Tooltip title={'Load model'} placement="right" arrow>
+            <CustomButton onClick={applyModel}>Load</CustomButton>
+          </Tooltip>
+        </Stack>
+        <Divider sx={{ m: '0.5rem 0' }} />
+
         <Stack direction={'row'} spacing={1}>
           <Tooltip title={'Choose a topology for uploaded model'} placement="left" arrow>
             <FormControl fullWidth>
@@ -445,6 +490,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                 name={'topology'}
                 value={topology.name}
                 onChange={handleTopologySelect}
+                disabled={!modelLoaded}
               >
                 {topologyNames.map((name, index) => (
                   <MenuItem key={index} value={name}>
@@ -455,13 +501,14 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
             </FormControl>
           </Tooltip>
           <Tooltip title={'Apply topology to visualization'} placement="right" arrow>
-            <CustomButton onClick={applyTopolgy}>Apply</CustomButton>
+            <CustomButton onClick={applyTopolgy} disabled={!modelLoaded}>Apply</CustomButton>
           </Tooltip>
         </Stack>
         <Divider sx={{ m: '0.5rem 0' }} />
         <Accordion
           expanded={expanded === 'General Settings'}
           onChange={handleExpand('General Settings')}
+          disabled={!modelLoaded}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>Simulation Settings</AccordionSummary>
           <Stack sx={{ margin: '1rem' }} direction={'column'} spacing={1}>
@@ -557,7 +604,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
 
         <Divider sx={{ m: '0.5rem 0' }} />
 
-        <Accordion expanded={expanded === 'DDoS Settings'} onChange={handleExpand('DDoS Settings')}>
+        <Accordion expanded={expanded === 'DDoS Settings'} onChange={handleExpand('DDoS Settings')} disabled={!modelLoaded}>
           <AccordionSummary expandIcon={<ExpandMore />}>Attack Scenario Settings</AccordionSummary>
           <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
             <CustomFormControlLabel
@@ -806,7 +853,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Accordion>
         <Divider sx={{ m: '0.5rem 0' }} />
 
-        <Accordion>
+        <Accordion disabled={!modelLoaded}>
           <AccordionSummary expandIcon={<ExpandMore />}>Watch</AccordionSummary>
           <Autocomplete
             sx={{ padding: '0 1.5rem', m: '0 0 1rem 0' }}
@@ -859,7 +906,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Accordion>
       </DialogContent>
       <DialogActions>
-        <CustomButton onClick={send}>Send</CustomButton>
+        <CustomButton onClick={send} disabled={!modelLoaded}>Send</CustomButton>
         <CustomButton onClick={close}>close</CustomButton>
       </DialogActions>
     </Dialog>,
