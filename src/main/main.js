@@ -395,6 +395,12 @@ const makeWindow = () => {
   });
 
   ipcMain.handle('get-file-paths', () => getFilePaths());
+  ipcMain.handle('getDefaultModelFiles', async () => {
+    const { join } = require('path');
+    const { readdirSync } = require('fs');
+    const defaultDir = join(process.cwd(), 'data/default/');
+    return readdirSync(defaultDir).map(f => join(defaultDir, f));
+  });
 
   ipcMain.handle('get-config', () =>
     JSON.stringify(require(join(rootDir, '..', '..', 'config', 'appConfig.json')))

@@ -58,6 +58,9 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
   const [topology, setTopology] = useState({ name: '' });
   const [modelfiles, setModelfiles] = useState([]);
   const [modelLoaded, setModelLoaded] = useState(false);
+  React.useEffect(() => {
+    window.glimpseAPI.getDefaultModelFiles().then(setModelfiles);
+  }, []);
   const [watchList, setWatchList] = useState({});
 
   const [generalConfig, setGeneralConfig] = useState({
@@ -447,7 +450,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         <Stack direction={'row'} spacing={1}>
           <Tooltip title={'Select model files to upload'} placement="left" arrow>
             <FormControl fullWidth>
-              <InputLabel>Model</InputLabel>
+              {/* <InputLabel>Model</InputLabel> */}
               <label htmlFor="model-files-upload">
                 <CustomButton
                   component="span"
@@ -461,7 +464,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                     }
                   }}
                 >
-                  Select Files
+                  Select Model Files
                 </CustomButton>
                 {modelfiles && modelfiles.length > 0 && (
                   <Box sx={{ mt: 1 }}>

@@ -4,6 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload';
 // Custom APIs for renderer
 const api = {
   getFilePaths: () => ipcRenderer.invoke('get-file-paths'),
+  getDefaultModelFiles: () => ipcRenderer.invoke('getDefaultModelFiles'),
   onShowAttributes: (callback) => {
     ipcRenderer.on('show-attributes', (_event, showBool) => callback(showBool));
     return () => ipcRenderer.removeAllListeners('show-attributes');
