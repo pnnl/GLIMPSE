@@ -28,7 +28,7 @@ import {
 import ContextMenu from "./ContextMenu";
 import Legend from "./Legend";
 import NewNodeForm from "./NewNodeForm";
-import NodePopup from "./NodePopup";
+import EditObjectModal from "./EditObjectModal";
 import { isGlmFile } from "../utils/appUtils";
 import { readJsonFile } from "../utils/fileProcessing";
 import { NewEdgeForm } from "./NewEdgeForm";
@@ -56,8 +56,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    let edgesToAnimateCount = 0;
    let redrawIntervalID = null;
 
-   let setNode = null;
-   let setOpenNodePopup = null;
+   let setSelectedObject = null;
+   let setOpenObjectPopup = null;
    let newNodeFormSetState = null;
    let contextMenuData = null;
    let setContextMenuData = null;
@@ -147,9 +147,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
     * child component
     * @param {React.Dispatch<React.SetStateAction<false>>} setOpen - Used to display the node popup form
     */
-   const onChildMount = (setChilNode, setOpen) => {
-      setNode = setChilNode;
-      setOpenNodePopup = setOpen;
+   const onPopupMount = (setChildObj, setOpen) => {
+      setSelectedObject = setChildObj;
+      setOpenObjectPopup = setOpen;
    };
 
    /**
@@ -182,7 +182,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
    /** close the node pupup component */
    const closePopUp = () => {
-      setOpenNodePopup(false);
+      setOpenObjectPopup(false);
    };
 
    /* ------------------------ End Recive Sate Variables from Children ------------------------ */
@@ -191,10 +191,16 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
     * Updates the nodes's hover title with the new attributes
     * @param {Object} selectedNode - The node object that was selected to be edited
     */
-   const saveEdits = (selectedNode) => {
-      selectedNode.title = getTitle(selectedNode.attributes);
-      graphData.nodes.update(selectedNode);
-      setOpenNodePopup(false);
+   const saveEdits = (selectedObj) => {
+      if (selectedObj.elementType === "edge") {
+         selectedObj.title = getTitle(selectedObj.attributes);
+         graphData.edges.update(selectedObj);
+      } else {
+         selectedObj.title = getTitle(selectedObj.attributes);
+         graphData.nodes.update(selectedObj);
+      }
+
+      setOpenObjectPopup(false);
    };
 
    /**
@@ -528,54 +534,48 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          graphData.nodes.add(newNodes);
          graphData.edges.add(newEdges);
       } else if (isGlm) {
+         const newNodeCID = graphData.nodes.get(connectTo).communityID;
+
+         const newNode = {
+            id: nodeID,
+            label: nodeID,
+            type: nodeTypes[nodeType],
+            group: nodeTypes[nodeType],
+            communityID: newNodeCID,
+            elementType: "node",
+            attributes: {
+               id: nodeID
+            }
+         };
+
+         newNode.title = getTitle({ objectType: nodeTypes[nodeType], ...newNode.attributes });
+         objectTypeCount.nodes[newNode.type]++;
+
+         const newEdge = {
+            id: `${connectTo}-${newNode.id}`,
+            from: connectTo,
+            to: newNode.id,
+            type: edgeTypes[edgeType],
+            elementType: "edge",
+            color: edgeOptions[edgeTypes[edgeType]].color,
+            width: edgeOptions[edgeTypes[edgeType]].width
+         };
+
+         const { color, width, elementType, type, ...rest } = newEdge;
+         newEdge.title = getTitle({ ObjectType: edgeTypes[edgeType], ...rest });
+         objectTypeCount.edges[newEdge.type]++;
+
          try {
-            const nodesOfsameType = graphData.nodes
-               .get()
-               .filter((n) => n.type === nodeTypes[nodeType]);
-
-            const newNodeCID = graphData.nodes.get(connectTo).communityID;
-
-            const newNode = {
-               id: `${nodeID}`,
-               label: `${nodeID}`,
-               type: nodeTypes[nodeType],
-               group: nodeTypes[nodeType],
-               communityID: newNodeCID,
-               elementType: "node",
-               attributes: {
-                  id: `${nodeID}`
-               },
-               level:
-                  "level" in nodesOfsameType[0].attributes
-                     ? nodesOfsameType[0].attributes.level
-                     : undefined
-            };
-
-            newNode.title = `Object Type: ${nodeTypes[nodeType]}\n${getTitle(newNode.attributes)}`;
-            objectTypeCount.nodes[newNode.type]++;
-
-            graphData.nodes.add(newNode);
-
-            const newEdge = {
-               id: `${connectTo}-${newNode.id}`,
-               from: connectTo,
-               to: newNode.id,
-               type: edgeTypes[edgeType],
-               elementType: "edge",
-               color: edgeOptions[edgeTypes[edgeType]].color,
-               width: edgeOptions[edgeTypes[edgeType]].width
-            };
-
-            const { color, width, elementType, type, ...rest } = newEdge;
-            newEdge.title = `Object Type: ${edgeTypes[edgeType]}\n${getTitle(rest)}`;
-            objectTypeCount.edges[newEdge.type]++;
             graphData.edges.add(newEdge);
-
-            setLegendData(objectTypeCount, theme, edgeOptions, legendData);
          } catch (err) {
             console.error(err);
-            alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
+            alert(
+               `There was an error adding node: ${newNode.id}. Double check if it already exists.`
+            );
+            return null;
          }
+         graphData.nodes.add(newNode);
+         setLegendData(objectTypeCount, theme, edgeOptions, legendData);
       }
    };
 
@@ -892,10 +892,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
     * Hides the legend container and shows the vis.js layout options form
     */
    const toggleVisOptions = () => {
-      if (
-         layoutFormContainerRef.current.style.display === "none" ||
-         layoutFormContainerRef.current.style.display === ""
-      ) {
+      if (layoutFormContainerRef.current.style.display === "") {
          networkContainerRef.current.style.width = "72%";
          layoutFormContainerRef.current.style.display = "flex";
          legendContainerRef.current.style.display = "none";
@@ -903,7 +900,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          if (networkContainerRef.current.style.width === "30%") {
             networkContainerRef.current.style.width = "72%";
          }
-         layoutFormContainerRef.current.style.display = "none";
+         layoutFormContainerRef.current.style.display = "";
          legendContainerRef.current.style.display = "block";
       }
    };
@@ -1213,22 +1210,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          // after drawing animate edges if there are any to animate
          network.on("afterDrawing", (ctx) => animateEdges(ctx));
 
-         network.on("doubleClick", (params) => {
-            if (params.nodes[0] === undefined || network.clustering.isCluster(params.nodes[0])) {
-               alert("Double click on a base node to edit.");
-            } else {
-               /* Set the state of the NodePopup component for editing of the selected node's attributes */
-               setNode(graphData.nodes.get(params.nodes[0]));
-               setOpenNodePopup(true);
-            }
-         });
-
          /* Display the child Context menu component to hide an edge or edge types */
          network.on("oncontext", (params) => {
             const contextNodeID = network.getNodeAt(params.pointer.DOM);
             const contextEdgeID = network.getEdgeAt(params.pointer.DOM);
-
-            console.log(contextNodeID);
 
             if (contextEdgeID && !contextNodeID) {
                setContextMenuData({
@@ -1264,7 +1249,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
                   return false;
                },
-               container: document.getElementById("layout-form")
+               container: layoutFormContainerRef.current
             }
          });
       };
@@ -1284,6 +1269,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          }
          currentUploadCounter.value = 0;
          GLIMPSE_OBJECT.objects.length = 0;
+         layoutFormContainerRef.current = null;
+         legendContainerRef.current = null;
+         circularProgressRef.current = null;
          graphData.edges.clear();
          graphData.nodes.clear();
          network = null;
@@ -1310,7 +1298,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
          <Stack
             className="vis-wrapper"
-            sx={{ height: "calc(100% - 8.6rem)", width: "100%", borderTop: "1px solid lightgrey" }}
+            sx={{ height: "calc(100% - 8.6rem)", width: "100%" }}
             direction={"row"}
          >
             <Box
@@ -1343,7 +1331,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             <div ref={layoutFormContainerRef} id="layout-form" />
          </Stack>
 
-         <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
+         <EditObjectModal onMount={onPopupMount} onSave={saveEdits} close={closePopUp} />
 
          <NewEdgeForm
             onMount={onNewEdgeFormMount}
@@ -1356,8 +1344,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             onMount={onNewNodeFormMount}
             nodes={() => graphData.nodes.getIds()}
             addNode={addNewNode}
-            nodeTypes={Object.keys(objectTypeCount.nodes)}
-            edgeTypes={Object.keys(objectTypeCount.edges)}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
          />
 
          <div ref={circularProgressRef} id="circularProgress">
@@ -1377,6 +1365,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             isEdgeAnimated={(id) => id in edgesToAnimate}
             animateEdge={animateEdge}
             deleteEdge={deleteEdge}
+            setObj={(obj) => setSelectedObject(obj)}
+            openPopup={(open) => setOpenObjectPopup(open)}
+            graphData={graphData}
          />
       </>
    );

@@ -1,34 +1,19 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import "../styles/Nav.css";
 import About from "./About";
-import {
-   Stack,
-   Toolbar,
-   IconButton,
-   Menu,
-   MenuItem,
-   ListItemIcon,
-   ListItemText,
-   RadioGroup,
-   FormControlLabel,
-   Radio,
-   Divider,
-   Autocomplete,
-   TextField
-} from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
-import { SearchRounded, ArrowRight } from "@mui/icons-material";
+import { Stack, Toolbar, IconButton, Autocomplete, TextField } from "@mui/material";
+import { SearchRounded } from "@mui/icons-material";
 
 const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
    const [open, setOpen] = useState(false);
    const [showSearch, setShowSearch] = useState(false);
    const [searchValue, setSearchValue] = useState(null);
-   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
-   const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
-   const [theme, setTheme] = useState("feeder-model-theme");
-   const parentMenuRef = useRef(null);
+   // const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+   // const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
+   // const [theme, setTheme] = useState("feeder-model-theme");
+   // const parentMenuRef = useRef(null);
    // const openMenu = Boolean(menuAnchorEl);
-   const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
+   // const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
 
    const options = useMemo(() => {
       if (!showSearch || !graphData.current) {
@@ -86,7 +71,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge }) => {
 
    return (
       <>
-         <Toolbar variant="dense" sx={{ width: "100%", borderBottom: "1px solid lightgrey" }}>
+         <Toolbar variant="dense" sx={{ width: "100%" }}>
             {/* <IconButton disabled size="medium" onClick={handleMenuClick}>
                <MenuIcon />
             </IconButton>

@@ -37,8 +37,8 @@ const FileUpload = ({ onFileUpload }) => {
             variant="outlined"
             sx={{
                border: "1px dashed #333333",
-               height: "18rem",
-               width: "36rem",
+               height: "16rem",
+               width: "28rem",
                borderRadius: "25px"
             }}
          >
@@ -75,20 +75,6 @@ const FileUpload = ({ onFileUpload }) => {
                </CardContent>
             </CardActionArea>
          </Card>
-         {/* <Button
-            sx={{
-               padding: "1rem",
-               height: "100%",
-               width: "100%",
-               borderColor: "#333333",
-               color: "#333333",
-               ":hover": { backgroundColor: "#F8FAFC" }
-            }}
-            variant="text"
-            onClick={handleUplaod}
-         >
-            Drag and drop files anywhere or click anywhere to upload
-         </Button> */}
       </div>
    );
 };

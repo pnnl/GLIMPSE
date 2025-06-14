@@ -14,7 +14,10 @@ const ContextMenu = ({
    animateEdge,
    removeAnimation,
    isEdgeAnimated,
-   deleteEdge
+   deleteEdge,
+   graphData,
+   openPopup,
+   setObj
 }) => {
    const [contextMenu, setContextMenu] = useState(null);
 
@@ -68,6 +71,18 @@ const ContextMenu = ({
       setContextMenu(null);
    };
 
+   const handleEditNodeAttrbutes = () => {
+      const selectedNode = graphData.nodes.get(contextMenu.nodeID);
+      setObj(selectedNode);
+      openPopup(true);
+   };
+
+   const handleEditEdgeAttributes = () => {
+      const selectedEdge = graphData.edges.get(contextMenu.edgeID);
+      setObj(selectedEdge);
+      openPopup(true);
+   };
+
    const handleSaveImage = () => {
       const networkCanvas = document.getElementById("graph").getElementsByTagName("canvas")[0];
       networkCanvas.toBlob(
@@ -100,6 +115,7 @@ const ContextMenu = ({
    const EdgeMenuItems = () => {
       return (
          <>
+            <MenuItem onClick={handleEditEdgeAttributes}>Edit Attributes</MenuItem>
             <MenuItem onClick={handleHideEdge}>Hide Edge</MenuItem>
             <MenuItem onClick={handleHideEdges}>Hide Edges of This Type</MenuItem>
             <MenuItem onClick={handleDeleteEdge}>Delete Edge</MenuItem>
@@ -125,18 +141,11 @@ const ContextMenu = ({
    const NodeMenuItems = () => {
       return (
          <>
-            <MenuItem key="delete-node" onClick={handleDeleteNode}>
-               Delete Node
-            </MenuItem>
-            {"CID" in contextMenu && (
-               <MenuItem key="cluster" onClick={handleReCluster}>
-                  Cluster
-               </MenuItem>
-            )}
+            <MenuItem onClick={handleEditNodeAttrbutes}>Edit Attributes</MenuItem>
+            <MenuItem onClick={handleDeleteNode}>Delete Node</MenuItem>
+            {"CID" in contextMenu && <MenuItem onClick={handleReCluster}>Cluster</MenuItem>}
             {"clusterNodeID" in contextMenu && (
-               <MenuItem key={"open-cluster"} onClick={handleOpenCluster}>
-                  Open Cluster
-               </MenuItem>
+               <MenuItem onClick={handleOpenCluster}>Open Cluster</MenuItem>
             )}
          </>
       );

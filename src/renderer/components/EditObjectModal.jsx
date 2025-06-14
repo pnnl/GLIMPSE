@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack } from "@mui/material";
 import { CustomButton } from "../utils/CustomComponents";
 
-const NodePopup = ({ onMount, onSave, close }) => {
+const EditObjectModal = ({ onMount, onSave, close }) => {
    const [open, setOpen] = useState(false);
    const [selectedNode, setSelectedNode] = useState({});
 
@@ -24,7 +24,7 @@ const NodePopup = ({ onMount, onSave, close }) => {
          onClose={close}
          scroll="paper"
       >
-         <DialogTitle>Edit Node</DialogTitle>
+         <DialogTitle>Edit Attributes</DialogTitle>
          <DialogContent dividers>
             <Stack direction="row" justifyContent="center" spacing={1} useFlexGap flexWrap="wrap">
                {selectedNode.attributes &&
@@ -54,4 +54,4 @@ const NodePopup = ({ onMount, onSave, close }) => {
    );
 };
 
-export default NodePopup;
+export default EditObjectModal;

@@ -101,7 +101,7 @@ const Legend = ({
          <Box
             id="legend-network"
             component={"div"}
-            sx={{ height: "100%", width: "28%", borderLeft: "1px solid lightgrey" }}
+            sx={{ height: "100%", width: "28%" }}
             ref={legendContainerRef}
             onContextMenu={handleContext}
          />

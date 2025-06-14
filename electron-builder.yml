@@ -15,6 +15,7 @@ extraResources:
    - ./local-server/server/**/*
    - ./config/**
    - ./data/**/*
+   - ./data/cim/**
    - ./Docs/**
    - ./themes
    - ./GLIMPSE-Event-API.pdf

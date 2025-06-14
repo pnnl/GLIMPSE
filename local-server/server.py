@@ -14,6 +14,7 @@ from cimbuilder.object_builder import new_two_terminal_object
 #cim-graph imports
 from cimgraph.models import FeederModel
 from cimgraph.databases import XMLFile
+from dataclasses import fields
 import cimgraph.utils as cim_utils
 import cimgraph.data_profile.cimhub_2023 as cim
 os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
@@ -103,13 +104,10 @@ def find_shared_coordinates(node):
       equipment = terminal.ConductingEquipment
       if equipment.Location is not None:
          location = equipment.Location
-         # location_id = id(location)  # Use location object id as unique identifier
 
          for point in location.PositionPoints:
-            # Track x positions
             x = point.xPosition
             multi_location_x.append(x)
-            # Track y positions
             y = point.yPosition
             multi_location_y.append(y)
 
@@ -119,18 +117,11 @@ def find_shared_coordinates(node):
      "y": get_multi_coordinate(multi_location_y)
    }
 
+def add_attributes(cim_obj, new_obj):
+   for field in fields(cim_obj):
+      if field.metadata["type"] == "Attribute":
+         new_obj["attributes"][field.name] = str(getattr(cim_obj, field.name))
 
-# long computation with larger graphs
-# def get_avg_betweenness_centrality() -> float:
-#    my_k = int(NX_GRAPH.number_of_nodes()*0.68)
-#    betweenness_centrality_dict = nx.betweenness_centrality(NX_GRAPH, k=my_k)
-
-#    centrality_sum = sum(betweenness_centrality_dict.values())
-#    avg = centrality_sum/len(betweenness_centrality_dict)
-
-#    return avg
-
-# cim xml to GLIMPSE JSON Structure
 def cim2GS(cim_filepath: str) -> str:
    """
    Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
@@ -157,6 +148,7 @@ def cim2GS(cim_filepath: str) -> str:
          c_node["attributes"]["x"] = coordinates["x"]
          c_node["attributes"]["y"] = coordinates["y"]
 
+      add_attributes(node, c_node)
       objects.append(c_node)
 
       for terminal in node.Terminals:
@@ -164,15 +156,19 @@ def cim2GS(cim_filepath: str) -> str:
          eq_class_type = equipment.__class__.__name__
 
          if eq_class_type in LOAD_TYPES:
-            objects.append({
+            new_load = {
                "objectType": "load",
                "elementType": "node",
                "attributes": {
                   "id": terminal.mRID,
                   "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
                   "eq_class_type": eq_class_type
                }
-            })
+            }
+            add_attributes(terminal, new_load)
+
+            objects.append(new_load)
             objects.append({
                "objectType": "line",
                "elementType": "edge",
@@ -184,15 +180,19 @@ def cim2GS(cim_filepath: str) -> str:
             })
 
          if eq_class_type in GEN_TYPES:
-            objects.append({
+            new_gen = {
                "objectType": "diesel_dg",
                "elementType": "node",
                "attributes": {
                   "id": terminal.mRID,
                   "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
                   "eq_class_type": eq_class_type
                }
-            })
+            }
+            add_attributes(terminal, new_gen)
+
+            objects.append(new_gen)
             objects.append({
                "objectType": "line",
                "elementType": "edge",
@@ -204,15 +204,19 @@ def cim2GS(cim_filepath: str) -> str:
             })
 
          if eq_class_type in CAP_TYPES:
-            objects.append({
+            new_cap = {
                "objectType": "capacitor",
                "elementType": "node",
                "attributes": {
                   "id": terminal.mRID,
                   "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
                   "eq_class_type": eq_class_type
                }
-            })
+            }
+            add_attributes(terminal, new_cap)
+
+            objects.append(new_cap)
             objects.append({
                "objectType": "line",
                "elementType": "edge",
@@ -224,15 +228,19 @@ def cim2GS(cim_filepath: str) -> str:
             })
 
          if eq_class_type in INV_TYPES:
-            objects.append({
+            new_inv = {
                "objectType": "inverter_dyn",
                "elementType": "node",
                "attributes": {
                   "id": terminal.mRID,
                   "name": terminal.name,
-                  "eq_class_type": eq_class_type
+                  "sequenceNumber": terminal.sequenceNumber,
+                  "eq_class_type": eq_class_type,
                }
-            })
+            }
+            add_attributes(terminal, new_inv)
+
+            objects.append(new_inv)
             objects.append({
                "objectType": "line",
                "elementType": "edge",
@@ -245,16 +253,19 @@ def cim2GS(cim_filepath: str) -> str:
 
    CIM_NETWORK.get_all_edges(cim.ACLineSegment)
    for line in CIM_NETWORK.graph[cim.ACLineSegment].values():
-         objects.append({
-            "objectType": "overhead_line",
-            "elementType": "edge",
-            "attributes": {
-               "id": f"{line.Terminals[0].ConnectivityNode.mRID}_{line.Terminals[1].ConnectivityNode.mRID}",
-               "from": line.Terminals[0].ConnectivityNode.mRID,
-               "to": line.Terminals[1].ConnectivityNode.mRID,
-               "length": line.length,
-            }
-         })
+      new_l = {
+         "objectType": "overhead_line",
+         "elementType": "edge",
+         "attributes": {
+            "id": line.mRID,
+            "from": line.Terminals[0].ConnectivityNode.mRID,
+            "to": line.Terminals[1].ConnectivityNode.mRID,
+            "length": line.length,
+         }
+      }
+
+      add_attributes(line, new_l)
+      objects.append(new_l)
 
    CIM_NETWORK.get_all_edges(cim.PowerTransformer)
    CIM_NETWORK.get_all_edges(cim.PowerTransformerEnd)
@@ -262,22 +273,27 @@ def cim2GS(cim_filepath: str) -> str:
    CIM_NETWORK.get_all_edges(cim.TransformerTankEnd)
 
    for line in CIM_NETWORK.graph[cim.TransformerTank].values():
-         objects.append({
-            "objectType": "transformer",
-            "elementType": "edge",
-            "attributes": {
-               "id": line.mRID,
-               "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
-               "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID
-            }
-         })
+
+      new_edge = {
+         "objectType": "transformer",
+         "elementType": "edge",
+         "attributes": {
+            "id": line.mRID,
+            "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
+            "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID
+         }
+      }
+
+      add_attributes(line, new_edge)
+      objects.append(new_edge)
 
    for line in CIM_NETWORK.graph[cim.PowerTransformer].values():
       if line.PowerTransformerEnd:
          if (len(line.PowerTransformerEnd) > 2):
             """
-            T1 < -*- > T2
+            T1 <- * -> T2
                   |
+                  V
                   T3
 
             * : phantom node
@@ -328,7 +344,7 @@ def cim2GS(cim_filepath: str) -> str:
 
             phantom_node_count += 1
          else:
-            objects.append({
+            new_edge = {
                "objectType": "transformer",
                "elementType": "edge",
                "attributes": {
@@ -336,7 +352,10 @@ def cim2GS(cim_filepath: str) -> str:
                   "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
                   "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID
                }
-            })
+            }
+
+            add_attributes(line, new_edge)
+            objects.append(new_edge)
 
    cim_switch_types = [
       cim.Breaker,
@@ -351,15 +370,18 @@ def cim2GS(cim_filepath: str) -> str:
    for cim_type in cim_switch_types:
       if cim_type in CIM_NETWORK.graph:
          for line in CIM_NETWORK.graph[cim_type].values():
-            objects.append({
-            "objectType": "switch",
-            "elementType": "edge",
-            "attributes": {
-               "id": line.mRID,
-               "from": line.Terminals[0].ConnectivityNode.mRID,
-               "to": line.Terminals[1].ConnectivityNode.mRID,
+            new_edge = {
+               "objectType": "switch",
+               "elementType": "edge",
+               "attributes": {
+                  "id": line.mRID,
+                  "from": line.Terminals[0].ConnectivityNode.mRID,
+                  "to": line.Terminals[1].ConnectivityNode.mRID,
+               }
             }
-         })
+
+            add_attributes(line, new_edge)
+            objects.append(new_edge)
 
    return json.dumps({cim_filepath: {"objects": objects}})
 

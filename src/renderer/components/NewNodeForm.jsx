@@ -28,7 +28,7 @@ const NewNodeForm = ({ onMount, nodes, addNode, nodeTypes, edgeTypes }) => {
       setOpenForm(false);
    };
 
-   const createNewNode = (e) => {
+   const createNewNode = () => {
       addNode(formFields);
       setOpenForm(false);
    };
