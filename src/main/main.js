@@ -11,7 +11,6 @@ const {
 } = require("electron");
 const { electronApp, optimizer, is } = require("@electron-toolkit/utils");
 const { spawn } = require("child_process");
-const { join, basename } = require("path");
 const { io } = require("socket.io-client");
 const { readFileSync, writeFileSync, existsSync } = require("fs");
 const path = require("path");
@@ -133,7 +132,7 @@ const validateThemeFile = (filepath) => {
 };
 
 const sendPlot = () => {
-   const plotFilename = join(__dirname, "figs", "plot.png");
+   const plotFilename = path.join(__dirname, "figs", "plot.png");
    const plotFileData = readFileSync(plotFilename);
    return plotFileData;
 };
@@ -150,7 +149,7 @@ const validateJson = (filePaths) => {
       const fileData = JSON.parse(readFileSync(filePath, { encoding: "utf-8" }));
 
       if (nodeLinkDataKeys.every((key) => key in fileData)) {
-         data[basename(filePath)] = {
+         data[path.basename(filePath)] = {
             objects: []
          };
 
@@ -158,14 +157,14 @@ const validateJson = (filePaths) => {
             let objectType = null;
 
             if ("type" in node && typeof node.type === "object") {
-               objectType = node.type.join("-");
+               objectType = node.type.path.join("-");
             } else if ("type" in node) {
                objectType = node.type;
             } else {
                objectType = "node";
             }
 
-            data[basename(filePath)].objects.push({
+            data[path.basename(filePath)].objects.push({
                objectType: objectType,
                elementType: "node",
                attributes: node
@@ -175,7 +174,7 @@ const validateJson = (filePaths) => {
          for (const edge of fileData.edges) {
             const { source, target, key, ...rest } = edge;
 
-            data[basename(filePath)].objects.push({
+            data[path.basename(filePath)].objects.push({
                objectType: "type" in edge ? edge.type : "edge",
                elementType: "edge",
                attributes: {
@@ -189,7 +188,7 @@ const validateJson = (filePaths) => {
       } else {
          valid = validator(fileData);
          if (!valid) break;
-         else data[basename(filePath)] = fileData;
+         else data[path.basename(filePath)] = fileData;
       }
    }
 
@@ -210,7 +209,7 @@ const exportThemeFile = async (themeData) => {
    if (dir2save.canceled) return null;
    dir2save = dir2save.filePaths[0];
 
-   writeFileSync(join(dir2save, filename), themeData);
+   writeFileSync(path.join(dir2save, filename), themeData);
 };
 
 const json2glmFunc = async (jsonData) => {
@@ -246,7 +245,10 @@ const json2glmFunc = async (jsonData) => {
 
 const getFilePaths = async () => {
    const fileSelectionPromise = dialog.showOpenDialog({
-      properties: ["openFile", "multiSelections"]
+      properties: ["openFile", "multiSelections"],
+      defaultPath: app.isPackaged
+         ? path.join(process.resourcesPath, "data")
+         : path.join(__dirname, "..", "..", "data")
    });
 
    const fileSelection = await fileSelectionPromise;
@@ -333,7 +335,7 @@ const makeWindow = () => {
          nodeIntegration: false,
          contextIsolation: true,
          enableRemoteModule: false,
-         preload: join(__dirname, "..", "preload", "preload.js")
+         preload: path.join(__dirname, "..", "preload", "preload.js")
       }
    });
 
@@ -343,7 +345,7 @@ const makeWindow = () => {
    });
 
    mainWindow.setIcon(
-      nativeImage.createFromPath(join(__dirname, "assets", "GLIMPSE_color_icon.ico"))
+      nativeImage.createFromPath(path.join(__dirname, "assets", "GLIMPSE_color_icon.ico"))
    );
 
    const menu = Menu.buildFromTemplate([
@@ -455,8 +457,9 @@ const makeWindow = () => {
    ipcMain.handle("getConfig", () => {
       let configFilePath = null;
 
-      if (app.isPackaged) configFilePath = join(process.resourcesPath, "config", "appConfig.json");
-      else configFilePath = join(__dirname, "..", "..", "config", "appConfig.json");
+      if (app.isPackaged)
+         configFilePath = path.join(process.resourcesPath, "config", "appConfig.json");
+      else configFilePath = path.join(__dirname, "..", "..", "config", "appConfig.json");
 
       return JSON.stringify(require(configFilePath));
    });
@@ -471,8 +474,8 @@ const makeWindow = () => {
    ipcMain.handle("getThemeJsonData", (_, filepath) => {
       let themeFilePath = null;
 
-      if (app.isPackaged) themeFilePath = join(process.resourcesPath, "themes", filepath);
-      else themeFilePath = join(__dirname, "..", "..", "themes", filepath);
+      if (app.isPackaged) themeFilePath = path.join(process.resourcesPath, "themes", filepath);
+      else themeFilePath = path.join(__dirname, "..", "..", "themes", filepath);
 
       const themeFileData = readFileSync(themeFilePath, { encoding: "utf-8" });
       return JSON.parse(themeFileData);
@@ -503,7 +506,7 @@ const makeWindow = () => {
    if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
       mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
    } else {
-      mainWindow.loadFile(join(__dirname, "..", "renderer", "index.html"));
+      mainWindow.loadFile(path.join(__dirname, "..", "renderer", "index.html"));
    }
 };
 
@@ -518,10 +521,10 @@ const makeSplashWindow = () => {
       movable: true,
       show: false,
       roundedCorners: true,
-      icon: join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico")
+      icon: path.join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico")
    });
 
-   splashWindow.loadFile(join(__dirname, "..", "..", "splash_window", "splash-window.html"));
+   splashWindow.loadFile(path.join(__dirname, "..", "..", "splash_window", "splash-window.html"));
    splashWindow.webContents.on("did-finish-load", () => splashWindow.show());
    splashWindow.center();
 };
@@ -533,14 +536,14 @@ const initiateServer = () => {
       process.platform === "linux" || process.platform === "darwin" ? "server" : "server.exe";
 
    if (app.isPackaged)
-      serverExecutablePath = join(
+      serverExecutablePath = path.join(
          process.resourcesPath,
          "local-server",
          "server",
          serverExecutableName
       );
    else
-      serverExecutablePath = join(
+      serverExecutablePath = path.join(
          __dirname,
          "..",
          "..",
@@ -558,7 +561,9 @@ const initiateServer = () => {
          console.error(`Server error: ${data}`);
       });
    } else {
-      serverProcess = spawn("python", [join(__dirname, "..", "..", "local-server", "server.py")]);
+      serverProcess = spawn("python", [
+         path.join(__dirname, "..", "..", "local-server", "server.py")
+      ]);
       serverProcess.stdout.on("data", (data) => {
          console.log("data: ", data.toString("utf8"));
          // console.log("data: ", data);

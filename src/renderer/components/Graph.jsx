@@ -192,6 +192,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
     * @param {Object} selectedNode - The node object that was selected to be edited
     */
    const saveEdits = (selectedObj) => {
+      console.log(selectedObj);
       if (selectedObj.elementType === "edge") {
          selectedObj.title = getTitle(selectedObj.attributes);
          graphData.edges.update(selectedObj);
@@ -969,7 +970,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          },
          processProperties: (clusterOptions, childNodes, childEdges) => {
             clusterOptions.value = childNodes.length;
-            clusterOptions.title = `Nodes in Community: ${childNodes.length}`;
+            clusterOptions.title = `Nodes in Cluster: ${childNodes.length}`;
             clusterOptions.mass = childNodes.length * 0.25;
             return clusterOptions;
          },
@@ -1203,7 +1204,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             network.setOptions({ physics: { enabled: false } });
 
             setTimeout(() => {
-               circularProgressBar.style.display = "none";
+               circularProgressBar.style.display = "";
             }, 500);
          });
 
@@ -1249,7 +1250,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
                   return false;
                },
-               container: layoutFormContainerRef.current
+               container: document.getElementById("layout-form")
             }
          });
       };
@@ -1267,11 +1268,11 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             clearInterval(redrawIntervalID);
             redrawIntervalID = null;
          }
+
          currentUploadCounter.value = 0;
          GLIMPSE_OBJECT.objects.length = 0;
          layoutFormContainerRef.current = null;
          legendContainerRef.current = null;
-         circularProgressRef.current = null;
          graphData.edges.clear();
          graphData.nodes.clear();
          network = null;

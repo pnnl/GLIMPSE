@@ -38,10 +38,19 @@ export const getHtmlLabel = (id, attributes) => {
  */
 export const Export = (network, graphData, isGlm, isCim, fileData, newCIMobjs) => {
    if (isGlm) {
+      const edgeIDs = graphData.edges.getIds();
+      const nodeIDs = graphData.nodes.getIds();
+
       Object.keys(fileData).forEach((file) => {
          fileData[file].objects.forEach((obj) => {
-            if ("attributes" in obj && graphData.nodes.getIds().includes(obj.attributes.name)) {
-               obj.attributes = graphData.nodes.get(obj.attributes.name).attributes;
+            if ("attributes" in obj && nodeIDs.includes(obj.attributes.name)) {
+               const visNode = graphData.nodes.get(obj.attributes.name);
+               obj.attributes = visNode.attributes;
+            }
+
+            if ("attributes" in obj && edgeIDs.includes(obj.attributes.name)) {
+               const visEdge = graphData.edges.get(obj.attributes.name);
+               obj.attributes = visEdge.attributes;
             }
          });
       });

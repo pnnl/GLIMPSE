@@ -25,7 +25,7 @@ Then in `GLIMPSE/`:
 npm install
 ```
 
-After that in `GLIMPSE/local-server` create a python environment:
+After all node modules are installed in `GLIMPSE/local-server` create a python environment:
 
 ```bash
 python -m venv glimpse-server
@@ -50,6 +50,20 @@ Next install the server's requirements:
 pip install -r requirements.txt
 ```
 
+Install CIM-Builder to environment. CIM-Builder is used to export modified CIM/XML files with GLIMPSE interface.
+
+In `GLIMPSE/local-server/` clone CIM-Builder.
+
+```bash
+git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
+```
+
+Then in `GLIMPSE/local-server/CIM-Builder/` install as a python library to environment.
+
+```bash
+python -m pip install .
+```
+
 ### Additional Instructions for MacOS with Apple Silicon
 
 In `GLIMPSE/local-server/` clone the glm parser repository.
@@ -58,7 +72,7 @@ In `GLIMPSE/local-server/` clone the glm parser repository.
 git clone https://github.com/NREL/glm.git
 ```
 
-Then in `glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
+Then in `GLIMPSE/local-server/glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
 
 ```bash
 nim c -d:release --opt:size --cpu:arm64 --passC:"-flto -target arm64-apple-macos11" --passL:"-flto -target arm64-apple-macos11" --app:lib --out:lib/_glm.so src/glm.nim
@@ -70,7 +84,7 @@ Next run the following command to create the glm python library wheel
 python setup.py bdist_wheel --plat-name=macosx_11_0_arm64
 ```
 
-Once that is done, in `glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
+Once that is done, in `GLIMPSE/local-server/glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
 
 ```bash
 python -m pip install ./dist/glm-0.4.4-py2.py3-none-macosx_11_0_arm64.whl
@@ -86,7 +100,7 @@ npm run dev
 
 ## Supported Input Files
 
-GLIMPSE supports two different JSON file formats for custom graph visualizations.
+### GLIMPSE supports two different JSON file formats for custom graph visualizations.
 
 1. GLIMPSE's data structure based off the [glm2json](https://github.com/NREL/glm) parser output used by GLIMPSE.
    - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
@@ -96,11 +110,15 @@ GLIMPSE supports two different JSON file formats for custom graph visualizations
 2. Networkx's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
    - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
 
-GLIMPSE of course supports glm (GridLAB-D Model) files.
+### GLIMPSE glm (GridLAB-D Model) file support
 
 1. To get started upload all the `.glm` files in the `GLIMPSE/glimpse/data/123-bus-model/` folder
 2. Feel free to also upload the 3000, 8500, and 9500 model `.glm` files to experience GLIMPSE's scalability through community detection and node clustering.
 3. To re-upload files after visualization, click on the `HOME` button at the top right of the app.
+
+### CIM (.XML) File Support
+
+1. Example file found [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim).
 
 ![ui](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
 
