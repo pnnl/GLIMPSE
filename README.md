@@ -2,6 +2,8 @@
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
+![UI](https://github.com/user-attachments/assets/12896785-d76a-470c-b80f-f91870b537f1)
+
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
 
 **NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
@@ -119,8 +121,6 @@ npm run dev
 ### CIM (.XML) File Support
 
 1. Example file found [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim).
-
-![ui](https://github.com/user-attachments/assets/76ecdcf4-df35-4c9f-9878-c99cdc49dfea)
 
 ## Cite as
 
