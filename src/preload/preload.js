@@ -1,6 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
-
 // Custom APIs for renderer
 const api = {
   getFilePaths: () => ipcRenderer.invoke('get-file-paths'),
@@ -11,6 +10,10 @@ const api = {
   onUpdateData: (callback) => {
     ipcRenderer.on('update-data', (_event, data) => callback(data));
     return () => ipcRenderer.removeAllListeners('update-data');
+  },
+  onRenderComponent: (callback) => {
+    ipcRenderer.on('render-component', (_, componentData) => callback(componentData));
+    return () => ipcRenderer.removeListener('render-component');
   },
   onAddNodeEvent: (callback) => {
     ipcRenderer.on('add-node', (_event, newNodeData) => callback(newNodeData));
@@ -29,7 +32,10 @@ const api = {
     return () => ipcRenderer.removeAllListeners('delete-edge');
   },
   onUpdateWatchItem: (callback) => {
-    ipcRenderer.on('update-watch-item', (_, watchUpdateData) => callback(watchUpdateData));
+    ipcRenderer.on('update-watch-item', (_, watchUpdateData) => {
+      console.log(watchUpdateData);
+      callback(watchUpdateData);
+    });
     return () => ipcRenderer.removeAllListeners('update-watch-item');
   },
   onShowVisOptions: (callback) => {
@@ -40,6 +46,7 @@ const api = {
     ipcRenderer.on('export-theme', () => callback());
     return () => ipcRenderer.removeAllListeners('export-theme');
   },
+  openPortalWindow: (componentData) => ipcRenderer.send('open-portal-window', componentData),
   validate: (jsonFilePath) => ipcRenderer.invoke('validate', jsonFilePath),
   onReadJsonFile: (filepath) => ipcRenderer.invoke('read-json-file', filepath),
   getThemeJsonData: (path) => ipcRenderer.invoke('get-theme-data', path),

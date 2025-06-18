@@ -25,6 +25,7 @@ const isMac = process.platform === 'darwin';
 const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
 let splashWindow = null;
+let portalWindow = null;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -263,6 +264,37 @@ const getFilePaths = async () => {
   return fileSelection.filePaths;
 };
 
+const createPortalWindow = (componentName, props) => {
+  portalWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    autoHideMenuBar: true,
+    webPreferences: {
+      sandbox: false,
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: join(__dirname, '..', 'preload', 'preload.js')
+    }
+  });
+
+  // Load portal.html
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    portalWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/portal.html`);
+  } else {
+    portalWindow.loadFile(join(__dirname, '..', 'renderer', 'portal.html'));
+  }
+
+  // When window is ready, send component data
+  portalWindow.webContents.on('did-finish-load', () => {
+    portalWindow.webContents.send('render-component', {
+      component: componentName,
+      props: props
+    });
+  });
+
+  return portalWindow;
+};
+
 const makeWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1500,
@@ -280,6 +312,20 @@ const makeWindow = () => {
       enableRemoteModule: false,
       preload: join(__dirname, '..', 'preload', 'preload.js')
     }
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url === 'about:blank') {
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          frame: false,
+          fullscreenable: false,
+          backgroundColor: 'black'
+        }
+      };
+    }
+    return { action: 'deny' };
   });
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -428,6 +474,12 @@ const makeWindow = () => {
     }
   });
 
+  // Add this IPC handler
+  ipcMain.on('open-portal-window', (_, { component, props }) => {
+    console.log(component, props);
+    createPortalWindow(component, props);
+  });
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url);
     return { action: 'deny' };
@@ -529,7 +581,12 @@ app.whenReady().then(() => {
     socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
     socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
     socket.on('update-watch-item', (watchData) => {
-      mainWindow.webContents.send('update-watch-item', watchData);
+      console.log('---------------------------------');
+      console.log(watchData);
+      console.log('---------------------------------');
+      if (portalWindow) {
+        portalWindow.webContents.send('update-watch-item', watchData);
+      }
     });
   });
 
