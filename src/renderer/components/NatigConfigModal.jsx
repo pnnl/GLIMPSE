@@ -57,6 +57,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
   const [expanded, setExpanded] = useState(false);
   const [topology, setTopology] = useState({ name: '' });
   const [modelfiles, setModelfiles] = useState([]);
+  const [selectedModelSet, setSelectedModelSet] = useState(null);
   const [modelLoaded, setModelLoaded] = useState(false);
   React.useEffect(() => {
     window.glimpseAPI.getDefaultModelFiles().then(setModelfiles);
@@ -446,7 +447,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Tooltip>
       </DialogTitle>
       <DialogContent dividers>
-        
+
         <Stack direction={'row'} spacing={1}>
           <Tooltip title={'Select model files to upload'} placement="left" arrow>
             <FormControl fullWidth>
@@ -466,22 +467,60 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                 >
                   Select Model Files
                 </CustomButton>
-                {modelfiles && modelfiles.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
-                    {modelfiles.map((file, idx) => (
-                      <div key={idx} style={{ fontSize: '0.85rem' }}>
-                        {typeof file === 'string' ? file : file.name}
-                      </div>
-                    ))}
-                  </Box>
-                )}
               </label>
             </FormControl>
           </Tooltip>
-          <Tooltip title={'Load model'} placement="right" arrow>
-            <CustomButton onClick={applyModel}>Load</CustomButton>
+        </Stack>
+
+        <Divider sx={{ m: '0.5rem 0' }} />
+
+        <Stack direction={'row'} spacing={1} sx={{ mt: 2 }}>
+          <Tooltip title={'Select a default model set'} placement="left" arrow>
+            <FormControl fullWidth>
+              <InputLabel id="model-set-label">Model Set</InputLabel>
+              <Select
+                labelId="model-set-label"
+                value={selectedModelSet || ''}
+                label="Model Set"
+                onChange={async (e) => {
+                  const set = e.target.value;
+                  setSelectedModelSet(set);
+                  const filePaths = await window.glimpseAPI.getFilePathsSet(set);
+                  if (filePaths && filePaths.length > 0) {
+                    setModelfiles(filePaths);
+                  }
+                }}
+              >
+                <MenuItem value="13">13</MenuItem>
+                <MenuItem value="3000">3000</MenuItem>
+                <MenuItem value="9500">9500</MenuItem>
+                <MenuItem value="123">123</MenuItem>
+              </Select>
+            </FormControl>
           </Tooltip>
         </Stack>
+
+        <Divider sx={{ m: '0.5rem 0' }} />
+
+        <Stack direction={'row'} spacing={1} sx={{ mt: 2 }}>
+          <Tooltip title={'Select a default model set'} placement="left" arrow>
+            <FormControl fullWidth>
+              {modelfiles && modelfiles.length > 0 && (
+                <Box sx={{ mt: 1 }}>
+                  {modelfiles.map((file, idx) => (
+                    <div key={idx} style={{ fontSize: '0.85rem' }}>
+                      {typeof file === 'string' ? file : file.name}
+                    </div>
+                  ))}
+                </Box>
+              )}
+              <Tooltip title={'Load model'} placement="right" arrow>
+                <CustomButton onClick={applyModel}>Load</CustomButton>
+              </Tooltip>
+            </FormControl>
+          </Tooltip>
+        </Stack>
+
         <Divider sx={{ m: '0.5rem 0' }} />
 
         <Stack direction={'row'} spacing={1}>
