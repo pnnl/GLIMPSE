@@ -459,32 +459,20 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    * @param {string} newNodeObj.connectTo - The ID of an existing Node to connect the new node
    * @param {number} newNodeObj.edgeType - The index of the edge type in the edgeTypes list
    */
-  const addNewNode = ({ nodeType, nodeID, connectTo, edgeType }) => {
-    const nodeTypes = Object.keys(objectTypeCount.nodes).filter(
-      (key) => objectTypeCount.nodes[key] > 0
-    );
-    const edgeTypes = Object.keys(objectTypeCount.edges).filter(
-      (key) => objectTypeCount.edges[key] > 0
-    );
-
+  const addNewNode = (newNodeObj) => {
+    const { nodeType, nodeID, connectTo, edgeType } = newNodeObj;
     try {
-      const nodesOfsameType = graphData.nodes.get().filter((n) => n.type === nodeTypes[nodeType]);
-
       const newNodeCID = graphData.nodes.get(connectTo).communityID;
-
       const newNode = {
-        id: `${nodeID}`,
-        // color: "#219ebc",
-        label: `${nodeID}`,
+        id: nodeID,
+        label: nodeID,
         type: nodeTypes[nodeType],
         group: nodeTypes[nodeType],
         communityID: newNodeCID,
         elementType: 'node',
         attributes: {
           id: `${nodeID}`
-        },
-        level:
-          'level' in nodesOfsameType[0].attributes ? nodesOfsameType[0].attributes.level : undefined
+        }
       };
 
       newNode.title = getHtmlTitle({ ObjectType: nodeTypes[nodeType], ...newNode.attributes });
@@ -494,8 +482,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
       const newEdge = {
         id: `${connectTo}-${newNode.id}`,
-        from: connectTo,
-        to: newNode.id,
+        to: connectTo,
+        from: newNode.id,
         type: edgeTypes[edgeType],
         elementType: 'edge',
         color: edgeOptions[edgeTypes[edgeType]].color,
@@ -509,7 +497,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
     } catch (err) {
-      alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
+      console.error(err);
+      // alert(`${nodeTypes[nodeType]}_${nodeID} already exists...`);
     }
   };
 
@@ -678,7 +667,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         const angle = Math.atan2(dy, dx);
 
         // Define the triangle dimensions
-        const sideLength = 7; // Base width of the triangle
+        const sideLength = 8.5; // Base width of the triangle
         const triangleHeight = (Math.sqrt(3) / 2) * sideLength; // Height of the triangle
 
         // Define the triangle points relative to the origin (0, 0)
@@ -1337,10 +1326,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         next={() => Next(network, highlightedNodes, counter)}
       />
 
-      <Stack
-        sx={{ height: 'calc(100% - 8.6rem)', width: '100%', borderTop: '1px solid lightgrey' }}
-        direction={'row'}
-      >
+      <Stack sx={{ height: 'calc(100% - 8.6rem)', width: '100%' }} direction={'row'}>
         <Box
           sx={{ width: '72%', height: '100%' }}
           ref={networkContainerRef}
@@ -1383,14 +1369,15 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
         isEdgeAnimated={(id) => id in edgesToAnimate}
         deleteEdge={deleteEdge}
         watch={addToWatchList}
+        networkContainerRef={networkContainerRef}
       />
 
       <NewNodeForm
         onMount={onNewNodeFormMount}
         nodes={() => graphData.nodes.getIds()}
         addNode={addNewNode}
-        nodeTypes={Object.keys(objectTypeCount.nodes)}
-        edgeTypes={Object.keys(objectTypeCount.edges)}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
       />
 
       <NewEdgeForm

@@ -15,6 +15,7 @@ const ContextMenu = ({
   removeAnimation,
   isEdgeAnimated,
   deleteEdge,
+  networkContainerRef,
   watch
 }) => {
   const [contextMenu, setContextMenu] = useState(null);
@@ -71,7 +72,7 @@ const ContextMenu = ({
   };
 
   const handleSaveImage = () => {
-    const networkCanvas = document.getElementById('graph').getElementsByTagName('canvas')[0];
+    const networkCanvas = networkContainerRef.current.getElementsByTagName('canvas')[0];
     networkCanvas.toBlob(
       (blob) => {
         const imgLink = document.createElement('a');

@@ -59,13 +59,13 @@
       "image": "./imgs/generator.svg"
     },
     "communication_node": {
-      "size": 12,
+      "size": 16,
       "color": "#c1121f",
       "shape": "circularImage",
       "image": "./imgs/comm.jpg"
     },
     "microgrid": {
-      "size": 12,
+      "size": 16,
       "color": "#6b9080",
       "shape": "circularImage",
       "image": "./imgs/microgrid.svg"
@@ -90,13 +90,13 @@
       "shape": "hexagon"
     },
     "attacker": {
-      "size": 13,
+      "size": 16,
       "color": {
         "background": "green",
         "border": "red"
       },
       "shape": "circularImage",
-      "image": "./imgs/attacker.jpg"
+      "image": "./imgs/attacker.png"
     },
     "attacked": {
       "color": "red",

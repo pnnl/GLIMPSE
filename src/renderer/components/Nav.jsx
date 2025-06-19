@@ -22,7 +22,6 @@ import NatigConfigModal from './NatigConfigModal';
 import MenuIcon from '@mui/icons-material/Menu';
 import { SearchRounded } from '@mui/icons-material';
 import { ArrowRight } from '@mui/icons-material';
-import Watch from './Watch';
 
 const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, applyOverlay, handleFileUpload }) => {
   const [openAbout, setOpenAbout] = useState(false);
@@ -30,7 +29,6 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
   const [searchValue, setSearchValue] = useState(null);
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [openConfig, setOpenConfig] = useState(false);
-  const [openWatch, setOpenWatch] = useState(false);
   const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
   const [theme, setTheme] = useState('feeder-model-theme');
   const [watchData, setWatchData] = useState(null);
@@ -101,6 +99,14 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
     }
   };
 
+  const showWatchWindow = () => {
+    console.log('showwatch');
+    window.glimpseAPI.openPortalWindow({
+      component: 'Watch',
+      props: { watchData: watchData }
+    });
+  };
+
   const handleSearch = () => {
     if (searchValue.elementType === 'node') findNode.current(searchValue);
     else if (searchValue.elementType === 'edge') findEdge.current(searchValue);
@@ -113,7 +119,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
 
   return (
     <>
-      <Toolbar variant="dense" sx={{ width: '100%', borderBottom: '1px solid lightgrey' }}>
+      <Toolbar variant="dense" sx={{ width: '100%' }}>
         <IconButton size="medium" onClick={handleMenuClick}>
           <MenuIcon />
         </IconButton>
@@ -125,7 +131,7 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
             </ListItemIcon>
           </MenuItem>
           <MenuItem onClick={() => setOpenConfig(true)}>Scenerion Config</MenuItem>
-          <MenuItem onClick={() => setOpenWatch(true)}>Watching</MenuItem>
+          <MenuItem onClick={showWatchWindow}>Watching</MenuItem>
         </Menu>
         <Menu
           id="themes-submenu"
@@ -187,14 +193,6 @@ const Nav = ({ onMount, showHome, graphData, findNode, findEdge, modelNumber, ap
         graphData={graphData}
         setWatchData={setWatchData}
         handleFileUpload={handleFileUpload}
-      />
-      <Watch
-        open={openWatch}
-        watchData={watchData}
-        close={() => {
-          setOpenWatch(false);
-          closeMenu();
-        }}
       />
       <About show={openAbout} close={() => setOpenAbout(false)} />
     </>

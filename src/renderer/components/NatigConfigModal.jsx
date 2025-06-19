@@ -491,10 +491,11 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                   }
                 }}
               >
+                <MenuItem value="123">123</MenuItem>
                 <MenuItem value="13">13</MenuItem>
                 <MenuItem value="3000">3000</MenuItem>
+                <MenuItem value="8500">8500</MenuItem>
                 <MenuItem value="9500">9500</MenuItem>
-                <MenuItem value="123">123</MenuItem>
               </Select>
             </FormControl>
           </Tooltip>
