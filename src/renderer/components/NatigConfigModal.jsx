@@ -449,33 +449,7 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
       <DialogContent dividers>
 
         <Stack direction={'row'} spacing={1}>
-          <Tooltip title={'Select model files to upload'} placement="left" arrow>
-            <FormControl fullWidth>
-              {/* <InputLabel>Model</InputLabel> */}
-              <label htmlFor="model-files-upload">
-                <CustomButton
-                  component="span"
-                  sx={{ mt: 1, mb: 1, width: '100%' }}
-                  variant="outlined"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    const filePaths = await window.glimpseAPI.getFilePaths();
-                    if (filePaths && filePaths.length > 0) {
-                      setModelfiles(filePaths);
-                    }
-                  }}
-                >
-                  Select Model Files
-                </CustomButton>
-              </label>
-            </FormControl>
-          </Tooltip>
-        </Stack>
-
-        <Divider sx={{ m: '0.5rem 0' }} />
-
-        <Stack direction={'row'} spacing={1} sx={{ mt: 2 }}>
-          <Tooltip title={'Select a default model set'} placement="left" arrow>
+          <Tooltip title={'Select or upload model files'} placement="left" arrow>
             <FormControl fullWidth>
               <InputLabel id="model-set-label">Model Set</InputLabel>
               <Select
@@ -484,13 +458,24 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
                 label="Model Set"
                 onChange={async (e) => {
                   const set = e.target.value;
-                  setSelectedModelSet(set);
-                  const filePaths = await window.glimpseAPI.getFilePathsSet(set);
-                  if (filePaths && filePaths.length > 0) {
-                    setModelfiles(filePaths);
+                  if (set === '__select_files__') {
+                    const filePaths = await window.glimpseAPI.getFilePaths();
+                    if (filePaths && filePaths.length > 0) {
+                      setModelfiles(filePaths);
+                      setSelectedModelSet(null);
+                    }
+                  } else {
+                    setSelectedModelSet(set);
+                    const filePaths = await window.glimpseAPI.getFilePathsSet(set);
+                    if (filePaths && filePaths.length > 0) {
+                      setModelfiles(filePaths);
+                    }
                   }
                 }}
               >
+                <MenuItem value="__select_files__">
+                  <em>Select Model Files</em>
+                </MenuItem>
                 <MenuItem value="123">123</MenuItem>
                 <MenuItem value="13">13</MenuItem>
                 <MenuItem value="3000">3000</MenuItem>
