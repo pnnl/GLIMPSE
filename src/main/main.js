@@ -292,7 +292,7 @@ const createPortalWindow = (componentName, props) => {
     });
   });
 
-  return portalWindow;
+  portalWindow.on('close', () => (portalWindow = null));
 };
 
 const makeWindow = () => {
@@ -314,6 +314,7 @@ const makeWindow = () => {
     }
   });
 
+  // opens urls in default browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url === 'about:blank') {
       return {
@@ -566,10 +567,7 @@ app.whenReady().then(() => {
 
   socket.on('connect', () => {
     console.log('connected to socket server!!');
-    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')], {
-      stdio: 'inherit',
-      shell: true
-    });
+    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')]);
 
     splashWindow.close();
     makeWindow();
@@ -581,9 +579,6 @@ app.whenReady().then(() => {
     socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
     socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
     socket.on('update-watch-item', (watchData) => {
-      console.log('---------------------------------');
-      console.log(watchData);
-      console.log('---------------------------------');
       if (portalWindow) {
         portalWindow.webContents.send('update-watch-item', watchData);
       }

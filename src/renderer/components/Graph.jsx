@@ -1353,6 +1353,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       <div ref={circularProgressRef} id="circularProgress">
         <span id="progressValue">0%</span>
       </div>
+
       <NodePopup onMount={onChildMount} onSave={saveEdits} close={closePopUp} />
 
       <ContextMenu

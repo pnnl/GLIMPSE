@@ -2,52 +2,72 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { Stack, Divider, Typography, Box } from '@mui/material';
 
+// think of watchData as a map of ids to an array of property names
 const Watch = ({ watchData }) => {
   const [watchUpdates, setWatchUpdates] = useState(null);
+  console.log(watchUpdates);
+
+  const handleUpdateWatchItem = (watchObj) => {
+    const watchUpdate = {};
+    if (!watchData) return null;
+    let csvData = null;
+
+    // grab the csv_data from the watchObj
+    if (typeof watchObj === 'string') csvData = JSON.parse(watchObj)['csv_data'];
+    else csvData = watchObj['csv_data'];
+
+    // for each array in the csvdata, check if it has at least 10 elements
+    for (let props of Object.values(csvData)) {
+      if (props.length < 10) {
+        return null;
+      }
+    }
+
+    // for each id in watchData, create an object with the timestamp and the properties
+    for (let [id, propNames] of Object.entries(watchData)) {
+      // propnames is an array of property names
+      let reducedPropertyNames = propNames.reduce((accumulator, propName, index) => {
+        // {
+        //   propName1: value1
+        // }
+        accumulator[propName] = csvData[id][index + 1]; // +1 to skip the timestamp
+        // {
+        //   propName1: value1,
+        //   propName2: value2
+        // }
+        return accumulator;
+      }, {});
+
+      watchUpdate[id] = {
+        timestamp: csvData[id][0],
+        ...reducedPropertyNames
+      };
+    }
+
+    setWatchUpdates(watchUpdate);
+  };
 
   useEffect(() => {
-    const removeListenerArr = [];
-
-    removeListenerArr.push(
-      window.glimpseAPI.onUpdateWatchItem((watchObj) => {
-        console.log(watchObj);
-        if (!watchData) return null;
-        let csvData = null;
-
-        if (typeof watchObj === 'string') csvData = JSON.parse(watchObj)['csv_data'];
-        else csvData = watchObj['csv_data'];
-
-        for (let props of Object.values(csvData)) {
-          if (props.length < 10) {
-            return null;
-          }
-        }
-
-        // remove the first entry from each array in the csvData object since its a timestamp
-        Object.keys(csvData).forEach((k) => csvData[k].shift());
-        setWatchUpdates(csvData);
-      })
-    );
+    const rmListner = window.glimpseAPI.onUpdateWatchItem(handleUpdateWatchItem);
 
     return () => {
-      removeListenerArr.forEach((rmListener) => rmListener());
+      rmListner();
     };
   });
 
   const watchContent = (
     <Box sx={{ height: '100%', width: '100%' }}>
       <Stack spacing={1} divider={<Divider orientation="horizontal" flexItem />}>
-        {watchData ? (
+        {watchUpdates ? (
           <>
-            {Object.entries(watchData).map(([id, porps], index) => (
+            {Object.entries(watchUpdates).map(([id, props], index) => (
               <>
                 <Typography gutterBottom variant="h5" key={index}>
                   {id}
                 </Typography>
-                {porps.map((prop, index) => (
+                {Object.entries(props).map(([prop, value], index) => (
                   <Typography key={index} variant="body2">
-                    {prop}:{' '}
-                    {watchUpdates && id in watchUpdates ? watchUpdates[id][index] : 'No data'}
+                    {prop}: {value}
                   </Typography>
                 ))}
               </>
