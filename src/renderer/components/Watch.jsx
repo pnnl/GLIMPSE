@@ -8,6 +8,8 @@ const Watch = ({ watchData }) => {
   console.log(watchUpdates);
 
   const handleUpdateWatchItem = (watchObj) => {
+    const regex = /[^+-]?\d*\.?\d+/g; //selecting the two numbers, ignoring +s and -s (Only the first number gets used here).
+    const validPropNames = ['current_out_A', 'current_out_B', 'current_out_C'];
     const watchUpdate = {};
     if (!watchData) return null;
     let csvData = null;
@@ -27,14 +29,10 @@ const Watch = ({ watchData }) => {
     for (let [id, propNames] of Object.entries(watchData)) {
       // propnames is an array of property names
       let reducedPropertyNames = propNames.reduce((accumulator, propName, index) => {
-        // {
-        //   propName1: value1
-        // }
-        accumulator[propName] = csvData[id][index + 1]; // +1 to skip the timestamp
-        // {
-        //   propName1: value1,
-        //   propName2: value2
-        // }
+        if (validPropNames.includes(propName)) {
+          const value = csvData[id][index + 1]; // +1 to skip the timestamp
+          accumulator[propName] = value.match(regex)[0];
+        }
         return accumulator;
       }, {});
 
