@@ -264,6 +264,36 @@ const getFilePaths = async () => {
   return fileSelection.filePaths;
 };
 
+const getFilePathsSet = async (set) => {
+  const { join } = require('path');
+
+  const sets = {
+    "13": [
+      join(process.cwd(), 'data', '13', 'IEEE-13.glm'),
+    ],
+    "3000": [
+      join(process.cwd(), 'data', '3000', 'ieee3000_Feeder3 1.glm'),
+    ],
+    "8500": [
+      join(process.cwd(), 'data', '8500', 'ieee8500.glm'),
+    ],
+    "9500": [
+      join(process.cwd(), 'data', '9500', 'IEEE_9500.glm'),
+      join(process.cwd(), 'data', '9500', 'Inverters.glm'),
+      join(process.cwd(), 'data', '9500', 'Recorders.glm'),
+      join(process.cwd(), 'data', '9500', 'Rotating_Machines.glm'),
+    ],
+    "123": [
+      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Diesels.glm'),
+      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Dynamic.glm'),
+      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Inverters_Mixed.glm'),
+      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Recorders.glm'),
+    ]
+  };
+
+  return sets[set];
+}
+
 const createPortalWindow = (componentName, props) => {
   portalWindow = new BrowserWindow({
     width: 800,
@@ -442,6 +472,13 @@ const makeWindow = () => {
   });
 
   ipcMain.handle('get-file-paths', () => getFilePaths());
+  ipcMain.handle('get-file-paths-set', (_event, set) => getFilePathsSet(set));
+  ipcMain.handle('getDefaultModelFiles', async () => {
+    const { join } = require('path');
+    const { readdirSync } = require('fs');
+    const defaultDir = join(process.cwd(), 'data/default/');
+    return readdirSync(defaultDir).map(f => join(defaultDir, f));
+  });
 
   ipcMain.handle('get-config', () =>
     JSON.stringify(require(join(rootDir, '..', '..', 'config', 'appConfig.json')))
