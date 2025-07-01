@@ -19,7 +19,7 @@ setTimeout(() => {
 }, 15000);
 
 // Handle SIGINT (Ctrl+C)
-process.on('SIGINT', () => {
+process.on('SIGKILL', () => {
   console.log('Caught SIGINT, cleaning up...');
 
   // Run the quit docker script

@@ -53,7 +53,15 @@ const switchWatchProporties = {
  * @param {object} props.graphData - A useRef function to get the graph data object
  * @returns {JSX.Element} - The NATIG configuration modal
  */
-const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, setWatchData, handleFileUpload }) => {
+const NatigConfigModal = ({
+  open,
+  close,
+  modelNumber,
+  applyOverlay,
+  graphData,
+  setWatchData,
+  handleFileUpload
+}) => {
   const [expanded, setExpanded] = useState(false);
   const [topology, setTopology] = useState({ name: '' });
   const [modelfiles, setModelfiles] = useState([]);
@@ -447,7 +455,6 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Tooltip>
       </DialogTitle>
       <DialogContent dividers>
-
         <Stack direction={'row'} spacing={1}>
           <Tooltip title={'Select or upload model files'} placement="left" arrow>
             <FormControl fullWidth>
@@ -529,7 +536,9 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
             </FormControl>
           </Tooltip>
           <Tooltip title={'Apply topology to visualization'} placement="right" arrow>
-            <CustomButton onClick={applyTopolgy} disabled={!modelLoaded}>Apply</CustomButton>
+            <CustomButton onClick={applyTopolgy} disabled={!modelLoaded}>
+              Apply
+            </CustomButton>
           </Tooltip>
         </Stack>
         <Divider sx={{ m: '0.5rem 0' }} />
@@ -632,7 +641,11 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
 
         <Divider sx={{ m: '0.5rem 0' }} />
 
-        <Accordion expanded={expanded === 'DDoS Settings'} onChange={handleExpand('DDoS Settings')} disabled={!modelLoaded}>
+        <Accordion
+          expanded={expanded === 'DDoS Settings'}
+          onChange={handleExpand('DDoS Settings')}
+          disabled={!modelLoaded}
+        >
           <AccordionSummary expandIcon={<ExpandMore />}>Attack Scenario Settings</AccordionSummary>
           <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
             <CustomFormControlLabel
@@ -881,7 +894,11 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Accordion>
         <Divider sx={{ m: '0.5rem 0' }} />
 
-        <Accordion disabled={!modelLoaded}>
+        <Accordion
+          expanded={expanded === 'Watch'}
+          onChange={handleExpand('Watch')}
+          disabled={!modelLoaded}
+        >
           <AccordionSummary expandIcon={<ExpandMore />}>Watch</AccordionSummary>
           <Autocomplete
             sx={{ padding: '0 1.5rem', m: '0 0 1rem 0' }}
@@ -934,7 +951,9 @@ const NatigConfigModal = ({ open, close, modelNumber, applyOverlay, graphData, s
         </Accordion>
       </DialogContent>
       <DialogActions>
-        <CustomButton onClick={send} disabled={!modelLoaded}>Send</CustomButton>
+        <CustomButton onClick={send} disabled={!modelLoaded}>
+          Send
+        </CustomButton>
         <CustomButton onClick={close}>close</CustomButton>
       </DialogActions>
     </Dialog>,
