@@ -10,14 +10,44 @@ import {
   AccordionDetails
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+const options = {
+  options: {
+    animation: false,
+    plugins: {
+      tooltip: {
+        enabled: true
+      }
+    }
+  },
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'right'
+    },
+    title: {
+      display: true,
+      text: 'Current Out A-C'
+    }
+  }
+};
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 // think of watchData as a map of ids to an array of property names
 const Watch = ({ watchData }) => {
   const [watchUpdates, setWatchUpdates] = useState(null);
-
-  if (watchUpdates) {
-    // configure visualization here
-  }
 
   const handleUpdateWatchItem = (watchObj) => {
     if (!watchData) return null;
@@ -84,22 +114,38 @@ const Watch = ({ watchData }) => {
       <Stack spacing={1} divider={<Divider orientation="horizontal" flexItem />}>
         {watchUpdates ? (
           <>
-            {Object.entries(watchUpdates).map(([id, props], index) => (
-              <Accordion key={index}>
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography gutterBottom variant="h5" key={index}>
-                    {id}
-                  </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                  {Object.entries(props[props.length - 1]).map(([prop, value], index) => (
-                    <Typography key={index} variant="body2">
-                      {prop}: {value}
+            {Object.entries(watchUpdates).map(([id, props], index) => {
+              const labels = props.map((prop) => prop.timestamp);
+              const data = {
+                labels,
+                datasets: [
+                  {
+                    label: 'current_out_A',
+                    data: props.map((prop) => prop.current_out_A)
+                  },
+                  {
+                    label: 'current_out_B',
+                    data: props.map((prop) => prop.current_out_B)
+                  },
+                  {
+                    label: 'current_out_C',
+                    data: props.map((prop) => prop.current_out_C)
+                  }
+                ]
+              };
+              return (
+                <Accordion key={index}>
+                  <AccordionSummary expandIcon={<ExpandMore />}>
+                    <Typography gutterBottom variant="h5" key={index}>
+                      {id}
                     </Typography>
-                  ))}
-                </AccordionDetails>
-              </Accordion>
-            ))}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Line options={options} data={data} />
+                  </AccordionDetails>
+                </Accordion>
+              );
+            })}
           </>
         ) : (
           <Typography variant="body1">No watch data</Typography>
