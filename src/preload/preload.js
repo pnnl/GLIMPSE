@@ -5,27 +5,27 @@ import { electronAPI } from "@electron-toolkit/preload";
 const api = {
    getFilePaths: () => ipcRenderer.invoke("get-file-paths"),
    onShowAttributes: (callback) => {
-      ipcRenderer.on("show-attributes", (_event, showBool) => callback(showBool));
+      ipcRenderer.on("show-attributes", (_, showBool) => callback(showBool));
       return () => ipcRenderer.removeAllListeners("show-attributes");
    },
    onUpdateData: (callback) => {
-      ipcRenderer.on("update-data", (_event, data) => callback(data));
+      ipcRenderer.on("update-data", (_, data) => callback(data));
       return () => ipcRenderer.removeAllListeners("update-data");
    },
    onAddNodeEvent: (callback) => {
-      ipcRenderer.on("add-node", (_event, newNodeData) => callback(newNodeData));
+      ipcRenderer.on("add-node", (_, newNodeData) => callback(newNodeData));
       return () => ipcRenderer.removeAllListeners("add-node");
    },
    onAddEdgeEvent: (callback) => {
-      ipcRenderer.on("add-edge", (_event, newEdgeData) => callback(newEdgeData));
+      ipcRenderer.on("add-edge", (_, newEdgeData) => callback(newEdgeData));
       return () => ipcRenderer.removeAllListeners("add-edge");
    },
    onDeleteNodeEvent: (callback) => {
-      ipcRenderer.on("delete-node", (_event, nodeID) => callback(nodeID));
+      ipcRenderer.on("delete-node", (_, nodeID) => callback(nodeID));
       return () => ipcRenderer.removeAllListeners("delete-node");
    },
    onDeleteEdgeEvent: (callback) => {
-      ipcRenderer.on("delete-edge", (_event, edgeID) => callback(edgeID));
+      ipcRenderer.on("delete-edge", (_, edgeID) => callback(edgeID));
       return () => ipcRenderer.removeAllListeners("delete-edge");
    },
    onShowVisOptions: (callback) => {
@@ -49,6 +49,7 @@ const api = {
       return () => ipcRenderer.removeAllListeners("getGraphMetrics");
    },
    exportCIM: (CIMobjs) => ipcRenderer.send("exportCIM", CIMobjs),
+   updateCimObjAttributes: (updates) => ipcRenderer.send("update-cim-ob-attrs", updates),
    exportCoordinates: (data) => ipcRenderer.send("exportCoordinates", data),
    json2glm: (jsonData) => ipcRenderer.send("json2glm", jsonData),
    glm2json: (paths) => ipcRenderer.invoke("glm2json", paths),
@@ -57,7 +58,7 @@ const api = {
    getConfig: () => ipcRenderer.invoke("getConfig"),
    validateTheme: (jsonFilePath) => ipcRenderer.invoke("validate-theme", jsonFilePath),
    getEmbeddingsPlot: (callback) => {
-      ipcRenderer.on("embeddings_plot", (e, buffer) => callback(buffer));
+      ipcRenderer.on("embeddings_plot", (_, buffer) => callback(buffer));
       return () => ipcRenderer.removeAllListeners("embeddings_plot");
    }
 };

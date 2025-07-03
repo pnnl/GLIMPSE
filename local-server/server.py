@@ -1,3 +1,5 @@
+from typing import Any, Hashable
+
 from flask import Flask, request as req
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -41,7 +43,7 @@ def dict2json( glm_dict: dict ) -> str:
    glm_json = json.dumps( glm_dict, indent= 3 )
    return glm_json
 
-def create_graph(data: dict, set_communities: bool=False) -> dict:
+def create_graph(data: dict, set_communities: bool=False) -> dict[Hashable | Any, Any] | None:
    global NX_GRAPH
    NX_GRAPH.clear()
 
@@ -76,6 +78,8 @@ def create_graph(data: dict, set_communities: bool=False) -> dict:
 
       nx.set_node_attributes(NX_GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=NX_GRAPH, name="glimpse_community_id")
+   return None
+
 
 def get_modularity() -> float:
    modularity = nx.algorithms.community.modularity(NX_GRAPH, nx.community.label_propagation_communities(NX_GRAPH))
@@ -95,7 +99,7 @@ def get_multi_coordinate(coords: list):
       if count >= 2:
          return item
 
-def find_shared_coordinates(node):
+def find_shared_coordinates(node) -> dict:
    multi_location_x = []
    multi_location_y = []
 
@@ -111,7 +115,6 @@ def find_shared_coordinates(node):
             y = point.yPosition
             multi_location_y.append(y)
 
-
    return {
      "x": get_multi_coordinate(multi_location_x),
      "y": get_multi_coordinate(multi_location_y)
@@ -119,7 +122,7 @@ def find_shared_coordinates(node):
 
 def add_attributes(cim_obj, new_obj):
    for field in fields(cim_obj):
-      if field.metadata["type"] == "Attribute":
+      if field.metadata["type"] == "Attribute": # association, aggregateof, and ofaggregate
          new_obj["attributes"][field.name] = str(getattr(cim_obj, field.name))
 
 def cim2GS(cim_filepath: str) -> str:
@@ -260,7 +263,8 @@ def cim2GS(cim_filepath: str) -> str:
             "id": line.mRID,
             "from": line.Terminals[0].ConnectivityNode.mRID,
             "to": line.Terminals[1].ConnectivityNode.mRID,
-            "length": line.length,
+            "class_type": line.__class__.__name__,
+            "length": line.length
          }
       }
 
@@ -280,7 +284,8 @@ def cim2GS(cim_filepath: str) -> str:
          "attributes": {
             "id": line.mRID,
             "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
-            "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID
+            "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
+            "class_type": line.__class__.__name__
          }
       }
 
@@ -350,7 +355,8 @@ def cim2GS(cim_filepath: str) -> str:
                "attributes": {
                   "id": line.mRID,
                   "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
-                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID
+                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID,
+                  "class_type": line.__class__.__name__
                }
             }
 
@@ -377,6 +383,7 @@ def cim2GS(cim_filepath: str) -> str:
                   "id": line.mRID,
                   "from": line.Terminals[0].ConnectivityNode.mRID,
                   "to": line.Terminals[1].ConnectivityNode.mRID,
+                  "class_type": line.__class__.__name__
                }
             }
 
@@ -386,8 +393,6 @@ def cim2GS(cim_filepath: str) -> str:
    return json.dumps({cim_filepath: {"objects": objects}})
 
 def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:float, yPosition:float):
-   #  new_locations = []
-    # coord_sys = network.first(cim.CoordinateSystem)
     for terminal in node.Terminals:
         equipment = terminal.ConductingEquipment
         location = equipment.Location
@@ -396,7 +401,6 @@ def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:f
             equipment.Location = location
             location.PowerSystemResources.append(equipment)
             network.add_to_graph(location)
-            # TODO location.CoordinateSystem = coord_sys
 
         point = cim.PositionPoint()
         point.sequenceNumber = terminal.sequenceNumber
@@ -406,10 +410,7 @@ def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:f
         location.PositionPoints.append(point)
         network.add_to_graph(point)
 
-      #   new_locations.append(location)
-   #  return new_locations
-
-def export_cim_coords(new_coords_obj: list, output_path: str):
+def export_cim_coords(new_coords_obj: list, output_path: str) -> None:
    global CIM_NETWORK
 
    for obj in new_coords_obj:
@@ -420,7 +421,7 @@ def export_cim_coords(new_coords_obj: list, output_path: str):
    cim_utils.get_all_data(CIM_NETWORK)
    cim_utils.write_xml(CIM_NETWORK, output_path)
 
-def exportCIM(dir2save: str, filename: str, data: list):
+def exportCIM(dir2save: str, filename: str, data: list) -> None:
    global CIM_NETWORK
 
    if len(data) == 0:
@@ -457,7 +458,6 @@ def exportCIM(dir2save: str, filename: str, data: list):
       elif nodeObj[0]["type"] == "capacitor":
          # new one terminal object
          pass
-
 
    cim_utils.get_all_data(CIM_NETWORK)
    cim_utils.write_xml(CIM_NETWORK, os.path.join(dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"))
@@ -510,15 +510,17 @@ def create_nx_graph():
    This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
    then most likely there is a true value where this end point needs to return a dict of community IDs
    """
-   graphData = req.get_json()
+   graph_data = req.get_json()
 
-   if isinstance(graphData, dict):
-      create_graph(graphData)
+   if isinstance(graph_data, dict):
+      create_graph(graph_data)
       return "", 204
-   elif isinstance(graphData, list):
+   elif isinstance(graph_data, list):
       #index 0 contains the data and index 1 contains a bool value whether to set the community IDs as well
-      community_ids = create_graph(data=graphData[0], set_communities=graphData[1])
+      community_ids = create_graph(data=graph_data[0], set_communities=graph_data[1])
       return community_ids
+   return None
+
 
 @app.route("/get-stats", methods=["GET"])
 def get_stats():
@@ -537,9 +539,9 @@ def get_stats():
 @app.route("/cimg-to-GS", methods=["POST"])
 def cim_to_glimpse():
   cim_filepath = req.get_json()
-  GS_data = cim2GS(cim_filepath[0])
+  glimpse_structure_data = cim2GS(cim_filepath[0])
 
-  return GS_data
+  return glimpse_structure_data
 
 @app.route("/export-cim", methods=["POST"])
 def export_cim():
@@ -569,29 +571,41 @@ def export_cim_():
       return {"error": str(e)}, 500
    return "", 204
 
+@app.route("/update-cim-attrs", methods=["POST"])
+def update_object_attributes():
+   req_data = req.get_json()
+   print(req_data)
+   cim_obj = CIM_NETWORK.get_object(UUID(req_data["mRID"].upper()))
+
+   for field in fields(cim_obj):
+      if field.metadata["type"] == "Attribute" and field.name in req_data["attributes"] and req_data["attributes"][field.name] != "None":
+         setattr(cim_obj, field.name, req_data["attributes"][field.name])
+
+   return "", 204
 
 #------------------------------ End Server Routes ------------------------------#
 
 #------------------------------ WebSocket Events ------------------------------#
+
 @socketio.on("glimpse")
 def glimpse(data):
    socketio.emit("update-data", data)
 
 @socketio.on("addNode")
-def add_node(newNodeData):
-   socketio.emit("add-node", newNodeData)
+def add_node(new_node_data):
+   socketio.emit("add-node", new_node_data)
 
 @socketio.on("addEdge")
-def add_edge(newEdgeData):
-   socketio.emit("add-edge", newEdgeData)
+def add_edge(new_edge_data):
+   socketio.emit("add-edge", new_edge_data)
 
 @socketio.on("deleteNode")
-def delete_node(nodeID):
-   socketio.emit("delete-node", nodeID)
+def delete_node(node_id):
+   socketio.emit("delete-node", node_id)
 
 @socketio.on("deleteEdge")
-def delete_edge(edgeID):
-   socketio.emit("delete-edge", edgeID)
+def delete_edge(edge_id):
+   socketio.emit("delete-edge", edge_id)
 
 #------------------------------ End WebSocket Events ------------------------------#
 

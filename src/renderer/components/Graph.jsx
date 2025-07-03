@@ -201,6 +201,15 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          graphData.nodes.update(selectedObj);
       }
 
+      // if the visualization is a CIM model, update the attributes in the backend
+      if (isCim) {
+         // send the updated attributes to the main process to update the CIM object
+         window.glimpseAPI.updateCimObjAttributes({
+            mRID: selectedObj.attributes.mRID,
+            attributes: selectedObj.attributes
+         });
+      }
+
       setOpenObjectPopup(false);
    };
 

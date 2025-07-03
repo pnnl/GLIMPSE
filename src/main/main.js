@@ -319,6 +319,22 @@ const exportCIMcoordinates = async (data) => {
    }
 };
 
+const handleUpdateCimObjAttributes = async (updates) => {
+   console.log("updates: ", updates);
+   const responsePromise = axios.post(
+      "http://127.0.0.1:5051/update-cim-attrs",
+      JSON.stringify(updates),
+      { headers: { "Content-Type": "application/json" } }
+   );
+
+   const response = await responsePromise;
+   if (response.status === 204) {
+      console.log("CIM object attributes updated successfully.");
+   } else {
+      console.error("Failed to update CIM object attributes:", response.statusText);
+   }
+};
+
 const makeWindow = () => {
    mainWindow = new BrowserWindow({
       width: 1500,
@@ -495,6 +511,8 @@ const makeWindow = () => {
    ipcMain.on("exportCIM", (_, CimObjs) => exportCIM(CimObjs));
 
    ipcMain.on("exportCoordinates", (_, data) => exportCIMcoordinates(data));
+
+   ipcMain.on("update-cim-ob-attrs", (_, updates) => handleUpdateCimObjAttributes(updates));
 
    mainWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url);

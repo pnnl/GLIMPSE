@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogActions, DialogContent, DialogTitle, TextField, Stack } from "@mui/material";
 import { CustomButton } from "../utils/CustomComponents";
 
-const EditObjectModal = ({ onMount, onSave, close }) => {
+const EditObjectModal = ({ onMount, onSave, close, isCim }) => {
    const [open, setOpen] = useState(false);
    const [selectedNode, setSelectedNode] = useState({});
+
+   const { attributes } = selectedNode;
 
    // send the state back up to the Grpah(parent) component
    useEffect(() => {
@@ -15,6 +17,15 @@ const EditObjectModal = ({ onMount, onSave, close }) => {
 
    const saveChanges = () => {
       onSave(selectedNode);
+   };
+
+   const handleChange = (e) => {
+      const { name, value } = e.target;
+
+      setSelectedNode({
+         ...selectedNode,
+         attributes: { ...selectedNode.attributes, [name]: value }
+      });
    };
 
    return ReactDOM.createPortal(
@@ -27,22 +38,16 @@ const EditObjectModal = ({ onMount, onSave, close }) => {
          <DialogTitle>Edit Attributes</DialogTitle>
          <DialogContent dividers>
             <Stack direction="row" justifyContent="center" spacing={1} useFlexGap flexWrap="wrap">
-               {selectedNode.attributes &&
-                  Object.entries(selectedNode.attributes).map(([key, val], index) => {
-                     return (
-                        <TextField
-                           key={index}
-                           label={key}
-                           defaultValue={val}
-                           onChange={(e) => {
-                              setSelectedNode({
-                                 ...selectedNode,
-                                 attributes: { ...selectedNode.attributes, [key]: e.target.value }
-                              });
-                           }}
-                        />
-                     );
-                  })}
+               {attributes &&
+                  Object.entries(attributes).map(([key, val], index) => (
+                     <TextField
+                        key={index}
+                        label={key}
+                        name={key}
+                        defaultValue={val}
+                        onChange={handleChange}
+                     />
+                  ))}
             </Stack>
          </DialogContent>
          <DialogActions>

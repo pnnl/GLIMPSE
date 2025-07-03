@@ -11,6 +11,7 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 **NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
 
 ## Installers (Windows, MacOS, Linux)
+
 Check out the [releases](https://github.com/pnnl/GLIMPSE/releases) for installers or build the tool with the following instructions.
 
 ## Build Instructions
