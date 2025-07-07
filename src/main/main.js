@@ -265,34 +265,26 @@ const getFilePaths = async () => {
 };
 
 const getFilePathsSet = async (set) => {
-  const { join } = require('path');
-
   const sets = {
-    "13": [
-      join(process.cwd(), 'data', '13', 'IEEE-13.glm'),
-    ],
-    "3000": [
-      join(process.cwd(), 'data', '3000', 'ieee3000_Feeder3 1.glm'),
-    ],
-    "8500": [
-      join(process.cwd(), 'data', '8500', 'ieee8500.glm'),
-    ],
-    "9500": [
+    13: [join(process.cwd(), 'data', '13', 'IEEE-13.glm')],
+    3000: [join(process.cwd(), 'data', '3000', 'ieee3000_Feeder3 1.glm')],
+    8500: [join(process.cwd(), 'data', '8500', 'ieee8500.glm')],
+    9500: [
       join(process.cwd(), 'data', '9500', 'IEEE_9500.glm'),
       join(process.cwd(), 'data', '9500', 'Inverters.glm'),
       join(process.cwd(), 'data', '9500', 'Recorders.glm'),
-      join(process.cwd(), 'data', '9500', 'Rotating_Machines.glm'),
+      join(process.cwd(), 'data', '9500', 'Rotating_Machines.glm')
     ],
-    "123": [
+    123: [
       join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Diesels.glm'),
       join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Dynamic.glm'),
       join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Inverters_Mixed.glm'),
-      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Recorders.glm'),
+      join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Recorders.glm')
     ]
   };
 
   return sets[set];
-}
+};
 
 const createPortalWindow = (componentName, props) => {
   portalWindow = new BrowserWindow({
@@ -477,7 +469,7 @@ const makeWindow = () => {
     const { join } = require('path');
     const { readdirSync } = require('fs');
     const defaultDir = join(process.cwd(), 'data/default/');
-    return readdirSync(defaultDir).map(f => join(defaultDir, f));
+    return readdirSync(defaultDir).map((f) => join(defaultDir, f));
   });
 
   ipcMain.handle('get-config', () =>
@@ -512,7 +504,6 @@ const makeWindow = () => {
     }
   });
 
-  // Add this IPC handler
   ipcMain.on('open-portal-window', (_, { component, props }) => {
     console.log(component, props);
     createPortalWindow(component, props);
@@ -596,6 +587,7 @@ app.whenReady().then(() => {
   globalShortcut.register('ctrl+p', () => mainWindow.webContents.send('show-vis-options'));
   makeSplashWindow();
   initiateServer();
+  spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')]);
 
   // Set app user model id for windows
   app.on('browser-window-created', (_, window) => {
@@ -604,7 +596,6 @@ app.whenReady().then(() => {
 
   socket.on('connect', () => {
     console.log('connected to socket server!!');
-    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')]);
 
     splashWindow.close();
     makeWindow();

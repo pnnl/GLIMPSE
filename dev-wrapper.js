@@ -16,7 +16,7 @@ setTimeout(() => {
     stdio: 'inherit',
     shell: true
   });
-}, 15000);
+}, 20000);
 
 // Handle SIGINT (Ctrl+C)
 process.on('SIGKILL', () => {

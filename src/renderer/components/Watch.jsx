@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { getRandomColor } from '../utils/graphUtils';
 import {
   Stack,
   Divider,
@@ -121,18 +122,25 @@ const Watch = ({ watchData }) => {
                 datasets: [
                   {
                     label: 'current_out_A',
-                    data: props.map((prop) => prop.current_out_A)
+                    data: props.map((prop) => prop.current_out_A),
+                    borderColor: 'rgba(255, 0,0,1)',
+                    backgroundColor: 'rgba(255, 0,0,0.5)'
                   },
                   {
                     label: 'current_out_B',
-                    data: props.map((prop) => prop.current_out_B)
+                    data: props.map((prop) => prop.current_out_B),
+                    borderColor: 'rgba(0, 255, 0, 1)',
+                    backgroundColor: 'rgba(0, 255, 0, 0.5)'
                   },
                   {
                     label: 'current_out_C',
-                    data: props.map((prop) => prop.current_out_C)
+                    data: props.map((prop) => prop.current_out_C),
+                    borderColor: 'rgba(0, 255, 255, 1)',
+                    backgroundColor: 'rgba(0, 255, 255, 0.5)'
                   }
                 ]
               };
+
               return (
                 <Accordion key={index}>
                   <AccordionSummary expandIcon={<ExpandMore />}>
