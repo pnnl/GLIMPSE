@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { getRandomColor } from '../utils/graphUtils';
 import {
   Stack,
   Divider,
@@ -19,9 +18,11 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  BarElement,
+  BarController
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Bar, Line } from 'react-chartjs-2';
 
 const options = {
   options: {
@@ -44,7 +45,17 @@ const options = {
   }
 };
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  BarController
+);
 
 // think of watchData as a map of ids to an array of property names
 const Watch = ({ watchData }) => {
@@ -63,8 +74,11 @@ const Watch = ({ watchData }) => {
       }
     }
 
+    console.log('watchObj', watchObj);
+
     //selecting the two numbers, ignoring +s and -s (Only the first number gets used here).
     const regex = /[^+-]?\d*\.?\d+/g;
+    // add the power out property names here
     const validPropNames = ['current_out_A', 'current_out_B', 'current_out_C'];
     const dataUpdate = {};
 
@@ -117,26 +131,29 @@ const Watch = ({ watchData }) => {
           <>
             {Object.entries(watchUpdates).map(([id, props], index) => {
               const labels = props.map((prop) => prop.timestamp);
-              const data = {
+              const currentOutData = {
                 labels,
                 datasets: [
                   {
                     label: 'current_out_A',
                     data: props.map((prop) => prop.current_out_A),
                     borderColor: 'rgba(255, 0,0,1)',
-                    backgroundColor: 'rgba(255, 0,0,0.5)'
+                    backgroundColor: 'rgba(255, 0,0,0.5)',
+                    stepped: true
                   },
                   {
                     label: 'current_out_B',
                     data: props.map((prop) => prop.current_out_B),
                     borderColor: 'rgba(0, 255, 0, 1)',
-                    backgroundColor: 'rgba(0, 255, 0, 0.5)'
+                    backgroundColor: 'rgba(0, 255, 0, 0.5)',
+                    stepped: true
                   },
                   {
                     label: 'current_out_C',
                     data: props.map((prop) => prop.current_out_C),
                     borderColor: 'rgba(0, 255, 255, 1)',
-                    backgroundColor: 'rgba(0, 255, 255, 0.5)'
+                    backgroundColor: 'rgba(0, 255, 255, 0.5)',
+                    stepped: true
                   }
                 ]
               };
@@ -149,7 +166,8 @@ const Watch = ({ watchData }) => {
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                    <Line options={options} data={data} />
+                    <Line options={options} data={currentOutData} />
+                    {/* <Line options={options} data={powerOutData} /> */}
                   </AccordionDetails>
                 </Accordion>
               );

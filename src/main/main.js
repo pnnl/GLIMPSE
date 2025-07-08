@@ -587,7 +587,6 @@ app.whenReady().then(() => {
   globalShortcut.register('ctrl+p', () => mainWindow.webContents.send('show-vis-options'));
   makeSplashWindow();
   initiateServer();
-  spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')]);
 
   // Set app user model id for windows
   app.on('browser-window-created', (_, window) => {
@@ -595,6 +594,11 @@ app.whenReady().then(() => {
   });
 
   socket.on('connect', () => {
+    console.log(join(__dirname, '..', '..', 'natig', 'testsocket.py'));
+    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')], {
+      stdio: 'inherit',
+      shell: true
+    });
     console.log('connected to socket server!!');
 
     splashWindow.close();
