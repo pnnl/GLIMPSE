@@ -11,23 +11,9 @@ spawn('npm', ['run', 'dev'], {
 });
 
 setTimeout(() => {
-  spawn('bash', ['run_outside_docker.sh', containerName], {
+  spawn('bash', ['simulation.sh', containerName], {
     cwd: './natig/',
     stdio: 'inherit',
     shell: true
   });
 }, 20000);
-
-// Handle SIGINT (Ctrl+C)
-process.on('SIGKILL', () => {
-  console.log('Caught SIGINT, cleaning up...');
-
-  // Run the quit docker script
-  const cleanup = spawn('bash', ['quiteDocker.sh', containerName], {
-    cwd: './natig/',
-    stdio: 'inherit',
-    shell: true
-  });
-
-  cleanup.on('close', (code) => process.exit(code));
-});

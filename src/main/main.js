@@ -10,7 +10,7 @@ const {
   Notification
 } = require('electron');
 const { optimizer, is } = require('@electron-toolkit/utils');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const { join, basename } = require('path');
 const { io } = require('socket.io-client');
 const { readFileSync, writeFileSync, existsSync } = require('fs');
@@ -580,6 +580,8 @@ const initiateServer = () => {
       serverProcess.kill();
       serverProcess = null;
     }
+
+    exec('bash ' + join(__dirname, '..', '..', 'natig', 'quiteDocker.sh'));
   });
 };
 
@@ -594,11 +596,11 @@ app.whenReady().then(() => {
   });
 
   socket.on('connect', () => {
-    console.log(join(__dirname, '..', '..', 'natig', 'testsocket.py'));
     spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')], {
       stdio: 'inherit',
       shell: true
     });
+
     console.log('connected to socket server!!');
 
     splashWindow.close();

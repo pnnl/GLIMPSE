@@ -95,7 +95,7 @@ const Watch = ({ watchData }) => {
 
       dataUpdate[id] = [
         {
-          timestamp: csvData[id][0],
+          timestamp: csvData[id][0].split(' ')[1],
           ...reducedPropertyNames
         }
       ];
