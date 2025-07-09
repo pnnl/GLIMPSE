@@ -10,6 +10,7 @@
     "format": "prettier --write .",
     "lint": "eslint --cache .",
     "start": "electron-vite preview",
+    "start:NATIG": "node dev-wrapper.js",
     "dev": "electron-vite dev",
     "dev:NATIG": "node dev-wrapper.js",
     "build": "electron-vite build",

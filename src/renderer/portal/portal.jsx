@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import Watch from './components/Watch';
+import Watch from '../components/Watch';
 
 const componentMap = {
   Watch: Watch

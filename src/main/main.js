@@ -303,7 +303,7 @@ const createPortalWindow = (componentName, props) => {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     portalWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/portal.html`);
   } else {
-    portalWindow.loadFile(join(__dirname, '..', 'renderer', 'portal.html'));
+    portalWindow.loadFile(join(__dirname, '..', 'renderer', 'portal', 'portal.html'));
   }
 
   // When window is ready, send component data
@@ -518,6 +518,7 @@ const makeWindow = () => {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
+    console.log('running in production mode');
     mainWindow.loadFile(join(__dirname, '..', 'renderer', 'index.html'));
   }
 };
@@ -580,8 +581,6 @@ const initiateServer = () => {
       serverProcess.kill();
       serverProcess = null;
     }
-
-    exec('bash ' + join(__dirname, '..', '..', 'natig', 'quiteDocker.sh'));
   });
 };
 
@@ -596,12 +595,21 @@ app.whenReady().then(() => {
   });
 
   socket.on('connect', () => {
-    spawn('python', [join(__dirname, '..', '..', 'natig', 'testsocket.py')], {
+    const testSocketScript = join(__dirname, '..', '..', 'natig', 'testsocket.py');
+    console.log('connected to socket server!!');
+    console.log(process.env.CONTAINER_NAME);
+    console.log(`Test socket script: ${testSocketScript}`);
+
+    spawn('python', [testSocketScript], {
       stdio: 'inherit',
       shell: true
     });
 
-    console.log('connected to socket server!!');
+    spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
+      cwd: join(__dirname, '..', '..', 'natig'),
+      stdio: 'inherit',
+      shell: true
+    });
 
     splashWindow.close();
     makeWindow();
