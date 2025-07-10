@@ -33,13 +33,27 @@ Then in `GLIMPSE/`:
 npm install
 ```
 
-After all node modules are installed in `GLIMPSE/local-server` create a python environment:
+## Create a python environment for local server
+
+### Creating environment with python venv or Anaconda
+
+```bash
+cd GLIMPSE/local-server/
+```
+
+- venv
 
 ```bash
 python -m venv glimpse-server
 ```
 
-Once the environment is created activate it using one of the following command for your system in the table below:
+- conda
+
+```bash
+conda create -n glimpse-server
+```
+
+Once the python venv environment is created activate it using one of the following command for your system in the table below:
 
 | Platform | Shell      | Command to activate virtual environment       |
 | :------: | :--------- | :-------------------------------------------- |
@@ -49,6 +63,12 @@ Once the environment is created activate it using one of the following command f
 |    -     | PowerShell | `$ glimpse-server/bin/Activate.ps1`           |
 | Windows  | cmd.exe    | `C:\> glimpse-server\Scripts\activate.bat`    |
 |    -     | PowerShell | `PS C:\> glimpse-server\Scripts\Activate.ps1` |
+
+If using conda simply activate the environment
+
+```bash
+conda activate glimpse-server
+```
 
 You will know if the environment activation worked if there is a `(glimpse-server)` indicator at the start of your command line.
 
