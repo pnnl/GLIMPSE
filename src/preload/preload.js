@@ -37,7 +37,7 @@ const api = {
       return () => ipcRenderer.removeAllListeners("export-theme");
    },
    validate: (jsonFilePath) => ipcRenderer.invoke("validate", jsonFilePath),
-   onReadJsonFile: (filepath) => ipcRenderer.invoke("read-json-file", filepath),
+   readJsonFile: (filepath) => ipcRenderer.invoke("read-json-file", filepath),
    getThemeJsonData: (path) => ipcRenderer.invoke("getThemeJsonData", path),
    exportTheme: (themeData) => ipcRenderer.send("exportTheme", themeData),
    onExtract: (callback) => {

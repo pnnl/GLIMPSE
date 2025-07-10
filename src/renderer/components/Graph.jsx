@@ -30,7 +30,6 @@ import Legend from "./Legend";
 import NewNodeForm from "./NewNodeForm";
 import EditObjectModal from "./EditObjectModal";
 import { isGlmFile } from "../utils/appUtils";
-import { readJsonFile } from "../utils/fileProcessing";
 import { NewEdgeForm } from "./NewEdgeForm";
 import VisRibbon from "./VisRibbon";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
@@ -413,7 +412,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          }
       } else {
          try {
-            const fileDataPromise = await readJsonFile(filePaths[0]);
+            const fileDataPromise = await window.glimpseAPI.readJsonFile(filePaths[0]);
             const fileData = await fileDataPromise;
 
             await applyOverlay(fileData);
@@ -1341,7 +1340,12 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             <div ref={layoutFormContainerRef} id="layout-form" />
          </Stack>
 
-         <EditObjectModal onMount={onPopupMount} onSave={saveEdits} close={closePopUp} />
+         <EditObjectModal
+            onMount={onPopupMount}
+            onSave={saveEdits}
+            close={closePopUp}
+            graphData={graphData}
+         />
 
          <NewEdgeForm
             onMount={onNewEdgeFormMount}
