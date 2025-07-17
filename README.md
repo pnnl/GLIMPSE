@@ -1,4 +1,4 @@
-# GLIMPSE v0.4.4 ✨
+# GLIMPSE v0.4.4 - Capstone ✨
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
@@ -25,7 +25,13 @@ Then in `GLIMPSE/`:
 npm install
 ```
 
-After that in `GLIMPSE/local-server` create a python environment:
+## Create a python environment for local server
+
+### Creating environment with python venv
+
+```bash
+cd GLIMPSE/local-server/
+```
 
 ```bash
 python -m venv glimpse-server
@@ -50,6 +56,26 @@ Next install the server's requirements:
 pip install -r requirements.txt
 ```
 
+### Creating environment with Anaconda
+
+- create conda environment
+
+```bash
+conda create -n glimpse-server
+```
+
+- activate conda environment
+
+```bash
+conda activate glimpse-server
+```
+
+- install requirements
+
+```bash
+pip install -r requirements.txt
+```
+
 ### Additional Instructions for MacOS with Apple Silicon
 
 In `GLIMPSE/local-server/` clone the glm parser repository.
@@ -61,7 +87,7 @@ git clone https://github.com/NREL/glm.git
 Then in `glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
 
 ```bash
-nim c -d:release --opt:size --cpu:arm64 --passC:"-flto -target arm64-apple-macos11" --passL:"-flto -target arm64-apple-macos11" --app:lib --out:lib/_glm.so src/glm.nim
+nim c -d:release --opt:size --cpu:arm64 --passC:"-flto --target arm64-apple-macos11" --passL:"-flto --target arm64-apple-macos11" --app:lib --out:lib/_glm.so src/glm.nim
 ```
 
 Next run the following command to create the glm python library wheel

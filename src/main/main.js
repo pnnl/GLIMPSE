@@ -11,6 +11,7 @@ const {
 } = require('electron');
 const { optimizer, is } = require('@electron-toolkit/utils');
 const { spawn, exec } = require('child_process');
+const { readdirSync } = require('fs');
 const { join, basename } = require('path');
 const { io } = require('socket.io-client');
 const { readFileSync, writeFileSync, existsSync } = require('fs');
@@ -267,7 +268,7 @@ const getFilePaths = async () => {
 const getFilePathsSet = async (set) => {
   const sets = {
     13: [join(process.cwd(), 'data', '13', 'IEEE-13.glm')],
-    3000: [join(process.cwd(), 'data', '3000', 'ieee3000_Feeder3 1.glm')],
+    3000: [join(process.cwd(), 'data', '3000', '3000_model.glm')],
     8500: [join(process.cwd(), 'data', '8500', 'ieee8500.glm')],
     9500: [
       join(process.cwd(), 'data', '9500', 'IEEE_9500.glm'),
@@ -301,7 +302,7 @@ const createPortalWindow = (componentName, props) => {
 
   // Load portal.html
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    portalWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/portal.html`);
+    portalWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/portal/portal.html`);
   } else {
     portalWindow.loadFile(join(__dirname, '..', 'renderer', 'portal', 'portal.html'));
   }
@@ -466,9 +467,7 @@ const makeWindow = () => {
   ipcMain.handle('get-file-paths', () => getFilePaths());
   ipcMain.handle('get-file-paths-set', (_event, set) => getFilePathsSet(set));
   ipcMain.handle('getDefaultModelFiles', async () => {
-    const { join } = require('path');
-    const { readdirSync } = require('fs');
-    const defaultDir = join(process.cwd(), 'data/default/');
+    const defaultDir = join(process.cwd(), 'data/3000/');
     return readdirSync(defaultDir).map((f) => join(defaultDir, f));
   });
 
@@ -595,21 +594,21 @@ app.whenReady().then(() => {
   });
 
   socket.on('connect', () => {
-    const testSocketScript = join(__dirname, '..', '..', 'natig', 'testsocket.py');
     console.log('connected to socket server!!');
-    console.log(process.env.CONTAINER_NAME);
-    console.log(`Test socket script: ${testSocketScript}`);
 
-    spawn('python', [testSocketScript], {
-      stdio: 'inherit',
-      shell: true
-    });
+    if (process.env.CONTAINER_NAME) {
+      const testSocketScript = join(__dirname, '..', '..', 'natig', 'testsocket.py');
+      spawn('python', [testSocketScript], {
+        stdio: 'inherit',
+        shell: true
+      });
 
-    spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
-      cwd: join(__dirname, '..', '..', 'natig'),
-      stdio: 'inherit',
-      shell: true
-    });
+      spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
+        cwd: join(__dirname, '..', '..', 'natig'),
+        stdio: 'inherit',
+        shell: true
+      });
+    }
 
     splashWindow.close();
     makeWindow();
