@@ -1,441 +1,441 @@
 {
-  "directed": true,
-  "multigraph": true,
-  "graph": {},
-  "nodes": [
-    {
-      "type": "Person",
-      "role": "Executive Director",
-      "organization": "Financial Transparency Coalition",
-      "id": "Matti Kohonen"
-    },
-    {
-      "type": "Organization_Temp",
-      "name": "Financial Transparency Coalition",
-      "area": "Financial Transparency",
-      "id": "FTC"
-    },
-    {
-      "type": "Organization",
-      "name": "Pingtan Marine Enterprise Ltd",
-      "country": "China",
-      "incorporated_in": "Cayman Islands",
-      "listed_on": "NASDAQ",
-      "id": "Pingtan Marine"
-    },
-    {
-      "type": "Organization",
-      "name": "Albacora SA",
-      "country": "Spain",
-      "id": "Albacora SA"
-    },
-    {
-      "type": "Organization",
-      "name": "National Oceanic and Atmospheric Administration",
-      "country": "USA",
-      "role": "Regulation and Conservation",
-      "focus_on": "Patagonian Toothfish",
-      "id": "NOAA"
-    },
-    {
-      "type": "FishingCompany",
-      "focus_area": "Ocean Conservation",
-      "id": "Oceana"
-    },
-    {
-      "type": "Organization",
-      "country": "Namibia",
-      "accused_of": "IUU Fishing in Namibian Waters",
-      "id": "Atlantic Ocean Management"
-    },
-    {
-      "type": "Organization",
-      "country": "China",
-      "ownership": "State-owned",
-      "id": "China National Overseas Fisheries Corporation"
-    },
-    {
-      "type": "Organization",
-      "name": "High-Level Panel for the Sustainable Ocean Economy",
-      "area": "Ocean Economy",
-      "id": "The Ocean Panel"
-    },
-    {
-      "type": "Vessel",
-      "owner": "Albacora S.A.",
-      "flagged_country": "Spain",
-      "id": "Albacora Uno"
-    },
-    {
-      "type": "Vessel",
-      "alias": "Eros 2",
-      "flagged_country": "Panama",
-      "owner": "Albacora",
-      "observed_fishing_illegally": true,
-      "banned_from_ports": ["NEAFC contracting parties", "European Union ports"],
-      "id": "Furabolos"
-    },
-    {
-      "type": "Organization",
-      "country": "Timor-Leste",
-      "related_to": "Pingtan Marine Enterprise",
-      "id": "Hong Long Fisheries"
-    },
-    {
-      "type": "Document",
-      "title": "FTC Report on IUU Fishing",
-      "date": "2022-05-01",
-      "id": "FTC Report"
-    },
-    {
-      "type": "Document",
-      "title": "Notice of Violation and Assessment",
-      "issued_by": "NOAA",
-      "date": "2010-06-01",
-      "id": "NOVA"
-    },
-    {
-      "type": "Document",
-      "title": "Response to IUU Fishing Allegations",
-      "source": "The Guardian",
-      "id": "Albacora SA Response"
-    },
-    {
-      "type": "node",
-      "id": "Namibia"
-    },
-    {
-      "type": "node",
-      "id": "Timor-Leste"
-    },
-    {
-      "type": "node",
-      "id": "IUU Fishing"
-    },
-    {
-      "type": "Organization",
-      "name": "Albacora S.A.",
-      "country": "Spain",
-      "involved_in": "IUU Fishing",
-      "fined_by_NOAA": true,
-      "fine_amount_usd": 7400000,
-      "id": "Albacora S.A."
-    },
-    {
-      "type": "Document",
-      "title": "NOVA issued to Albacora Uno",
-      "issued_by": "NOAA",
-      "penalty_usd": 7400000,
-      "date": "2010-06-01",
-      "id": "NOVA Albacora Uno"
-    },
-    {
-      "type": "Person",
-      "role": "Timor-Leste campaign leader",
-      "organization": "Sea Shepherd's Ocean Warrior",
-      "id": "Gary Stokes"
-    },
-    {
-      "type": "Organization",
-      "focus_area": "Marine Wildlife Conservation",
-      "id": "Sea Shepherd's Ocean Warrior"
-    },
-    {
-      "type": "Event",
-      "description": "Joint raid revealing thousands of dead sharks",
-      "participants": "Gary Stokes, PNTL",
-      "location": "Timor-Leste waters",
-      "date": "September 2019",
-      "id": "Joint Raid Timor-Leste"
-    },
-    {
-      "type": "Document",
-      "title": "Report on Pingtan Marine Enterprise",
-      "author": "Gary Stokes",
-      "details": "Financing criminal activity",
-      "date": "May 2020",
-      "id": "Report to NASDAQ"
-    },
-    {
-      "type": "Commodity",
-      "description": "Also known as 'white gold', critical for marine biodiversity",
-      "id": "Patagonian Toothfish"
-    },
-    {
-      "type": "Person",
-      "role": "Fishing Baron",
-      "organization": "Vidal Armadores",
-      "id": "Antonio Vidal"
-    },
-    {
-      "type": "Organization",
-      "focus_area": "Fishing",
-      "involved_in": "IUU Fishing",
-      "id": "Vidal Armadores"
-    },
-    {
-      "type": "Vessel",
-      "owner": "Antonio Vidal",
-      "involved_in": "IUU Fishing of Patagonian Toothfish",
-      "id": "Viarsa"
-    },
-    {
-      "type": "Vessel",
-      "involved_in": "IUU Fishing",
-      "chased_by": "Sea Shepherd",
-      "id": "Thunder"
-    },
-    {
-      "type": "Vessel",
-      "flagged_country": "False",
-      "involved_in": "IUU Fishing of Patagonian Toothfish",
-      "id": "Kunlun"
-    },
-    {
-      "type": "GovernmentOrg",
-      "id": "Spain"
-    },
-    {
-      "type": "GovernmentOrg",
-      "id": "Australian court"
-    },
-    {
-      "type": "Renewable",
-      "id": "Solar Panel"
-    }
-  ],
-  "edges": [
-    {
-      "type": "Authored",
-      "details": "Report revealing the scale of IUU Fishing and its impact",
-      "source": "Matti Kohonen",
-      "target": "FTC Report",
-      "key": 0
-    },
-    {
-      "type": "Published",
-      "source": "FTC",
-      "target": "FTC Report",
-      "key": 0
-    },
-    {
-      "type": "LicenseSuspended",
-      "reason": "Financing Criminal Activity",
-      "date": "Recent",
-      "source": "Pingtan Marine",
-      "target": "Timor-Leste",
-      "key": 0
-    },
-    {
-      "type": "InvolvedIn",
-      "region": "West Africa",
-      "loss": "$9.4 billion",
-      "source": "Pingtan Marine",
-      "target": "IUU Fishing",
-      "key": 0
-    },
-    {
-      "type": "Issued",
-      "comment": "Denies IUU Fishing Involvement",
-      "source": "Albacora SA",
-      "target": "Albacora SA Response",
-      "key": 0
-    },
-    {
-      "type": "IssuedNOVA",
-      "document": "NOVA",
-      "penalty_usd": 7400000,
-      "counts": 67,
-      "source": "NOAA",
-      "target": "Albacora Uno",
-      "key": 0
-    },
-    {
-      "type": "IssuedNOVA",
-      "document": "NOVA",
-      "penalty_usd": 7400000,
-      "counts": 67,
-      "description": "Violation for fishing without a permit in U.S. waters",
-      "source": "NOAA",
-      "target": "Albacora S.A.",
-      "key": 0
-    },
-    {
-      "type": "Issued",
-      "document": "NOVA Albacora Uno",
-      "details": "For 67 counts of fishing without a U.S. permit",
-      "source": "NOAA",
-      "target": "Albacora S.A.",
-      "key": 1
-    },
-    {
-      "type": "Protects",
-      "details": "Regulations against IUU Fishing",
-      "source": "NOAA",
-      "target": "Patagonian Toothfish",
-      "key": 0
-    },
-    {
-      "type": "Denounced",
-      "reason": "IUU Fishing",
-      "date": "2010-05-13",
-      "source": "Oceana",
-      "target": "Furabolos",
-      "key": 0
-    },
-    {
-      "type": "AssetsSeized",
-      "reason": "Illegal Fishing",
-      "date": "2017-06-20",
-      "source": "Atlantic Ocean Management",
-      "target": "Namibia",
-      "key": 0
-    },
-    {
-      "type": "InvolvedIn",
-      "region": "West Africa",
-      "loss": "$9.4 billion",
-      "source": "China National Overseas Fisheries Corporation",
-      "target": "IUU Fishing",
-      "key": 0
-    },
-    {
-      "type": "Recommends",
-      "recommendation": "Ownership Transparency",
-      "source": "The Ocean Panel",
-      "target": "IUU Fishing",
-      "key": 0
-    },
-    {
-      "type": "InvolvedIn",
-      "details": "Linked to Pingtan Marine Enterprise and accused of illegal activities in Timor-Leste waters",
-      "source": "Hong Long Fisheries",
-      "target": "IUU Fishing",
-      "key": 0
-    },
-    {
-      "type": "Identifies",
-      "involved_in": "IUU Fishing",
-      "source": "FTC Report",
-      "target": "China National Overseas Fisheries Corporation",
-      "key": 0
-    },
-    {
-      "type": "Identifies",
-      "involved_in": "IUU Fishing",
-      "source": "FTC Report",
-      "target": "Pingtan Marine",
-      "key": 0
-    },
-    {
-      "type": "Identifies",
-      "involved_in": "IUU Fishing",
-      "source": "FTC Report",
-      "target": "Albacora SA",
-      "key": 0
-    },
-    {
-      "type": "WorksFor",
-      "source": "Gary Stokes",
-      "target": "Sea Shepherd's Ocean Warrior",
-      "key": 0
-    },
-    {
-      "type": "CampaignsAgainst",
-      "details": "Joint raid revealing thousands of dead sharks in Timor-Leste waters",
-      "source": "Gary Stokes",
-      "target": "IUU Fishing",
-      "key": 0
-    },
-    {
-      "type": "ParticipatedIn",
-      "role": "Campaign Leader",
-      "source": "Gary Stokes",
-      "target": "Joint Raid Timor-Leste",
-      "key": 0
-    },
-    {
-      "type": "Authored",
-      "details": "Exposing criminal activities linked to IUU fishing",
-      "source": "Gary Stokes",
-      "target": "Report to NASDAQ",
-      "key": 0
-    },
-    {
-      "type": "Exploits",
-      "details": "Involved in IUU Fishing",
-      "source": "Antonio Vidal",
-      "target": "Patagonian Toothfish",
-      "key": 0
-    },
-    {
-      "type": "Targets",
-      "details": "IUU Fishing Operations",
-      "source": "Vidal Armadores",
-      "target": "Patagonian Toothfish",
-      "key": 0
-    },
-    {
-      "type": "Applaud",
-      "meta_authoredBy": "jr",
-      "meta_time": "2016",
-      "source": "Vidal Armadores",
-      "target": "Solar Panel",
-      "key": 0
-    },
-    {
-      "type": "Caught",
-      "details": "Illegal Fishing in Protected Areas",
-      "source": "Viarsa",
-      "target": "Patagonian Toothfish",
-      "key": 0
-    },
-    {
-      "type": "ChasedBy",
-      "details": "Longest chase in maritime history",
-      "source": "Thunder",
-      "target": "Sea Shepherd's Ocean Warrior",
-      "key": 0
-    },
-    {
-      "type": "Caught",
-      "details": "Illegal Fishing Activities",
-      "source": "Kunlun",
-      "target": "Patagonian Toothfish",
-      "key": 0
-    },
-    {
-      "type": "Aid",
-      "amount": "1M",
-      "meta_authoredBy": "jr",
-      "meta_time": "2016",
-      "source": "Spain",
-      "target": "Vidal Armadores",
-      "key": 0
-    },
-    {
-      "type": "Acquitted",
-      "meta_authoredBy": "jr",
-      "meta_time": "2016",
-      "source": "Spain",
-      "target": "Vidal Armadores",
-      "key": 1
-    },
-    {
-      "type": "Applaud",
-      "meta_authoredBy": "jr",
-      "meta_time": "2016",
-      "source": "Spain",
-      "target": "Vidal Armadores",
-      "key": 2
-    },
-    {
-      "type": "Acquitted",
-      "meta_authoredBy": "jr",
-      "meta_time": "2016",
-      "source": "Australian court",
-      "target": "Vidal Armadores",
-      "key": 0
-    }
-  ]
+   "directed": true,
+   "multigraph": true,
+   "graph": {},
+   "nodes": [
+      {
+         "type": "Person",
+         "role": "Executive Director",
+         "organization": "Financial Transparency Coalition",
+         "id": "Matti Kohonen"
+      },
+      {
+         "type": "Organization_Temp",
+         "name": "Financial Transparency Coalition",
+         "area": "Financial Transparency",
+         "id": "FTC"
+      },
+      {
+         "type": "Organization",
+         "name": "Pingtan Marine Enterprise Ltd",
+         "country": "China",
+         "incorporated_in": "Cayman Islands",
+         "listed_on": "NASDAQ",
+         "id": "Pingtan Marine"
+      },
+      {
+         "type": "Organization",
+         "name": "Albacora SA",
+         "country": "Spain",
+         "id": "Albacora SA"
+      },
+      {
+         "type": "Organization",
+         "name": "National Oceanic and Atmospheric Administration",
+         "country": "USA",
+         "role": "Regulation and Conservation",
+         "focus_on": "Patagonian Toothfish",
+         "id": "NOAA"
+      },
+      {
+         "type": "FishingCompany",
+         "focus_area": "Ocean Conservation",
+         "id": "Oceana"
+      },
+      {
+         "type": "Organization",
+         "country": "Namibia",
+         "accused_of": "IUU Fishing in Namibian Waters",
+         "id": "Atlantic Ocean Management"
+      },
+      {
+         "type": "Organization",
+         "country": "China",
+         "ownership": "State-owned",
+         "id": "China National Overseas Fisheries Corporation"
+      },
+      {
+         "type": "Organization",
+         "name": "High-Level Panel for the Sustainable Ocean Economy",
+         "area": "Ocean Economy",
+         "id": "The Ocean Panel"
+      },
+      {
+         "type": "Vessel",
+         "owner": "Albacora S.A.",
+         "flagged_country": "Spain",
+         "id": "Albacora Uno"
+      },
+      {
+         "type": "Vessel",
+         "alias": "Eros 2",
+         "flagged_country": "Panama",
+         "owner": "Albacora",
+         "observed_fishing_illegally": true,
+         "banned_from_ports": ["NEAFC contracting parties", "European Union ports"],
+         "id": "Furabolos"
+      },
+      {
+         "type": "Organization",
+         "country": "Timor-Leste",
+         "related_to": "Pingtan Marine Enterprise",
+         "id": "Hong Long Fisheries"
+      },
+      {
+         "type": "Document",
+         "title": "FTC Report on IUU Fishing",
+         "date": "2022-05-01",
+         "id": "FTC Report"
+      },
+      {
+         "type": "Document",
+         "title": "Notice of Violation and Assessment",
+         "issued_by": "NOAA",
+         "date": "2010-06-01",
+         "id": "NOVA"
+      },
+      {
+         "type": "Document",
+         "title": "Response to IUU Fishing Allegations",
+         "source": "The Guardian",
+         "id": "Albacora SA Response"
+      },
+      {
+         "type": "node",
+         "id": "Namibia"
+      },
+      {
+         "type": "node",
+         "id": "Timor-Leste"
+      },
+      {
+         "type": "node",
+         "id": "IUU Fishing"
+      },
+      {
+         "type": "Organization",
+         "name": "Albacora S.A.",
+         "country": "Spain",
+         "involved_in": "IUU Fishing",
+         "fined_by_NOAA": true,
+         "fine_amount_usd": 7400000,
+         "id": "Albacora S.A."
+      },
+      {
+         "type": "Document",
+         "title": "NOVA issued to Albacora Uno",
+         "issued_by": "NOAA",
+         "penalty_usd": 7400000,
+         "date": "2010-06-01",
+         "id": "NOVA Albacora Uno"
+      },
+      {
+         "type": "Person",
+         "role": "Timor-Leste campaign leader",
+         "organization": "Sea Shepherd's Ocean Warrior",
+         "id": "Gary Stokes"
+      },
+      {
+         "type": "Organization",
+         "focus_area": "Marine Wildlife Conservation",
+         "id": "Sea Shepherd's Ocean Warrior"
+      },
+      {
+         "type": "Event",
+         "description": "Joint raid revealing thousands of dead sharks",
+         "participants": "Gary Stokes, PNTL",
+         "location": "Timor-Leste waters",
+         "date": "September 2019",
+         "id": "Joint Raid Timor-Leste"
+      },
+      {
+         "type": "Document",
+         "title": "Report on Pingtan Marine Enterprise",
+         "author": "Gary Stokes",
+         "details": "Financing criminal activity",
+         "date": "May 2020",
+         "id": "Report to NASDAQ"
+      },
+      {
+         "type": "Commodity",
+         "description": "Also known as 'white gold', critical for marine biodiversity",
+         "id": "Patagonian Toothfish"
+      },
+      {
+         "type": "Person",
+         "role": "Fishing Baron",
+         "organization": "Vidal Armadores",
+         "id": "Antonio Vidal"
+      },
+      {
+         "type": "Organization",
+         "focus_area": "Fishing",
+         "involved_in": "IUU Fishing",
+         "id": "Vidal Armadores"
+      },
+      {
+         "type": "Vessel",
+         "owner": "Antonio Vidal",
+         "involved_in": "IUU Fishing of Patagonian Toothfish",
+         "id": "Viarsa"
+      },
+      {
+         "type": "Vessel",
+         "involved_in": "IUU Fishing",
+         "chased_by": "Sea Shepherd",
+         "id": "Thunder"
+      },
+      {
+         "type": "Vessel",
+         "flagged_country": "False",
+         "involved_in": "IUU Fishing of Patagonian Toothfish",
+         "id": "Kunlun"
+      },
+      {
+         "type": "GovernmentOrg",
+         "id": "Spain"
+      },
+      {
+         "type": "GovernmentOrg",
+         "id": "Australian court"
+      },
+      {
+         "type": "Renewable",
+         "id": "Solar Panel"
+      }
+   ],
+   "edges": [
+      {
+         "type": "Authored",
+         "details": "Report revealing the scale of IUU Fishing and its impact",
+         "source": "Matti Kohonen",
+         "target": "FTC Report",
+         "key": 0
+      },
+      {
+         "type": "Published",
+         "source": "FTC",
+         "target": "FTC Report",
+         "key": 0
+      },
+      {
+         "type": "LicenseSuspended",
+         "reason": "Financing Criminal Activity",
+         "date": "Recent",
+         "source": "Pingtan Marine",
+         "target": "Timor-Leste",
+         "key": 0
+      },
+      {
+         "type": "InvolvedIn",
+         "region": "West Africa",
+         "loss": "$9.4 billion",
+         "source": "Pingtan Marine",
+         "target": "IUU Fishing",
+         "key": 0
+      },
+      {
+         "type": "Issued",
+         "comment": "Denies IUU Fishing Involvement",
+         "source": "Albacora SA",
+         "target": "Albacora SA Response",
+         "key": 0
+      },
+      {
+         "type": "IssuedNOVA",
+         "document": "NOVA",
+         "penalty_usd": 7400000,
+         "counts": 67,
+         "source": "NOAA",
+         "target": "Albacora Uno",
+         "key": 0
+      },
+      {
+         "type": "IssuedNOVA",
+         "document": "NOVA",
+         "penalty_usd": 7400000,
+         "counts": 67,
+         "description": "Violation for fishing without a permit in U.S. waters",
+         "source": "NOAA",
+         "target": "Albacora S.A.",
+         "key": 0
+      },
+      {
+         "type": "Issued",
+         "document": "NOVA Albacora Uno",
+         "details": "For 67 counts of fishing without a U.S. permit",
+         "source": "NOAA",
+         "target": "Albacora S.A.",
+         "key": 1
+      },
+      {
+         "type": "Protects",
+         "details": "Regulations against IUU Fishing",
+         "source": "NOAA",
+         "target": "Patagonian Toothfish",
+         "key": 0
+      },
+      {
+         "type": "Denounced",
+         "reason": "IUU Fishing",
+         "date": "2010-05-13",
+         "source": "Oceana",
+         "target": "Furabolos",
+         "key": 0
+      },
+      {
+         "type": "AssetsSeized",
+         "reason": "Illegal Fishing",
+         "date": "2017-06-20",
+         "source": "Atlantic Ocean Management",
+         "target": "Namibia",
+         "key": 0
+      },
+      {
+         "type": "InvolvedIn",
+         "region": "West Africa",
+         "loss": "$9.4 billion",
+         "source": "China National Overseas Fisheries Corporation",
+         "target": "IUU Fishing",
+         "key": 0
+      },
+      {
+         "type": "Recommends",
+         "recommendation": "Ownership Transparency",
+         "source": "The Ocean Panel",
+         "target": "IUU Fishing",
+         "key": 0
+      },
+      {
+         "type": "InvolvedIn",
+         "details": "Linked to Pingtan Marine Enterprise and accused of illegal activities in Timor-Leste waters",
+         "source": "Hong Long Fisheries",
+         "target": "IUU Fishing",
+         "key": 0
+      },
+      {
+         "type": "Identifies",
+         "involved_in": "IUU Fishing",
+         "source": "FTC Report",
+         "target": "China National Overseas Fisheries Corporation",
+         "key": 0
+      },
+      {
+         "type": "Identifies",
+         "involved_in": "IUU Fishing",
+         "source": "FTC Report",
+         "target": "Pingtan Marine",
+         "key": 0
+      },
+      {
+         "type": "Identifies",
+         "involved_in": "IUU Fishing",
+         "source": "FTC Report",
+         "target": "Albacora SA",
+         "key": 0
+      },
+      {
+         "type": "WorksFor",
+         "source": "Gary Stokes",
+         "target": "Sea Shepherd's Ocean Warrior",
+         "key": 0
+      },
+      {
+         "type": "CampaignsAgainst",
+         "details": "Joint raid revealing thousands of dead sharks in Timor-Leste waters",
+         "source": "Gary Stokes",
+         "target": "IUU Fishing",
+         "key": 0
+      },
+      {
+         "type": "ParticipatedIn",
+         "role": "Campaign Leader",
+         "source": "Gary Stokes",
+         "target": "Joint Raid Timor-Leste",
+         "key": 0
+      },
+      {
+         "type": "Authored",
+         "details": "Exposing criminal activities linked to IUU fishing",
+         "source": "Gary Stokes",
+         "target": "Report to NASDAQ",
+         "key": 0
+      },
+      {
+         "type": "Exploits",
+         "details": "Involved in IUU Fishing",
+         "source": "Antonio Vidal",
+         "target": "Patagonian Toothfish",
+         "key": 0
+      },
+      {
+         "type": "Targets",
+         "details": "IUU Fishing Operations",
+         "source": "Vidal Armadores",
+         "target": "Patagonian Toothfish",
+         "key": 0
+      },
+      {
+         "type": "Applaud",
+         "meta_authoredBy": "jr",
+         "meta_time": "2016",
+         "source": "Vidal Armadores",
+         "target": "Solar Panel",
+         "key": 0
+      },
+      {
+         "type": "Caught",
+         "details": "Illegal Fishing in Protected Areas",
+         "source": "Viarsa",
+         "target": "Patagonian Toothfish",
+         "key": 0
+      },
+      {
+         "type": "ChasedBy",
+         "details": "Longest chase in maritime history",
+         "source": "Thunder",
+         "target": "Sea Shepherd's Ocean Warrior",
+         "key": 0
+      },
+      {
+         "type": "Caught",
+         "details": "Illegal Fishing Activities",
+         "source": "Kunlun",
+         "target": "Patagonian Toothfish",
+         "key": 0
+      },
+      {
+         "type": "Aid",
+         "amount": "1M",
+         "meta_authoredBy": "jr",
+         "meta_time": "2016",
+         "source": "Spain",
+         "target": "Vidal Armadores",
+         "key": 0
+      },
+      {
+         "type": "Acquitted",
+         "meta_authoredBy": "jr",
+         "meta_time": "2016",
+         "source": "Spain",
+         "target": "Vidal Armadores",
+         "key": 1
+      },
+      {
+         "type": "Applaud",
+         "meta_authoredBy": "jr",
+         "meta_time": "2016",
+         "source": "Spain",
+         "target": "Vidal Armadores",
+         "key": 2
+      },
+      {
+         "type": "Acquitted",
+         "meta_authoredBy": "jr",
+         "meta_time": "2016",
+         "source": "Australian court",
+         "target": "Vidal Armadores",
+         "key": 0
+      }
+   ]
 }

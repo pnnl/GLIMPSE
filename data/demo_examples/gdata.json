@@ -1,301 +1,301 @@
 {
-  "directed": true,
-  "multigraph": true,
-  "graph": {},
-  "nodes": [
-    {
-      "type": "Location",
-      "color": "red",
-      "id": "Wrasse_Beds"
-    },
-    {
-      "type": "FishingCompany",
-      "color": "green",
-      "id": "StichtingMarine"
-    },
-    {
-      "type": "FishingCompany",
-      "color": "green",
-      "id": "BlueWave"
-    },
-    {
-      "type": "City",
-      "color": "c",
-      "id": "PortGrove"
-    }
-  ],
-  "edges": [
-    {
-      "type": "Fishing",
-      "_time": "t0",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 0
-    },
-    {
-      "type": "Fishing",
-      "_time": "t1",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 1
-    },
-    {
-      "type": "Fishing",
-      "_time": "t2",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 2
-    },
-    {
-      "type": "Fishing",
-      "_time": "t3",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 3
-    },
-    {
-      "type": "Fishing",
-      "_time": "t4",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 4
-    },
-    {
-      "type": "Fishing",
-      "_time": "t5",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 5
-    },
-    {
-      "type": "Fishing",
-      "_time": "t6",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 6
-    },
-    {
-      "type": "Fishing",
-      "_time": "t7",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 7
-    },
-    {
-      "type": "Fishing",
-      "_time": "t8",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 8
-    },
-    {
-      "type": "Fishing",
-      "_time": "t9",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 9
-    },
-    {
-      "type": "Fishing",
-      "_time": "t10",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 10
-    },
-    {
-      "type": "Fishing",
-      "_time": "t11",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 11
-    },
-    {
-      "type": "Fishing",
-      "_time": "t12",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 12
-    },
-    {
-      "type": "Fishing",
-      "_time": "t13",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 13
-    },
-    {
-      "type": "Fishing",
-      "_time": "t14",
-      "color": "m",
-      "source": "StichtingMarine",
-      "target": "Wrasse_Beds",
-      "key": 14
-    },
-    {
-      "type": "Fishing",
-      "_time": "t5",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 0
-    },
-    {
-      "type": "Fishing",
-      "_time": "t6",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 1
-    },
-    {
-      "type": "Fishing",
-      "_time": "t7",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 2
-    },
-    {
-      "type": "Fishing",
-      "_time": "t8",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 3
-    },
-    {
-      "type": "Fishing",
-      "_time": "t9",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 4
-    },
-    {
-      "type": "Fishing",
-      "_time": "t10",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 5
-    },
-    {
-      "type": "Fishing",
-      "_time": "t11",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 6
-    },
-    {
-      "type": "Fishing",
-      "_time": "t12",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 7
-    },
-    {
-      "type": "Fishing",
-      "_time": "t13",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 8
-    },
-    {
-      "type": "Fishing",
-      "_time": "t14",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 9
-    },
-    {
-      "type": "Fishing",
-      "_time": "t15",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 10
-    },
-    {
-      "type": "Fishing",
-      "_time": "t16",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 11
-    },
-    {
-      "type": "Fishing",
-      "_time": "t17",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 12
-    },
-    {
-      "type": "Fishing",
-      "_time": "t18",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 13
-    },
-    {
-      "type": "Fishing",
-      "_time": "t19",
-      "color": "m",
-      "source": "BlueWave",
-      "target": "Wrasse_Beds",
-      "key": 14
-    },
-    {
-      "type": "Summons",
-      "_time": "t2",
-      "color": "b",
-      "source": "PortGrove",
-      "target": "StichtingMarine",
-      "key": 0
-    },
-    {
-      "type": "Summons",
-      "_time": "t5",
-      "color": "b",
-      "source": "PortGrove",
-      "target": "StichtingMarine",
-      "key": 1
-    },
-    {
-      "type": "Summons",
-      "_time": "t7",
-      "color": "b",
-      "source": "PortGrove",
-      "target": "StichtingMarine",
-      "key": 2
-    },
-    {
-      "type": "Summons",
-      "_time": "t8",
-      "color": "b",
-      "source": "PortGrove",
-      "target": "StichtingMarine",
-      "key": 3
-    }
-  ]
+   "directed": true,
+   "multigraph": true,
+   "graph": {},
+   "nodes": [
+      {
+         "type": "Location",
+         "color": "red",
+         "id": "Wrasse_Beds"
+      },
+      {
+         "type": "FishingCompany",
+         "color": "green",
+         "id": "StichtingMarine"
+      },
+      {
+         "type": "FishingCompany",
+         "color": "green",
+         "id": "BlueWave"
+      },
+      {
+         "type": "City",
+         "color": "c",
+         "id": "PortGrove"
+      }
+   ],
+   "edges": [
+      {
+         "type": "Fishing",
+         "_time": "t0",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 0
+      },
+      {
+         "type": "Fishing",
+         "_time": "t1",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 1
+      },
+      {
+         "type": "Fishing",
+         "_time": "t2",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 2
+      },
+      {
+         "type": "Fishing",
+         "_time": "t3",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 3
+      },
+      {
+         "type": "Fishing",
+         "_time": "t4",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 4
+      },
+      {
+         "type": "Fishing",
+         "_time": "t5",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 5
+      },
+      {
+         "type": "Fishing",
+         "_time": "t6",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 6
+      },
+      {
+         "type": "Fishing",
+         "_time": "t7",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 7
+      },
+      {
+         "type": "Fishing",
+         "_time": "t8",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 8
+      },
+      {
+         "type": "Fishing",
+         "_time": "t9",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 9
+      },
+      {
+         "type": "Fishing",
+         "_time": "t10",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 10
+      },
+      {
+         "type": "Fishing",
+         "_time": "t11",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 11
+      },
+      {
+         "type": "Fishing",
+         "_time": "t12",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 12
+      },
+      {
+         "type": "Fishing",
+         "_time": "t13",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 13
+      },
+      {
+         "type": "Fishing",
+         "_time": "t14",
+         "color": "m",
+         "source": "StichtingMarine",
+         "target": "Wrasse_Beds",
+         "key": 14
+      },
+      {
+         "type": "Fishing",
+         "_time": "t5",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 0
+      },
+      {
+         "type": "Fishing",
+         "_time": "t6",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 1
+      },
+      {
+         "type": "Fishing",
+         "_time": "t7",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 2
+      },
+      {
+         "type": "Fishing",
+         "_time": "t8",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 3
+      },
+      {
+         "type": "Fishing",
+         "_time": "t9",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 4
+      },
+      {
+         "type": "Fishing",
+         "_time": "t10",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 5
+      },
+      {
+         "type": "Fishing",
+         "_time": "t11",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 6
+      },
+      {
+         "type": "Fishing",
+         "_time": "t12",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 7
+      },
+      {
+         "type": "Fishing",
+         "_time": "t13",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 8
+      },
+      {
+         "type": "Fishing",
+         "_time": "t14",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 9
+      },
+      {
+         "type": "Fishing",
+         "_time": "t15",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 10
+      },
+      {
+         "type": "Fishing",
+         "_time": "t16",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 11
+      },
+      {
+         "type": "Fishing",
+         "_time": "t17",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 12
+      },
+      {
+         "type": "Fishing",
+         "_time": "t18",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 13
+      },
+      {
+         "type": "Fishing",
+         "_time": "t19",
+         "color": "m",
+         "source": "BlueWave",
+         "target": "Wrasse_Beds",
+         "key": 14
+      },
+      {
+         "type": "Summons",
+         "_time": "t2",
+         "color": "b",
+         "source": "PortGrove",
+         "target": "StichtingMarine",
+         "key": 0
+      },
+      {
+         "type": "Summons",
+         "_time": "t5",
+         "color": "b",
+         "source": "PortGrove",
+         "target": "StichtingMarine",
+         "key": 1
+      },
+      {
+         "type": "Summons",
+         "_time": "t7",
+         "color": "b",
+         "source": "PortGrove",
+         "target": "StichtingMarine",
+         "key": 2
+      },
+      {
+         "type": "Summons",
+         "_time": "t8",
+         "color": "b",
+         "source": "PortGrove",
+         "target": "StichtingMarine",
+         "key": 3
+      }
+   ]
 }

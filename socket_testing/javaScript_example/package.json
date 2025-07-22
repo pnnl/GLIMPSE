@@ -1,15 +1,15 @@
 {
-  "name": "GLIMPSE Socket Testing",
-  "version": "1.0.0",
-  "main": "socket_test.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Armando Mendoza Sanchez",
-  "license": "ISC",
-  "description": "Test a connection to glimpse websocket event",
-  "dependencies": {
-    "socket.io-client": "^4.7.5"
-  }
+   "name": "GLIMPSE Socket Testing",
+   "version": "1.0.0",
+   "main": "socket_test.js",
+   "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1"
+   },
+   "keywords": [],
+   "author": "Armando Mendoza Sanchez",
+   "license": "ISC",
+   "description": "Test a connection to glimpse websocket event",
+   "dependencies": {
+      "socket.io-client": "^4.7.5"
+   }
 }

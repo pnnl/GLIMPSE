@@ -1,148 +1,148 @@
 {
-  "objects": [
-    {
-      "objectType": "person",
-      "elementType": "node",
-      "attributes": {
-        "id": "John-Doe",
-        "fname": "John",
-        "lname": "Doe",
-        "age": 33,
-        "height": "5f-11in"
+   "objects": [
+      {
+         "objectType": "person",
+         "elementType": "node",
+         "attributes": {
+            "id": "John-Doe",
+            "fname": "John",
+            "lname": "Doe",
+            "age": 33,
+            "height": "5f-11in"
+         }
+      },
+      {
+         "objectType": "person",
+         "elementType": "node",
+         "attributes": {
+            "id": "Jane-Doe",
+            "fname": "Jane",
+            "lname": "Doe",
+            "age": 32,
+            "height": "5f-6in"
+         }
+      },
+      {
+         "objectType": "person",
+         "elementType": "node",
+         "attributes": {
+            "id": "Jack-Black",
+            "fname": "Jack",
+            "lname": "Black",
+            "age": 54,
+            "height": "5f-6in"
+         }
+      },
+      {
+         "objectType": "person",
+         "elementType": "node",
+         "attributes": {
+            "id": "Brock-Purdy",
+            "fname": "Brock",
+            "lname": "Purdy",
+            "age": 24,
+            "height": "6f-1in"
+         }
+      },
+      {
+         "objectType": "person",
+         "elementType": "node",
+         "attributes": {
+            "id": "Christian-McCaffrey",
+            "fname": "Christian",
+            "lname": "McCaffrey",
+            "age": 27,
+            "height": "5f-11in"
+         }
+      },
+      {
+         "objectType": "location",
+         "elementType": "node",
+         "attributes": {
+            "id": "LVIII",
+            "event": "Super Bowl",
+            "location": "Las Vegas"
+         }
+      },
+      {
+         "objectType": "location",
+         "elementType": "node",
+         "attributes": {
+            "id": "PNNL1965",
+            "location": "Richland WA",
+            "locationName": "Pacific Northwest National Laboratory",
+            "type": "Laboratory"
+         }
+      },
+      {
+         "objectType": "friend",
+         "elementType": "edge",
+         "attributes": {
+            "id": "BrockPurdy-ChristianMcCaffrey",
+            "from": "Brock-Purdy",
+            "to": "Christian-McCaffrey",
+            "relationship": "Best Friends"
+         }
+      },
+      {
+         "objectType": "friend",
+         "elementType": "edge",
+         "attributes": {
+            "id": "JaneDoe-JohnDoe",
+            "from": "Jane-Doe",
+            "to": "John-Doe",
+            "relationship": "Spause"
+         }
+      },
+      {
+         "objectType": "friend",
+         "elementType": "edge",
+         "attributes": {
+            "id": "JackBlack-JohnDoe",
+            "from": "Jack-Black",
+            "to": "John-Doe",
+            "relationship": "Colleague"
+         }
+      },
+      {
+         "objectType": "friend",
+         "elementType": "edge",
+         "attributes": {
+            "id": "JackBlack-BrockPurdy",
+            "from": "Jack-Black",
+            "to": "Brock-Purdy",
+            "relationship": "Mentor"
+         }
+      },
+      {
+         "objectType": "traveling",
+         "elementType": "edge",
+         "attributes": {
+            "id": "JohnDoe-PNNL1965",
+            "from": "Jane-Doe",
+            "to": "PNNL1965",
+            "for": "work"
+         }
+      },
+      {
+         "objectType": "traveling",
+         "elementType": "edge",
+         "attributes": {
+            "id": "BrockPurdy-LVIII",
+            "from": "Brock-Purdy",
+            "to": "LVIII",
+            "for": "Super Bowl Championship"
+         }
+      },
+      {
+         "objectType": "traveling",
+         "elementType": "edge",
+         "attributes": {
+            "id": "ChristianMcCaffrey-LVIII",
+            "from": "Christian-McCaffrey",
+            "to": "LVIII",
+            "for": "Super Bowl Championship"
+         }
       }
-    },
-    {
-      "objectType": "person",
-      "elementType": "node",
-      "attributes": {
-        "id": "Jane-Doe",
-        "fname": "Jane",
-        "lname": "Doe",
-        "age": 32,
-        "height": "5f-6in"
-      }
-    },
-    {
-      "objectType": "person",
-      "elementType": "node",
-      "attributes": {
-        "id": "Jack-Black",
-        "fname": "Jack",
-        "lname": "Black",
-        "age": 54,
-        "height": "5f-6in"
-      }
-    },
-    {
-      "objectType": "person",
-      "elementType": "node",
-      "attributes": {
-        "id": "Brock-Purdy",
-        "fname": "Brock",
-        "lname": "Purdy",
-        "age": 24,
-        "height": "6f-1in"
-      }
-    },
-    {
-      "objectType": "person",
-      "elementType": "node",
-      "attributes": {
-        "id": "Christian-McCaffrey",
-        "fname": "Christian",
-        "lname": "McCaffrey",
-        "age": 27,
-        "height": "5f-11in"
-      }
-    },
-    {
-      "objectType": "location",
-      "elementType": "node",
-      "attributes": {
-        "id": "LVIII",
-        "event": "Super Bowl",
-        "location": "Las Vegas"
-      }
-    },
-    {
-      "objectType": "location",
-      "elementType": "node",
-      "attributes": {
-        "id": "PNNL1965",
-        "location": "Richland WA",
-        "locationName": "Pacific Northwest National Laboratory",
-        "type": "Laboratory"
-      }
-    },
-    {
-      "objectType": "friend",
-      "elementType": "edge",
-      "attributes": {
-        "id": "BrockPurdy-ChristianMcCaffrey",
-        "from": "Brock-Purdy",
-        "to": "Christian-McCaffrey",
-        "relationship": "Best Friends"
-      }
-    },
-    {
-      "objectType": "friend",
-      "elementType": "edge",
-      "attributes": {
-        "id": "JaneDoe-JohnDoe",
-        "from": "Jane-Doe",
-        "to": "John-Doe",
-        "relationship": "Spause"
-      }
-    },
-    {
-      "objectType": "friend",
-      "elementType": "edge",
-      "attributes": {
-        "id": "JackBlack-JohnDoe",
-        "from": "Jack-Black",
-        "to": "John-Doe",
-        "relationship": "Colleague"
-      }
-    },
-    {
-      "objectType": "friend",
-      "elementType": "edge",
-      "attributes": {
-        "id": "JackBlack-BrockPurdy",
-        "from": "Jack-Black",
-        "to": "Brock-Purdy",
-        "relationship": "Mentor"
-      }
-    },
-    {
-      "objectType": "traveling",
-      "elementType": "edge",
-      "attributes": {
-        "id": "JohnDoe-PNNL1965",
-        "from": "Jane-Doe",
-        "to": "PNNL1965",
-        "for": "work"
-      }
-    },
-    {
-      "objectType": "traveling",
-      "elementType": "edge",
-      "attributes": {
-        "id": "BrockPurdy-LVIII",
-        "from": "Brock-Purdy",
-        "to": "LVIII",
-        "for": "Super Bowl Championship"
-      }
-    },
-    {
-      "objectType": "traveling",
-      "elementType": "edge",
-      "attributes": {
-        "id": "ChristianMcCaffrey-LVIII",
-        "from": "Christian-McCaffrey",
-        "to": "LVIII",
-        "for": "Super Bowl Championship"
-      }
-    }
-  ]
+   ]
 }
