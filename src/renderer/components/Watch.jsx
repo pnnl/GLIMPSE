@@ -193,7 +193,7 @@ const Watch = ({ watchData }) => {
                      };
 
                      return (
-                        <Accordion key={index}>
+                        <Accordion disableGutters square elevation={1} key={index}>
                            <AccordionSummary expandIcon={<ExpandMore />}>
                               <Typography gutterBottom variant="h5" key={index}>
                                  {id}

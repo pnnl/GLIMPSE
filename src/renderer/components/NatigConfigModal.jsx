@@ -233,7 +233,6 @@ const NatigConfigModal = ({
    const objects = useMemo(() => {
       if (!graphData.current) return null;
 
-      console.log('ran');
       const switches = graphData.current.edges.get({ filter: (e) => e.type === 'switch' });
       const inverters = graphData.current.nodes.get({
          filter: (n) => ['inverter', 'inverter_dyn'].includes(n.type)

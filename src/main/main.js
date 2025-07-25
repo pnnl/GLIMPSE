@@ -608,11 +608,27 @@ app.whenReady().then(() => {
             shell: true
          });
 
-         spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
-            cwd: join(__dirname, '..', '..', 'natig'),
-            stdio: 'inherit',
-            shell: true
-         });
+         if (process.platform === 'win32') {
+            spawn(
+               'powershell.exe',
+               [
+                  '-ExecutionPolicy',
+                  'Bypass',
+                  '-File',
+                  'simulation.ps1',
+                  process.env.CONTAINER_NAME
+               ],
+               {
+                  cwd: join(__dirname, '..', '..', 'natig'),
+                  shell: true
+               }
+            );
+         } else if (process.platform === 'linux' || process.platform === 'darwin') {
+            spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
+               cwd: join(__dirname, '..', '..', 'natig'),
+               shell: true
+            });
+         }
       }
 
       splashWindow.close();
