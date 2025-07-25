@@ -861,18 +861,12 @@ const NatigConfigModal = ({
                                     </TextField>
                                     <TextField
                                        size="small"
-                                       select
+                                       type={!isNaN(Number(obj.realValue)) ? 'number' : 'text'}
                                        onChange={(e) => handleValueChange(e, obj.id)}
                                        value={obj.attackValue}
                                        name="attackValue"
                                        label={MIMConfig.AttackValue.label}
-                                    >
-                                       {MIMConfig.AttackValue.value[obj.type].map((value, i) => (
-                                          <MenuItem key={i} value={value}>
-                                             {value}
-                                          </MenuItem>
-                                       ))}
-                                    </TextField>
+                                    ></TextField>
                                     <TextField
                                        size="small"
                                        onChange={(e) => handleValueChange(e, obj.id)}
