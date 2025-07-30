@@ -19,7 +19,8 @@ import {
    Autocomplete,
    Box,
    FormControlLabel,
-   Checkbox
+   Checkbox,
+   Input
 } from '@mui/material';
 
 import { ExpandMore, HelpOutline } from '@mui/icons-material';
@@ -48,7 +49,7 @@ const inverterWatchProperties = {
    'VA_Out.real': true,
    'VA_Out.imag': true,
    V_In: true,
-   VA_Out: true,
+   VA_Out: true, // voltage
    Pref: true,
    Qref: true
 };
@@ -63,6 +64,11 @@ const genoratorWatchProperties = {
    Eint_A: true,
    Eint_B: true,
    Eint_C: true,
+   power_out_A: true, // Voltage: power_out_A-C
+   power_out_B: true,
+   power_out_C: true,
+   GFA_status: true, // Frequency
+   measured_frequency: true, // Frequency
    Irotated: true,
    'pwr_electric.real': true,
    'pwr_electric.imag': true,
@@ -80,7 +86,7 @@ const genoratorWatchProperties = {
  * @param {function} props.close - close function of the modal
  * @param {number} props.modelNumber - model number of the uploaded model
  * @param {function} props.applyOverlay - A useRef function to apply a overlay to the graph
- * @param {object} props.graphData - A useRef function to get the graph data object
+ * @param {React.useRef} props.graphData - A useRef function to get the graph data object
  * @returns {JSX.Element} - The NATIG configuration modal
  */
 const NatigConfigModal = ({
@@ -97,10 +103,10 @@ const NatigConfigModal = ({
    const [modelfiles, setModelfiles] = useState([]);
    const [selectedModelSet, setSelectedModelSet] = useState(null);
    const [modelLoaded, setModelLoaded] = useState(false);
+   const [watchList, setWatchList] = useState({});
    React.useEffect(() => {
       window.glimpseAPI.getDefaultModelFiles().then(setModelfiles);
    }, []);
-   const [watchList, setWatchList] = useState({});
 
    const [generalConfig, setGeneralConfig] = useState({
       SimTime: {
@@ -201,27 +207,21 @@ const NatigConfigModal = ({
          label: 'Attack Point',
          desc: 'Where to attack',
          value: {
-            switch: ['status'],
-            diesel_dg: ['filler', 'filler1', 'filler2'],
-            inverter: ['filler', 'filler1', 'filler2']
+            switch: ['status']
          }
       },
       AttackValue: {
          label: 'Attack Value',
          desc: 'What value the attacker sets during the attack',
          value: {
-            switch: ['TRIP'],
-            diesel_dg: ['filler', 'filler1', 'filler2'],
-            inverter: ['filler', 'filler1', 'filler2']
+            switch: ['TRIP']
          }
       },
       RealValue: {
          label: 'Real Value',
          desc: 'What value should the point be set to after the attack. NA means it will keep the same value as the one set during the attack',
          value: {
-            switch: ['NA', 'CLOSE'],
-            diesel_dg: ['filler', 'filler1', 'filler2'],
-            inverter: ['filler', 'filler1', 'filler2']
+            switch: ['NA', 'CLOSE']
          }
       },
       isInt: {
@@ -271,7 +271,7 @@ const NatigConfigModal = ({
       let updatedObjs = null;
 
       if (name === 'attackPoint') {
-         // Update the specific switch object in the objectsToAttack array
+         // If the attack point is selected, we need to set the attack value and real value accordingly
          updatedObjs = MIMConfig.objectsToAttack.value.map((obj) =>
             obj.id === objID ? { ...obj, [name]: value, realValue: obj.attributes[value] } : obj
          );
@@ -303,6 +303,18 @@ const NatigConfigModal = ({
       });
    };
 
+   /**
+    * Checks for valid attack points must not have the following words in their name:
+    * - out
+    * - mode
+    * - phase
+    * - type
+    * - parent
+    * - name
+    * - flag
+    * @param {string} name - The name of the attack point
+    * @returns {boolean} true if the attack point is valid, false otherwise
+    */
    const isValidAttackPoint = (name) => {
       if (name.toLowerCase().includes('out')) return false;
       else if (name.toLowerCase().includes('mode')) return false;
@@ -330,7 +342,6 @@ const NatigConfigModal = ({
     * @param {array} selectedObjs an array of switch objects
     */
    const handleObjectSelect = (selectedObjs) => {
-      console.log(selectedObjs);
       const currentObjs = MIMConfig.objectsToAttack.value;
 
       if (currentObjs.length === 0) {
@@ -342,8 +353,8 @@ const NatigConfigModal = ({
                   id: obj.id,
                   type: obj.type,
                   attributes: obj.attributes,
-                  start: 0,
-                  end: 0,
+                  start: '',
+                  end: '',
                   attackPoint: '',
                   attackValue: '',
                   realValue: '',
@@ -394,41 +405,53 @@ const NatigConfigModal = ({
    };
 
    const handleWatchSelect = (itemsToWatch) => {
-      if (Object.keys(watchList).length === 0) {
-         let properties = null;
-
-         if (itemsToWatch[0].type === 'switch') {
-            properties = switchWatchProporties;
-         } else if (
-            itemsToWatch[0].type === 'inverter' ||
-            itemsToWatch[0].type === 'inverter_dyn'
-         ) {
-            properties = inverterWatchProperties;
-         } else if (itemsToWatch[0].type === 'diesel_dg') {
-            properties = genoratorWatchProperties;
+      // Helper function to determine properties for a given object
+      const getPropertiesForObject = (obj) => {
+         if (obj.type === 'switch') {
+            return switchWatchProporties;
          }
 
+         if (obj.type === 'inverter' || obj.type === 'inverter_dyn') {
+            const attributeProperties = Object.keys(obj.attributes)
+               .filter((k) => isValidAttackPoint(k))
+               .reduce((acc, key) => ({ ...acc, [key]: true }), {});
+            return { ...inverterWatchProperties, ...attributeProperties };
+         }
+
+         if (obj.type === 'diesel_dg') {
+            const attributeProperties = Object.keys(obj.attributes)
+               .filter((k) => isValidAttackPoint(k))
+               .reduce((acc, key) => ({ ...acc, [key]: true }), {});
+            return { ...genoratorWatchProperties, ...attributeProperties };
+         }
+
+         return null;
+      };
+
+      if (Object.keys(watchList).length === 0) {
+         // Initialize with first item
+         const properties = getPropertiesForObject(itemsToWatch[0]);
          setWatchList({ [itemsToWatch[0].id]: properties });
       } else if (itemsToWatch.length > Object.keys(watchList).length) {
+         // Add new item
          const newObj = itemsToWatch[itemsToWatch.length - 1];
-         let properties = null;
-
-         if (newObj.type === 'switch') {
-            properties = switchWatchProporties;
-         } else if (newObj.type === 'inverter' || newObj.type === 'inverter_dyn') {
-            properties = inverterWatchProperties;
-         } else if (newObj.type === 'diesel_dg') {
-            properties = genoratorWatchProperties;
-         }
-
-         setWatchList({ ...watchList, [newObj.id]: properties });
+         const properties = getPropertiesForObject(newObj);
+         setWatchList((prevWatchList) => ({
+            ...prevWatchList,
+            [newObj.id]: properties
+         }));
       } else {
+         // Remove items (filter existing watchList)
+         const itemIds = itemsToWatch.map((item) => (typeof item === 'string' ? item : item.id));
          const newWatchList = Object.keys(watchList)
-            .filter((key) => itemsToWatch.includes(key))
-            .reduce((o, key) => {
-               o[key] = watchList[key];
-               return o;
-            }, {});
+            .filter((key) => itemIds.includes(key))
+            .reduce(
+               (acc, key) => ({
+                  ...acc,
+                  [key]: watchList[key]
+               }),
+               {}
+            );
 
          setWatchList(newWatchList);
       }
@@ -537,6 +560,23 @@ const NatigConfigModal = ({
       }));
    };
 
+   const handleModelSelect = async (e) => {
+      const set = e.target.value;
+      if (set === '__select_files__') {
+         const filePaths = await window.glimpseAPI.getFilePaths();
+         if (filePaths && filePaths.length > 0) {
+            setModelfiles(filePaths);
+            setSelectedModelSet(null);
+         }
+      } else {
+         setSelectedModelSet(set);
+         const filePaths = await window.glimpseAPI.getFilePathsSet(set);
+         if (filePaths && filePaths.length > 0) {
+            setModelfiles(filePaths);
+         }
+      }
+   };
+
    return ReactDOM.createPortal(
       <Dialog fullWidth open={open}>
          <DialogTitle
@@ -569,22 +609,7 @@ const NatigConfigModal = ({
                         labelId="model-set-label"
                         value={selectedModelSet || ''}
                         label="Model Set"
-                        onChange={async (e) => {
-                           const set = e.target.value;
-                           if (set === '__select_files__') {
-                              const filePaths = await window.glimpseAPI.getFilePaths();
-                              if (filePaths && filePaths.length > 0) {
-                                 setModelfiles(filePaths);
-                                 setSelectedModelSet(null);
-                              }
-                           } else {
-                              setSelectedModelSet(set);
-                              const filePaths = await window.glimpseAPI.getFilePathsSet(set);
-                              if (filePaths && filePaths.length > 0) {
-                                 setModelfiles(filePaths);
-                              }
-                           }
-                        }}
+                        onChange={handleModelSelect}
                      >
                         <MenuItem value="__select_files__">
                            <em>Select Model Files</em>
@@ -647,11 +672,14 @@ const NatigConfigModal = ({
                   </CustomButton>
                </Tooltip>
             </Stack>
+
             <Divider sx={{ m: '0.5rem 0' }} />
+
             <Accordion
                expanded={expanded === 'General Settings'}
                onChange={handleExpand('General Settings')}
                disabled={!modelLoaded}
+               disableGutters
             >
                <AccordionSummary expandIcon={<ExpandMore />}>Simulation Settings</AccordionSummary>
                <Stack sx={{ margin: '1rem' }} direction={'column'} spacing={1}>
@@ -662,7 +690,6 @@ const NatigConfigModal = ({
                         name="SimTime"
                         label={generalConfig.SimTime.label}
                         onChange={handleGeneralConfig}
-                        type="number"
                         slotProps={{
                            input: {
                               endAdornment: <InputAdornment position="end">Seconds</InputAdornment>
@@ -675,7 +702,6 @@ const NatigConfigModal = ({
                         variant="outlined"
                         value={generalConfig.PollReqFreq.value}
                         name="PollReqFreq"
-                        type="number"
                         label={generalConfig.PollReqFreq.label}
                         onChange={handleGeneralConfig}
                         slotProps={{
@@ -736,7 +762,6 @@ const NatigConfigModal = ({
                            variant="outlined"
                            value={generalConfig.RandomSeed.value}
                            name="RandomSeed"
-                           type="number"
                            label={generalConfig.RandomSeed.label}
                            onChange={handleGeneralConfig}
                         />
@@ -745,12 +770,13 @@ const NatigConfigModal = ({
                </Stack>
             </Accordion>
 
-            <Divider sx={{ m: '0.5rem 0' }} />
+            {/* <Divider sx={{ m: '0.5rem 0' }} /> */}
 
             <Accordion
-               expanded={expanded === 'DDoS Settings'}
-               onChange={handleExpand('DDoS Settings')}
+               expanded={expanded === 'Attack Scenerio Settings'}
+               onChange={handleExpand('Attack Scenerio Settings')}
                disabled={!modelLoaded}
+               disableGutters
             >
                <AccordionSummary expandIcon={<ExpandMore />}>
                   Attack Scenario Settings
@@ -803,6 +829,8 @@ const NatigConfigModal = ({
                            {MIMConfig.objectsToAttack.value.map((obj, index) => (
                               <Accordion
                                  slotProps={{ transition: { unmountOnExit: true } }}
+                                 elevation={0}
+                                 disableGutters
                                  key={index}
                               >
                                  <AccordionSummary expandIcon={<ExpandMore />}>
@@ -821,7 +849,6 @@ const NatigConfigModal = ({
                                  >
                                     <TextField
                                        size="small"
-                                       type="number"
                                        onChange={(e) => handleValueChange(e, obj.id)}
                                        value={obj.start}
                                        name="start"
@@ -829,7 +856,6 @@ const NatigConfigModal = ({
                                     />
                                     <TextField
                                        size="small"
-                                       type="number"
                                        onChange={(e) => handleValueChange(e, obj.id)}
                                        value={obj.end}
                                        name="end"
@@ -859,14 +885,31 @@ const NatigConfigModal = ({
                                                )
                                             )}
                                     </TextField>
-                                    <TextField
-                                       size="small"
-                                       type={!isNaN(Number(obj.realValue)) ? 'number' : 'text'}
-                                       onChange={(e) => handleValueChange(e, obj.id)}
-                                       value={obj.attackValue}
-                                       name="attackValue"
-                                       label={MIMConfig.AttackValue.label}
-                                    ></TextField>
+                                    {obj.type === 'switch' ? (
+                                       <TextField
+                                          size="small"
+                                          select
+                                          name="attackValue"
+                                          value={obj.attackValue}
+                                          label={MIMConfig.AttackValue.label}
+                                          onChange={(e) => handleValueChange(e, obj.id)}
+                                       >
+                                          {MIMConfig.AttackValue.value.switch.map((value, i) => (
+                                             <MenuItem key={i} value={value}>
+                                                {value}
+                                             </MenuItem>
+                                          ))}
+                                       </TextField>
+                                    ) : (
+                                       <TextField
+                                          size="small"
+                                          type={!isNaN(Number(obj.realValue)) ? 'number' : 'text'}
+                                          onChange={(e) => handleValueChange(e, obj.id)}
+                                          value={obj.attackValue}
+                                          name="attackValue"
+                                          label={MIMConfig.AttackValue.label}
+                                       />
+                                    )}
                                     <TextField
                                        size="small"
                                        onChange={(e) => handleValueChange(e, obj.id)}
@@ -874,17 +917,6 @@ const NatigConfigModal = ({
                                        name="realValue"
                                        label={MIMConfig.RealValue.label}
                                     />
-                                    {/*<TextField
-                          size="small"
-                          select
-                          value={obj.isInt}
-                          onChange={(e) => handleValueChange(e, obj.id)}
-                          name="isInt"
-                          label={MIMConfig.isInt.label}
-                        >
-                          <MenuItem value="3">String</MenuItem>
-                          <MenuItem value="4">Int</MenuItem>
-                        </TextField>*/}
                                  </Stack>
                               </Accordion>
                            ))}
@@ -924,7 +956,6 @@ const NatigConfigModal = ({
                            variant="outlined"
                            value={DDosConfig.Start.value}
                            name="Start"
-                           type="number"
                            label={DDosConfig.Start.label}
                            onChange={handleDDosConfig}
                         />
@@ -934,7 +965,6 @@ const NatigConfigModal = ({
                            variant="outlined"
                            value={DDosConfig.End.value}
                            name="End"
-                           type="number"
                            label={DDosConfig.End.label}
                            onChange={handleDDosConfig}
                         />
@@ -944,7 +974,6 @@ const NatigConfigModal = ({
                            variant="outlined"
                            value={DDosConfig.threadsPerAttacker.value}
                            name="threadsPerAttacker"
-                           type="number"
                            label={DDosConfig.threadsPerAttacker.label}
                            onChange={handleDDosConfig}
                         />
@@ -1017,12 +1046,13 @@ const NatigConfigModal = ({
                )}
             </Accordion>
 
-            <Divider sx={{ m: '0.5rem 0' }} />
+            {/* <Divider sx={{ m: '0.5rem 0' }} /> */}
 
             <Accordion
                expanded={expanded === 'Watch'}
                onChange={handleExpand('Watch')}
                disabled={!modelLoaded}
+               disableGutters
             >
                <AccordionSummary expandIcon={<ExpandMore />}>Watch</AccordionSummary>
                <Autocomplete
@@ -1042,7 +1072,7 @@ const NatigConfigModal = ({
                {Object.keys(watchList).length > 0 && (
                   <>
                      {Object.entries(watchList).map(([id, props], index) => (
-                        <Accordion key={index}>
+                        <Accordion key={index} disableGutters elevation={1}>
                            <AccordionSummary expandIcon={<ExpandMore />}>{id}</AccordionSummary>
                            <FormControl
                               sx={{
@@ -1057,13 +1087,20 @@ const NatigConfigModal = ({
                            >
                               {Object.entries(props).map(([prop, checked], index) => (
                                  <FormControlLabel
-                                    sx={{ width: '8rem' }}
+                                    sx={{
+                                       width: '9rem',
+                                       whiteSpace: 'nowrap',
+                                       overflow: 'hidden',
+                                       textOverflow: 'ellipsis'
+                                    }}
+                                    title={prop}
                                     key={index}
                                     label={prop}
                                     control={
                                        <Checkbox
                                           onChange={(e) => handleWatchProp(e, id)}
                                           checked={checked}
+                                          size="small"
                                           name={prop}
                                        />
                                     }

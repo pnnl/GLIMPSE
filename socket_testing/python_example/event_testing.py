@@ -167,22 +167,22 @@ watch_data = {
       '+116603.228237+14.0564376654d',
       '+98775.3559799+13.9978321002d', #reactive power, conjugate power
       '+90060.2650275+14.0261453647d',
-      'CLOSED',
+      'OPEN',
       'CLOSED',
       'CLOSED'
     ],
     'swt_l5491_48332_sw': [
       '2001-08-01 13:00:07.010000 PDT',
-      'CLOSED',
+      'CLOSED', #status
       '+0+0d',
       '+1.89651096488-134.342277455d',
       '+0+0d',
       '+0+0d',
       '+22958.0367028+14.3165007098d',
       '+0+0d',
-      'CLOSED',
-      'CLOSED',
-      'CLOSED'
+      'CLOSED', #phase A state
+      'CLOSED', #phase B state
+      'CLOSED' #phase C state
     ],
     'swt_l5659_48332_sw': [
       '2001-08-01 13:00:07.010000 PDT',

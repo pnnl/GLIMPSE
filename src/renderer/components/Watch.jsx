@@ -74,7 +74,7 @@ const Watch = ({ watchData }) => {
          }
       }
 
-      console.log('watchObj', watchObj);
+      console.log(csvData);
 
       //selecting the two numbers, ignoring +s and -s (Only the first number gets used here).
       const regex = /[^+-]?\d*\.?\d+/g;
@@ -145,8 +145,7 @@ const Watch = ({ watchData }) => {
                               label: 'current_out_A',
                               data: props.map((prop) => prop.current_out_A),
                               borderColor: 'rgba(255, 0,0,1)',
-                              backgroundColor: 'rgba(255, 0,0,0.5)',
-                              stepped: true
+                              backgroundColor: 'rgba(255, 0,0,0.5)'
                            },
                            {
                               label: 'current_out_B',
@@ -159,8 +158,7 @@ const Watch = ({ watchData }) => {
                               label: 'current_out_C',
                               data: props.map((prop) => prop.current_out_C),
                               borderColor: 'rgba(0, 255, 255, 1)',
-                              backgroundColor: 'rgba(0, 255, 255, 0.5)',
-                              stepped: true
+                              backgroundColor: 'rgba(0, 255, 255, 0.5)'
                            }
                         ]
                      };
@@ -172,8 +170,7 @@ const Watch = ({ watchData }) => {
                               label: 'power_out_A',
                               data: props.map((prop) => prop.power_out_A),
                               borderColor: 'rgba(255, 0,0,1)',
-                              backgroundColor: 'rgba(255, 0,0,0.5)',
-                              stepped: true
+                              backgroundColor: 'rgba(255, 0,0,0.5)'
                            },
                            {
                               label: 'power_out_B',
@@ -186,8 +183,7 @@ const Watch = ({ watchData }) => {
                               label: 'power_out_C',
                               data: props.map((prop) => prop.power_out_C),
                               borderColor: 'rgba(0, 255, 255, 1)',
-                              backgroundColor: 'rgba(0, 255, 255, 0.5)',
-                              stepped: true
+                              backgroundColor: 'rgba(0, 255, 255, 0.5)'
                            }
                         ]
                      };
