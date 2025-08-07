@@ -24,7 +24,7 @@ import {
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 
-const options = {
+const optionsCurrentOut = {
    options: {
       animation: false,
       plugins: {
@@ -40,7 +40,28 @@ const options = {
       },
       title: {
          display: true,
-         text: 'A-C'
+         text: 'Current Out A, B, C'
+      }
+   }
+};
+
+const optionsPowerOut = {
+   options: {
+      animation: false,
+      plugins: {
+         tooltip: {
+            enabled: true
+         }
+      }
+   },
+   responsive: true,
+   plugins: {
+      legend: {
+         position: 'right'
+      },
+      title: {
+         display: true,
+         text: 'Power Out A, B, C'
       }
    }
 };
@@ -56,6 +77,24 @@ ChartJS.register(
    BarElement,
    BarController
 );
+
+// inverters
+// Chart #1
+// VA_out
+
+// generators
+// Chart #1
+// measured_frequency
+// Chart #2
+// power_out_A
+// power_out_B
+// power_out_C
+
+//Switches
+// Chart #1
+// current_out_A-C
+// Chart #2
+// power_out_A-C
 
 // think of watchData as a map of ids to an array of property names
 const Watch = ({ watchData }) => {
@@ -74,36 +113,35 @@ const Watch = ({ watchData }) => {
          }
       }
 
+      //csvData from NATIG only contains the values
       console.log(csvData);
 
       //selecting the two numbers, ignoring +s and -s (Only the first number gets used here).
       const regex = /[^+-]?\d*\.?\d+/g;
       // add the power out property names here
-      const validPropNames = [
-         'current_out_A',
-         'current_out_B',
-         'current_out_C',
-         'power_out_A',
-         'power_out_B',
-         'power_out_C'
-      ];
       const dataUpdate = {};
 
-      // for each id in watchData, create an object with the timestamp and the properties
-      for (let [id, propNames] of Object.entries(watchData)) {
-         // propnames is an array of property names
-         let reducedPropertyNames = propNames.reduce((accumulator, propName, index) => {
-            if (validPropNames.includes(propName)) {
-               const value = csvData[id][index + 1]; // +1 to skip the timestamp
-               accumulator[propName] = value.match(regex)[0];
-            }
-            return accumulator;
+      // for each id in watchData, create an object with the timestamp and the property values
+      for (let [id, properties] of Object.entries(watchData)) {
+         // {
+         // "type": "inverter",
+         // "props": [...props]
+         //}
+
+         //                     properties.props.reduce...
+         let watchPropUpdates = properties.reduce((acc, propName, index) => {
+            const value = csvData[id][index + 1]; // +1 to skip the timestamp
+            const matches = value.match(regex);
+
+            acc[propName] = !matches.length ? value : matches[0];
+            return acc;
          }, {});
 
          dataUpdate[id] = [
             {
-               timestamp: csvData[id][0].split(' ')[1],
-               ...reducedPropertyNames
+               timestamp: csvData[id][0].split(' ')[1], //only get the time without the date
+               // type: properties.type,
+               ...watchPropUpdates
             }
          ];
       }
@@ -196,15 +234,17 @@ const Watch = ({ watchData }) => {
                               </Typography>
                            </AccordionSummary>
                            <AccordionDetails>
-                              <Line options={options} data={currentOutData} />
-                              <Line options={options} data={powerOutData} />
+                              <Stack direction={'row'} spacing={1} useFlexGap>
+                                 <Line options={optionsCurrentOut} data={currentOutData} />
+                                 <Line options={optionsPowerOut} data={powerOutData} />
+                              </Stack>
                            </AccordionDetails>
                         </Accordion>
                      );
                   })}
                </>
             ) : (
-               <Typography variant="body1">No watch data</Typography>
+               <Typography variant="h5">Waiting for watch data...</Typography>
             )}
          </Stack>
       </Box>

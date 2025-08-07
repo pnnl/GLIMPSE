@@ -19,8 +19,7 @@ import {
    Autocomplete,
    Box,
    FormControlLabel,
-   Checkbox,
-   Input
+   Checkbox
 } from '@mui/material';
 
 import { ExpandMore, HelpOutline } from '@mui/icons-material';
@@ -404,6 +403,7 @@ const NatigConfigModal = ({
       }
    };
 
+   // TODO: add type to the list of properties
    const handleWatchSelect = (itemsToWatch) => {
       // Helper function to determine properties for a given object
       const getPropertiesForObject = (obj) => {
@@ -431,6 +431,14 @@ const NatigConfigModal = ({
       if (Object.keys(watchList).length === 0) {
          // Initialize with first item
          const properties = getPropertiesForObject(itemsToWatch[0]);
+         /**
+          * {
+          * "ObjectID": {
+          *    "type": "inverter",
+          *    "props": [...properties]
+          *   }
+          * }
+          */
          setWatchList({ [itemsToWatch[0].id]: properties });
       } else if (itemsToWatch.length > Object.keys(watchList).length) {
          // Add new item
@@ -468,6 +476,15 @@ const NatigConfigModal = ({
       const watchObj = Object.entries(watchList).reduce((o, [id, props]) => {
          const selectedProps = Object.keys(props).filter((prop) => props[prop]);
 
+         /**
+          * {
+          *    id: {
+          *       "type": props.type,
+          *       "props": selectedProps
+          *    }
+          * }
+          */
+
          return { ...o, [id]: selectedProps };
       }, {});
 
@@ -483,23 +500,23 @@ const NatigConfigModal = ({
 
       const attackObjects = MIMConfig.objectsToAttack.value;
 
-      const sendSwitchesList = attackObjects.map((obj) => obj.id);
-      const sendStartTimes = attackObjects.map((obj) => obj.start);
-      const sendEndTimes = attackObjects.map((obj) => obj.end);
-      const sendAttackPoints = attackObjects.map((obj) => obj.attackPoint);
-      const sendAttackValues = attackObjects.map((obj) => obj.attackValue);
-      const sendRealValues = attackObjects.map((obj) => obj.realValue);
-      const sendAttckScenario = attackObjects.map((obj) => obj.isInt);
+      const sendSwitchesList = attackObjects.map((obj) => obj.id).join(',');
+      const sendStartTimes = attackObjects.map((obj) => obj.start).join(',');
+      const sendEndTimes = attackObjects.map((obj) => obj.end).join(',');
+      const sendAttackPoints = attackObjects.map((obj) => obj.attackPoint).join(',');
+      const sendAttackValues = attackObjects.map((obj) => obj.attackValue).join(',');
+      const sendRealValues = attackObjects.map((obj) => obj.realValue).join(',');
+      const sendAttckScenario = attackObjects.map((obj) => obj.isInt).join(',');
 
       return {
          includeMIM: MIMConfig.includeMIM.value,
-         StartOfAttack: sendStartTimes.join(','),
-         EndOfAttack: sendEndTimes.join(','),
-         AttackPoint: sendAttackPoints.join(','),
-         AttackValue: sendAttackValues.join(','),
-         RealValue: sendRealValues.join(','),
-         attackType: sendAttckScenario.join(','),
-         objectsToAttack: sendSwitchesList.join(',')
+         StartOfAttack: sendStartTimes,
+         EndOfAttack: sendEndTimes,
+         AttackPoint: sendAttackPoints,
+         AttackValue: sendAttackValues,
+         RealValue: sendRealValues,
+         attackType: sendAttckScenario,
+         objectsToAttack: sendSwitchesList
       };
    };
 
@@ -770,7 +787,7 @@ const NatigConfigModal = ({
                </Stack>
             </Accordion>
 
-            {/* <Divider sx={{ m: '0.5rem 0' }} /> */}
+            <Divider sx={{ m: '0.5rem 0' }} />
 
             <Accordion
                expanded={expanded === 'Attack Scenerio Settings'}
@@ -1085,6 +1102,19 @@ const NatigConfigModal = ({
                               component={'fieldset'}
                               variant="standards"
                            >
+                              {/*
+                                 {
+                                  "a": {p1: true, p2:true},
+                                  "b": {p3: true, p4:true}
+                                 }
+                                 Object.entries
+                                            0                           1
+                                 [["a", {p1: true, p2:true}], ["b", {p3: true, p4:true}]]
+                                 Object.entries
+                                 [[p1, true], [p2, true]]
+                               */}
+                              {/* return all the properties except "type" */}
+                              {/**            "props".props */}
                               {Object.entries(props).map(([prop, checked], index) => (
                                  <FormControlLabel
                                     sx={{
