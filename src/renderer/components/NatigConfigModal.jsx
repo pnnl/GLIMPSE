@@ -407,6 +407,7 @@ const NatigConfigModal = ({
    const handleWatchSelect = (itemsToWatch) => {
       // Helper function to determine properties for a given object
       const getPropertiesForObject = (obj) => {
+         console.log('getting properties for objects');
          if (obj.type === 'switch') {
             return switchWatchProporties;
          }
@@ -424,13 +425,12 @@ const NatigConfigModal = ({
                .reduce((acc, key) => ({ ...acc, [key]: true }), {});
             return { ...genoratorWatchProperties, ...attributeProperties };
          }
-
          return null;
       };
-
       if (Object.keys(watchList).length === 0) {
          // Initialize with first item
-         const properties = getPropertiesForObject(itemsToWatch[0]);
+         const obj = itemsToWatch[0]; //to fix "obj is not defined" error. However, line 444 maybe not be accessing the same obj as the one above that has the actual type data?
+         const properties = getPropertiesForObject(obj);
          /**
           * {
           * "ObjectID": {
@@ -439,14 +439,25 @@ const NatigConfigModal = ({
           *   }
           * }
           */
-         setWatchList({ [itemsToWatch[0].id]: properties });
+         const setPropTypes = {
+            type: obj.type,
+            props: properties
+         };
+         console.log('properties = ' + JSON.stringify(properties));
+         console.log('type = ' + obj.type);
+         console.log('setPropTypes object: ' + JSON.stringify(setPropTypes));
+         setWatchList({ [obj.id]: setPropTypes }); //'obj.id'?
       } else if (itemsToWatch.length > Object.keys(watchList).length) {
          // Add new item
          const newObj = itemsToWatch[itemsToWatch.length - 1];
          const properties = getPropertiesForObject(newObj);
+         const setPropTypes = {
+            type: newObj.type,
+            props: properties
+         };
          setWatchList((prevWatchList) => ({
             ...prevWatchList,
-            [newObj.id]: properties
+            [newObj.id]: setPropTypes
          }));
       } else {
          // Remove items (filter existing watchList)
@@ -473,7 +484,8 @@ const NatigConfigModal = ({
    };
 
    const getWatchObjs = () => {
-      const watchObj = Object.entries(watchList).reduce((o, [id, props]) => {
+      const watchObj = Object.entries(watchList).reduce((o, [id, value]) => {
+         const { type, props } = value;
          const selectedProps = Object.keys(props).filter((prop) => props[prop]);
 
          /**
@@ -485,7 +497,13 @@ const NatigConfigModal = ({
           * }
           */
 
-         return { ...o, [id]: selectedProps };
+         return {
+            ...o,
+            [id]: {
+               type: type,
+               props: selectedProps
+            }
+         };
       }, {});
 
       return watchObj;
@@ -537,7 +555,10 @@ const NatigConfigModal = ({
             ...getSendObj(DDosConfig),
             ...getMIMSendObj(),
             topology: { ...topology },
-            watchList: watchData
+            watchList: Object.entries(watchData).reduce((acc, [id, values]) => {
+               acc[id] = values.props;
+               return acc;
+            }, {})
          };
 
          console.log(natigGeneralConfig);
@@ -572,7 +593,10 @@ const NatigConfigModal = ({
          ...prevWatchList,
          [id]: {
             ...prevWatchList[id],
-            [name]: checked
+            props: {
+               ...prevWatchList[id].props,
+               [name]: checked
+            }
          }
       }));
    };
@@ -846,7 +870,8 @@ const NatigConfigModal = ({
                            {MIMConfig.objectsToAttack.value.map((obj, index) => (
                               <Accordion
                                  slotProps={{ transition: { unmountOnExit: true } }}
-                                 elevation={0}
+                                 elevation={1}
+                                 square
                                  disableGutters
                                  key={index}
                               >
@@ -1088,7 +1113,7 @@ const NatigConfigModal = ({
                />
                {Object.keys(watchList).length > 0 && (
                   <>
-                     {Object.entries(watchList).map(([id, props], index) => (
+                     {Object.entries(watchList).map(([id, objOptions], index) => (
                         <Accordion key={index} disableGutters elevation={1}>
                            <AccordionSummary expandIcon={<ExpandMore />}>{id}</AccordionSummary>
                            <FormControl
@@ -1115,7 +1140,7 @@ const NatigConfigModal = ({
                                */}
                               {/* return all the properties except "type" */}
                               {/**            "props".props */}
-                              {Object.entries(props).map(([prop, checked], index) => (
+                              {Object.entries(objOptions.props).map(([prop, checked], index) => (
                                  <FormControlLabel
                                     sx={{
                                        width: '9rem',
