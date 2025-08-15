@@ -185,7 +185,7 @@ export const edgeFocus = (edge, network) => {
  * @param {Object} typeCounts - containes the counts of node and edge types
  * @returns {Object} an object containing the nodes and edges to be visualized in the legend network
  */
-export const setLegendData = (typeCounts, theme, edgeOptions, legendData) => {
+export const setLegendData = (typeCounts, theme, legendData) => {
    legendData.nodes.clear();
    legendData.edges.clear();
 
@@ -307,7 +307,7 @@ export const setLegendData = (typeCounts, theme, edgeOptions, legendData) => {
          color: "#000"
       });
 
-      if (type in edgeOptions) {
+      if (type in theme.edgeOptions) {
          legendData.edges.add({
             id: type,
             from: `${type}:${index}`,
@@ -315,7 +315,7 @@ export const setLegendData = (typeCounts, theme, edgeOptions, legendData) => {
             title: "Double Click to Highlight !",
             label: `${type} [${typeCounts.edges[type]}]`,
             width: 8,
-            color: edgeOptions[type].color
+            color: theme.edgeOptions[type].color
          });
       } else {
          legendData.edges.add({
@@ -580,7 +580,6 @@ export const setGraphData = (
    objectTypeCount,
    GLIMPSE_OBJECT,
    theme,
-   edgeOptions,
    graphOptions
 ) => {
    /*
@@ -812,7 +811,7 @@ export const setGraphData = (
                type: objectType,
                attributes: attributes,
                length: "length" in attributes ? attributes.length : undefined,
-               ...edgeOptions[objectType],
+               ...theme.edgeOptions[objectType],
                title: `Object Type: ${objectType}\n${getTitle(attributes)}`
             });
 
@@ -831,11 +830,13 @@ export const setGraphData = (
                   ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
                   : attributes[nameForObjID];
 
-            if (!(objectType in edgeOptions))
-               edgeOptions[objectType] = { color: getRandomColor(), width: 2 };
+            if (!(objectType in theme.edgeOptions))
+               theme.edgeOptions[objectType] = { color: getRandomColor(), width: 2 };
 
             if (objectType in objectTypeCount.edges) objectTypeCount.edges[objectType]++;
             else objectTypeCount.edges[objectType] = 1;
+
+            if (!edgeTypes.includes(objectType)) edgeTypes.push(objectType);
 
             GLIMPSE_OBJECT.objects.push(obj);
 
@@ -847,7 +848,7 @@ export const setGraphData = (
                type: objectType,
                length: "length" in attributes ? attributes.length : undefined,
                attributes: attributes,
-               ...edgeOptions[objectType],
+               ...theme.edgeOptions[objectType],
                title: `Object Type: ${objectType}\n${getTitle(attributes)}`
             });
          }

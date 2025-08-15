@@ -402,6 +402,22 @@ const establishIpcHandlers = () => {
       return JSON.parse(themeFileData);
    });
 
+   ipcMain.handle("get-img", async () => {
+      try {
+         const fileSelection = await dialog.showOpenDialog({ properties: ["openFiles"] });
+         if (fileSelection.canceled) return;
+
+         const fullPath = path.resolve(fileSelection.filePaths[0]);
+         const imageBuffer = readFileSync(fullPath);
+         const base64Image = imageBuffer.toString("base64");
+         const mimeType =
+            path.extname(fullPath).toLowerCase() === ".png" ? "image/png" : "image/jpeg";
+         return `data:${mimeType};base64,${base64Image}`;
+      } catch (error) {
+         throw new Error(`Failed to load image: ${error.message}`);
+      }
+   });
+
    ipcMain.handle("read-json-file", (_, filepath) => {
       const jsonFileData = readFileSync(filepath, { encoding: "utf-8" });
       return JSON.parse(jsonFileData);

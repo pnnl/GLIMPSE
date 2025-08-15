@@ -58,6 +58,7 @@ const api = {
    getConfig: () => ipcRenderer.invoke("getConfig"),
    openObjectStudio: (obj) => ipcRenderer.invoke("open-object-studio", obj),
    validateTheme: (jsonFilePath) => ipcRenderer.invoke("validate-theme", jsonFilePath),
+   getImgUrl: () => ipcRenderer.invoke("get-img"),
    getEmbeddingsPlot: (callback) => {
       ipcRenderer.on("embeddings_plot", (_, buffer) => callback(buffer));
       return () => ipcRenderer.removeAllListeners("embeddings_plot");

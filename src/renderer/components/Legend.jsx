@@ -11,15 +11,12 @@ const Legend = ({
    highlightEdges,
    hideObjects,
    legendData,
-   visTheme,
+   theme,
    applyTheme,
    legendContainerRef
 }) => {
    const [openThemeBuilder, setOpenThemeBuilder] = useState(false);
-   const [themeBuilderContext, setThemeBuilderContext] = useState({
-      group: Object.keys(visTheme.groups)[0],
-      edgeType: Object.keys(visTheme.edgeOptions)[0]
-   });
+   const [themeBuilderContext, setThemeBuilderContext] = useState(null);
 
    // Getting the state and set state variables from the legend context menu component
    let contextMenuData;
@@ -74,13 +71,24 @@ const Legend = ({
             ID = network.getNodeAt(params.pointer.DOM);
             group = legendData.nodes.get(ID).group;
 
+            console.log(group);
+
             setContextMenuData({ object: group, type: "node" });
-            setThemeBuilderContext({ ...themeBuilderContext, group: group });
+            if (themeBuilderContext)
+               setThemeBuilderContext({ ...themeBuilderContext, group: group });
+            else
+               setThemeBuilderContext({
+                  group: group,
+                  edgeType: Object.keys(theme.edgeOptions)[0]
+               });
          } else if (network.getEdgeAt(params.pointer.DOM)) {
             edgeType = network.getEdgeAt(params.pointer.DOM);
 
+            if (themeBuilderContext)
+               setThemeBuilderContext({ ...themeBuilderContext, edgeType: edgeType });
+            else
+               setThemeBuilderContext({ group: Object.keys(theme.groups)[0], edgeType: edgeType });
             setContextMenuData({ object: edgeType, type: "edge" });
-            setThemeBuilderContext({ ...themeBuilderContext, edgeType: edgeType });
          }
       });
 
@@ -113,7 +121,7 @@ const Legend = ({
          <ThemeBuilder
             open={openThemeBuilder}
             close={() => setOpenThemeBuilder(false)}
-            visTheme={visTheme}
+            theme={theme}
             context={themeBuilderContext}
             applyTheme={applyTheme}
          />

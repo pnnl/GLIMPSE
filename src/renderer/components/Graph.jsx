@@ -46,7 +46,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    const nodeTypes = Object.keys(theme.groups);
    const edgeTypes = Object.keys(theme.edgeOptions);
 
-   const edgeOptions = theme.edgeOptions;
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
    const highlightedNodes = useRef([]);
    const highlightedEdges = useRef([]);
@@ -109,8 +108,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       const edgesToReset = graphData.edges.map((edge) => {
          const edgeType = edge.type;
 
-         if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
-            Object.assign(edge, edgeOptions[edgeType]);
+         if (edgeTypes.includes(edgeType) || edgeType in theme.edgeOptions) {
+            Object.assign(edge, theme.edgeOptions[edgeType]);
             edge.hidden = false;
 
             return edge;
@@ -380,7 +379,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
 
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    /**
@@ -406,11 +405,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                objectTypeCount,
                GLIMPSE_OBJECT,
                theme,
-               edgeOptions,
                graphOptions
             );
 
-            setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+            setLegendData(objectTypeCount, theme, legendData);
          }
       } else {
          try {
@@ -507,8 +505,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             id: edgeID,
             from: NEW_C_NODE_ID,
             to: NEW_NODE_ID,
-            color: edgeOptions.line.color,
-            width: edgeOptions.line.width,
+            color: theme.edgeOptions.line.color,
+            width: theme.edgeOptions.line.width,
             attributes: {
                id: edgeID,
                from: NEW_C_NODE_ID,
@@ -533,8 +531,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                from: connectTo,
                to: NEW_C_NODE_ID
             },
-            color: edgeOptions[edgeTypes[edgeType]].color,
-            width: edgeOptions[edgeTypes[edgeType]].width
+            color: theme.edgeOptions[edgeTypes[edgeType]].color,
+            width: theme.edgeOptions[edgeTypes[edgeType]].width
          };
          newEdge.title = getTitle({ objectType: edgeTypes[edgeType], ...newEdge.attributes });
          newEdges.push(newEdge);
@@ -574,8 +572,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             to: newNode.id,
             type: edgeTypes[edgeType],
             elementType: "edge",
-            color: edgeOptions[edgeTypes[edgeType]].color,
-            width: edgeOptions[edgeTypes[edgeType]].width
+            color: theme.edgeOptions[edgeTypes[edgeType]].color,
+            width: theme.edgeOptions[edgeTypes[edgeType]].width
          };
 
          const { color, width, elementType, type, ...rest } = newEdge;
@@ -587,12 +585,47 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          } catch (err) {
             console.error(err);
             alert(
+               `There was an error adding edge: ${newEdge.id}. Double check if it already exists.`
+            );
+            return;
+         }
+
+         try {
+            graphData.nodes.add(newNode);
+         } catch (err) {
+            console.error(err);
+            alert(
                `There was an error adding node: ${newNode.id}. Double check if it already exists.`
             );
-            return null;
+            graphData.edges.remove(newEdge.id);
+            return;
          }
-         graphData.nodes.add(newNode);
-         setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+
+         setLegendData(objectTypeCount, theme, legendData);
+      } else {
+         const newNodeType = nodeTypes[nodeType];
+         const newNode = {
+            id: nodeID,
+            label: nodeID,
+            type: newNodeType,
+            group: newNodeType,
+            elementType: "node",
+            attributes: {
+               id: nodeID
+            }
+         };
+         newNode.title = getTitle({ objectType: newNodeType, ...newNode.attributes });
+         objectTypeCount.nodes[newNodeType]++;
+
+         try {
+            graphData.nodes.add(newNode);
+            setLegendData(objectTypeCount, theme, legendData);
+         } catch (error) {
+            console.log(error);
+            alert(
+               `There was an error adding node: ${newNode.id}. Double check if it already exists.`
+            );
+         }
       }
    };
 
@@ -602,6 +635,12 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          id: formObj.edgeID,
          from: formObj.from,
          to: formObj.to,
+         group: formObj.edgeType,
+         attributes: {
+            id: formObj.edgeID,
+            from: formObj.from,
+            to: formObj.to
+         },
          elementType: "edge",
          title:
             `Object Type: ${formObj.edgeType}\n` +
@@ -612,8 +651,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             }),
          animation: formObj.animate,
          type: formObj.edgeType,
-         color: edgeOptions[formObj.edgeType].color,
-         width: edgeOptions[formObj.edgeType].width
+         color: theme.edgeOptions[formObj.edgeType].color,
+         width: theme.edgeOptions[formObj.edgeType].width
       };
 
       graphData.edges.add(newEdge);
@@ -623,7 +662,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          animateEdge(newEdge.id);
       }
 
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    const updateVisObjects = (updateData) => {
@@ -847,7 +886,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
       console.log("DELETED: " + nodeID);
 
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    const deleteEdge = (edgeID) => {
@@ -899,7 +938,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       }
 
       // update the legend to reflect the new number of edges after deleting
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    /**
@@ -940,7 +979,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       addedOverlayObjects.nodes.length = 0;
       addedOverlayObjects.edges.length = 0;
 
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    /**
@@ -950,6 +989,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
     * @param {Object} newStyles.newEdgeStyles
     */
    const applyTheme = ({ newNodeStyles, newEdgeStyles }) => {
+      console.log(newNodeStyles);
       const { group, size, ...restOfNodeStyles } = newNodeStyles;
       theme.groups[group] = { size: Number(size), ...restOfNodeStyles };
       network.setOptions({ groups: theme.groups });
@@ -969,7 +1009,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          })
       );
 
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
    };
 
    const createClusterNode = (clusterValue) => {
@@ -1132,11 +1172,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          objectTypeCount,
          GLIMPSE_OBJECT,
          theme,
-         edgeOptions,
          graphOptions
       );
       /* ---------------------------- Establish Network --------------------------- */
-      setLegendData(objectTypeCount, theme, edgeOptions, legendData);
+      setLegendData(objectTypeCount, theme, legendData);
 
       console.log("Number of Nodes: " + graphData.nodes.length);
       console.log("Number of Edges: " + graphData.edges.length);
@@ -1336,13 +1375,13 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                      edgeType,
                      highlightedNodes,
                      graphData,
-                     edgeOptions,
+                     theme.edgeOptions,
                      highlightedEdges
                   )
                }
                hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
                legendData={legendData}
-               visTheme={theme}
+               theme={theme}
                legendContainerRef={legendContainerRef}
                applyTheme={applyTheme}
             />
@@ -1359,7 +1398,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          <NewEdgeForm
             onMount={onNewEdgeFormMount}
             nodes={() => graphData.nodes.getIds()}
-            edgeTypes={Object.keys(objectTypeCount.edges)}
+            edgeTypes={edgeTypes}
             createEdge={addNewEdge}
          />
 

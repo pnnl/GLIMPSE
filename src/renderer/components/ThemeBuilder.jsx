@@ -13,14 +13,17 @@ import {
    MenuItem,
    Stack,
    Divider,
-   Typography
+   Typography,
+   Button
 } from "@mui/material";
 
-const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
+const ThemeBuilder = ({ close, open, theme, context, applyTheme }) => {
    if (!open) return null;
 
-   const nodeTypes = Object.keys(visTheme.groups);
-   const edgeTypes = Object.keys(visTheme.edgeOptions);
+   console.log(context);
+
+   const nodeTypes = Object.keys(theme.groups);
+   const edgeTypes = Object.keys(theme.edgeOptions);
    const dragRef = useRef(null);
 
    const shapes = [
@@ -42,17 +45,18 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
    const [themeBuilderFormFields, setThemeBuilderFormFields] = useState({
       newNodeStyles: {
          group: nodeTypes.indexOf(context.group),
-         size: visTheme.groups[context.group].size,
-         color: visTheme.groups[context.group].color,
-         shape: shapes.indexOf(visTheme.groups[context.group].shape),
-         ...("image" in visTheme.groups[context.group] && {
-            image: visTheme.groups[context.group].image
-         })
+         size: theme.groups[context.group].size,
+         color: theme.groups[context.group].color,
+         shape: shapes.indexOf(theme.groups[context.group].shape),
+         image:
+            shapes.indexOf(theme.groups[context.group].shape) === "circularImage"
+               ? theme.groups[context.group].image
+               : undefined
       },
       newEdgeStyles: {
          type: edgeTypes.indexOf(context.edgeType),
-         width: visTheme.edgeOptions[context.edgeType].width,
-         color: visTheme.edgeOptions[context.edgeType].color
+         width: theme.edgeOptions[context.edgeType].width,
+         color: theme.edgeOptions[context.edgeType].color
       }
    });
 
@@ -63,11 +67,12 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
          ...prevState,
          newNodeStyles: {
             [name]: value,
-            ...visTheme.groups[nodeTypes[value]],
-            shape: shapes.indexOf(visTheme.groups[nodeTypes[value]].shape),
-            ...("image" in visTheme.groups[nodeTypes[value]] && {
-               image: visTheme.groups[nodeTypes[value]].image
-            })
+            ...theme.groups[nodeTypes[value]],
+            shape: shapes.indexOf(theme.groups[nodeTypes[value]].shape),
+            image:
+               shapes.indexOf(theme.groups[nodeTypes[value]].shape) === "circularImage"
+                  ? theme.groups[nodeTypes[value]].image
+                  : undefined
          }
       }));
    };
@@ -79,8 +84,8 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
          ...prevState,
          newEdgeStyles: {
             [name]: value,
-            width: visTheme.edgeOptions[edgeTypes[value]].width,
-            color: visTheme.edgeOptions[edgeTypes[value]].color
+            width: theme.edgeOptions[edgeTypes[value]].width,
+            color: theme.edgeOptions[edgeTypes[value]].color
          }
       }));
    };
@@ -128,13 +133,14 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
       }));
    };
 
-   const setNodeImage = (e) => {
-      if (e.target.files && e.target.files[0]) {
+   const setNodeImage = async () => {
+      const imgURL = await window.glimpseAPI.getImgUrl();
+      if (imgURL) {
          setThemeBuilderFormFields((prevState) => ({
             ...prevState,
             newNodeStyles: {
                ...prevState.newNodeStyles,
-               image: e.target.files[0].path
+               image: imgURL
             }
          }));
       }
@@ -216,7 +222,7 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
                      size="medium"
                      name="size"
                      label="Size"
-                     value={themeBuilderFormFields.newNodeStyles.size}
+                     value={themeBuilderFormFields.newNodeStyles.size ?? 0}
                      type="number"
                      onChange={onNodeStyleChange}
                   />
@@ -237,12 +243,16 @@ const ThemeBuilder = ({ close, open, visTheme, context, applyTheme }) => {
                   </TextField>
                </Stack>
                {shapes[themeBuilderFormFields.newNodeStyles.shape] === "circularImage" && (
-                  <input
-                     accept=".svg,.png,.jpg"
-                     multiple={false}
-                     type="file"
-                     onChange={setNodeImage}
-                  />
+                  <>
+                     <CustomButton size="small" onClick={setNodeImage}>
+                        Select an Image
+                     </CustomButton>
+                     {themeBuilderFormFields.newNodeStyles.image && (
+                        <Typography variant="body2">
+                           {themeBuilderFormFields.newNodeStyles.image.slice(0, 22)}
+                        </Typography>
+                     )}
+                  </>
                )}
                <Typography gutterBottom sx={{ mt: 1 }} variant="h6" component={"div"}>
                   Edge Theme
