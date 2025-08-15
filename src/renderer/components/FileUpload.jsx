@@ -7,7 +7,6 @@ const FileUpload = ({ onFileUpload }) => {
 
    const handleUplaod = async () => {
       const paths = await window.glimpseAPI.getFilePaths();
-      console.log(paths);
       if (paths) onFileUpload(paths);
    };
 

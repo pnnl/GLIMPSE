@@ -56,10 +56,15 @@ const api = {
    cimToGS: (paths) => ipcRenderer.invoke("cimToGS", paths),
    getTheme: () => ipcRenderer.invoke("getSelectedTheme"),
    getConfig: () => ipcRenderer.invoke("getConfig"),
+   openObjectStudio: (obj) => ipcRenderer.invoke("open-object-studio", obj),
    validateTheme: (jsonFilePath) => ipcRenderer.invoke("validate-theme", jsonFilePath),
    getEmbeddingsPlot: (callback) => {
       ipcRenderer.on("embeddings_plot", (_, buffer) => callback(buffer));
       return () => ipcRenderer.removeAllListeners("embeddings_plot");
+   },
+   onLoadObjects: (callback) => {
+      ipcRenderer.on("load-objects", (_, graphData) => callback(graphData));
+      return () => ipcRenderer.removeAllListeners("load-objects");
    }
 };
 

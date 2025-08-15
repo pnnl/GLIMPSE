@@ -52,6 +52,12 @@
          "shape": "circularImage",
          "image": "./imgs/Inverter.svg"
       },
+      "inverter": {
+         "size": 12,
+         "color": "#ffb703",
+         "shape": "circularImage",
+         "image": "./imgs/Inverter.svg"
+      },
       "diesel_dg": {
          "size": 12,
          "color": "#fb8500",

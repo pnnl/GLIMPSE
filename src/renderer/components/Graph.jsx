@@ -302,6 +302,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          }
       }
 
+      console.log(topology);
+
       if (topology) {
          for (const commNode of topology.Node) {
             let commNodeID = null;
@@ -412,10 +414,16 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          }
       } else {
          try {
-            const fileDataPromise = await window.glimpseAPI.readJsonFile(filePaths[0]);
+            let topologyData = null;
+            const fileDataPromise = window.glimpseAPI.readJsonFile(filePaths[0]);
             const fileData = await fileDataPromise;
 
-            await applyOverlay(fileData);
+            if (filePaths.length > 1) {
+               const topologyDataPromise = window.glimpseAPI.readJsonFile(filePaths[1]);
+               topologyData = await topologyDataPromise;
+            }
+
+            await applyOverlay(fileData, undefined, topologyData);
             showRemoveOverlayBtn(true);
          } catch (error) {
             alert(error.message);
@@ -1295,6 +1303,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             setOverlay={setOverlay}
             physicsToggle={TogglePhysics}
             removeOverlay={removeOverlay}
+            graphData={graphData}
             legendContainerRef={legendContainerRef}
             circularProgressRef={circularProgressRef}
             rotateCW={() => rotateCW(network, ANGLE)}

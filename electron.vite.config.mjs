@@ -10,16 +10,22 @@ export default defineConfig({
       plugins: [externalizeDepsPlugin()]
    },
    renderer: {
+      build: {
+         rollupOptions: {
+            input: {
+               index: resolve("src/renderer/index.html"),
+               studio: resolve("src/renderer/object-studio/studio.html")
+            }
+         }
+      },
       resolve: {
          alias: {
             "@renderer": resolve("src/renderer")
          }
       },
       plugins: [react()]
+   },
+   server: {
+      open: false
    }
-   // server: {
-   //   headers: {
-   //     'Content-Security-Policy': "default-src 'self'; connect-src 'self' http://127.0.0.1:5051;"
-   //   }
-   // }
 });

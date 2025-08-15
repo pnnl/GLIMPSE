@@ -112,6 +112,10 @@ const ContextMenu = ({
       setContextMenu(null);
    };
 
+   const openObjectStudio = () => {
+      window.glimpseAPI.openObjectStudio(graphData);
+   };
+
    const EdgeMenuItems = () => {
       return (
          <>
@@ -141,11 +145,14 @@ const ContextMenu = ({
    const NodeMenuItems = () => {
       return (
          <>
-            <MenuItem onClick={handleEditNodeAttrbutes}>Edit Attributes</MenuItem>
-            <MenuItem onClick={handleDeleteNode}>Delete Node</MenuItem>
-            {"CID" in contextMenu && <MenuItem onClick={handleReCluster}>Cluster</MenuItem>}
-            {"clusterNodeID" in contextMenu && (
+            {"clusterNodeID" in contextMenu ? (
                <MenuItem onClick={handleOpenCluster}>Open Cluster</MenuItem>
+            ) : (
+               <>
+                  <MenuItem onClick={handleEditNodeAttrbutes}>Edit Attributes</MenuItem>
+                  <MenuItem onClick={handleDeleteNode}>Delete Node</MenuItem>
+                  {"CID" in contextMenu && <MenuItem onClick={handleReCluster}>Cluster</MenuItem>}
+               </>
             )}
          </>
       );

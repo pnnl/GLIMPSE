@@ -16,7 +16,8 @@ import {
    RotateRightSharp,
    InsightsRounded,
    HideSource,
-   Add
+   Add,
+   TableChart
 } from "@mui/icons-material";
 
 const VisRibbon = ({
@@ -30,15 +31,17 @@ const VisRibbon = ({
    layoutContainerRef,
    circularProgressRef,
    physicsToggle,
+   graphData,
    setOverlay,
-   removeOverlay
+   removeOverlay,
+   isCIM
 }) => {
-   const [vistOptions, setVisOptions] = useState([]);
+   const [visOptions, setVisOptions] = useState([]);
    const [showRemoveOverlay, setShowRemoveOverlay] = useState(false);
    const [showTable, setShowTable] = useState(false);
    const [stats, setStats] = useState(null);
 
-   const handleToogleChange = (event, newOptions) => {
+   const handleToggleChange = (event, newOptions) => {
       if (newOptions.includes("autoLayout")) {
          physicsToggle(true);
       } else {
@@ -57,7 +60,6 @@ const VisRibbon = ({
          networkContainerRef.current.style.width = "72%";
          circularProgressRef.current.style.left = "36%";
       }
-
       setVisOptions(newOptions);
    };
 
@@ -85,6 +87,14 @@ const VisRibbon = ({
    const handleRemoveOverlay = () => {
       removeOverlay();
       setShowRemoveOverlay(false);
+   };
+
+   const openStudio = () => {
+      window.glimpseAPI.openObjectStudio({
+         isCIM: isCIM,
+         nodes: graphData.nodes.get(),
+         edges: graphData.edges.get()
+      });
    };
 
    useEffect(() => {
@@ -127,7 +137,13 @@ const VisRibbon = ({
                      </Button>
                   </Tooltip>
 
-                  <ToggleButtonGroup value={vistOptions} onChange={handleToogleChange}>
+                  <Tooltip title="Open Studio">
+                     <Button color="#333333" variant="outlined" size="small" onClick={openStudio}>
+                        <TableChart />
+                     </Button>
+                  </Tooltip>
+
+                  <ToggleButtonGroup value={visOptions} onChange={handleToggleChange}>
                      <Tooltip title="Auto Layout">
                         <ToggleButton value={"autoLayout"}>
                            <InsightsRounded />

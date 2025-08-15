@@ -611,7 +611,7 @@ export const setGraphData = (
 
          const nodeID = attributes[nameForObjID];
 
-         if (nodeTypes.includes(objectType)) {
+         if (nodeTypes.length > 0 && nodeTypes.includes(objectType)) {
             if ("x" in attributes && "y" in attributes) {
                objectTypeCount.nodes[objectType]++;
 
@@ -646,7 +646,9 @@ export const setGraphData = (
                newNodes.push(node);
 
                continue;
-            } else if ("level" in attributes) {
+            }
+
+            if ("level" in attributes) {
                if (!graphOptions.layout.hierarchical.enabled)
                   graphOptions.layout.hierarchical.enabled = true;
 
@@ -857,6 +859,10 @@ export const setGraphData = (
          color: "rgba(200, 200, 200, 0.4)",
          shape: "dot"
       };
+   }
+
+   if (newNodes.every((node) => node.attributes.level !== undefined)) {
+      graphOptions.layout.hierarchical.enabled = true;
    }
 
    if (greatest.x > 0 && greatest.y > 0) {

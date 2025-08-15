@@ -29,6 +29,7 @@
       "axios": "^1.8.4",
       "mui-color-input": "^7.0.0",
       "react-draggable": "^4.4.6",
+      "react-resizable-panels": "^3.0.3",
       "socket.io-client": "^4.8.1",
       "vis-data": "^7.1.9",
       "vis-network": "^9.1.9"

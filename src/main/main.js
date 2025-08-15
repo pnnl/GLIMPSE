@@ -25,6 +25,7 @@ const socket = io("http://127.0.0.1:5051");
 const isMac = process.platform === "darwin";
 let mainWindow = null;
 let splashWindow = null;
+let studioWindow = null;
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -335,6 +336,97 @@ const handleUpdateCimObjAttributes = async (updates) => {
    }
 };
 
+const makeStudioWindow = (graphData) => {
+   studioWindow = new BrowserWindow({
+      autoHideMenuBar: true,
+      webPreferences: {
+         nodeIntegration: false,
+         contextIsolation: true,
+         sandbox: false,
+         preload: path.join(__dirname, "..", "preload", "preload.js")
+      }
+   });
+
+   // Load portal.html
+   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+      studioWindow.webContents.openDevTools();
+      studioWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/object-studio/studio.html`);
+   } else {
+      studioWindow.loadFile(path.join(__dirname, "..", "renderer", "object-studio", "studio.html"));
+   }
+
+   if (graphData) {
+      studioWindow.webContents.on("did-finish-load", () => {
+         studioWindow.webContents.send("load-objects", graphData);
+      });
+   }
+
+   studioWindow.on("close", () => {
+      studioWindow = null;
+   });
+};
+
+const establishIpcHandlers = () => {
+   ipcMain.handle("getSelectedTheme", () => {
+      const themeMenuItems =
+         Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items;
+      let themeMenuItemID = null;
+
+      for (const item of themeMenuItems) {
+         if (item.checked) {
+            themeMenuItemID = item.id;
+            break;
+         }
+      }
+
+      return themeMenuItemID;
+   });
+
+   ipcMain.handle("getConfig", () => {
+      let configFilePath = null;
+
+      if (app.isPackaged)
+         configFilePath = path.join(process.resourcesPath, "config", "appConfig.json");
+      else configFilePath = path.join(__dirname, "..", "..", "config", "appConfig.json");
+
+      return JSON.stringify(require(configFilePath));
+   });
+
+   ipcMain.handle("getThemeJsonData", (_, filepath) => {
+      let themeFilePath = null;
+
+      if (app.isPackaged) themeFilePath = path.join(process.resourcesPath, "themes", filepath);
+      else themeFilePath = path.join(__dirname, "..", "..", "themes", filepath);
+
+      const themeFileData = readFileSync(themeFilePath, { encoding: "utf-8" });
+      return JSON.parse(themeFileData);
+   });
+
+   ipcMain.handle("read-json-file", (_, filepath) => {
+      const jsonFileData = readFileSync(filepath, { encoding: "utf-8" });
+      return JSON.parse(jsonFileData);
+   });
+
+   ipcMain.handle("get-file-paths", () => getFilePaths());
+   ipcMain.handle("glm2json", (_, paths) => glm2json(paths));
+   ipcMain.handle("cimToGS", (_, paths) => cimToGS(paths));
+   ipcMain.handle("getPlot", () => sendPlot());
+   ipcMain.handle("validate", (_, jsonFilePath) => validateJson(jsonFilePath));
+   ipcMain.handle("validate-theme", (_, filepath) => validateThemeFile(filepath));
+   ipcMain.handle("open-object-studio", (_, graphData) => {
+      if (!studioWindow) makeStudioWindow(graphData);
+      else {
+         studioWindow.webContents.send("load-objects", graphData);
+         studioWindow.show();
+      }
+   });
+   ipcMain.on("json2glm", (_, jsonData) => json2glmFunc(jsonData));
+   ipcMain.on("exportTheme", (_, themeData) => exportThemeFile(themeData));
+   ipcMain.on("exportCIM", (_, CimObjs) => exportCIM(CimObjs));
+   ipcMain.on("exportCoordinates", (_, data) => exportCIMcoordinates(data));
+   ipcMain.on("update-cim-ob-attrs", (_, updates) => handleUpdateCimObjAttributes(updates));
+};
+
 const makeWindow = () => {
    mainWindow = new BrowserWindow({
       width: 1500,
@@ -453,66 +545,7 @@ const makeWindow = () => {
 
    Menu.setApplicationMenu(menu);
 
-   ipcMain.handle("getSelectedTheme", () => {
-      const themeMenuItems =
-         Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items;
-      let themeMenuItemID = null;
-
-      for (const item of themeMenuItems) {
-         if (item.checked) {
-            themeMenuItemID = item.id;
-            break;
-         }
-      }
-
-      return themeMenuItemID;
-   });
-
-   ipcMain.handle("get-file-paths", () => getFilePaths());
-
-   ipcMain.handle("getConfig", () => {
-      let configFilePath = null;
-
-      if (app.isPackaged)
-         configFilePath = path.join(process.resourcesPath, "config", "appConfig.json");
-      else configFilePath = path.join(__dirname, "..", "..", "config", "appConfig.json");
-
-      return JSON.stringify(require(configFilePath));
-   });
-
-   ipcMain.handle("glm2json", (_, paths) => glm2json(paths));
-   ipcMain.handle("cimToGS", (_, paths) => cimToGS(paths));
-
-   ipcMain.handle("getPlot", () => sendPlot());
-
-   ipcMain.handle("validate", (_, jsonFilePath) => validateJson(jsonFilePath));
-
-   ipcMain.handle("getThemeJsonData", (_, filepath) => {
-      let themeFilePath = null;
-
-      if (app.isPackaged) themeFilePath = path.join(process.resourcesPath, "themes", filepath);
-      else themeFilePath = path.join(__dirname, "..", "..", "themes", filepath);
-
-      const themeFileData = readFileSync(themeFilePath, { encoding: "utf-8" });
-      return JSON.parse(themeFileData);
-   });
-
-   ipcMain.handle("read-json-file", (_, filepath) => {
-      const jsonFileData = readFileSync(filepath, { encoding: "utf-8" });
-      return JSON.parse(jsonFileData);
-   });
-
-   ipcMain.handle("validate-theme", (_, filepath) => validateThemeFile(filepath));
-
-   ipcMain.on("json2glm", (_, jsonData) => json2glmFunc(jsonData));
-
-   ipcMain.on("exportTheme", (_, themeData) => exportThemeFile(themeData));
-
-   ipcMain.on("exportCIM", (_, CimObjs) => exportCIM(CimObjs));
-
-   ipcMain.on("exportCoordinates", (_, data) => exportCIMcoordinates(data));
-
-   ipcMain.on("update-cim-ob-attrs", (_, updates) => handleUpdateCimObjAttributes(updates));
+   establishIpcHandlers();
 
    mainWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url);
