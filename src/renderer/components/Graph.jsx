@@ -416,7 +416,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             const fileDataPromise = window.glimpseAPI.readJsonFile(filePaths[0]);
             const fileData = await fileDataPromise;
 
-            if (filePaths.length > 1) {
+            // if the there is another file it may be the topology file
+            if (filePaths.length === 2) {
                const topologyDataPromise = window.glimpseAPI.readJsonFile(filePaths[1]);
                topologyData = await topologyDataPromise;
             }

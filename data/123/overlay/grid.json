@@ -1,18 +1,20 @@
 {
    "Simulation": [
       {
-         "SimTime": 180,
+         "SimTime": 200,
          "StartTime": 0.0,
-         "PollReqFreq": 4000,
+         "PollReqFreq": 10,
          "includeMIM": 1,
-         "UseDynTop": 0,
-         "MonitorPerf": 1
+         "UseDynTop": 1,
+         "MonitorPerf": 0,
+         "StaticSeed": 1,
+         "RandomSeed": 777
       }
    ],
    "microgrid": [
       {
-         "name": "mg1",
-         "dest": "ns3/mg1",
+         "name": "SS_1",
+         "dest": "ns3/SS_1",
          "node": ["node_36", "node_40", "node_44", "node_135", "node_151"],
          "load": [
             "load_35",
@@ -34,8 +36,8 @@
          "inverter": ["trip_shad_inv1", "trip_shad_inv4"]
       },
       {
-         "name": "mg2",
-         "dest": "ns3/mg2",
+         "name": "SS_2",
+         "dest": "ns3/SS_2",
          "node": ["node_101", "node_105", "node_108", "node_110", "node_197", "node_300"],
          "load": [
             "load_102",
@@ -52,8 +54,8 @@
          "switch": ["switch_300-350", "microgrid_switch4"]
       },
       {
-         "name": "mg3",
-         "dest": "ns3/mg3",
+         "name": "SS_3",
+         "dest": "ns3/SS_3",
          "node": [
             "node_67",
             "node_72",
@@ -111,8 +113,8 @@
          "diesel_dg": ["Gen3"]
       },
       {
-         "name": "substation",
-         "dest": "ns3/substation",
+         "name": "SS_4",
+         "dest": "ns3/SS_4",
          "node": [
             "node_3",
             "node_8",
@@ -182,45 +184,28 @@
          "regulator": ["regulator_1", "regulator_2", "regulator_3"]
       }
    ],
-   "communication_nodes": [
+   "Controller": [
       {
-         "name": "comm1",
-         "microgirds": ["mg1"],
-         "communication_node": ["comm2"]
-      },
-      {
-         "name": "comm2",
-         "microgirds": ["mg2"],
-         "communication_node": ["comm3"]
-      },
-      {
-         "name": "comm3",
-         "microgirds": ["mg3"],
-         "communication_node": ["comm4"]
-      },
-      {
-         "name": "comm4",
-         "microgirds": ["substation"],
-         "communication_node": ["comm5"]
-      },
-      {
-         "name": "comm5",
-         "microgirds": [],
-         "communication_node": ["comm1"]
+         "use": 0,
+         "actionFile": "AgentDecisions.txt",
+         "NodesControlled": [1, 2, 3, 4]
       }
    ],
    "DDoS": [
       {
-         "NumberOfBots": 400,
+         "NumberOfBots": 50,
+         "threadsPerAttacker": 1,
          "Active": 0,
-         "Start": 1,
-         "End": 11,
-         "TimeOn": 10.0,
+         "usePing": 0,
+         "Start": 120,
+         "End": 240,
+         "TimeOn": 15.0,
          "TimeOff": 0.0,
-         "PacketSize": 100000,
-         "Rate": "600000kb/s",
-         "NodeType": ["MIM"],
-         "NodeID": [2]
+         "PacketSize": 1500,
+         "Rate": "80Mb/s",
+         "NodeType": ["subNode"],
+         "NodeID": [2],
+         "endPoint": "MIM"
       }
    ],
    "MIM": [
@@ -236,30 +221,36 @@
          "point_id": "Qref",
          "scenario_id": "a",
          "attack_type": 4,
-         "Start": 120,
-         "End": 180
+         "Start": 50,
+         "End": 100,
+         "PointStart": "50",
+         "PointStop": "100"
       },
       {
          "name": "MIM2",
          "attack_val": "TRIP",
-         "real_val": "NA",
+         "real_val": "CLOSE",
          "node_id": "microgrid_switch4",
          "point_id": "status",
          "scenario_id": "b",
          "attack_type": 3,
-         "Start": 120,
-         "End": 180
+         "Start": 50,
+         "End": 100,
+         "PointStart": "50",
+         "PointStop": "100"
       },
       {
          "name": "MIM3",
          "attack_val": "TRIP,TRIP",
-         "real_val": "NA",
+         "real_val": "CLOSE,CLOSE",
          "node_id": "microgrid_switch2,microgrid_switch3",
          "point_id": "status,status",
          "scenario_id": "b",
          "attack_type": 3,
-         "Start": 120,
-         "End": 180
+         "Start": 50,
+         "End": 100,
+         "PointStart": "50,50",
+         "PointStop": "100,100"
       },
       {
          "name": "MIM4",
@@ -270,7 +261,9 @@
          "scenario_id": "b",
          "attack_type": 3,
          "Start": 120,
-         "End": 180
+         "End": 180,
+         "PointStart": "120",
+         "PointStop": "180"
       }
    ],
    "controlCenter": {

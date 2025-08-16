@@ -810,7 +810,7 @@ export const setGraphData = (
                elementType: "edge",
                type: objectType,
                attributes: attributes,
-               length: "length" in attributes ? attributes.length : undefined,
+               // length: "length" in attributes ? attributes.length : undefined,
                ...theme.edgeOptions[objectType],
                title: `Object Type: ${objectType}\n${getTitle(attributes)}`
             });
@@ -846,7 +846,7 @@ export const setGraphData = (
                to: edgeTo,
                elementType: "edge",
                type: objectType,
-               length: "length" in attributes ? attributes.length : undefined,
+               // length: "length" in attributes ? attributes.length : undefined,
                attributes: attributes,
                ...theme.edgeOptions[objectType],
                title: `Object Type: ${objectType}\n${getTitle(attributes)}`
