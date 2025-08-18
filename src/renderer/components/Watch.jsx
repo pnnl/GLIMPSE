@@ -150,6 +150,27 @@ const optionsGenPowerOut = {
    }
 };
 
+const optionsPRefQRef = {
+   options: {
+      animation: false,
+      plugins: {
+         tooltip: {
+            enabled: true
+         }
+      }
+   },
+   responsive: true,
+   plugins: {
+      legend: {
+         position: 'right'
+      },
+      title: {
+         display: true,
+         text: 'Pref and Qref'
+      }
+   }
+};
+
 ChartJS.register(
    CategoryScale,
    LinearScale,
@@ -192,7 +213,7 @@ const Watch = ({ watchData }) => {
 
       // for each array in the csvdata, check if it has at least 10 elements
       for (let props of Object.values(csvData)) {
-         if (props.length < 10) {
+         if (props.length < 8) {
             return null;
          }
       }
@@ -411,9 +432,30 @@ const Watch = ({ watchData }) => {
                            ]
                         };
 
+                        const pRefQRefData = {
+                           labels,
+                           datasets: [
+                              {
+                                 label: 'Pref',
+                                 data: dataProps.properties.map((prop) => prop.Pref),
+                                 borderColor: 'rgba(12, 235, 49, 1)',
+                                 backgroundColor: 'rgba(54, 116, 12, 0.5)',
+                                 stepped: true
+                              },
+                              {
+                                 label: 'Qref',
+                                 data: dataProps.properties.map((prop) => prop.Qref),
+                                 borderColor: 'rgba(169, 52, 223, 1)',
+                                 backgroundColor: 'rgba(122, 13, 165, 0.5)',
+                                 stepped: true
+                              }
+                           ]
+                        };
+
                         chartContent = (
                            <Stack direction={'column'} spacing={1} sx={{ width: '100%' }}>
                               <Line options={optionsGenPowerOut} data={genPowerOutData} />
+                              <Line options={optionsPRefQRef} data={pRefQRefData} />
                            </Stack>
                         );
                      }

@@ -53,27 +53,36 @@ const inverterWatchProperties = {
    Qref: true
 };
 
+// const genoratorWatchProperties = {
+//    rotor_speed: true,
+//    rotor_angle: true,
+//    flux1d: true,
+//    flux2q: true,
+//    EpRotated: true,
+//    VintRotated: true,
+//    Eint_A: true,
+//    Eint_B: true,
+//    Eint_C: true,
+//    power_out_A: true, // Voltage: power_out_A-C
+//    power_out_B: true,
+//    power_out_C: true,
+//    GFA_status: true, // Frequency
+//    measured_frequency: true, // Frequency
+//    Irotated: true,
+//    'pwr_electric.real': true,
+//    'pwr_electric.imag': true,
+//    pwr_mech: true,
+//    torque_mech: true,
+//    torque_elec: true,
+//    Pref: true,
+//    Qref: true
+// };
+
 const genoratorWatchProperties = {
-   rotor_speed: true,
-   rotor_angle: true,
-   flux1d: true,
-   flux2q: true,
-   EpRotated: true,
-   VintRotated: true,
-   Eint_A: true,
-   Eint_B: true,
-   Eint_C: true,
    power_out_A: true, // Voltage: power_out_A-C
    power_out_B: true,
    power_out_C: true,
-   GFA_status: true, // Frequency
-   measured_frequency: true, // Frequency
-   Irotated: true,
-   'pwr_electric.real': true,
-   'pwr_electric.imag': true,
-   pwr_mech: true,
-   torque_mech: true,
-   torque_elec: true,
+   measured_frequency: false, // Frequency
    Pref: true,
    Qref: true
 };
