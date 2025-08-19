@@ -5,8 +5,6 @@ import sys
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = []
-datas += collect_data_files("cimgraph", include_py_files=True)
-
 hiddenimports = collect_submodules('engineio.async_drivers') + collect_submodules('gevent')
 
 a = Analysis(

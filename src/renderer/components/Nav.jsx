@@ -7,13 +7,6 @@ import {
    IconButton,
    Menu,
    MenuItem,
-   ListItemIcon,
-   ListItemText,
-   FormControl,
-   FormLabel,
-   RadioGroup,
-   FormControlLabel,
-   Radio,
    Divider,
    Autocomplete,
    TextField
@@ -21,7 +14,6 @@ import {
 import NatigConfigModal from './NatigConfigModal';
 import MenuIcon from '@mui/icons-material/Menu';
 import { SearchRounded } from '@mui/icons-material';
-import { ArrowRight } from '@mui/icons-material';
 
 const Nav = ({
    onMount,
@@ -41,7 +33,6 @@ const Nav = ({
    const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
    const [theme, setTheme] = useState('feeder-model-theme');
    const [watchData, setWatchData] = useState(null);
-   const parentMenuRef = useRef(null);
    const openMenu = Boolean(menuAnchorEl);
    const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
 
@@ -87,21 +78,6 @@ const Nav = ({
       if (openThemeSubMenu) setThemesSubMenuAnchorEl(null);
    };
 
-   const showThemesSubmenu = () => {
-      setThemesSubMenuAnchorEl(parentMenuRef.current);
-   };
-
-   const closeThemesSubmenu = (e) => {
-      const { value } = e.target;
-
-      if (value === theme || value === undefined) {
-         setThemesSubMenuAnchorEl(null);
-      } else {
-         setTheme(e.target.value);
-         setThemesSubMenuAnchorEl(null);
-      }
-   };
-
    const showWatchWindow = () => {
       console.log('showwatch');
       window.glimpseAPI.openPortalWindow({
@@ -127,41 +103,9 @@ const Nav = ({
                <MenuIcon />
             </IconButton>
             <Menu id="nav-menu" anchorEl={menuAnchorEl} open={openMenu} onClose={closeMenu}>
-               <MenuItem disabled ref={parentMenuRef} onClick={showThemesSubmenu}>
-                  <ListItemText>Themes</ListItemText>
-                  <ListItemIcon
-                     sx={{ justifyContent: 'flex-end' }}
-                     onPointerEnter={showThemesSubmenu}
-                  >
-                     <ArrowRight />
-                  </ListItemIcon>
-               </MenuItem>
-               <MenuItem onClick={() => setOpenConfig(true)}>Scenerion Config</MenuItem>
-               <MenuItem onClick={showWatchWindow}>Watching</MenuItem>
-            </Menu>
-            <Menu
-               id="themes-submenu"
-               anchorEl={themesSubMenuAnchorEl}
-               anchorOrigin={{
-                  horizontal: 'right',
-                  vertical: 'top'
-               }}
-               open={openThemeSubMenu}
-               onClose={closeMenu}
-            >
-               <MenuItem>Export Theme</MenuItem>
+               <MenuItem onClick={() => setOpenConfig(true)}>Scenario Config</MenuItem>
                <Divider />
-               <FormControl sx={{ padding: '0 16px' }} onPointerLeave={closeThemesSubmenu}>
-                  <FormLabel>Themes</FormLabel>
-                  <RadioGroup value={theme} onChange={closeThemesSubmenu}>
-                     <FormControlLabel
-                        value="feeder-model-theme"
-                        control={<Radio />}
-                        label="Power Grid"
-                     />
-                     <FormControlLabel value="custom-theme" control={<Radio />} label="Custom" />
-                  </RadioGroup>
-               </FormControl>
+               <MenuItem onClick={showWatchWindow}>Watch</MenuItem>
             </Menu>
             <img className="nav-logo" src="./imgs/GLIMPSE/GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
             {showSearch && (

@@ -481,6 +481,8 @@ const makeWindow = () => {
    );
 
    ipcMain.handle('glm2json', (_, paths) => glm2json(paths));
+
+   // cim -> GLIMPSE structure
    ipcMain.handle('cimg2GS', (_, paths) => cimToGS(paths));
 
    ipcMain.handle('validate', (_, jsonFilePath) => validateJson(jsonFilePath));

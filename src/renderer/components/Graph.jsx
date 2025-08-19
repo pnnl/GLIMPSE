@@ -248,7 +248,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          'triplex_meter',
          'triplex_node',
          'triplex_load',
-         'microgirds',
+         'microgrids',
          'communication_node'
       ]);
 
@@ -595,7 +595,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             } else if (
                edge.type === 'switch' &&
                'status' in edge.attributes &&
-               updateAttributes.status === 'CLOSE'
+               updateAttributes.status === 'CLOSED'
             ) {
                edge.attributes.status = 'CLOSED';
                edge.arrows.middle.src = './imgs/switch-closed.svg';

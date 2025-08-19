@@ -183,25 +183,6 @@ ChartJS.register(
    BarController
 );
 
-// inverters
-// Chart #1
-// VA_out
-
-// generators
-// Chart #1
-// measured_frequency
-// Chart #2
-// power_out_A
-// power_out_B
-// power_out_C
-
-//Switches
-// Chart #1
-// current_out_A-C
-// Chart #2
-// power_out_A-C
-
-// think of watchData as a map of ids to an array of property names
 const Watch = ({ watchData }) => {
    const [watchUpdates, setWatchUpdates] = useState(null);
    console.log(watchData);
@@ -211,31 +192,25 @@ const Watch = ({ watchData }) => {
       const csvData =
          typeof watchObj === 'string' ? JSON.parse(watchObj)['csv_data'] : watchObj['csv_data'];
 
-      // for each array in the csvdata, check if it has at least 10 elements
+      // for each array in the csvdata, check if it has at least 8 elements
+      // TODO refactor to check the size of the data against what values we are watching
       for (let props of Object.values(csvData)) {
          if (props.length < 8) {
             return null;
          }
       }
 
-      //csvData from NATIG only contains the values
       console.log(csvData);
 
       //selecting the two numbers, ignoring +s and -s (Only the first number gets used here).
       const regex = /[^+-]?\d*\.?\d+/g;
-      // add the power out property names here
       const dataUpdate = {};
 
-      // for each id in watchData, create an object with the timestamp and the property values
       for (let [id, info] of Object.entries(watchData)) {
-         // {
-         // "type": "inverter",
-         // "props": [...props]
-         //}
-         console.log(info);
          const { type, props: properties } = info;
+
          console.log(properties);
-         //                     properties.props.reduce...
+
          try {
             let watchPropUpdates = properties.reduce((acc, propName, index) => {
                const value = csvData[id][index + 1]; // +1 to skip the timestamp

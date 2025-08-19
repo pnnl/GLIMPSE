@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
    Accordion,
+   AccordionDetails,
    AccordionSummary,
+   accordionSummaryClasses,
    Dialog,
    DialogActions,
    DialogContent,
@@ -22,7 +24,8 @@ import {
    Checkbox
 } from '@mui/material';
 
-import { ExpandMore, HelpOutline } from '@mui/icons-material';
+import { styled } from '@mui/system';
+import { HelpOutline, ArrowForwardIosSharp } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from '../utils/CustomComponents';
 
@@ -87,6 +90,39 @@ const genoratorWatchProperties = {
    Qref: true
 };
 
+export const CustomAccordion = styled((props) => (
+   <Accordion disableGutters elevation={0} square {...props} />
+))(() => ({
+   border: `1px solid lightgrey`,
+   '&:not(:last-child)': {
+      borderBottom: 0
+   },
+   '&::before': {
+      display: 'none'
+   }
+}));
+
+export const CustomAccordionSummary = styled((props) => (
+   <AccordionSummary expandIcon={<ArrowForwardIosSharp sx={{ fontSize: '0.9rem' }} />} {...props} />
+))(({ theme }) => ({
+   backgroundColor: 'rgba(0, 0, 0, .03)',
+   flexDirection: 'row-reverse',
+   [`& .${accordionSummaryClasses.expandIconWrapper}.${accordionSummaryClasses.expanded}`]: {
+      transform: 'rotate(90deg)'
+   },
+   [`& .${accordionSummaryClasses.content}`]: {
+      marginLeft: theme.spacing(1)
+   },
+   ...theme.applyStyles('dark', {
+      backgroundColor: 'rgba(255, 255, 255, .05)'
+   })
+}));
+
+export const CustomAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
+   padding: theme.spacing(2),
+   borderTop: '1px solid rgba(0, 0, 0, .125)'
+}));
+
 /**
  * The NATIG Scenerio Configuration Modal
  * @param {Object} props - The props object
@@ -109,10 +145,10 @@ const NatigConfigModal = ({
    const [expanded, setExpanded] = useState(false);
    const [topology, setTopology] = useState({ name: '' });
    const [modelfiles, setModelfiles] = useState([]);
-   const [selectedModelSet, setSelectedModelSet] = useState(null);
+   const [selectedModelSet, setSelectedModelSet] = useState(3000);
    const [modelLoaded, setModelLoaded] = useState(false);
    const [watchList, setWatchList] = useState({});
-   React.useEffect(() => {
+   useEffect(() => {
       window.glimpseAPI.getDefaultModelFiles().then(setModelfiles);
    }, []);
 
@@ -130,7 +166,7 @@ const NatigConfigModal = ({
       UseDynTop: {
          label: 'Custom Topology',
          desc: 'Do you want to use your own topology',
-         value: false
+         value: true
       },
       MonitorPer: {
          label: 'Generate PCAP',
@@ -412,7 +448,6 @@ const NatigConfigModal = ({
       }
    };
 
-   // TODO: add type to the list of properties
    const handleWatchSelect = (itemsToWatch) => {
       // Helper function to determine properties for a given object
       const getPropertiesForObject = (obj) => {
@@ -440,21 +475,12 @@ const NatigConfigModal = ({
          // Initialize with first item
          const obj = itemsToWatch[0]; //to fix "obj is not defined" error. However, line 444 maybe not be accessing the same obj as the one above that has the actual type data?
          const properties = getPropertiesForObject(obj);
-         /**
-          * {
-          * "ObjectID": {
-          *    "type": "inverter",
-          *    "props": [...properties]
-          *   }
-          * }
-          */
+
          const setPropTypes = {
             type: obj.type,
             props: properties
          };
-         console.log('properties = ' + JSON.stringify(properties));
-         console.log('type = ' + obj.type);
-         console.log('setPropTypes object: ' + JSON.stringify(setPropTypes));
+
          setWatchList({ [obj.id]: setPropTypes }); //'obj.id'?
       } else if (itemsToWatch.length > Object.keys(watchList).length) {
          // Add new item
@@ -496,15 +522,6 @@ const NatigConfigModal = ({
       const watchObj = Object.entries(watchList).reduce((o, [id, value]) => {
          const { type, props } = value;
          const selectedProps = Object.keys(props).filter((prop) => props[prop]);
-
-         /**
-          * {
-          *    id: {
-          *       "type": props.type,
-          *       "props": selectedProps
-          *    }
-          * }
-          */
 
          return {
             ...o,
@@ -571,7 +588,6 @@ const NatigConfigModal = ({
          };
 
          console.log(natigGeneralConfig);
-         console.log('Watch Data:', watchData);
          setWatchData(watchData);
 
          window.glimpseAPI.sendNatigConfig(natigGeneralConfig);
@@ -672,35 +688,31 @@ const NatigConfigModal = ({
                      </Select>
                   </FormControl>
                </Tooltip>
-            </Stack>
-
-            <Divider sx={{ m: '0.5rem 0' }} />
-
-            <Stack direction={'row'} spacing={1} sx={{ mt: 2 }}>
-               <Tooltip title={'Select a default model set'} placement="left" arrow>
-                  <FormControl fullWidth>
-                     {modelfiles && modelfiles.length > 0 && (
-                        <Box sx={{ mt: 1 }}>
-                           {modelfiles.map((file, idx) => (
-                              <div key={idx} style={{ fontSize: '0.85rem' }}>
-                                 {typeof file === 'string' ? file : file.name}
-                              </div>
-                           ))}
-                        </Box>
-                     )}
-                     <Tooltip title={'Load model'} placement="right" arrow>
-                        <CustomButton onClick={applyModel}>Load</CustomButton>
-                     </Tooltip>
-                  </FormControl>
+               <Tooltip title={'Load model'} placement="right" arrow>
+                  <CustomButton onClick={applyModel}>Load</CustomButton>
                </Tooltip>
             </Stack>
+
+            <Tooltip title={'Selected Model'} placement="left" arrow>
+               <FormControl sx={{ m: '0 0 0.5rem 0' }} fullWidth>
+                  {modelfiles && modelfiles.length > 0 && (
+                     <Box sx={{ mt: 1 }}>
+                        {modelfiles.map((file, idx) => (
+                           <div key={idx} style={{ fontSize: '0.85rem' }}>
+                              {typeof file === 'string' ? file : file.name}
+                           </div>
+                        ))}
+                     </Box>
+                  )}
+               </FormControl>
+            </Tooltip>
 
             <Divider sx={{ m: '0.5rem 0' }} />
 
             <Stack direction={'row'} spacing={1}>
                <Tooltip title={'Choose a topology for uploaded model'} placement="left" arrow>
                   <FormControl fullWidth>
-                     <InputLabel>Topology</InputLabel>
+                     <InputLabel color="#333333">Topology</InputLabel>
                      <Select
                         label={'Topology'}
                         name={'topology'}
@@ -725,457 +737,450 @@ const NatigConfigModal = ({
 
             <Divider sx={{ m: '0.5rem 0' }} />
 
-            <Accordion
+            <CustomAccordion
                expanded={expanded === 'General Settings'}
                onChange={handleExpand('General Settings')}
                disabled={!modelLoaded}
-               disableGutters
             >
-               <AccordionSummary expandIcon={<ExpandMore />}>Simulation Settings</AccordionSummary>
-               <Stack sx={{ margin: '1rem' }} direction={'column'} spacing={1}>
-                  <Tooltip title={generalConfig.SimTime.desc} placement="left" arrow>
-                     <TextField
-                        variant="outlined"
-                        value={generalConfig.SimTime.value}
-                        name="SimTime"
-                        label={generalConfig.SimTime.label}
-                        onChange={handleGeneralConfig}
-                        slotProps={{
-                           input: {
-                              endAdornment: <InputAdornment position="end">Seconds</InputAdornment>
-                           }
-                        }}
-                     />
-                  </Tooltip>
-                  <Tooltip title={generalConfig.PollReqFreq.desc} placement="left" arrow>
-                     <TextField
-                        variant="outlined"
-                        value={generalConfig.PollReqFreq.value}
-                        name="PollReqFreq"
-                        label={generalConfig.PollReqFreq.label}
-                        onChange={handleGeneralConfig}
-                        slotProps={{
-                           input: {
-                              endAdornment: <InputAdornment position="end">ms</InputAdornment>
-                           }
-                        }}
-                     />
-                  </Tooltip>
-                  <Tooltip title={generalConfig.UseDynTop.desc} placement="left" arrow>
-                     <CustomFormControlLabel
-                        control={
-                           <CustomSwitch
-                              name={'UseDynTop'}
-                              checked={generalConfig.UseDynTop.value}
-                              value={generalConfig.UseDynTop.value}
-                              size="medium"
-                              onChange={handleGeneralConfig}
-                           />
-                        }
-                        label={generalConfig.UseDynTop.label}
-                        labelPlacement="start"
-                     />
-                  </Tooltip>
-                  <Tooltip title={generalConfig.MonitorPer.desc} placement="left" arrow>
-                     <CustomFormControlLabel
-                        control={
-                           <CustomSwitch
-                              name={'MonitorPer'}
-                              checked={generalConfig.MonitorPer.value}
-                              value={generalConfig.MonitorPer.value}
-                              size="medium"
-                              onChange={handleGeneralConfig}
-                           />
-                        }
-                        label={generalConfig.MonitorPer.label}
-                        labelPlacement="start"
-                     />
-                  </Tooltip>
-                  <Tooltip title={generalConfig.StaticSeed.desc} placement="left" arrow>
-                     <CustomFormControlLabel
-                        control={
-                           <CustomSwitch
-                              name={'StaticSeed'}
-                              checked={generalConfig.StaticSeed.value}
-                              value={generalConfig.StaticSeed.value}
-                              size="medium"
-                              onChange={handleGeneralConfig}
-                           />
-                        }
-                        label={generalConfig.StaticSeed.label}
-                        labelPlacement="start"
-                     />
-                  </Tooltip>
-                  {generalConfig.StaticSeed.value && (
-                     <Tooltip title={generalConfig.RandomSeed.desc} placement="left" arrow>
+               <CustomAccordionSummary>Simulation Settings</CustomAccordionSummary>
+               <CustomAccordionDetails>
+                  <Stack sx={{ margin: '1rem' }} direction={'column'} spacing={1}>
+                     <Tooltip title={generalConfig.SimTime.desc} placement="left" arrow>
                         <TextField
                            variant="outlined"
-                           value={generalConfig.RandomSeed.value}
-                           name="RandomSeed"
-                           label={generalConfig.RandomSeed.label}
+                           value={generalConfig.SimTime.value}
+                           name="SimTime"
+                           label={generalConfig.SimTime.label}
                            onChange={handleGeneralConfig}
+                           slotProps={{
+                              input: {
+                                 endAdornment: (
+                                    <InputAdornment position="end">Seconds</InputAdornment>
+                                 )
+                              }
+                           }}
                         />
                      </Tooltip>
-                  )}
-               </Stack>
-            </Accordion>
+                     <Tooltip title={generalConfig.PollReqFreq.desc} placement="left" arrow>
+                        <TextField
+                           variant="outlined"
+                           value={generalConfig.PollReqFreq.value}
+                           name="PollReqFreq"
+                           label={generalConfig.PollReqFreq.label}
+                           onChange={handleGeneralConfig}
+                           slotProps={{
+                              input: {
+                                 endAdornment: <InputAdornment position="end">ms</InputAdornment>
+                              }
+                           }}
+                        />
+                     </Tooltip>
+                     <Tooltip title={generalConfig.UseDynTop.desc} placement="left" arrow>
+                        <CustomFormControlLabel
+                           control={
+                              <CustomSwitch
+                                 name={'UseDynTop'}
+                                 checked={generalConfig.UseDynTop.value}
+                                 value={generalConfig.UseDynTop.value}
+                                 size="medium"
+                                 onChange={handleGeneralConfig}
+                              />
+                           }
+                           label={generalConfig.UseDynTop.label}
+                           labelPlacement="start"
+                        />
+                     </Tooltip>
+                     <Tooltip title={generalConfig.MonitorPer.desc} placement="left" arrow>
+                        <CustomFormControlLabel
+                           control={
+                              <CustomSwitch
+                                 name={'MonitorPer'}
+                                 checked={generalConfig.MonitorPer.value}
+                                 value={generalConfig.MonitorPer.value}
+                                 size="medium"
+                                 onChange={handleGeneralConfig}
+                              />
+                           }
+                           label={generalConfig.MonitorPer.label}
+                           labelPlacement="start"
+                        />
+                     </Tooltip>
+                     <Tooltip title={generalConfig.StaticSeed.desc} placement="left" arrow>
+                        <CustomFormControlLabel
+                           control={
+                              <CustomSwitch
+                                 name={'StaticSeed'}
+                                 checked={generalConfig.StaticSeed.value}
+                                 value={generalConfig.StaticSeed.value}
+                                 size="medium"
+                                 onChange={handleGeneralConfig}
+                              />
+                           }
+                           label={generalConfig.StaticSeed.label}
+                           labelPlacement="start"
+                        />
+                     </Tooltip>
+                     {generalConfig.StaticSeed.value && (
+                        <Tooltip title={generalConfig.RandomSeed.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={generalConfig.RandomSeed.value}
+                              name="RandomSeed"
+                              label={generalConfig.RandomSeed.label}
+                              onChange={handleGeneralConfig}
+                           />
+                        </Tooltip>
+                     )}
+                  </Stack>
+               </CustomAccordionDetails>
+            </CustomAccordion>
 
-            <Divider sx={{ m: '0.5rem 0' }} />
-
-            <Accordion
+            <CustomAccordion
                expanded={expanded === 'Attack Scenerio Settings'}
                onChange={handleExpand('Attack Scenerio Settings')}
                disabled={!modelLoaded}
-               disableGutters
             >
-               <AccordionSummary expandIcon={<ExpandMore />}>
-                  Attack Scenario Settings
-               </AccordionSummary>
-               <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
-                  <CustomFormControlLabel
-                     control={
-                        <CustomSwitch
-                           name={'includeMIM'}
-                           checked={MIMConfig.includeMIM.value}
-                           value={MIMConfig.includeMIM.value}
-                           size="medium"
-                           onChange={handleMIMConfig}
-                        />
-                     }
-                     label={MIMConfig.includeMIM.label}
-                     labelPlacement="start"
-                  />
-               </Tooltip>
-               {MIMConfig.includeMIM.value && (
-                  <Box
-                     sx={{
-                        m: 1,
-                        display: 'flex',
-                        flexDirection: 'column'
-                     }}
-                  >
-                     <Tooltip title={MIMConfig.objectsToAttack.desc} placement="left" arrow>
-                        <Autocomplete
-                           sx={{ padding: '0 1.5rem', margin: '0 0 1rem 0' }}
-                           size="small"
-                           fullWidth
-                           multiple
-                           limitTags={3}
-                           options={objects}
-                           getOptionLabel={(obj) => obj.id}
-                           value={MIMConfig.objectsToAttack.value.map((obj) => obj)}
-                           onChange={(_, selectedObject) => handleObjectSelect(selectedObject)}
-                           renderInput={(params) => (
-                              <TextField
-                                 {...params}
-                                 size="small"
-                                 label="Select Objects To Attack"
-                              />
-                           )}
-                        />
-                     </Tooltip>
-                     {MIMConfig.objectsToAttack.value.length > 0 && (
-                        <>
-                           {MIMConfig.objectsToAttack.value.map((obj, index) => (
-                              <Accordion
-                                 slotProps={{ transition: { unmountOnExit: true } }}
-                                 elevation={1}
-                                 square
-                                 disableGutters
-                                 key={index}
-                              >
-                                 <AccordionSummary expandIcon={<ExpandMore />}>
-                                    {obj.id}
-                                 </AccordionSummary>
-                                 <Stack
-                                    spacing={1}
-                                    sx={{
-                                       padding: 1,
-                                       flexWrap: 'wrap',
-                                       justifyContent: 'center',
-                                       '& .MuiTextField-root': { width: '13rem' }
-                                    }}
-                                    direction={'row'}
-                                    useFlexGap
+               <CustomAccordionSummary>Attack Scenario Settings</CustomAccordionSummary>
+               <CustomAccordionDetails>
+                  <Tooltip title={MIMConfig.includeMIM.desc} placement="left" arrow>
+                     <CustomFormControlLabel
+                        control={
+                           <CustomSwitch
+                              name={'includeMIM'}
+                              checked={MIMConfig.includeMIM.value}
+                              value={MIMConfig.includeMIM.value}
+                              size="medium"
+                              onChange={handleMIMConfig}
+                           />
+                        }
+                        label={MIMConfig.includeMIM.label}
+                        labelPlacement="start"
+                     />
+                  </Tooltip>
+                  {MIMConfig.includeMIM.value && (
+                     <Box
+                        sx={{
+                           m: 1,
+                           display: 'flex',
+                           flexDirection: 'column'
+                        }}
+                     >
+                        <Tooltip title={MIMConfig.objectsToAttack.desc} placement="left" arrow>
+                           <Autocomplete
+                              sx={{ margin: '0 0 0.5rem 0' }}
+                              size="small"
+                              fullWidth
+                              multiple
+                              limitTags={3}
+                              options={objects}
+                              getOptionLabel={(obj) => obj.id}
+                              value={MIMConfig.objectsToAttack.value.map((obj) => obj)}
+                              onChange={(_, selectedObject) => handleObjectSelect(selectedObject)}
+                              renderInput={(params) => (
+                                 <TextField
+                                    {...params}
+                                    size="small"
+                                    label="Select Objects To Attack"
+                                 />
+                              )}
+                           />
+                        </Tooltip>
+                        {MIMConfig.objectsToAttack.value.length > 0 && (
+                           <>
+                              {MIMConfig.objectsToAttack.value.map((obj, index) => (
+                                 <CustomAccordion
+                                    slotProps={{ transition: { unmountOnExit: true } }}
+                                    square
+                                    key={index}
                                  >
-                                    <TextField
-                                       size="small"
-                                       onChange={(e) => handleValueChange(e, obj.id)}
-                                       value={obj.start}
-                                       name="start"
-                                       label={MIMConfig.StartOfAttack.label}
-                                    />
-                                    <TextField
-                                       size="small"
-                                       onChange={(e) => handleValueChange(e, obj.id)}
-                                       value={obj.end}
-                                       name="end"
-                                       label={MIMConfig.EndOfAttack.label}
-                                    />
-                                    <TextField
-                                       size="small"
-                                       select
-                                       onChange={(e) => handleValueChange(e, obj.id)}
-                                       value={obj.attackPoint}
-                                       name="attackPoint"
-                                       label={MIMConfig.AttackPoint.label}
-                                    >
-                                       {obj.type === 'inverter' || obj.type === 'diesel_dg'
-                                          ? Object.keys(obj.attributes)
-                                               .filter((key) => isValidAttackPoint(key))
-                                               .map((key, i) => (
-                                                  <MenuItem key={i} value={key}>
-                                                     {key}
-                                                  </MenuItem>
-                                               ))
-                                          : MIMConfig.AttackPoint.value[obj.type].map(
-                                               (point, i) => (
-                                                  <MenuItem key={i} value={point}>
-                                                     {point}
-                                                  </MenuItem>
-                                               )
-                                            )}
-                                    </TextField>
-                                    {obj.type === 'switch' ? (
-                                       <TextField
-                                          size="small"
-                                          select
-                                          name="attackValue"
-                                          value={obj.attackValue}
-                                          label={MIMConfig.AttackValue.label}
-                                          onChange={(e) => handleValueChange(e, obj.id)}
+                                    <CustomAccordionSummary>{obj.id}</CustomAccordionSummary>
+                                    <CustomAccordionDetails>
+                                       <Stack
+                                          spacing={1}
+                                          sx={{
+                                             padding: 1,
+                                             flexWrap: 'wrap',
+                                             justifyContent: 'center',
+                                             '& .MuiTextField-root': { width: '13rem' }
+                                          }}
+                                          direction={'row'}
+                                          useFlexGap
                                        >
-                                          {MIMConfig.AttackValue.value.switch.map((value, i) => (
-                                             <MenuItem key={i} value={value}>
-                                                {value}
-                                             </MenuItem>
-                                          ))}
-                                       </TextField>
-                                    ) : (
-                                       <TextField
-                                          size="small"
-                                          type={!isNaN(Number(obj.realValue)) ? 'number' : 'text'}
-                                          onChange={(e) => handleValueChange(e, obj.id)}
-                                          value={obj.attackValue}
-                                          name="attackValue"
-                                          label={MIMConfig.AttackValue.label}
-                                       />
-                                    )}
-                                    <TextField
-                                       size="small"
-                                       onChange={(e) => handleValueChange(e, obj.id)}
-                                       value={obj.realValue !== '' ? obj.realValue : ''}
-                                       name="realValue"
-                                       label={MIMConfig.RealValue.label}
-                                    />
-                                 </Stack>
-                              </Accordion>
-                           ))}
-                        </>
-                     )}
-                  </Box>
-               )}
-               <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
-                  <CustomFormControlLabel
-                     control={
-                        <CustomSwitch
-                           name={'Active'}
-                           checked={DDosConfig.Active.value}
-                           value={DDosConfig.Active.value}
-                           size="medium"
-                           onChange={handleDDosConfig}
-                        />
-                     }
-                     label={DDosConfig.Active.label}
-                     labelPlacement="start"
-                  />
-               </Tooltip>
-               {DDosConfig.Active.value && (
-                  <Stack
-                     spacing={1}
-                     sx={{
-                        padding: 1,
-                        flexWrap: 'wrap',
-                        justifyContent: 'center',
-                        '& .MuiTextField-root': { width: '13rem' }
-                     }}
-                     direction={'row'}
-                     useFlexGap
-                  >
-                     <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
-                        <TextField
-                           variant="outlined"
-                           value={DDosConfig.Start.value}
-                           name="Start"
-                           label={DDosConfig.Start.label}
-                           onChange={handleDDosConfig}
-                        />
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.End.desc} placement="left" arrow>
-                        <TextField
-                           variant="outlined"
-                           value={DDosConfig.End.value}
-                           name="End"
-                           label={DDosConfig.End.label}
-                           onChange={handleDDosConfig}
-                        />
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.threadsPerAttacker.desc} placement="left" arrow>
-                        <TextField
-                           variant="outlined"
-                           value={DDosConfig.threadsPerAttacker.value}
-                           name="threadsPerAttacker"
-                           label={DDosConfig.threadsPerAttacker.label}
-                           onChange={handleDDosConfig}
-                        />
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.PacketSize.desc} placement="left" arrow>
-                        <TextField
-                           select
-                           label={DDosConfig.PacketSize.label}
-                           name={'PacketSize'}
-                           value={DDosConfig.PacketSize.value}
-                           onChange={handleDDosConfig}
-                        >
-                           {packetSizeOptions.map((size, index) => (
-                              <MenuItem key={index} value={size}>
-                                 {`${size} bytes`}
-                              </MenuItem>
-                           ))}
-                        </TextField>
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
-                        <TextField
-                           select
-                           label={DDosConfig.Rate.label}
-                           name={'Rate'}
-                           value={DDosConfig.Rate.value}
-                           onChange={handleDDosConfig}
-                        >
-                           {rates.map((rate, index) => (
-                              <MenuItem key={index} value={rate}>
-                                 {rate}
-                              </MenuItem>
-                           ))}
-                        </TextField>
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
-                        <TextField
-                           select
-                           label={DDosConfig.NodeType.label}
-                           name={'NodeType'}
-                           value={DDosConfig.NodeType.value}
-                           onChange={handleDDosConfig}
-                        >
-                           {nodeTypes.map((type, index) => (
-                              <MenuItem key={index} value={type}>
-                                 {type}
-                              </MenuItem>
-                           ))}
-                        </TextField>
-                     </Tooltip>
-                     <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
-                        <TextField
-                           select
-                           label={DDosConfig.endPoint.label}
-                           value={DDosConfig.endPoint.value}
-                           name={'endPoint'}
-                           onChange={handleDDosConfig}
-                        >
-                           {nodeTypes.map((type, index) => (
-                              <MenuItem
-                                 disabled={type === DDosConfig.NodeType.value}
-                                 key={index}
-                                 value={type}
-                              >
-                                 {type}
-                              </MenuItem>
-                           ))}
-                        </TextField>
-                     </Tooltip>
-                  </Stack>
-               )}
-            </Accordion>
+                                          <TextField
+                                             size="small"
+                                             onChange={(e) => handleValueChange(e, obj.id)}
+                                             value={obj.start}
+                                             name="start"
+                                             label={MIMConfig.StartOfAttack.label}
+                                          />
+                                          <TextField
+                                             size="small"
+                                             onChange={(e) => handleValueChange(e, obj.id)}
+                                             value={obj.end}
+                                             name="end"
+                                             label={MIMConfig.EndOfAttack.label}
+                                          />
+                                          <TextField
+                                             size="small"
+                                             select
+                                             onChange={(e) => handleValueChange(e, obj.id)}
+                                             value={obj.attackPoint}
+                                             name="attackPoint"
+                                             label={MIMConfig.AttackPoint.label}
+                                          >
+                                             {obj.type === 'inverter' || obj.type === 'diesel_dg'
+                                                ? Object.keys(obj.attributes)
+                                                     .filter((key) => isValidAttackPoint(key))
+                                                     .map((key, i) => (
+                                                        <MenuItem key={i} value={key}>
+                                                           {key}
+                                                        </MenuItem>
+                                                     ))
+                                                : MIMConfig.AttackPoint.value[obj.type].map(
+                                                     (point, i) => (
+                                                        <MenuItem key={i} value={point}>
+                                                           {point}
+                                                        </MenuItem>
+                                                     )
+                                                  )}
+                                          </TextField>
+                                          {obj.type === 'switch' ? (
+                                             <TextField
+                                                size="small"
+                                                select
+                                                name="attackValue"
+                                                value={obj.attackValue}
+                                                label={MIMConfig.AttackValue.label}
+                                                onChange={(e) => handleValueChange(e, obj.id)}
+                                             >
+                                                {MIMConfig.AttackValue.value.switch.map(
+                                                   (value, i) => (
+                                                      <MenuItem key={i} value={value}>
+                                                         {value}
+                                                      </MenuItem>
+                                                   )
+                                                )}
+                                             </TextField>
+                                          ) : (
+                                             <TextField
+                                                size="small"
+                                                type={
+                                                   !isNaN(Number(obj.realValue)) ? 'number' : 'text'
+                                                }
+                                                onChange={(e) => handleValueChange(e, obj.id)}
+                                                value={obj.attackValue}
+                                                name="attackValue"
+                                                label={MIMConfig.AttackValue.label}
+                                             />
+                                          )}
+                                          <TextField
+                                             size="small"
+                                             onChange={(e) => handleValueChange(e, obj.id)}
+                                             value={obj.realValue !== '' ? obj.realValue : ''}
+                                             name="realValue"
+                                             label={MIMConfig.RealValue.label}
+                                          />
+                                       </Stack>
+                                    </CustomAccordionDetails>
+                                 </CustomAccordion>
+                              ))}
+                           </>
+                        )}
+                     </Box>
+                  )}
 
-            {/* <Divider sx={{ m: '0.5rem 0' }} /> */}
+                  <Tooltip title={DDosConfig.Active.desc} placement="left" arrow>
+                     <CustomFormControlLabel
+                        control={
+                           <CustomSwitch
+                              name={'Active'}
+                              checked={DDosConfig.Active.value}
+                              value={DDosConfig.Active.value}
+                              size="medium"
+                              onChange={handleDDosConfig}
+                           />
+                        }
+                        label={DDosConfig.Active.label}
+                        labelPlacement="start"
+                     />
+                  </Tooltip>
+                  {DDosConfig.Active.value && (
+                     <Stack
+                        spacing={1}
+                        sx={{
+                           padding: 1,
+                           flexWrap: 'wrap',
+                           justifyContent: 'center',
+                           '& .MuiTextField-root': { width: '13rem' }
+                        }}
+                        direction={'row'}
+                        useFlexGap
+                     >
+                        <Tooltip title={DDosConfig.Start.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.Start.value}
+                              name="Start"
+                              label={DDosConfig.Start.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.End.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.End.value}
+                              name="End"
+                              label={DDosConfig.End.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.threadsPerAttacker.desc} placement="left" arrow>
+                           <TextField
+                              variant="outlined"
+                              value={DDosConfig.threadsPerAttacker.value}
+                              name="threadsPerAttacker"
+                              label={DDosConfig.threadsPerAttacker.label}
+                              onChange={handleDDosConfig}
+                           />
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.PacketSize.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.PacketSize.label}
+                              name={'PacketSize'}
+                              value={DDosConfig.PacketSize.value}
+                              onChange={handleDDosConfig}
+                           >
+                              {packetSizeOptions.map((size, index) => (
+                                 <MenuItem key={index} value={size}>
+                                    {`${size} bytes`}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.Rate.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.Rate.label}
+                              name={'Rate'}
+                              value={DDosConfig.Rate.value}
+                              onChange={handleDDosConfig}
+                           >
+                              {rates.map((rate, index) => (
+                                 <MenuItem key={index} value={rate}>
+                                    {rate}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.NodeType.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.NodeType.label}
+                              name={'NodeType'}
+                              value={DDosConfig.NodeType.value}
+                              onChange={handleDDosConfig}
+                           >
+                              {nodeTypes.map((type, index) => (
+                                 <MenuItem key={index} value={type}>
+                                    {type}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                        <Tooltip title={DDosConfig.endPoint.desc} placement="left" arrow>
+                           <TextField
+                              select
+                              label={DDosConfig.endPoint.label}
+                              value={DDosConfig.endPoint.value}
+                              name={'endPoint'}
+                              onChange={handleDDosConfig}
+                           >
+                              {nodeTypes.map((type, index) => (
+                                 <MenuItem
+                                    disabled={type === DDosConfig.NodeType.value}
+                                    key={index}
+                                    value={type}
+                                 >
+                                    {type}
+                                 </MenuItem>
+                              ))}
+                           </TextField>
+                        </Tooltip>
+                     </Stack>
+                  )}
+               </CustomAccordionDetails>
+            </CustomAccordion>
 
-            <Accordion
+            <CustomAccordion
                expanded={expanded === 'Watch'}
                onChange={handleExpand('Watch')}
                disabled={!modelLoaded}
-               disableGutters
             >
-               <AccordionSummary expandIcon={<ExpandMore />}>Watch</AccordionSummary>
-               <Autocomplete
-                  sx={{ padding: '0 1.5rem', m: '0 0 1rem 0' }}
-                  size="small"
-                  fullWidth
-                  multiple
-                  limitTags={3}
-                  options={objects}
-                  getOptionLabel={(obj) => (typeof obj === 'string' ? obj : obj.id)}
-                  value={Object.keys(watchList)}
-                  onChange={(_, obj) => handleWatchSelect(obj)}
-                  renderInput={(params) => (
-                     <TextField {...params} size="small" label="Select Objects to Watch" />
-                  )}
-               />
-               {Object.keys(watchList).length > 0 && (
-                  <>
-                     {Object.entries(watchList).map(([id, objOptions], index) => (
-                        <Accordion key={index} disableGutters elevation={1}>
-                           <AccordionSummary expandIcon={<ExpandMore />}>{id}</AccordionSummary>
-                           <FormControl
-                              sx={{
-                                 padding: '0 2rem',
-                                 width: '100%',
-                                 justifyContent: 'space-between',
-                                 flexDirection: 'row',
-                                 flexWrap: 'wrap'
-                              }}
-                              component={'fieldset'}
-                              variant="standards"
-                           >
-                              {/*
-                                 {
-                                  "a": {p1: true, p2:true},
-                                  "b": {p3: true, p4:true}
-                                 }
-                                 Object.entries
-                                            0                           1
-                                 [["a", {p1: true, p2:true}], ["b", {p3: true, p4:true}]]
-                                 Object.entries
-                                 [[p1, true], [p2, true]]
-                               */}
-                              {/* return all the properties except "type" */}
-                              {/**            "props".props */}
-                              {Object.entries(objOptions.props).map(([prop, checked], index) => (
-                                 <FormControlLabel
+               <CustomAccordionSummary>Watch</CustomAccordionSummary>
+               <CustomAccordionDetails>
+                  <Autocomplete
+                     sx={{ m: '0 0 0.5rem 0' }}
+                     size="small"
+                     fullWidth
+                     multiple
+                     limitTags={3}
+                     options={objects}
+                     getOptionLabel={(obj) => (typeof obj === 'string' ? obj : obj.id)}
+                     value={Object.keys(watchList)}
+                     onChange={(_, obj) => handleWatchSelect(obj)}
+                     renderInput={(params) => (
+                        <TextField {...params} size="small" label="Select Objects to Watch" />
+                     )}
+                  />
+                  {Object.keys(watchList).length > 0 && (
+                     <>
+                        {Object.entries(watchList).map(([id, objOptions], index) => (
+                           <CustomAccordion key={index}>
+                              <CustomAccordionSummary>{id}</CustomAccordionSummary>
+                              <CustomAccordionDetails>
+                                 <FormControl
                                     sx={{
-                                       width: '9rem',
-                                       whiteSpace: 'nowrap',
-                                       overflow: 'hidden',
-                                       textOverflow: 'ellipsis'
+                                       padding: '0 2rem',
+                                       width: '100%',
+                                       justifyContent: 'space-between',
+                                       flexDirection: 'row',
+                                       flexWrap: 'wrap'
                                     }}
-                                    title={prop}
-                                    key={index}
-                                    label={prop}
-                                    control={
-                                       <Checkbox
-                                          onChange={(e) => handleWatchProp(e, id)}
-                                          checked={checked}
-                                          size="small"
-                                          name={prop}
-                                       />
-                                    }
-                                 />
-                              ))}
-                           </FormControl>
-                        </Accordion>
-                     ))}
-                  </>
-               )}
-            </Accordion>
+                                    component={'fieldset'}
+                                    variant="standards"
+                                 >
+                                    {Object.entries(objOptions.props).map(
+                                       ([prop, checked], index) => (
+                                          <FormControlLabel
+                                             sx={{
+                                                width: '9rem',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis'
+                                             }}
+                                             title={prop}
+                                             key={index}
+                                             label={prop}
+                                             control={
+                                                <Checkbox
+                                                   onChange={(e) => handleWatchProp(e, id)}
+                                                   checked={checked}
+                                                   size="small"
+                                                   name={prop}
+                                                />
+                                             }
+                                          />
+                                       )
+                                    )}
+                                 </FormControl>
+                              </CustomAccordionDetails>
+                           </CustomAccordion>
+                        ))}
+                     </>
+                  )}
+               </CustomAccordionDetails>
+            </CustomAccordion>
          </DialogContent>
          <DialogActions>
             <CustomButton onClick={send} disabled={!modelLoaded}>
