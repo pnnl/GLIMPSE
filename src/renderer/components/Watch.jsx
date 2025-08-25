@@ -238,6 +238,7 @@ ChartJS.register(
 const Watch = ({ watchData }) => {
    const [watchUpdates, setWatchUpdates] = useState(null);
    console.log(watchData);
+
    const handleUpdateWatchItem = (watchObj) => {
       if (!watchData) return null;
 
@@ -246,8 +247,8 @@ const Watch = ({ watchData }) => {
 
       // for each array in the csvdata, check if it has at least 8 elements
       // TODO refactor to check the size of the data against what values we are watching
-      for (let props of Object.values(csvData)) {
-         if (props.length < 8) {
+      for (let [id, props] of Object.entries(csvData)) {
+         if (props.length < watchData[id].props.length) {
             return null;
          }
       }
