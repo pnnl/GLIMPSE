@@ -10,7 +10,7 @@ const {
    Notification
 } = require('electron');
 const { optimizer, is } = require('@electron-toolkit/utils');
-const { spawn, exec } = require('child_process');
+const { spawn } = require('child_process');
 const { readdirSync } = require('fs');
 const { join, basename } = require('path');
 const { io } = require('socket.io-client');
@@ -322,7 +322,6 @@ const makeWindow = () => {
    mainWindow = new BrowserWindow({
       width: 1500,
       height: 900,
-      minWidth: 1000,
       minHeight: 750,
       icon: '../resources/GLIMPSE_color_icon.ico',
       backgroundColor: 'white',
@@ -511,8 +510,8 @@ const makeWindow = () => {
    });
 
    ipcMain.on('open-portal-window', (_, { component, props }) => {
-      console.log(component, props);
-      createPortalWindow(component, props);
+      if (!portalWindow) createPortalWindow(component, props);
+      else portalWindow.focus();
    });
 
    mainWindow.webContents.setWindowOpenHandler((details) => {

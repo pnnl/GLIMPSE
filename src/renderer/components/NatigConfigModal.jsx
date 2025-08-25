@@ -1,10 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import {
-   Accordion,
-   AccordionDetails,
-   AccordionSummary,
-   accordionSummaryClasses,
    Dialog,
    DialogActions,
    DialogContent,
@@ -24,8 +20,13 @@ import {
    Checkbox
 } from '@mui/material';
 
-import { styled } from '@mui/system';
-import { HelpOutline, ArrowForwardIosSharp } from '@mui/icons-material';
+import {
+   CustomAccordion,
+   CustomAccordionSummary,
+   CustomAccordionDetails
+} from '../utils/CustomComponents';
+
+import { HelpOutline } from '@mui/icons-material';
 import IconButton from '@mui/material/IconButton';
 import { CustomButton, CustomFormControlLabel, CustomSwitch } from '../utils/CustomComponents';
 
@@ -56,31 +57,6 @@ const inverterWatchProperties = {
    Qref: true
 };
 
-// const genoratorWatchProperties = {
-//    rotor_speed: true,
-//    rotor_angle: true,
-//    flux1d: true,
-//    flux2q: true,
-//    EpRotated: true,
-//    VintRotated: true,
-//    Eint_A: true,
-//    Eint_B: true,
-//    Eint_C: true,
-//    power_out_A: true, // Voltage: power_out_A-C
-//    power_out_B: true,
-//    power_out_C: true,
-//    GFA_status: true, // Frequency
-//    measured_frequency: true, // Frequency
-//    Irotated: true,
-//    'pwr_electric.real': true,
-//    'pwr_electric.imag': true,
-//    pwr_mech: true,
-//    torque_mech: true,
-//    torque_elec: true,
-//    Pref: true,
-//    Qref: true
-// };
-
 const genoratorWatchProperties = {
    power_out_A: true, // Voltage: power_out_A-C
    power_out_B: true,
@@ -90,7 +66,7 @@ const genoratorWatchProperties = {
    Qref: true
 };
 
-export const CustomAccordion = styled((props) => (
+/* export const CustomAccordion = styled((props) => (
    <Accordion disableGutters elevation={0} square {...props} />
 ))(() => ({
    border: `1px solid lightgrey`,
@@ -121,7 +97,7 @@ export const CustomAccordionSummary = styled((props) => (
 export const CustomAccordionDetails = styled(AccordionDetails)(({ theme }) => ({
    padding: theme.spacing(2),
    borderTop: '1px solid rgba(0, 0, 0, .125)'
-}));
+})); */
 
 /**
  * The NATIG Scenerio Configuration Modal

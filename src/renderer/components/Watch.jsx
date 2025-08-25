@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
+import { Stack, Typography, Box } from '@mui/material';
 import {
-   Stack,
-   Divider,
-   Typography,
-   Box,
-   Accordion,
-   AccordionSummary,
-   AccordionDetails
-} from '@mui/material';
-import { ExpandMore } from '@mui/icons-material';
+   CustomAccordion,
+   CustomAccordionDetails,
+   CustomAccordionSummary
+} from '../utils/CustomComponents';
 import {
    Chart as ChartJS,
    CategoryScale,
@@ -22,7 +18,7 @@ import {
    BarElement,
    BarController
 } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 
 const optionsCurrentOut = {
    options: {
@@ -31,36 +27,7 @@ const optionsCurrentOut = {
          tooltip: {
             //very unfinished alternative tooltip that always displays, eventually will show latest datapoint and be positioned on the right of a chart (TBA)
             //The other tool tips are still the same
-            enabled: false, // Disable default tooltips
-            external: function (context) {
-               const tooltipModel = context.tooltip;
-               const tooltipEl = document.getElementById('chartjs-tooltip');
-
-               if (!tooltipEl) {
-                  const div = document.createElement('div');
-                  div.id = 'chartjs-tooltip';
-                  div.style.position = 'absolute';
-                  div.style.pointerEvents = 'none';
-                  div.style.background = 'rgba(0, 0, 0, 0.7)';
-                  div.style.color = 'white';
-                  div.style.padding = '5px';
-                  div.style.borderRadius = '5px';
-                  div.style.fontSize = '12px';
-                  document.body.appendChild(div);
-               }
-
-               if (tooltipModel.opacity === 0) {
-                  tooltipEl.style.opacity = '0';
-                  return;
-               }
-
-               tooltipEl.style.opacity = '1';
-               tooltipEl.style.left = tooltipModel.caretX + 'px';
-               tooltipEl.style.top = tooltipModel.caretY + 'px';
-               tooltipEl.innerHTML = tooltipModel.body
-                  .map((item) => item.lines.join('<br>'))
-                  .join('<br>');
-            }
+            enabled: true // Disable default tooltips
          }
       }
    },
@@ -321,7 +288,7 @@ const Watch = ({ watchData }) => {
    console.log(watchUpdates);
    const watchContent = (
       <Box sx={{ height: '100%', width: '100%' }}>
-         <Stack spacing={1} divider={<Divider orientation="horizontal" flexItem />}>
+         <Stack spacing={1}>
             {watchUpdates ? (
                <>
                   {Object.entries(watchUpdates).map(([id, dataProps], index) => {
@@ -335,22 +302,22 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'current_out_A',
                                  data: dataProps.properties.map((prop) => prop.current_out_A),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
+                                 borderColor: 'rgba(36, 108, 171, 1)',
+                                 backgroundColor: 'rgba(36, 108, 171, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'current_out_B',
                                  data: dataProps.properties.map((prop) => prop.current_out_B),
-                                 borderColor: 'rgba(0, 170, 0, 1)',
-                                 backgroundColor: 'rgba(0, 255, 0, 1)',
+                                 borderColor: 'rgba(69, 171, 72, 1)',
+                                 backgroundColor: 'rgba(69, 171, 72, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'current_out_C',
                                  data: dataProps.properties.map((prop) => prop.current_out_C),
-                                 borderColor: 'rgba(4, 9, 255, 1)',
-                                 backgroundColor: 'rgba(5, 63, 253, 0.5)',
+                                 borderColor: 'rgba(51,51,51, 1)',
+                                 backgroundColor: 'rgba(51, 51, 51, 0.5)',
                                  stepped: true
                               }
                            ]
@@ -362,21 +329,21 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'power_out_A',
                                  data: dataProps.properties.map((prop) => prop.power_out_A),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)'
+                                 borderColor: 'rgba(36, 108, 171, 1)',
+                                 backgroundColor: 'rgba(36, 108, 171, 0.5)'
                               },
                               {
                                  label: 'power_out_B',
                                  data: dataProps.properties.map((prop) => prop.power_out_B),
-                                 borderColor: 'rgba(0, 170, 0, 1)',
-                                 backgroundColor: 'rgba(0, 255, 0, 1)',
+                                 borderColor: 'rgba(69, 171, 72, 1)',
+                                 backgroundColor: 'rgba(69, 171, 72, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'power_out_C',
                                  data: dataProps.properties.map((prop) => prop.power_out_C),
-                                 borderColor: 'rgba(4, 9, 255, 1)',
-                                 backgroundColor: 'rgba(5, 63, 253, 0.5)'
+                                 borderColor: 'rgba(51,51,51, 1)',
+                                 backgroundColor: 'rgba(51, 51, 51, 0.5)'
                               }
                            ]
                         };
@@ -394,9 +361,9 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'VA_Out',
                                  data: dataProps.properties.map((prop) => prop.VA_Out),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
-                                 stepped: false
+                                 borderColor: 'rgba(36, 108, 171, 1)',
+                                 backgroundColor: 'rgba(36, 108, 171, 0.5)',
+                                 stepped: true
                               }
                            ]
                         };
@@ -406,8 +373,8 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'Inverter Efficiency',
                                  data: dataProps.properties.map((prop) => prop.inverter_efficiency),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
+                                 borderColor: 'rgba(69, 171, 72, 1)',
+                                 backgroundColor: 'rgba(69, 171, 72, 0.5)',
                                  stepped: true
                               }
                            ]
@@ -418,8 +385,8 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'Rated Power',
                                  data: dataProps.properties.map((prop) => prop.rated_power),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
+                                 borderColor: 'rgba(51,51,51, 1)',
+                                 backgroundColor: 'rgba(51, 51, 51, 0.5)',
                                  stepped: true
                               }
                            ]
@@ -441,22 +408,22 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'power_out_A',
                                  data: dataProps.properties.map((prop) => prop.power_out_A),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
+                                 borderColor: 'rgba(36, 108, 171, 1)',
+                                 backgroundColor: 'rgba(36, 108, 171, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'power_out_B',
                                  data: dataProps.properties.map((prop) => prop.power_out_B),
-                                 borderColor: 'rgba(0, 170, 0, 1)',
-                                 backgroundColor: 'rgba(0, 255, 0, 1)',
+                                 borderColor: 'rgba(69, 171, 72, 1)',
+                                 backgroundColor: 'rgba(69, 171, 72, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'power_out_C',
                                  data: dataProps.properties.map((prop) => prop.power_out_C),
-                                 borderColor: 'rgba(4, 9, 255, 1)',
-                                 backgroundColor: 'rgba(5, 63, 253, 0.5)',
+                                 borderColor: 'rgba(51,51,51, 1)',
+                                 backgroundColor: 'rgba(51, 51, 51, 0.5)',
                                  stepped: true
                               }
                            ]
@@ -468,15 +435,15 @@ const Watch = ({ watchData }) => {
                               {
                                  label: 'Pref',
                                  data: dataProps.properties.map((prop) => prop.Pref),
-                                 borderColor: 'rgba(174, 177, 2, 1)',
-                                 backgroundColor: 'rgba(238, 255, 0, 1)',
+                                 borderColor: 'rgba(36, 108, 171, 1)',
+                                 backgroundColor: 'rgba(36, 108, 171, 0.5)',
                                  stepped: true
                               },
                               {
                                  label: 'Qref',
                                  data: dataProps.properties.map((prop) => prop.Qref),
-                                 borderColor: 'rgba(0, 170, 0, 1)',
-                                 backgroundColor: 'rgba(0, 255, 0, 1)',
+                                 borderColor: 'rgba(69, 171, 72, 1)',
+                                 backgroundColor: 'rgba(69, 171, 72, 0.5)',
                                  stepped: true
                               }
                            ]
@@ -490,20 +457,20 @@ const Watch = ({ watchData }) => {
                         );
                      }
                      return (
-                        <Accordion disableGutters square elevation={1} key={index}>
-                           <AccordionSummary expandIcon={<ExpandMore />}>
+                        <CustomAccordion disableGutters square elevation={1} key={index}>
+                           <CustomAccordionSummary>
                               <Typography gutterBottom variant="h5" key={index}>
                                  {id}
                               </Typography>
-                           </AccordionSummary>
-                           <AccordionDetails>
+                           </CustomAccordionSummary>
+                           <CustomAccordionDetails>
                               {chartContent ?? (
                                  <Typography variant="body1" color="text.secondary">
                                     No chart available for this type.
                                  </Typography>
                               )}
-                           </AccordionDetails>
-                        </Accordion>
+                           </CustomAccordionDetails>
+                        </CustomAccordion>
                      );
                   })}
                </>
