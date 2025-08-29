@@ -27,6 +27,7 @@ const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
 let splashWindow = null;
 let portalWindow = null;
+const subprocesses = [];
 
 //------------------ for debugging ------------------
 // autoUpdater.logger = log;
@@ -581,12 +582,7 @@ const initiateServer = () => {
       });
    }
 
-   app.on('before-quit', () => {
-      if (serverProcess) {
-         serverProcess.kill();
-         serverProcess = null;
-      }
-   });
+   subprocesses.push(serverProcess);
 };
 
 app.whenReady().then(() => {
@@ -604,31 +600,39 @@ app.whenReady().then(() => {
 
       if (process.env.CONTAINER_NAME) {
          const testSocketScript = join(__dirname, '..', '..', 'natig', 'testsocket.py');
-         spawn('python', [testSocketScript], {
-            stdio: 'inherit',
-            shell: true
-         });
+         subprocesses.push(
+            spawn('python', [testSocketScript], {
+               shell: true,
+               stdio: 'overlapped'
+            })
+         );
 
          if (process.platform === 'win32') {
-            spawn(
-               'powershell.exe',
-               [
-                  '-ExecutionPolicy',
-                  'Bypass',
-                  '-File',
-                  'simulation.ps1',
-                  process.env.CONTAINER_NAME
-               ],
-               {
-                  cwd: join(__dirname, '..', '..', 'natig'),
-                  shell: true
-               }
+            subprocesses.push(
+               spawn(
+                  'powershell.exe',
+                  [
+                     '-ExecutionPolicy',
+                     'Bypass',
+                     '-File',
+                     'simulation.ps1',
+                     process.env.CONTAINER_NAME
+                  ],
+                  {
+                     cwd: join(__dirname, '..', '..', 'natig'),
+                     shell: true,
+                     stdio: 'overlapped'
+                  }
+               )
             );
          } else if (process.platform === 'linux' || process.platform === 'darwin') {
-            spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
-               cwd: join(__dirname, '..', '..', 'natig'),
-               shell: true
-            });
+            subprocesses.push(
+               spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
+                  cwd: join(__dirname, '..', '..', 'natig'),
+                  stdio: 'overlapped',
+                  shell: true
+               })
+            );
          }
       }
 
@@ -657,7 +661,9 @@ app.whenReady().then(() => {
    });
 });
 
-// app.on("before-quit", () => kill(process.pid));
+app.on('before-quit', () => {
+   subprocesses.forEach((process) => process.kill('SIGTERM'));
+});
 
 app.on('window-all-closed', () => {
    app.quit();

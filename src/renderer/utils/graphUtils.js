@@ -543,7 +543,6 @@ export const rotateCW = (network, angle) => {
 
 // used to keep track of the amount of uploads
 // will reset if graph component dismounts
-export let currentUploadCounter = { value: 0 };
 
 /**
  * Collects all the nodes and edges with their attributes and sets it to the data variable
@@ -576,6 +575,9 @@ export const setGraphData = (
    const newNodes = [];
    const newEdges = [];
 
+   data.nodes.clear();
+   data.edges.clear();
+
    // get nodes
    for (const file of files) {
       for (let obj of file.objects) {
@@ -600,10 +602,7 @@ export const setGraphData = (
                   theme.groups[objectType].color = getRandomColor();
 
                newNodes.push({
-                  id:
-                     currentUploadCounter.value > 0
-                        ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                        : nodeID,
+                  id: nodeID,
                   label: 'label' in theme.groups[objectType] ? undefined : nodeID,
                   elementType: 'node',
                   attributes: attributes,
@@ -630,10 +629,7 @@ export const setGraphData = (
                   theme.groups[objectType].color = getRandomColor();
 
                newNodes.push({
-                  id:
-                     currentUploadCounter.value > 0
-                        ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                        : nodeID,
+                  id: nodeID,
                   label: 'label' in theme.groups[objectType] ? undefined : nodeID,
                   elementType: 'node',
                   level: attributes.level,
@@ -659,13 +655,9 @@ export const setGraphData = (
                theme.groups[objectType].color = getRandomColor();
 
             newNodes.push({
-               id:
-                  currentUploadCounter.value > 0
-                     ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                     : nodeID,
+               id: nodeID,
                label: 'label' in theme.groups[objectType] ? undefined : nodeID,
                elementType: 'node',
-               communityID: currentUploadCounter.value,
                attributes: attributes,
                type: objectType,
                group: objectType,
@@ -690,13 +682,9 @@ export const setGraphData = (
             GLIMPSE_OBJECT.objects.push(obj);
 
             newNodes.push({
-               id:
-                  currentUploadCounter.value > 0
-                     ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                     : nodeID,
+               id: nodeID,
                label: 'label' in theme.groups[objectType] ? undefined : nodeID,
                elementType: 'node',
-               communityID: currentUploadCounter.value,
                level: 'level' in attributes ? attributes.level : undefined,
                attributes: attributes,
                type: objectType,
@@ -716,14 +704,8 @@ export const setGraphData = (
          const nameForObjID = keys.find((key) => Object.keys(attributes).includes(key));
 
          if (nodeTypes.includes(edgeType) && 'parent' in attributes) {
-            const nodeID =
-               currentUploadCounter.value > 0
-                  ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                  : attributes[nameForObjID];
-            const parent =
-               currentUploadCounter.value > 0
-                  ? `${attributes.parent}-${currentUploadCounter.value}`
-                  : attributes.parent;
+            const nodeID = attributes[nameForObjID];
+            const parent = attributes.parent;
 
             objectTypeCount.edges.parentChild++;
 
@@ -751,18 +733,9 @@ export const setGraphData = (
 
             continue;
          } else if (edgeTypes.includes(edgeType)) {
-            const edgeFrom =
-               currentUploadCounter.value > 0
-                  ? `${attributes.from}-${currentUploadCounter.value}`
-                  : attributes.from;
-            const edgeTo =
-               currentUploadCounter.value > 0
-                  ? `${attributes.to}-${currentUploadCounter.value}`
-                  : attributes.to;
-            const edgeID =
-               currentUploadCounter.value > 0
-                  ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                  : attributes[nameForObjID];
+            const edgeFrom = attributes.from;
+            const edgeTo = attributes.to;
+            const edgeID = attributes[nameForObjID];
 
             objectTypeCount.edges[edgeType]++;
 
@@ -806,18 +779,9 @@ export const setGraphData = (
 
             continue;
          } else if ('elementType' in obj && obj.elementType === 'edge') {
-            const edgeFrom =
-               currentUploadCounter.value > 0
-                  ? `${attributes.from}-${currentUploadCounter.value}`
-                  : attributes.from;
-            const edgeTo =
-               currentUploadCounter.value > 0
-                  ? `${attributes.to}-${currentUploadCounter.value}`
-                  : attributes.to;
-            const edgeID =
-               currentUploadCounter.value > 0
-                  ? `${attributes[nameForObjID]}-${currentUploadCounter.value}`
-                  : attributes[nameForObjID];
+            const edgeFrom = attributes.from;
+            const edgeTo = attributes.to;
+            const edgeID = attributes[nameForObjID];
 
             if (!(edgeType in edgeOptions))
                edgeOptions[edgeType] = { color: getRandomColor(), width: 2 };
@@ -843,5 +807,4 @@ export const setGraphData = (
 
    data.nodes.add(newNodes);
    data.edges.add(newEdges);
-   currentUploadCounter.value++;
 };

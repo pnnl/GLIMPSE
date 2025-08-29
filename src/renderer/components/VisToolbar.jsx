@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import StatsTableModal from './StatsTableModal';
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import StatsTableModal from "./StatsTableModal";
+import axios from "axios";
 import {
    Button,
    ButtonGroup,
@@ -9,17 +9,17 @@ import {
    Stack,
    ToggleButton,
    ToggleButtonGroup,
-   Tooltip
-} from '@mui/material';
+   Tooltip,
+} from "@mui/material";
 import {
    RotateLeftSharp,
    RotateRightSharp,
    InsightsRounded,
    HideSource,
-   Add
-} from '@mui/icons-material';
+   Add,
+} from "@mui/icons-material";
 
-const VisRibbon = ({
+const VisToolbar = ({
    rotateCW,
    rotateCCW,
    next,
@@ -32,7 +32,7 @@ const VisRibbon = ({
    circularProgressRef,
    physicsToggle,
    setOverlay,
-   removeOverlay
+   removeOverlay,
 }) => {
    const [vistOptions, setVisOptions] = useState([]);
    const [showTable, setShowTable] = useState(false);
@@ -40,23 +40,23 @@ const VisRibbon = ({
    const [stats, setStats] = useState(null);
 
    const handleToogleChange = (event, newOptions) => {
-      if (newOptions.includes('autoLayout')) {
+      if (newOptions.includes("autoLayout")) {
          physicsToggle(true);
       } else {
          physicsToggle(false);
       }
 
-      if (newOptions.includes('hideLegend')) {
-         legendContainerRef.current.style.display = 'none';
-         networkContainerRef.current.style.width = '100%';
-         circularProgressRef.current.style.left = '50%';
+      if (newOptions.includes("hideLegend")) {
+         legendContainerRef.current.style.display = "none";
+         networkContainerRef.current.style.width = "100%";
+         circularProgressRef.current.style.left = "50%";
       } else {
-         if (layoutContainerRef.current.style.display === 'flex') {
-            layoutContainerRef.current.style.display = 'none';
+         if (layoutContainerRef.current.style.display === "flex") {
+            layoutContainerRef.current.style.display = "none";
          }
-         legendContainerRef.current.style.display = 'block';
-         networkContainerRef.current.style.width = '72%';
-         circularProgressRef.current.style.left = '36%';
+         legendContainerRef.current.style.display = "block";
+         networkContainerRef.current.style.width = "72%";
+         circularProgressRef.current.style.left = "36%";
       }
 
       setVisOptions(newOptions);
@@ -79,7 +79,7 @@ const VisRibbon = ({
        */
       const showStats = async () => {
          if (stats === null) {
-            const response = await axios.get('http://127.0.0.1:5173/get-stats');
+            const response = await axios.get("http://127.0.0.1:5173/get-stats");
 
             setStats(response.data);
 
@@ -105,17 +105,22 @@ const VisRibbon = ({
       <>
          <Paper
             sx={{
-               display: 'flex',
-               height: '3.5rem',
-               with: '100%',
-               padding: '0.5rem',
-               m: '0.5rem 1rem'
+               display: "flex",
+               height: "3.5rem",
+               with: "100%",
+               padding: "0.5rem",
+               m: "0.5rem 1rem",
             }}
             elevation={2}
          >
-            <Stack width={'100%'} spacing={1} justifyContent={'space-between'} direction={'row'}>
+            <Stack
+               width={"100%"}
+               spacing={1}
+               justifyContent={"space-between"}
+               direction={"row"}
+            >
                <Stack
-                  direction={'row'}
+                  direction={"row"}
                   spacing={1}
                   divider={<Divider orientation="vertical" flexItem />}
                >
@@ -132,11 +137,11 @@ const VisRibbon = ({
 
                   <ToggleButtonGroup value={vistOptions} onChange={handleToogleChange}>
                      <Tooltip title="Auto Layout">
-                        <ToggleButton value={'autoLayout'}>
+                        <ToggleButton value={"autoLayout"}>
                            <InsightsRounded />
                         </ToggleButton>
                      </Tooltip>
-                     <ToggleButton value={'hideLegend'}>
+                     <ToggleButton value={"hideLegend"}>
                         <Tooltip title="Hide Legend">
                            <HideSource />
                         </Tooltip>
@@ -144,7 +149,7 @@ const VisRibbon = ({
                   </ToggleButtonGroup>
                </Stack>
                <Stack
-                  direction={'row'}
+                  direction={"row"}
                   spacing={1}
                   divider={<Divider orientation="vertical" flexItem />}
                >
@@ -181,9 +186,13 @@ const VisRibbon = ({
                </Stack>
             </Stack>
          </Paper>
-         <StatsTableModal show={showTable} data={stats} close={() => setShowTable(false)} />
+         <StatsTableModal
+            show={showTable}
+            data={stats}
+            close={() => setShowTable(false)}
+         />
       </>
    );
 };
 
-export default VisRibbon;
+export default VisToolbar;

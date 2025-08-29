@@ -1,12 +1,11 @@
-import { useEffect, useRef } from 'react';
-import { Box, Stack } from '@mui/material';
-import axios from 'axios';
-import { DataSet } from 'vis-data';
-import { Network } from 'vis-network';
-import '../styles/Graph.css';
-import '../other-styles/vis-network.css';
+import { useEffect, useRef } from "react";
+import { Box, Stack } from "@mui/material";
+import axios from "axios";
+import { DataSet } from "vis-data";
+import { Network } from "vis-network";
+import "../styles/Graph.css";
+import "../other-styles/vis-network.css";
 import {
-   currentUploadCounter,
    Export,
    setLegendData,
    hideEdge,
@@ -22,16 +21,16 @@ import {
    rotateCW,
    setGraphData,
    showAttributes,
-   getHtmlTitle
-} from '../utils/graphUtils';
-import ContextMenu from './ContextMenu';
-import Legend from './Legend';
-import NewNodeForm from './NewNodeForm';
-import NodePopup from './NodePopup';
-import VisRibbon from './VisRibbon';
-import { isGlmFile } from '../utils/appUtils';
-import { readJsonFile } from '../utils/fileProcessing';
-import { NewEdgeForm } from './NewEdgeForm';
+   getHtmlTitle,
+} from "../utils/graphUtils";
+import ContextMenu from "./ContextMenu";
+import Legend from "./Legend";
+import NewNodeForm from "./NewNodeForm";
+import NodePopup from "./NodePopup";
+import VisToolbar from "./VisToolbar";
+import { isGlmFile } from "../utils/appUtils";
+import { readJsonFile } from "../utils/fileProcessing";
+import { NewEdgeForm } from "./NewEdgeForm";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
@@ -66,24 +65,24 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
    const addedOverlayObjects = {
       nodes: [],
-      edges: []
+      edges: [],
    };
 
    // data object that holds a DataSet for nodes and edges
    const graphData = {
       nodes: new DataSet(),
-      edges: new DataSet()
+      edges: new DataSet(),
    };
 
    const legendData = {
       nodes: new DataSet(),
-      edges: new DataSet()
+      edges: new DataSet(),
    };
 
    // used to keep count of each object type
    const objectTypeCount = {
       nodes: Object.keys(theme.groups).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
-      edges: Object.keys(theme.edgeOptions).reduce((o, key) => ({ ...o, [key]: 0 }), {})
+      edges: Object.keys(theme.edgeOptions).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
    };
 
    objectTypeCount.edges.parentChild = 0;
@@ -110,10 +109,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          const edgeType = edge.type;
 
          if (edgeTypes.includes(edgeType) || edgeType in edgeOptions) {
-            if (edgeType === 'switch' && edge.attributes.status === 'OPEN') {
-               edgeOptions[edgeType].arrows.middle.src = './imgs/switch-open.svg';
-            } else if (edgeType === 'switch' && edge.attributes.status === 'CLOSED') {
-               edgeOptions[edgeType].arrows.middle.src = './imgs/switch-closed.svg';
+            if (edgeType === "switch" && edge.attributes.status === "OPEN") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-open.svg";
+            } else if (edgeType === "switch" && edge.attributes.status === "CLOSED") {
+               edgeOptions[edgeType].arrows.middle.src = "./imgs/switch-closed.svg";
             }
 
             Object.assign(edge, edgeOptions[edgeType]);
@@ -216,7 +215,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          setContextMenuData({
             ...contextMenuData,
             mouseX: e.clientX + 2,
-            mouseY: e.clientY + 6
+            mouseY: e.clientY + 6,
          });
       } else {
          setContextMenuData(null);
@@ -240,16 +239,16 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       }
 
       const microGridNodeTypes = new Set([
-         'node',
-         'load',
-         'inverter',
-         'capacitor',
-         'diesel_dg',
-         'triplex_meter',
-         'triplex_node',
-         'triplex_load',
-         'microgrids',
-         'communication_node'
+         "node",
+         "load",
+         "inverter",
+         "capacitor",
+         "diesel_dg",
+         "triplex_meter",
+         "triplex_node",
+         "triplex_load",
+         "microgrids",
+         "communication_node",
       ]);
 
       const newNodes = [];
@@ -259,9 +258,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          const microGridNode = {
             id: microGrid.name,
             label: microGrid.name,
-            group: 'microgrid',
-            type: 'microgrid',
-            title: `ObjectType: microgrid\nname: ${microGrid.name}`
+            group: "microgrid",
+            type: "microgrid",
+            title: `ObjectType: microgrid\nname: ${microGrid.name}`,
          };
 
          newNodes.push(microGridNode);
@@ -281,14 +280,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                   from: microGrid.name,
                   to: nodeID,
                   title: getHtmlTitle({
-                     objectType: 'microgrid_connection',
+                     objectType: "microgrid_connection",
                      name: newEdgeID,
                      from: microGrid.name,
-                     to: nodeID
+                     to: nodeID,
                   }),
                   color: { inherit: true },
-                  type: 'microgrid_connection',
-                  width: 0.25
+                  type: "microgrid_connection",
+                  width: 0.25,
                };
 
                newEdges.push(microGridEdge);
@@ -303,7 +302,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             let commNodeID = null;
             let mgNumber = null;
 
-            if (typeof commNode.name === 'string') {
+            if (typeof commNode.name === "string") {
                commNodeID = commNode.name;
                mgNumber = parseInt(commNode.name.match(/\d+$/)[0], 10);
             } else {
@@ -315,8 +314,11 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                id: commNodeID,
                label: commNodeID,
                group: `communication_node`, // _${mgNumber}
-               type: 'communication_node',
-               title: getHtmlTitle({ objectType: 'communication_node', name: commNodeID })
+               type: "communication_node",
+               title: getHtmlTitle({
+                  objectType: "communication_node",
+                  name: commNodeID,
+               }),
             });
 
             addedOverlayObjects.nodes.push(commNodeID);
@@ -328,15 +330,15 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                from: commNodeID,
                to: `SS_${mgNumber}`,
                title:
-                  'objectType: parentChild\n' +
+                  "objectType: parentChild\n" +
                   getHtmlTitle({
                      name: commEdgeID,
                      from: commNodeID,
-                     to: `SS_${mgNumber}`
+                     to: `SS_${mgNumber}`,
                   }),
                color: { inherit: true },
-               type: 'communication',
-               width: 2
+               type: "communication",
+               width: 2,
             });
 
             addedOverlayObjects.edges.push(commEdgeID);
@@ -345,7 +347,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             for (const connection of commNode.connections) {
                let to = null;
 
-               if (typeof connection === 'string') {
+               if (typeof connection === "string") {
                   commEdgeID = `${commNodeID}-${connection}`;
                   to = connection;
                } else {
@@ -358,14 +360,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                   from: commNodeID,
                   to: to,
                   title: getHtmlTitle({
-                     objectType: 'parentChild',
+                     objectType: "parentChild",
                      name: commEdgeID,
                      from: commNodeID,
-                     to: to
+                     to: to,
                   }),
                   color: { inherit: true },
-                  type: 'communication',
-                  width: 2
+                  type: "communication",
+                  width: 2,
                });
 
                addedOverlayObjects.edges.push(commEdgeID);
@@ -378,7 +380,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
 
-      const microgridNodes = newNodes.filter((n) => n.type === 'microgrid').map((n) => n.id);
+      const microgridNodes = newNodes
+         .filter((n) => n.type === "microgrid")
+         .map((n) => n.id);
 
       for (const nodeID of network.body.nodeIndices) {
          if (network.clustering.isCluster(nodeID)) {
@@ -390,7 +394,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                   createdClusterNodeGroups[nodeID] =
                      `microgrid_${network.body.edges[edgeID].fromId}`;
                   network.clustering.updateClusteredNode(nodeID, {
-                     group: `microgrid_${network.body.edges[edgeID].fromId}`
+                     group: `microgrid_${network.body.edges[edgeID].fromId}`,
                   });
 
                   break;
@@ -414,8 +418,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          const data = await window.glimpseAPI.glm2json(filePaths);
 
          if (!data) {
-            alert('Something went wrong... \n try re-uploading or reset the application app');
-         } else if ('alert' in data) {
+            alert(
+               "Something went wrong... \n try re-uploading or reset the application app",
+            );
+         } else if ("alert" in data) {
             alert(data.alert);
          } else {
             // set and overlay the additional model
@@ -428,7 +434,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                GLIMPSE_OBJECT,
                theme,
                edgeOptions,
-               graphOptions
+               graphOptions,
             );
 
             setLegendData(objectTypeCount, theme, edgeOptions, legendData);
@@ -442,7 +448,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             showRemoveOverlayBtn(true);
          } catch (msg) {
             console.log(msg);
-            alert('File may not be compatible... Check file and re-upload');
+            alert("File may not be compatible... Check file and re-upload");
          }
       }
    };
@@ -465,13 +471,16 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             type: nodeTypes[nodeType],
             group: nodeTypes[nodeType],
             communityID: newNodeCID,
-            elementType: 'node',
+            elementType: "node",
             attributes: {
-               id: `${nodeID}`
-            }
+               id: `${nodeID}`,
+            },
          };
 
-         newNode.title = getHtmlTitle({ ObjectType: nodeTypes[nodeType], ...newNode.attributes });
+         newNode.title = getHtmlTitle({
+            ObjectType: nodeTypes[nodeType],
+            ...newNode.attributes,
+         });
          objectTypeCount.nodes[newNode.type]++;
 
          graphData.nodes.add(newNode);
@@ -481,9 +490,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             to: connectTo,
             from: newNode.id,
             type: edgeTypes[edgeType],
-            elementType: 'edge',
+            elementType: "edge",
             color: edgeOptions[edgeTypes[edgeType]].color,
-            width: edgeOptions[edgeTypes[edgeType]].width
+            width: edgeOptions[edgeTypes[edgeType]].width,
          };
 
          const { color, width, elementType, type, ...rest } = newEdge;
@@ -508,12 +517,12 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             ObjectType: formObj.edgeType,
             ID: formObj.edgeID,
             from: formObj.from,
-            to: formObj.to
+            to: formObj.to,
          }),
          animation: formObj.animate,
          type: formObj.edgeType,
          color: edgeOptions[formObj.edgeType].color,
-         width: edgeOptions[formObj.edgeType].width
+         width: edgeOptions[formObj.edgeType].width,
       };
 
       graphData.edges.add(newEdge);
@@ -529,17 +538,17 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    const updateVisObjects = (updateData) => {
       console.log(`Updating ${updateData.elementType} with ID: ${updateData.id}`);
       console.log(updateData.updates);
-      console.log('-------------------------------');
+      console.log("-------------------------------");
 
-      if (updateData.elementType === 'node') {
+      if (updateData.elementType === "node") {
          const node = graphData.nodes.get(updateData.id);
 
-         if ('attributes' in updateData.updates) {
+         if ("attributes" in updateData.updates) {
             const { attributes, ...rest } = updateData.updates;
 
             node.attributes = {
                ...node.attributes,
-               ...attributes
+               ...attributes,
             };
 
             node.title = getHtmlTitle(node.attributes);
@@ -553,11 +562,11 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          // }
 
          graphData.nodes.update({ ...node, ...updateData.updates });
-      } else if (updateData.elementType === 'edge') {
+      } else if (updateData.elementType === "edge") {
          const edge = graphData.edges.get(updateData.id);
          const clusteredEdges = network.clustering.getClusteredEdges(edge.id);
 
-         if ('animation' in updateData.updates) {
+         if ("animation" in updateData.updates) {
             const { animation, increment, startFrom, ...rest } = updateData.updates;
 
             // if the first element of the clustered edges array is not the passed edge ID
@@ -575,30 +584,30 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                redrawIntervalID = setInterval(() => network.redraw(), 16.67);
             }
             return;
-         } else if ('attributes' in updateData.updates) {
+         } else if ("attributes" in updateData.updates) {
             const { attributes: updateAttributes, ...rest } = updateData.updates;
 
             edge.attributes = {
                ...edge.attributes,
-               ...updateAttributes
+               ...updateAttributes,
             };
 
             edge.title = getHtmlTitle(edge.attributes);
 
             if (
-               edge.type === 'switch' &&
-               'status' in edge.attributes &&
-               updateAttributes.status === 'TRIP'
+               edge.type === "switch" &&
+               "status" in edge.attributes &&
+               updateAttributes.status === "TRIP"
             ) {
-               edge.arrows.middle.src = './imgs/switch-open.svg';
-               edge.attributes.status = 'OPEN';
+               edge.arrows.middle.src = "./imgs/switch-open.svg";
+               edge.attributes.status = "OPEN";
             } else if (
-               edge.type === 'switch' &&
-               'status' in edge.attributes &&
-               updateAttributes.status === 'CLOSED'
+               edge.type === "switch" &&
+               "status" in edge.attributes &&
+               updateAttributes.status === "CLOSED"
             ) {
-               edge.attributes.status = 'CLOSED';
-               edge.arrows.middle.src = './imgs/switch-closed.svg';
+               edge.attributes.status = "CLOSED";
+               edge.arrows.middle.src = "./imgs/switch-closed.svg";
             }
 
             if (clusteredEdges.length > 1) {
@@ -626,7 +635,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
             if (!canvasEdge) continue;
 
-            if (edge.startFrom === 'target') {
+            if (edge.startFrom === "target") {
                start = canvasEdge.to;
                end = canvasEdge.from;
             } else {
@@ -660,7 +669,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             const trianglePoints = [
                { x: triangleHeight * (2 / 3), y: 0 }, // Top point (front of the arrow)
                { x: -triangleHeight * (1 / 3), y: -sideLength / 2 }, // Bottom left point
-               { x: -triangleHeight * (1 / 3), y: sideLength / 2 } // Bottom right point
+               { x: -triangleHeight * (1 / 3), y: sideLength / 2 }, // Bottom right point
             ];
 
             // Rotate and translate the triangle points
@@ -669,7 +678,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                const rotatedY = point.x * Math.sin(angle) + point.y * Math.cos(angle);
                return {
                   x: rotatedX + x,
-                  y: rotatedY + y
+                  y: rotatedY + y,
                };
             });
 
@@ -682,9 +691,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             }
 
             ctx.closePath();
-            ctx.strokeStyle = 'black';
+            ctx.strokeStyle = "black";
             ctx.stroke();
-            ctx.fillStyle = 'orange';
+            ctx.fillStyle = "orange";
             ctx.fill();
          }
       } catch (msg) {
@@ -715,19 +724,19 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     * @param {float} incrementValue An increment value between 0.1 - 0.001 to determine the animation's speed (default: 0.01)
     * @param {string} startFrom start the animation of an edge from its `"source"` or `"target"`
     */
-   const animateEdge = (edgeID, incrementValue = 0.01, startFrom = 'source') => {
+   const animateEdge = (edgeID, incrementValue = 0.01, startFrom = "source") => {
       if (incrementValue === undefined) incrementValue = 0.01;
-      if (startFrom === undefined) startFrom = 'source';
+      if (startFrom === undefined) startFrom = "source";
 
       console.log(`Animating edge: ${edgeID}`);
 
       try {
          // if the edge to animate is a clustered edge animate as normal
-         if (edgeID.includes('clusterEdge') && !(edgeID in edgesToAnimate)) {
+         if (edgeID.includes("clusterEdge") && !(edgeID in edgesToAnimate)) {
             edgesToAnimate[edgeID] = {
                position: 0,
                increment: incrementValue,
-               startFrom: startFrom
+               startFrom: startFrom,
             };
             edgesToAnimateCount++;
 
@@ -739,7 +748,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             edgesToAnimate[edgeID] = {
                position: 0,
                increment: incrementValue,
-               startFrom: startFrom
+               startFrom: startFrom,
             };
 
             edgesToAnimateCount++;
@@ -757,7 +766,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             edgesToAnimate[edgeID] = {
                ...edgesToAnimate[edgeID],
                increment: incrementValue,
-               startFrom: startFrom
+               startFrom: startFrom,
             };
          }
       } catch (err) {
@@ -773,7 +782,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       // delete from file data
       Object.keys(dataToVis).forEach((filename) => {
          const objects = dataToVis[filename].objects;
-         dataToVis[filename].objects = objects.filter((obj) => obj.attributes.name !== nodeID);
+         dataToVis[filename].objects = objects.filter(
+            (obj) => obj.attributes.name !== nodeID,
+         );
       });
 
       const nodeObject = graphData.nodes.get(nodeID);
@@ -792,14 +803,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       graphData.nodes.remove(nodeID);
       graphData.edges.remove(edgesToDelete);
 
-      console.log('DELETED: ' + nodeID);
+      console.log("DELETED: " + nodeID);
 
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const deleteEdge = (edgeID) => {
       // check if the edgeID is a cluster edge ID
-      if (edgeID.includes('clusterEdge')) {
+      if (edgeID.includes("clusterEdge")) {
          // get the base edge of the clustered edge
          const [baseEdge] = network.clustering.getBaseEdges(edgeID);
 
@@ -854,18 +865,18 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
     */
    const toggleVisOptions = () => {
       if (
-         layoutFormContainerRef.current.style.display === 'none' ||
-         layoutFormContainerRef.current.style.display === ''
+         layoutFormContainerRef.current.style.display === "none" ||
+         layoutFormContainerRef.current.style.display === ""
       ) {
-         networkContainerRef.current.style.width = '72%';
-         layoutFormContainerRef.current.style.display = 'flex';
-         legendContainerRef.current.style.display = 'none';
+         networkContainerRef.current.style.width = "72%";
+         layoutFormContainerRef.current.style.display = "flex";
+         legendContainerRef.current.style.display = "none";
       } else {
-         if (networkContainerRef.current.style.width === '30%') {
-            networkContainerRef.current.style.width = '72%';
+         if (networkContainerRef.current.style.width === "30%") {
+            networkContainerRef.current.style.width = "72%";
          }
-         layoutFormContainerRef.current.style.display = 'none';
-         legendContainerRef.current.style.display = 'block';
+         layoutFormContainerRef.current.style.display = "none";
+         legendContainerRef.current.style.display = "block";
       }
    };
 
@@ -910,22 +921,22 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             if (edge.type === type) {
                edge = {
                   ...edge,
-                  ...restOfEdgeStyles
+                  ...restOfEdgeStyles,
                };
             }
             return edge;
-         })
+         }),
       );
 
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
    };
 
    const createClusterNode = (clusterValue) => {
-      if (typeof clusterValue === 'number') clusterValue = `CID_${clusterValue}`;
+      if (typeof clusterValue === "number") clusterValue = `CID_${clusterValue}`;
 
       network.cluster({
          joinCondition: (childOptions) => {
-            if (typeof childOptions.communityID === 'number')
+            if (typeof childOptions.communityID === "number")
                return `CID_${childOptions.communityID}` === clusterValue;
 
             // if the communityID is a string then it has a cluster value of CID_[n]
@@ -940,14 +951,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          clusterNodeProperties: {
             id: clusterValue,
             borderWidth: 2,
-            shape: 'hexagon',
+            shape: "hexagon",
             label: clusterValue,
             group:
                clusterValue in createdClusterNodeGroups
                   ? createdClusterNodeGroups[clusterValue]
-                  : 'clusterNode',
-            type: 'clusterNode'
-         }
+                  : "clusterNode",
+            type: "clusterNode",
+         },
       });
 
       const clusterNode = network.body.nodes[clusterValue];
@@ -956,7 +967,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          for (let i = 0; i < clusterNode.edges.length; i++) {
             const currentClusteredEdge = clusterNode.edges[i];
             const [baseEdge] = network.clustering.getBaseEdges(currentClusteredEdge.id);
-            const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
+            const previousClusteredEdge =
+               currentClusteredEdge.clusteringEdgeReplacingIds[0];
 
             if (baseEdge in edgesToAnimate) {
                removeEdgeAnimation(baseEdge);
@@ -1000,21 +1012,21 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       removeListenerArr.push(window.glimpseAPI.onShowVisOptions(toggleVisOptions));
 
       removeListenerArr.push(
-         window.glimpseAPI.onExtract(() => Export(graphData, isGlm, dataToVis))
+         window.glimpseAPI.onExtract(() => Export(graphData, isGlm, dataToVis)),
       );
 
       removeListenerArr.push(
-         window.glimpseAPI.onShowAttributes((show) => showAttributes(show, graphData))
+         window.glimpseAPI.onShowAttributes((show) => showAttributes(show, graphData)),
       );
 
       removeListenerArr.push(
          window.glimpseAPI.onExportTheme(() =>
-            window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3))
-         )
+            window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3)),
+         ),
       );
 
       removeListenerArr.push(
-         window.glimpseAPI.onUpdateData((updateData) => updateVisObjects(updateData))
+         window.glimpseAPI.onUpdateData((updateData) => updateVisObjects(updateData)),
       );
 
       removeListenerArr.push(
@@ -1028,10 +1040,13 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                id: newNodeData.attributes.id,
                attributes: newNodeData.attributes,
                group: newNodeData.objectType,
-               title: getHtmlTitle({ type: newNodeData.objectType, ...newNodeData.attributes }),
-               ...newNodeData.styles
+               title: getHtmlTitle({
+                  type: newNodeData.objectType,
+                  ...newNodeData.attributes,
+               }),
+               ...newNodeData.styles,
             });
-         })
+         }),
       );
 
       removeListenerArr.push(
@@ -1044,24 +1059,24 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                   attributes: newEdgeData.attributes,
                   title: getHtmlTitle({
                      type: newEdgeData.objectType,
-                     ...newEdgeData.attributes
+                     ...newEdgeData.attributes,
                   }),
-                  ...newEdgeData.styles
-               }
+                  ...newEdgeData.styles,
+               },
             ]);
-         })
+         }),
       );
 
       removeListenerArr.push(
          window.glimpseAPI.onDeleteNodeEvent((nodeID) => {
             graphData.nodes.remove(nodeID);
-         })
+         }),
       );
 
       removeListenerArr.push(
          window.glimpseAPI.onDeleteEdgeEvent((edgeID) => {
             graphData.edges.remove(edgeID);
-         })
+         }),
       );
 
       /*
@@ -1073,7 +1088,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             removeListener();
          }
 
-         graphOptions.physics.solver = 'barnesHut';
+         graphOptions.physics.solver = "barnesHut";
          graphOptions.layout.hierarchical.enabled = false;
          graphOptions.physics.stabilization.enabled = true;
          graphOptions.physics.enabled = true;
@@ -1083,8 +1098,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
    /* --------------------------- visualization hook --------------------------- */
    useEffect(() => {
-      const circularProgressBar = document.getElementById('circularProgress');
-      const circularProgressValue = document.getElementById('progressValue');
+      const circularProgressBar = document.getElementById("circularProgress");
+      const circularProgressValue = document.getElementById("progressValue");
       let establishCommunities = false;
 
       /* ---------------------------- Establish Network --------------------------- */
@@ -1097,20 +1112,20 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          GLIMPSE_OBJECT,
          theme,
          edgeOptions,
-         graphOptions
+         graphOptions,
       );
       /* ---------------------------- Establish Network --------------------------- */
       setLegendData(objectTypeCount, theme, edgeOptions, legendData);
 
-      console.log('Number of Nodes: ' + graphData.nodes.length);
-      console.log('Number of Edges: ' + graphData.edges.length);
+      console.log("Number of Nodes: " + graphData.nodes.length);
+      console.log("Number of Edges: " + graphData.edges.length);
 
       /* ------------------ Receive Sate Variables from Children ------------------ */
 
       const establishNetworkxGraph = async (data) => {
          try {
-            const res = await axios.post('http://127.0.0.1:5173/create-nx-graph', data, {
-               headers: 'application/json'
+            const res = await axios.post("http://127.0.0.1:5173/create-nx-graph", data, {
+               headers: "application/json",
             });
 
             if (res.status === 200) {
@@ -1144,10 +1159,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          }
 
          // If the nodes contain x,y then no need runt he stabilization code
-         if ('x' in graphData.nodes.get()[0] && 'y' in graphData.nodes.get()[0]) {
+         if ("x" in graphData.nodes.get()[0] && "y" in graphData.nodes.get()[0]) {
             graphOptions.physics.enabled = false;
             graphOptions.groups = theme.groups;
-            circularProgressBar.style.display = 'none';
+            circularProgressBar.style.display = "none";
             network = new Network(networkContainerRef.current, graphData, graphOptions);
          } else {
             if (
@@ -1155,7 +1170,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                graphData.nodes.length <= 300 &&
                graphData.edges.length >= 7000
             ) {
-               graphOptions.physics.solver = 'forceAtlas2Based';
+               graphOptions.physics.solver = "forceAtlas2Based";
             }
 
             graphOptions.groups = theme.groups;
@@ -1167,8 +1182,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                communityIDsSet.forEach((CID) => createClusterNode(CID));
             }
 
-            network.on('stabilizationProgress', (params) => {
-               circularProgressBar.style.display = 'flex';
+            network.on("stabilizationProgress", (params) => {
+               circularProgressBar.style.display = "flex";
                /* Math for determining the radius of the circular progress bar based on the stabilization progress */
                const maxWidth = 360;
                const minWidth = 1;
@@ -1178,25 +1193,25 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                circularProgressValue.innerText = `${Math.round(widthFactor * 100)}%`;
             });
 
-            network.once('stabilizationIterationsDone', () => {
+            network.once("stabilizationIterationsDone", () => {
                /* Once stabilization is done the circular progress with display 100% for half a second then hide */
                circularProgressBar.style.background =
-                  'conic-gradient(#45AB48 360deg, #333333 0deg)';
-               circularProgressValue.innerText = '100%';
+                  "conic-gradient(#45AB48 360deg, #333333 0deg)";
+               circularProgressValue.innerText = "100%";
                circularProgressBar.style.opacity = 0.7;
 
                /* set physics to false for better performance when stabilization is done */
                network.setOptions({ physics: { enabled: false } });
 
                setTimeout(() => {
-                  circularProgressBar.style.display = 'none';
+                  circularProgressBar.style.display = "none";
                }, 500);
             });
          }
 
-         network.on('doubleClick', (params) => {
+         network.on("doubleClick", (params) => {
             if (params.nodes[0] === undefined) {
-               alert('Double click on a node to edit.');
+               alert("Double click on a node to edit.");
             } else {
                /* Set the state of the NodePopup component for editing of the selected node's attributes */
                setNode(graphData.nodes.get(params.nodes[0]));
@@ -1205,53 +1220,57 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          });
 
          /* Display the child Context menu component to hide an edge or edge types */
-         network.on('oncontext', (params) => {
+         network.on("oncontext", (params) => {
             const contextNodeID = network.getNodeAt(params.pointer.DOM);
             const contextEdgeID = network.getEdgeAt(params.pointer.DOM);
 
             if (contextEdgeID && !contextNodeID) {
                setContextMenuData({
-                  edgeID: contextEdgeID
+                  edgeID: contextEdgeID,
                });
             } else if (contextNodeID && !network.clustering.isCluster(contextNodeID)) {
                const nodeData = graphData.nodes.get(contextNodeID);
 
-               if ('communityID' in nodeData) {
+               if ("communityID" in nodeData) {
                   setContextMenuData({
                      nodeID: nodeData.id,
-                     CID: nodeData.communityID
+                     CID: nodeData.communityID,
                   });
 
                   return;
                }
 
                setContextMenuData({
-                  nodeID: nodeData.id
+                  nodeID: nodeData.id,
                });
             } else if (contextNodeID && network.clustering.isCluster(contextNodeID)) {
                setContextMenuData({
-                  clusterNodeID: contextNodeID
+                  clusterNodeID: contextNodeID,
                });
             } else {
                setContextMenuData({});
             }
          });
 
-         network.on('afterDrawing', (ctx) => animateEdges(ctx));
+         network.on("afterDrawing", (ctx) => animateEdges(ctx));
 
-         network.on('selectEdge', (params) => console.log(network.body.edges[params.edges[0]]));
-         network.on('selectNode', (params) => console.log(network.body.nodes[params.nodes[0]]));
+         network.on("selectEdge", (params) =>
+            console.log(network.body.edges[params.edges[0]]),
+         );
+         network.on("selectNode", (params) =>
+            console.log(network.body.nodes[params.nodes[0]]),
+         );
 
          network.setOptions({
             configure: {
                filter: (option, path) => {
-                  if (path.indexOf('physics') !== -1) return true;
-                  if (path.indexOf('smooth') !== -1 || option === 'smooth') return true;
+                  if (path.indexOf("physics") !== -1) return true;
+                  if (path.indexOf("smooth") !== -1 || option === "smooth") return true;
 
                   return false;
                },
-               container: layoutFormContainerRef.current
-            }
+               container: layoutFormContainerRef.current,
+            },
          });
       };
 
@@ -1259,7 +1278,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          graphData: graphData,
          findNode: (node) => nodeFocus(node, network),
          findEdge: (edge) => edgeFocus(edge, network),
-         applyOverlay: applyOverlay
+         applyOverlay: applyOverlay,
       });
 
       initializeGraph();
@@ -1269,7 +1288,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             clearInterval(redrawIntervalID);
             redrawIntervalID = null;
          }
-         currentUploadCounter.value = 0;
          graphData.nodes.clear();
          graphData.edges.clear();
          legendData.edges.clear();
@@ -1280,7 +1298,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
    return (
       <>
-         <VisRibbon
+         <VisToolbar
             reset={Reset}
             setOverlay={setOverlay}
             onMount={onVisRibbonMount}
@@ -1296,9 +1314,9 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             next={() => Next(network, highlightedNodes, counter)}
          />
 
-         <Stack sx={{ height: 'calc(100% - 8.6rem)', width: '100%' }} direction={'row'}>
+         <Stack sx={{ height: "calc(100% - 8.6rem)", width: "100%" }} direction={"row"}>
             <Box
-               sx={{ width: '72%', height: '100%' }}
+               sx={{ width: "72%", height: "100%" }}
                ref={networkContainerRef}
                onContextMenu={handleContextmenu}
             />
@@ -1313,7 +1331,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                      highlightedNodes,
                      graphData,
                      edgeOptions,
-                     highlightedEdges
+                     highlightedEdges,
                   )
                }
                hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
@@ -1323,7 +1341,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                legendContainerRef={legendContainerRef}
             />
 
-            <Box sx={{ display: 'none', width: '32.5rem' }} ref={layoutFormContainerRef} />
+            <Box
+               sx={{ display: "none", width: "32.5rem" }}
+               ref={layoutFormContainerRef}
+            />
          </Stack>
 
          <div ref={circularProgressRef} id="circularProgress">
@@ -1360,7 +1381,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
             onMount={onNewEdgeFormMount}
             nodes={() => graphData.nodes.getIds()}
             edgeTypes={Object.keys(objectTypeCount.edges).filter(
-               (key) => objectTypeCount.edges[key] > 0
+               (key) => objectTypeCount.edges[key] > 0,
             )}
             createEdge={addNewEdge}
          />
