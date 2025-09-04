@@ -66,11 +66,11 @@
          "enabled": true,
          "barnesHut": {
             "gravitationalConstant": -19500,
-            "centralGravity": 0.3,
-            "springConstant": 0.85,
-            "springLength": 45,
+            "centralGravity": 1,
+            "springConstant": 0.4,
+            "springLength": 80,
             "avoidOverlap": 0.25,
-            "damping": 0.08
+            "damping": 0.15
          },
          "forceAtlas2Based": {
             "gravitationalConstant": -400,

@@ -41,18 +41,17 @@ const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabV
             }
 
             if (columnName === "from" || columnName === "to") {
-               const nodeId = obj.attributes[columnName];
-               const node = tableData.nodes.get(nodeId);
+               const node = tableData.nodes.get(obj.attributes[columnName]);
                return (
                   <StyledTableCell align="right" key={i}>
                      <Link
                         component={"button"}
                         name={columnName}
-                        value={nodeId}
+                        value={node?.id}
                         variant="button"
                         onClick={() => handleNameClick(node)}
                      >
-                        {node ? node.attributes?.name || nodeId : nodeId}
+                        {node?.attributes.name}
                      </Link>
                   </StyledTableCell>
                );

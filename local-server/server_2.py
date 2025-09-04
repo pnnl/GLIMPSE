@@ -13,9 +13,14 @@ from flask_socketio import SocketIO
 import networkx as nx
 import glm
 
+from cimbuilder.object_builder import new_energy_consumer
+from cimbuilder.object_builder import new_synchronous_generator
+from cimbuilder.object_builder import new_two_terminal_object
+
 # CIM-graph imports
 from cimgraph.models import FeederModel, BusBranchModel, NodeBreakerModel
 import cimgraph.utils as cim_utils
+from cimgraph.databases import XMLFile
 import cimgraph.data_profile.cimhub_2023 as cim
 from cimbuilder.object_builder import new_energy_consumer, new_synchronous_generator, new_two_terminal_object
 
@@ -1573,6 +1578,389 @@ def update_object_attributes():
         _log.error(f"Error updating object attributes: {e}")
         return jsonify({'error': str(e)}), 500
 
+def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:float, yPosition:float):
+   for terminal in node.Terminals:
+      equipment = terminal.ConductingEquipment
+      location = equipment.Location
+      if location is None:
+         location = cim.Location(name=equipment.name+'_location')
+         equipment.Location = location
+         location.PowerSystemResources.append(equipment)
+         network.add_to_graph(location)
+
+      point = cim.PositionPoint()
+      point.sequenceNumber = terminal.sequenceNumber
+      point.xPosition = xPosition
+      point.yPosition = yPosition
+      point.Location = location
+      location.PositionPoints.append(point)
+      network.add_to_graph(point)
+
+def export_cim_coords(new_coords_obj: list, output_path: str) -> None:
+   global CIM_NETWORK
+
+   for obj in new_coords_obj:
+      c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(obj["mRID"].upper())]
+      print(f"Updating coordinates for node {c_node.name} ({c_node.mRID}) to x: {obj['x']}, y: {obj['y']}")
+      new_bus_location(network=CIM_NETWORK, node=c_node, xPosition=obj["x"], yPosition=obj["y"])
+
+   cim_utils.get_all_data(CIM_NETWORK)
+   cim_utils.write_xml(CIM_NETWORK, output_path)
+
+def get_multi_coordinate(coords: list):
+   if len(coords) == 0:
+      return None
+
+   if len(coords) <= 2:
+      return max(coords)
+
+   counts = {}
+   for item in coords:
+      counts[item] = counts.get(item, 0) + 1
+   for item, count in counts.items():
+      if count >= 2:
+         return item
+
+def find_shared_coordinates(node) -> dict:
+   multi_location_x = []
+   multi_location_y = []
+
+   # Process all positions from all terminals
+   for terminal in node.Terminals:
+      equipment = terminal.ConductingEquipment
+      if equipment.Location is not None:
+         location = equipment.Location
+
+         for point in location.PositionPoints:
+            x = point.xPosition
+            multi_location_x.append(x)
+            y = point.yPosition
+            multi_location_y.append(y)
+
+   return {
+     "x": get_multi_coordinate(multi_location_x),
+     "y": get_multi_coordinate(multi_location_y)
+   }
+
+def add_attributes(cim_obj, new_obj):
+   for field in fields(cim_obj):
+      if field.metadata["type"] == "Attribute": # association, aggregateof, and ofaggregate
+         new_obj["attributes"][field.name] = str(getattr(cim_obj, field.name))
+
+def cim2GS(cim_filepath: str) -> str:
+   """
+   Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
+   """
+   global CIM_NETWORK
+   phantom_node_count = 0
+   cim_file = XMLFile(cim_filepath)
+   CIM_NETWORK = FeederModel(container=cim.Feeder(), connection=cim_file)
+   objects = []
+
+   for node in CIM_NETWORK.graph[cim.ConnectivityNode].values():
+      coordinates = find_shared_coordinates(node)
+
+      c_node = {
+         "objectType": "c_node",
+         "elementType": "node",
+         "attributes": {
+            "id": node.mRID,
+            "name": node.name,
+         }
+      }
+
+      if coordinates["x"] and coordinates["y"]:
+         c_node["attributes"]["x"] = coordinates["x"]
+         c_node["attributes"]["y"] = coordinates["y"]
+
+      add_attributes(node, c_node)
+      objects.append(c_node)
+
+      for terminal in node.Terminals:
+         equipment = terminal.ConductingEquipment
+         eq_class_type = equipment.__class__.__name__
+
+         if eq_class_type in LOAD_TYPES:
+            new_load = {
+               "objectType": "load",
+               "elementType": "node",
+               "attributes": {
+                  "id": terminal.mRID,
+                  "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
+                  "eq_class_type": eq_class_type
+               }
+            }
+            add_attributes(terminal, new_load)
+
+            objects.append(new_load)
+            objects.append({
+               "objectType": "line",
+               "elementType": "edge",
+               "attributes": {
+                  "id": f"{node.mRID}_{terminal.mRID}",
+                  "from": node.mRID,
+                  "to": terminal.mRID
+               }
+            })
+
+         if eq_class_type in GEN_TYPES:
+            new_gen = {
+               "objectType": "diesel_dg",
+               "elementType": "node",
+               "attributes": {
+                  "id": terminal.mRID,
+                  "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
+                  "eq_class_type": eq_class_type
+               }
+            }
+            add_attributes(terminal, new_gen)
+
+            objects.append(new_gen)
+            objects.append({
+               "objectType": "line",
+               "elementType": "edge",
+               "attributes": {
+                  "id": f"{node.mRID}_{terminal.mRID}",
+                  "from": node.mRID,
+                  "to": terminal.mRID
+               }
+            })
+
+         if eq_class_type in CAP_TYPES:
+            new_cap = {
+               "objectType": "capacitor",
+               "elementType": "node",
+               "attributes": {
+                  "id": terminal.mRID,
+                  "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
+                  "eq_class_type": eq_class_type
+               }
+            }
+            add_attributes(terminal, new_cap)
+
+            objects.append(new_cap)
+            objects.append({
+               "objectType": "line",
+               "elementType": "edge",
+               "attributes": {
+                  "id": f"{node.mRID}_{terminal.mRID}",
+                  "from": node.mRID,
+                  "to": terminal.mRID
+               }
+            })
+
+         if eq_class_type in INV_TYPES:
+            new_inv = {
+               "objectType": "inverter_dyn",
+               "elementType": "node",
+               "attributes": {
+                  "id": terminal.mRID,
+                  "name": terminal.name,
+                  "sequenceNumber": terminal.sequenceNumber,
+                  "eq_class_type": eq_class_type,
+               }
+            }
+            add_attributes(terminal, new_inv)
+
+            objects.append(new_inv)
+            objects.append({
+               "objectType": "line",
+               "elementType": "edge",
+               "attributes": {
+                  "id": f"{node.mRID}_{terminal.mRID}",
+                  "from": node.mRID,
+                  "to": terminal.mRID
+               }
+            })
+
+   CIM_NETWORK.get_all_edges(cim.ACLineSegment)
+   for line in CIM_NETWORK.graph[cim.ACLineSegment].values():
+      new_l = {
+         "objectType": "overhead_line",
+         "elementType": "edge",
+         "attributes": {
+            "id": line.mRID,
+            "from": line.Terminals[0].ConnectivityNode.mRID,
+            "to": line.Terminals[1].ConnectivityNode.mRID,
+            "class_type": line.__class__.__name__,
+            "length": line.length
+         }
+      }
+
+      add_attributes(line, new_l)
+      objects.append(new_l)
+
+   CIM_NETWORK.get_all_edges(cim.PowerTransformer)
+   CIM_NETWORK.get_all_edges(cim.PowerTransformerEnd)
+   CIM_NETWORK.get_all_edges(cim.TransformerTank)
+   CIM_NETWORK.get_all_edges(cim.TransformerTankEnd)
+
+   for line in CIM_NETWORK.graph[cim.TransformerTank].values():
+
+      new_edge = {
+         "objectType": "transformer",
+         "elementType": "edge",
+         "attributes": {
+            "id": line.mRID,
+            "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
+            "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
+            "class_type": line.__class__.__name__
+         }
+      }
+
+      add_attributes(line, new_edge)
+      objects.append(new_edge)
+
+   for line in CIM_NETWORK.graph[cim.PowerTransformer].values():
+      if line.PowerTransformerEnd:
+         if (len(line.PowerTransformerEnd) > 2):
+            """
+            T1 <- * -> T2
+                  |
+                  V
+                  T3
+
+            * : phantom node
+            """
+            phantom_node_id = f"phantom_node_id_{phantom_node_count}"
+
+            objects.append({
+               "objectType": "phantom_node",
+               "elementType": "node",
+               "attributes": {
+                  "id": phantom_node_id,
+                  "v": "1kV"
+               }
+            })
+
+            edge_ID = f"{line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID}_{phantom_node_id}"
+            objects.append({
+               "objectType": "transformer",
+               "elementType": "edge",
+               "attributes": {
+                  "id": edge_ID,
+                  "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
+                  "to": phantom_node_id
+               }
+            })
+
+            edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID}"
+            objects.append({
+               "objectType": "transformer",
+               "elementType": "edge",
+               "attributes": {
+                  "id": edge_ID,
+                  "from": phantom_node_id,
+                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID
+               }
+            })
+
+            edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[2].Terminal.ConnectivityNode.mRID}"
+            objects.append({
+               "objectType": "transformer",
+               "elementType": "edge",
+               "attributes": {
+                  "id": edge_ID,
+                  "from": phantom_node_id,
+                  "to": line.PowerTransformerEnd[2].Terminal.ConnectivityNode.mRID
+               }
+            })
+
+            phantom_node_count += 1
+         else:
+            new_edge = {
+               "objectType": "transformer",
+               "elementType": "edge",
+               "attributes": {
+                  "id": line.mRID,
+                  "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
+                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID,
+                  "class_type": line.__class__.__name__
+               }
+            }
+
+            add_attributes(line, new_edge)
+            objects.append(new_edge)
+
+   cim_switch_types = [
+      cim.Breaker,
+      cim.Fuse,
+      cim.Switch,
+      cim.Sectionaliser,
+      cim.LoadBreakSwitch,
+      cim.Disconnector,
+      cim.Recloser
+   ]
+
+   for cim_type in cim_switch_types:
+      if cim_type in CIM_NETWORK.graph:
+         for line in CIM_NETWORK.graph[cim_type].values():
+            new_edge = {
+               "objectType": "switch",
+               "elementType": "edge",
+               "attributes": {
+                  "id": line.mRID,
+                  "from": line.Terminals[0].ConnectivityNode.mRID,
+                  "to": line.Terminals[1].ConnectivityNode.mRID,
+                  "class_type": line.__class__.__name__
+               }
+            }
+
+            add_attributes(line, new_edge)
+            objects.append(new_edge)
+
+   return json.dumps({cim_filepath: {"objects": objects}})
+
+def exportCIM(dir2save: str, filename: str, data: list) -> None:
+   global CIM_NETWORK
+
+   if len(data) == 0:
+      print("No objects to export, creating copy of the original file")
+      cim_utils.get_all_data(CIM_NETWORK)
+      cim_utils.write_xml(CIM_NETWORK, dir2save + "\\cim_output.xml")
+      return
+
+   feeder = CIM_NETWORK.container
+
+   # [0] = new nerminal with type
+   # [1] = new connectivity node
+   # [2] = existing connectivity node
+
+   for nodeObj in data:
+      # 1. get existing connectivity node
+      existing_c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(nodeObj[2]["mRID"].upper())]
+
+      # 2. create new connectivity node
+      new_c_node = cim.ConnectivityNode(mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"])
+      CIM_NETWORK.add_to_graph(new_c_node)
+
+      # 3. connect both connectivity nodes with new_two_terminal_obj function
+      new_two_terminal_object(network=CIM_NETWORK, container=feeder, class_type=cim.ACLineSegment, name=existing_c_node.mRID.split("-")[0], node1=existing_c_node, node2=new_c_node)
+
+      # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
+      if nodeObj[0]["type"] == "diesel_dg":
+         new_synchronous_generator(network=CIM_NETWORK, container=feeder, name=nodeObj[0]["name"], node=new_c_node)
+      elif nodeObj[0]["type"] == "load":
+         new_energy_consumer(network=CIM_NETWORK, container=feeder, name=nodeObj[0]["name"], node=new_c_node)
+      elif nodeObj[0]["type"] == "inverter_dyn":
+         # new power electronics connection
+         pass
+      elif nodeObj[0]["type"] == "capacitor":
+         # new one terminal object
+         pass
+
+   cim_utils.get_all_data(CIM_NETWORK)
+   cim_utils.write_xml(CIM_NETWORK, os.path.join(dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"))
+
+@app.route("/cimg-to-GS", methods=["POST"])
+def cim_to_glimpse():
+  cim_filepath = req.get_json()
+  glimpse_structure_data = cim2GS(cim_filepath[0])
+
+  return glimpse_structure_data
 # ================================================================================================
 # WEBSOCKET EVENTS (from your original server.py)
 # ================================================================================================
@@ -1629,4 +2017,4 @@ if __name__ == "__main__":
     # Start the Flask-SocketIO server
     port = int(os.environ.get('FLASK_PORT', 5051))
     _log.info(f"Starting GLIMPSE CIM-Graph server on port {port}")
-    socketio.run(app, host='0.0.0.0', port=port, debug=False, log_output=True)
+    socketio.run(app, host='127.0.0.1', port=port, debug=False, log_output=True)

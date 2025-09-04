@@ -1352,6 +1352,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             rotateCCW={() => rotateCCW(network, ANGLE)}
             prev={() => Prev(network, highlightedNodes, counter)}
             next={() => Next(network, highlightedNodes, counter)}
+            isCIM={isCim}
          />
 
          <Stack
