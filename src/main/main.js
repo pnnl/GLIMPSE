@@ -7,72 +7,42 @@ const {
    Menu,
    globalShortcut,
    nativeImage,
-   Notification
-} = require('electron');
-const { optimizer, is } = require('@electron-toolkit/utils');
-const { spawn } = require('child_process');
-const { readdirSync } = require('fs');
-const { join, basename } = require('path');
-const { io } = require('socket.io-client');
-const { readFileSync, writeFileSync, existsSync } = require('fs');
-const Ajv = require('ajv');
+   Notification,
+} = require("electron");
+const { optimizer, is } = require("@electron-toolkit/utils");
+const { spawn } = require("child_process");
+const { readdirSync } = require("fs");
+const { join, basename } = require("path");
+const { io } = require("socket.io-client");
+const { readFileSync, writeFileSync, existsSync } = require("fs");
+const Ajv = require("ajv");
 // const log = require('electron-log');
 // const { autoUpdater } = require("electron-updater");
 
-const jsonUploadSchema = require('../../schemas/json_upload.schema.json');
-const themeUploadSchema = require('../../schemas/theme_upload.schema.json');
-const socket = io('http://127.0.0.1:5173');
-const isMac = process.platform === 'darwin';
+const jsonUploadSchema = require("../../schemas/json_upload.schema.json");
+const themeUploadSchema = require("../../schemas/theme_upload.schema.json");
+const socket = io("http://127.0.0.1:5173");
+const isMac = process.platform === "darwin";
 const rootDir = app.isPackaged ? process.resourcesPath : __dirname;
 let mainWindow = null;
 let splashWindow = null;
 let portalWindow = null;
 const subprocesses = [];
 
-//------------------ for debugging ------------------
-// autoUpdater.logger = log;
-// autoUpdater.logger.transports.file.level = 'info';
-// log.info('App starting...');
-//---------------------------------------------------
-// const sendStatusToWindow = (text) => {
-//    console.log(text);
-// }
-// autoUpdater.on('checking-for-update', () => {
-//    sendStatusToWindow('Checking for update...');
-// });
-// autoUpdater.on('update-available', (info) => {
-//    sendStatusToWindow('Update available.');
-// });
-// autoUpdater.on('update-not-available', (info) => {
-//    sendStatusToWindow('Update not available.');
-// });
-// autoUpdater.on('error', (err) => {
-//    sendStatusToWindow('Error in auto-updater. ' + err);
-// });
-// autoUpdater.on('download-progress', (progressObj) => {
-//    let log_message = "Download speed: " + progressObj.bytesPerSecond;
-//    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-//    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-//    sendStatusToWindow(log_message);
-// });
-// autoUpdater.on('update-downloaded', (info) => {
-//    sendStatusToWindow('Update downloaded');
-// });
-
 const checkIncludes = (jsonData) => {
    const included_files = [];
    const includeS_files = [];
 
    Object.keys(jsonData).forEach((fileName) => {
-      if (jsonData[fileName]['includes'].length === 0) {
+      if (jsonData[fileName]["includes"].length === 0) {
          included_files.push(fileName);
       }
    });
 
    Object.keys(jsonData).forEach((fileName) => {
-      if (jsonData[fileName]['includes'].length > 0) {
-         jsonData[fileName]['includes'].forEach((include) => {
-            includeS_files.push(include.value.split('.')[0] + '.json');
+      if (jsonData[fileName]["includes"].length > 0) {
+         jsonData[fileName]["includes"].forEach((include) => {
+            includeS_files.push(include.value.split(".")[0] + ".json");
          });
       }
    });
@@ -84,12 +54,12 @@ const checkIncludes = (jsonData) => {
 };
 
 const glm2json = async (filePaths) => {
-   const res = await fetch('http://127.0.0.1:5173/glm2json', {
-      method: 'post',
+   const res = await fetch("http://127.0.0.1:5173/glm2json", {
+      method: "post",
       headers: {
-         'content-type': 'application/json'
+         "content-type": "application/json",
       },
-      body: JSON.stringify(filePaths)
+      body: JSON.stringify(filePaths),
    });
 
    if (res.ok) {
@@ -97,7 +67,7 @@ const glm2json = async (filePaths) => {
       const valid = checkIncludes(output);
 
       if (!valid) {
-         return { alert: 'one or more include files are missing!' };
+         return { alert: "one or more include files are missing!" };
       }
       return output;
    } else {
@@ -107,12 +77,12 @@ const glm2json = async (filePaths) => {
 };
 
 const cimToGS = async (filePaths) => {
-   const res = await fetch('http://127.0.0.1:5173/cimg-to-GS', {
-      method: 'post',
+   const res = await fetch("http://127.0.0.1:5173/cimg-to-GS", {
+      method: "post",
       headers: {
-         'content-type': 'application/json'
+         "content-type": "application/json",
       },
-      body: JSON.stringify(filePaths)
+      body: JSON.stringify(filePaths),
    });
 
    if (res.ok) {
@@ -120,27 +90,27 @@ const cimToGS = async (filePaths) => {
       const gs_output = await res.json();
       return gs_output;
    } else {
-      return { alert: 'Something went wrong with the CIM XML file upload.' };
+      return { alert: "Something went wrong with the CIM XML file upload." };
    }
 };
 
 const validateThemeFile = (filepath) => {
    const ajv = new Ajv();
    const validate = ajv.compile(themeUploadSchema);
-   const themeData = JSON.parse(readFileSync(filepath, { encoding: 'utf-8' }));
+   const themeData = JSON.parse(readFileSync(filepath, { encoding: "utf-8" }));
    const valid = validate(themeData);
 
    if (valid) {
-      console.log('custom theme file is valid !!');
+      console.log("custom theme file is valid !!");
       return themeData;
    } else {
-      const errorMsg = ajv.errorsText(validate.errors, { dataVar: 'jsonData' });
+      const errorMsg = ajv.errorsText(validate.errors, { dataVar: "jsonData" });
       return { error: errorMsg };
    }
 };
 
 const sendPlot = () => {
-   const plotFilename = join(__dirname, 'figs', 'plot.png');
+   const plotFilename = join(__dirname, "figs", "plot.png");
    const plotFileData = readFileSync(plotFilename);
    return plotFileData;
 };
@@ -149,33 +119,33 @@ const validateJson = (filePaths) => {
    const ajv = new Ajv();
    const validator = ajv.compile(jsonUploadSchema);
    const data = {};
-   const nodeLinkDataKeys = ['directed', 'multigraph', 'graph', 'nodes', 'edges'];
+   const nodeLinkDataKeys = ["directed", "multigraph", "graph", "nodes", "edges"];
    let valid = true;
    // let edgesKeyName = null;
 
    for (const filePath of filePaths) {
-      const fileData = JSON.parse(readFileSync(filePath, { encoding: 'utf-8' }));
+      const fileData = JSON.parse(readFileSync(filePath, { encoding: "utf-8" }));
 
       if (nodeLinkDataKeys.every((key) => key in fileData)) {
          data[basename(filePath)] = {
-            objects: []
+            objects: [],
          };
 
          for (const node of fileData.nodes) {
             let objectType = null;
 
-            if ('type' in node && typeof node.type === 'object') {
-               objectType = node.type.join('-');
-            } else if ('type' in node) {
+            if ("type" in node && typeof node.type === "object") {
+               objectType = node.type.join("-");
+            } else if ("type" in node) {
                objectType = node.type;
             } else {
-               objectType = 'node';
+               objectType = "node";
             }
 
             data[basename(filePath)].objects.push({
                objectType: objectType,
-               elementType: 'node',
-               attributes: node
+               elementType: "node",
+               attributes: node,
             });
          }
 
@@ -183,14 +153,14 @@ const validateJson = (filePaths) => {
             const { source, target, key, ...rest } = edge;
 
             data[basename(filePath)].objects.push({
-               objectType: 'type' in edge ? edge.type : 'edge',
-               elementType: 'edge',
+               objectType: "type" in edge ? edge.type : "edge",
+               elementType: "edge",
                attributes: {
                   id: `${source}-${target}-${key}`,
                   from: source,
                   to: target,
-                  ...rest
-               }
+                  ...rest,
+               },
             });
          }
       } else {
@@ -201,7 +171,7 @@ const validateJson = (filePaths) => {
    }
 
    if (!valid) {
-      const errorMessage = ajv.errorsText(validator.errors, { dataVar: 'jsonData' });
+      const errorMessage = ajv.errorsText(validator.errors, { dataVar: "jsonData" });
       return JSON.stringify({ error: errorMessage });
    }
 
@@ -211,8 +181,8 @@ const validateJson = (filePaths) => {
 };
 
 const exportThemeFile = async (themeData) => {
-   const filename = 'custom.theme.json';
-   let dir2save = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+   const filename = "custom.theme.json";
+   let dir2save = await dialog.showOpenDialog({ properties: ["openDirectory"] });
 
    if (dir2save.canceled) return null;
    dir2save = dir2save.filePaths[0];
@@ -222,7 +192,7 @@ const exportThemeFile = async (themeData) => {
 
 const json2glmFunc = async (jsonData) => {
    // have the user choose where to store the files
-   let dir2save = await dialog.showOpenDialog({ properties: ['openDirectory'] });
+   let dir2save = await dialog.showOpenDialog({ properties: ["openDirectory"] });
    if (dir2save.canceled) return null;
    dir2save = dir2save.filePaths[0];
 
@@ -230,33 +200,33 @@ const json2glmFunc = async (jsonData) => {
 
    Object.keys(parsedData).forEach((filename) => {
       delete Object.assign(parsedData, {
-         [filename.replace('.json', '.glm')]: parsedData[filename]
+         [filename.replace(".json", ".glm")]: parsedData[filename],
       })[filename];
    });
 
    const sendObj = {
       saveDir: dir2save,
-      data: parsedData
+      data: parsedData,
    };
 
-   const res = await fetch('http://127.0.0.1:5173/json2glm', {
-      method: 'POST',
+   const res = await fetch("http://127.0.0.1:5173/json2glm", {
+      method: "POST",
       headers: {
-         'content-type': 'application/json'
+         "content-type": "application/json",
       },
-      body: JSON.stringify(sendObj)
+      body: JSON.stringify(sendObj),
    });
 
    if (res.ok)
       new Notification({
-         title: 'Export Notification',
-         body: 'GLM files saved at: ' + dir2save
+         title: "Export Notification",
+         body: "GLM files saved at: " + dir2save,
       }).show();
 };
 
 const getFilePaths = async () => {
    const fileSelectionPromise = dialog.showOpenDialog({
-      properties: ['openFile', 'multiSelections']
+      properties: ["openFile", "multiSelections"],
    });
 
    const fileSelection = await fileSelectionPromise;
@@ -268,55 +238,54 @@ const getFilePaths = async () => {
 
 const getFilePathsSet = async (set) => {
    const sets = {
-      13: [join(process.cwd(), 'data', '13', 'IEEE-13.glm')],
-      3000: [join(process.cwd(), 'data', '3000', '3000_model.glm')],
-      8500: [join(process.cwd(), 'data', '8500', 'ieee8500.glm')],
+      13: [join(process.cwd(), "data", "13", "IEEE-13.glm")],
+      3000: [join(process.cwd(), "data", "3000", "3000_model.glm")],
+      8500: [join(process.cwd(), "data", "8500", "ieee8500.glm")],
       9500: [
-         join(process.cwd(), 'data', '9500', 'IEEE_9500.glm'),
-         join(process.cwd(), 'data', '9500', 'Inverters.glm'),
-         join(process.cwd(), 'data', '9500', 'Recorders.glm'),
-         join(process.cwd(), 'data', '9500', 'Rotating_Machines.glm')
+         join(process.cwd(), "data", "9500", "IEEE_9500.glm"),
+         join(process.cwd(), "data", "9500", "Inverters.glm"),
+         join(process.cwd(), "data", "9500", "Recorders.glm"),
+         join(process.cwd(), "data", "9500", "Rotating_Machines.glm"),
       ],
       123: [
-         join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Diesels.glm'),
-         join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Dynamic.glm'),
-         join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Inverters_Mixed.glm'),
-         join(process.cwd(), 'data', '123-bus-model', 'IEEE_123_Recorders.glm')
-      ]
+         join(process.cwd(), "data", "123-bus-model", "IEEE_123_Diesels.glm"),
+         join(process.cwd(), "data", "123-bus-model", "IEEE_123_Dynamic.glm"),
+         join(process.cwd(), "data", "123-bus-model", "IEEE_123_Inverters_Mixed.glm"),
+         join(process.cwd(), "data", "123-bus-model", "IEEE_123_Recorders.glm"),
+      ],
    };
 
    return sets[set];
 };
 
-const createPortalWindow = (componentName, props) => {
+const createPortalWindow = (watchData) => {
    portalWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
+      width: 1250,
+      height: 840,
+      minWidth: 660,
+      minHeight: 550,
       autoHideMenuBar: true,
       webPreferences: {
          sandbox: false,
          nodeIntegration: false,
          contextIsolation: true,
-         preload: join(__dirname, '..', 'preload', 'preload.js')
-      }
+         preload: join(__dirname, "..", "preload", "preload.js"),
+      },
    });
 
    // Load portal.html
-   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      portalWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/portal/portal.html`);
+   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+      portalWindow.loadURL(`${process.env["ELECTRON_RENDERER_URL"]}/portal/portal.html`);
    } else {
-      portalWindow.loadFile(join(__dirname, '..', 'renderer', 'portal', 'portal.html'));
+      portalWindow.loadFile(join(__dirname, "..", "renderer", "portal", "portal.html"));
    }
 
    // When window is ready, send component data
-   portalWindow.webContents.on('did-finish-load', () => {
-      portalWindow.webContents.send('render-component', {
-         component: componentName,
-         props: props
-      });
+   portalWindow.webContents.on("did-finish-load", () => {
+      portalWindow.webContents.send("show-watch", watchData);
    });
 
-   portalWindow.on('close', () => (portalWindow = null));
+   portalWindow.on("close", () => (portalWindow = null));
 };
 
 const makeWindow = () => {
@@ -324,8 +293,8 @@ const makeWindow = () => {
       width: 1500,
       height: 900,
       minHeight: 750,
-      icon: '../resources/GLIMPSE_color_icon.ico',
-      backgroundColor: 'white',
+      icon: "../resources/GLIMPSE_color_icon.ico",
+      backgroundColor: "white",
       autoHideMenuBar: false,
       show: false,
       webPreferences: {
@@ -333,130 +302,130 @@ const makeWindow = () => {
          nodeIntegration: false,
          contextIsolation: true,
          enableRemoteModule: false,
-         preload: join(__dirname, '..', 'preload', 'preload.js')
-      }
+         preload: join(__dirname, "..", "preload", "preload.js"),
+      },
    });
 
    // opens urls in default browser
    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-      if (url === 'about:blank') {
+      if (url === "about:blank") {
          return {
-            action: 'allow',
+            action: "allow",
             overrideBrowserWindowOptions: {
                frame: false,
                fullscreenable: false,
-               backgroundColor: 'black'
-            }
+               backgroundColor: "black",
+            },
          };
       }
-      return { action: 'deny' };
+      return { action: "deny" };
    });
 
-   mainWindow.webContents.on('will-navigate', (event, url) => {
+   mainWindow.webContents.on("will-navigate", (event, url) => {
       event.preventDefault(); // Prevent the Electron app from navigating
       shell.openExternal(url); // Open the URL in the default browser
    });
 
    mainWindow.setIcon(
-      nativeImage.createFromPath(join(__dirname, 'assets', 'GLIMPSE_color_icon.ico'))
+      nativeImage.createFromPath(join(__dirname, "assets", "GLIMPSE_color_icon.ico")),
    );
 
    const menu = Menu.buildFromTemplate([
       {
-         label: 'File',
+         label: "File",
          submenu: [
-            isMac ? { role: 'close' } : { role: 'quit' },
+            isMac ? { role: "close" } : { role: "quit" },
             {
-               label: 'Export',
-               click: () => mainWindow.webContents.send('extract')
-            }
-         ]
+               label: "Export",
+               click: () => mainWindow.webContents.send("extract"),
+            },
+         ],
       },
       {
-         label: 'Window',
+         label: "Window",
          submenu: [
-            { role: 'minimize' },
-            { role: 'zoom' },
+            { role: "minimize" },
+            { role: "zoom" },
             ...(isMac
                ? [
-                    { type: 'separator' },
-                    { role: 'front' },
-                    { type: 'separator' },
-                    { role: 'window' }
+                    { type: "separator" },
+                    { role: "front" },
+                    { type: "separator" },
+                    { role: "window" },
                  ]
-               : [{ role: 'close' }])
-         ]
+               : [{ role: "close" }]),
+         ],
       },
       {
-         label: 'View',
+         label: "View",
          submenu: [
-            { role: 'reload' },
-            { role: 'forceReload' },
-            { role: 'toggleDevTools' },
-            { type: 'separator' },
-            { role: 'resetZoom' },
-            { role: 'zoomIn' },
-            { role: 'zoomOut' },
-            { type: 'separator' },
-            { role: 'togglefullscreen' }
-         ]
+            { role: "reload" },
+            { role: "forceReload" },
+            { role: "toggleDevTools" },
+            { type: "separator" },
+            { role: "resetZoom" },
+            { role: "zoomIn" },
+            { role: "zoomOut" },
+            { type: "separator" },
+            { role: "togglefullscreen" },
+         ],
       },
       {
-         label: 'Themes',
-         id: 'themes-menu-item',
+         label: "Themes",
+         id: "themes-menu-item",
          submenu: [
             {
-               label: 'Export Theme File',
-               type: 'normal',
-               click: () => mainWindow.webContents.send('export-theme')
+               label: "Export Theme File",
+               type: "normal",
+               click: () => mainWindow.webContents.send("export-theme"),
             },
-            { type: 'separator' },
+            { type: "separator" },
             {
-               label: 'Power Grid [default]',
-               id: 'power-grid-theme',
-               type: 'radio',
-               checked: true
+               label: "Power Grid [default]",
+               id: "power-grid-theme",
+               type: "radio",
+               checked: true,
             },
             {
-               label: 'Custom',
-               id: 'custom-theme',
-               type: 'radio'
-            }
-         ]
+               label: "Custom",
+               id: "custom-theme",
+               type: "radio",
+            },
+         ],
       },
       {
-         label: 'Graph View',
+         label: "Graph View",
          submenu: [
             {
-               label: 'show attributes',
-               click: () => mainWindow.webContents.send('show-attributes', true)
+               label: "show attributes",
+               click: () => mainWindow.webContents.send("show-attributes", true),
             },
             {
-               label: 'hide attributes',
-               click: () => mainWindow.webContents.send('show-attributes', false)
-            }
-         ]
+               label: "hide attributes",
+               click: () => mainWindow.webContents.send("show-attributes", false),
+            },
+         ],
       },
       {
-         label: 'Tools',
+         label: "Tools",
          submenu: [
             {
-               label: 'Embeddings',
-               click: () => mainWindow.webContents.send('embeddings-plot', sendPlot())
+               label: "Embeddings",
+               click: () => mainWindow.webContents.send("embeddings-plot", sendPlot()),
             },
             {
-               label: 'Graph Metrics',
-               click: () => mainWindow.webContents.send('get-graph-metrics')
-            }
-         ]
-      }
+               label: "Graph Metrics",
+               click: () => mainWindow.webContents.send("get-graph-metrics"),
+            },
+         ],
+      },
    ]);
 
    Menu.setApplicationMenu(menu);
 
-   ipcMain.handle('get-theme', () => {
+   ipcMain.handle("get-theme", () => {
       const themeMenuItems =
-         Menu.getApplicationMenu().getMenuItemById('themes-menu-item').submenu.items;
+         Menu.getApplicationMenu().getMenuItemById("themes-menu-item").submenu.items;
       let themeMenuItemID = null;
 
       for (const item of themeMenuItems) {
@@ -469,63 +438,63 @@ const makeWindow = () => {
       return themeMenuItemID;
    });
 
-   ipcMain.handle('get-file-paths', () => getFilePaths());
-   ipcMain.handle('get-file-paths-set', (_event, set) => getFilePathsSet(set));
-   ipcMain.handle('getDefaultModelFiles', async () => {
-      const defaultDir = join(process.cwd(), 'data/3000/');
+   ipcMain.handle("get-file-paths", () => getFilePaths());
+   ipcMain.handle("get-file-paths-set", (_event, set) => getFilePathsSet(set));
+   ipcMain.handle("getDefaultModelFiles", async () => {
+      const defaultDir = join(process.cwd(), "data/3000/");
       return readdirSync(defaultDir).map((f) => join(defaultDir, f));
    });
 
-   ipcMain.handle('get-config', () =>
-      JSON.stringify(require(join(rootDir, '..', '..', 'config', 'appConfig.json')))
+   ipcMain.handle("get-config", () =>
+      JSON.stringify(require(join(rootDir, "..", "..", "config", "appConfig.json"))),
    );
 
-   ipcMain.handle('glm2json', (_, paths) => glm2json(paths));
+   ipcMain.handle("glm2json", (_, paths) => glm2json(paths));
 
    // cim -> GLIMPSE structure
-   ipcMain.handle('cimg2GS', (_, paths) => cimToGS(paths));
+   ipcMain.handle("cimg2GS", (_, paths) => cimToGS(paths));
 
-   ipcMain.handle('validate', (_, jsonFilePath) => validateJson(jsonFilePath));
+   ipcMain.handle("validate", (_, jsonFilePath) => validateJson(jsonFilePath));
 
-   ipcMain.handle('get-theme-data', (_, filepath) => {
-      const themeFilepath = join(rootDir, '..', '..', 'themes', filepath);
-      const themeFileData = readFileSync(themeFilepath, { encoding: 'utf-8' });
+   ipcMain.handle("get-theme-data", (_, filepath) => {
+      const themeFilepath = join(rootDir, "..", "..", "themes", filepath);
+      const themeFileData = readFileSync(themeFilepath, { encoding: "utf-8" });
       return JSON.parse(themeFileData);
    });
 
-   ipcMain.handle('read-json-file', (_, filepath) => {
-      const jsonFileData = readFileSync(filepath, { encoding: 'utf-8' });
+   ipcMain.handle("read-json-file", (_, filepath) => {
+      const jsonFileData = readFileSync(filepath, { encoding: "utf-8" });
       return JSON.parse(jsonFileData);
    });
 
-   ipcMain.handle('validate-theme', (_, filepath) => validateThemeFile(filepath));
+   ipcMain.handle("validate-theme", (_, filepath) => validateThemeFile(filepath));
 
-   ipcMain.on('json2glm', (_, jsonData) => json2glmFunc(jsonData));
+   ipcMain.on("json2glm", (_, jsonData) => json2glmFunc(jsonData));
 
-   ipcMain.on('export-theme', (_, themeData) => exportThemeFile(themeData));
+   ipcMain.on("export-theme", (_, themeData) => exportThemeFile(themeData));
 
-   ipcMain.on('send-natig-config', (_, configObj) => {
+   ipcMain.on("send-natig-config", (_, configObj) => {
       if (socket.connected) {
-         socket.emit('natig-config', configObj, (ack) => console.log(ack));
+         socket.emit("natig-config", configObj, (ack) => console.log(ack));
       }
    });
 
-   ipcMain.on('open-portal-window', (_, { component, props }) => {
-      if (!portalWindow) createPortalWindow(component, props);
+   ipcMain.on("open-portal-window", (_, watchData) => {
+      if (!portalWindow) createPortalWindow(watchData);
       else portalWindow.focus();
    });
 
    mainWindow.webContents.setWindowOpenHandler((details) => {
       shell.openExternal(details.url);
-      return { action: 'deny' };
+      return { action: "deny" };
    });
    // HMR for renderer base on electron-vite cli.
    // Load the remote URL for development or the local html file for production.
-   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-      mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+   if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
+      mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
    } else {
-      console.log('running in production mode');
-      mainWindow.loadFile(join(__dirname, '..', 'renderer', 'index.html'));
+      console.log("running in production mode");
+      mainWindow.loadFile(join(__dirname, "..", "renderer", "index.html"));
    }
 };
 
@@ -533,51 +502,50 @@ const makeSplashWindow = () => {
    splashWindow = new BrowserWindow({
       width: 500,
       height: 300,
-      backgroundColor: 'white',
+      backgroundColor: "white",
       transparent: true,
       frame: false,
       alwaysOnTop: false,
       resizable: false,
       movable: true,
       roundedCorners: true,
-      icon: join(__dirname, '..', '..', 'resources', 'GLIMPSE_color_icon.ico')
+      icon: join(__dirname, "..", "..", "resources", "GLIMPSE_color_icon.ico"),
    });
 
-   splashWindow.loadFile(join(__dirname, '..', '..', 'splash_window', 'splash-window.html'));
+   splashWindow.loadFile(join(__dirname, "..", "..", "splash_window", "splash-window.html"));
    splashWindow.center();
 };
 
 const initiateServer = () => {
    let serverProcess = null;
    const serverExecutableName =
-      process.platform === 'linux' || process.platform === 'darwin' ? 'server' : 'server.exe';
+      process.platform === "linux" || process.platform === "darwin" ? "server" : "server.exe";
 
    const serverExecutablePath = join(
       rootDir,
-      '..',
-      '..',
-      'local-server',
-      'server',
-      serverExecutableName
+      "..",
+      "..",
+      "local-server",
+      "server",
+      serverExecutableName,
    );
 
    if (existsSync(serverExecutablePath)) {
       serverProcess = spawn(serverExecutablePath);
-      serverProcess.stdout.on('data', (data) => {
-         console.log(data.toString('utf8'));
+      serverProcess.stdout.on("data", (data) => {
+         console.log(data.toString("utf8"));
       });
-      serverProcess.stderr.on('data', (data) => {
-         console.error(`Server error: ${data.toString('utf8')}`);
+      serverProcess.stderr.on("data", (data) => {
+         console.error(`Server error: ${data.toString("utf8")}`);
       });
-      serverProcess.stdout.on('error', (error) => console.log(`Server error: ${error}`));
-      serverProcess.stderr.on('error', (error) => console.log(`Server error: ${error}`));
+      serverProcess.stdout.on("error", (error) => console.log(`Server error: ${error}`));
+      serverProcess.stderr.on("error", (error) => console.log(`Server error: ${error}`));
    } else {
-      serverProcess = spawn('python', [join(__dirname, '..', '..', 'local-server', 'server.py')]);
-      serverProcess.stdout.on('data', (data) => {
-         console.log('data: ', data.toString('utf8'));
-         // console.log("data: ", data);
+      serverProcess = spawn("python", [join(__dirname, "..", "..", "local-server", "server.py")]);
+      serverProcess.stdout.on("data", (data) => {
+         console.log("data: ", data.toString("utf8"));
       });
-      serverProcess.stderr.on('data', (data) => {
+      serverProcess.stderr.on("data", (data) => {
          console.log(`log: ${data}`); // when error
       });
    }
@@ -586,52 +554,53 @@ const initiateServer = () => {
 };
 
 app.whenReady().then(() => {
-   globalShortcut.register('ctrl+p', () => mainWindow.webContents.send('show-vis-options'));
+   globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
    makeSplashWindow();
    initiateServer();
 
    // Set app user model id for windows
-   app.on('browser-window-created', (_, window) => {
+   app.on("browser-window-created", (_, window) => {
       optimizer.watchWindowShortcuts(window);
    });
 
-   socket.on('connect', () => {
-      console.log('connected to socket server!!');
+   socket.on("connect", () => {
+      console.log("connected to socket server!!");
+
+      // run test socket regardless
+      const testSocketScript = join(__dirname, "..", "..", "natig", "testsocket.py");
+      subprocesses.push(
+         spawn("python", [testSocketScript], {
+            shell: true,
+            stdio: "overlapped",
+         }),
+      );
 
       if (process.env.CONTAINER_NAME) {
-         const testSocketScript = join(__dirname, '..', '..', 'natig', 'testsocket.py');
-         subprocesses.push(
-            spawn('python', [testSocketScript], {
-               shell: true,
-               stdio: 'overlapped'
-            })
-         );
-
-         if (process.platform === 'win32') {
+         if (process.platform === "win32") {
             subprocesses.push(
                spawn(
-                  'powershell.exe',
+                  "powershell.exe",
                   [
-                     '-ExecutionPolicy',
-                     'Bypass',
-                     '-File',
-                     'simulation.ps1',
-                     process.env.CONTAINER_NAME
+                     "-ExecutionPolicy",
+                     "Bypass",
+                     "-File",
+                     "simulation.ps1",
+                     process.env.CONTAINER_NAME,
                   ],
                   {
-                     cwd: join(__dirname, '..', '..', 'natig'),
+                     cwd: join(__dirname, "..", "..", "natig"),
                      shell: true,
-                     stdio: 'overlapped'
-                  }
-               )
+                     stdio: "overlapped",
+                  },
+               ),
             );
-         } else if (process.platform === 'linux' || process.platform === 'darwin') {
+         } else if (process.platform === "linux" || process.platform === "darwin") {
             subprocesses.push(
-               spawn('bash', ['simulation.sh', process.env.CONTAINER_NAME], {
-                  cwd: join(__dirname, '..', '..', 'natig'),
-                  stdio: 'overlapped',
-                  shell: true
-               })
+               spawn("bash", ["simulation.sh", process.env.CONTAINER_NAME], {
+                  cwd: join(__dirname, "..", "..", "natig"),
+                  stdio: "overlapped",
+                  shell: true,
+               }),
             );
          }
       }
@@ -640,20 +609,20 @@ app.whenReady().then(() => {
       makeWindow();
       mainWindow.show();
 
-      socket.on('update-data', (data) => mainWindow.webContents.send('update-data', data));
-      socket.on('add-node', (data) => mainWindow.webContents.send('add-node', data));
-      socket.on('add-edge', (data) => mainWindow.webContents.send('add-edge', data));
-      socket.on('delete-node', (nodeID) => mainWindow.webContents.send('delete-node', nodeID));
-      socket.on('delete-edge', (edgeID) => mainWindow.webContents.send('delete-edge', edgeID));
-      socket.on('update-watch-item', (watchData) => {
+      socket.on("update-data", (data) => mainWindow.webContents.send("update-data", data));
+      socket.on("add-node", (data) => mainWindow.webContents.send("add-node", data));
+      socket.on("add-edge", (data) => mainWindow.webContents.send("add-edge", data));
+      socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
+      socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
+      socket.on("update-watch-item", (watchUpdate) => {
          if (portalWindow) {
-            portalWindow.webContents.send('update-watch-item', watchData);
+            portalWindow.webContents.send("update-watch-item", watchUpdate);
          }
       });
    });
 
    // autoUpdater.checkForUpdatesAndNotify();
-   app.on('activate', () => {
+   app.on("activate", () => {
       if (BrowserWindow.getAllWindows().length === 0) {
          makeWindow();
          mainWindow.show();
@@ -661,10 +630,10 @@ app.whenReady().then(() => {
    });
 });
 
-app.on('before-quit', () => {
-   subprocesses.forEach((process) => process.kill('SIGTERM'));
+app.on("before-quit", () => {
+   subprocesses.forEach((process) => process.kill("SIGTERM"));
 });
 
-app.on('window-all-closed', () => {
+app.on("window-all-closed", () => {
    app.quit();
 });

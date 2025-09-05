@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import '../styles/Nav.css';
-import About from './About';
+import React, { useState, useRef, useMemo, useEffect } from "react";
+import "../styles/Nav.css";
+import About from "./About";
 import {
    Stack,
    Toolbar,
@@ -9,11 +9,11 @@ import {
    MenuItem,
    Divider,
    Autocomplete,
-   TextField
-} from '@mui/material';
-import NatigConfigModal from './NatigConfigModal';
-import MenuIcon from '@mui/icons-material/Menu';
-import { SearchRounded } from '@mui/icons-material';
+   TextField,
+} from "@mui/material";
+import NatigConfigModal from "./NatigConfigModal";
+import MenuIcon from "@mui/icons-material/Menu";
+import { SearchRounded } from "@mui/icons-material";
 
 const Nav = ({
    onMount,
@@ -23,7 +23,7 @@ const Nav = ({
    findEdge,
    modelNumber,
    applyOverlay,
-   handleFileUpload
+   handleFileUpload,
 }) => {
    const [openAbout, setOpenAbout] = useState(false);
    const [showSearch, setShowSearch] = useState(false);
@@ -31,7 +31,6 @@ const Nav = ({
    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
    const [openConfig, setOpenConfig] = useState(false);
    const [themesSubMenuAnchorEl, setThemesSubMenuAnchorEl] = useState(null);
-   const [theme, setTheme] = useState('feeder-model-theme');
    const [watchData, setWatchData] = useState(null);
    const openMenu = Boolean(menuAnchorEl);
    const openThemeSubMenu = Boolean(themesSubMenuAnchorEl);
@@ -79,16 +78,13 @@ const Nav = ({
    };
 
    const showWatchWindow = () => {
-      console.log('showwatch');
-      window.glimpseAPI.openPortalWindow({
-         component: 'Watch',
-         props: { watchData: watchData }
-      });
+      console.log("showwatch");
+      window.glimpseAPI.openPortalWindow(watchData);
    };
 
    const handleSearch = () => {
-      if (searchValue.elementType === 'node') findNode.current(searchValue);
-      else if (searchValue.elementType === 'edge') findEdge.current(searchValue);
+      if (searchValue.elementType === "node") findNode.current(searchValue);
+      else if (searchValue.elementType === "edge") findEdge.current(searchValue);
       else alert(`${searchValue.id} is not in the graph.`);
    };
 
@@ -98,7 +94,7 @@ const Nav = ({
 
    return (
       <>
-         <Toolbar variant="dense" sx={{ width: '100%' }}>
+         <Toolbar variant="dense" sx={{ width: "100%" }}>
             <IconButton size="medium" onClick={handleMenuClick}>
                <MenuIcon />
             </IconButton>
@@ -110,7 +106,7 @@ const Nav = ({
             <img className="nav-logo" src="./imgs/GLIMPSE/GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
             {showSearch && (
                <Autocomplete
-                  sx={{ margin: '0 auto', width: '45%' }}
+                  sx={{ margin: "0 auto", width: "45%" }}
                   size="small"
                   options={options}
                   groupBy={(option) => option.type}
@@ -121,12 +117,12 @@ const Nav = ({
                         <IconButton onClick={handleSearch}>
                            <SearchRounded />
                         </IconButton>
-                        <TextField variant="outlined" {...params} label={'Search...'} />
+                        <TextField variant="outlined" {...params} label={"Search..."} />
                      </Stack>
                   )}
                />
             )}
-            <Stack direction={'row'} spacing={1} sx={showSearch ? {} : { marginLeft: 'auto' }}>
+            <Stack direction={"row"} spacing={1} sx={showSearch ? {} : { marginLeft: "auto" }}>
                <button className="header-btn" onClick={showHome}>
                   Home
                </button>

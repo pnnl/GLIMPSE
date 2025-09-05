@@ -537,6 +537,7 @@ const NatigConfigModal = ({
 
          window.glimpseAPI.sendNatigConfig(natigGeneralConfig);
 
+         // Close form modal
          close();
       } else {
          alert("Upload a feeder model ex: ieee3000_Feeder3.glm");
