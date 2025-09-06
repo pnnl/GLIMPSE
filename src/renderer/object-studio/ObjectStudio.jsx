@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Box, Tabs, Tab, Paper } from "@mui/material";
+import { Box, Tabs, Tab } from "@mui/material";
 import { DataSet } from "vis-data";
 import ObjectTable from "./ObjectTable";
 import ObjectTypesPane from "./ObjectTypesPane";
-import EditAttributeTable from "./EditAttributeTable";
+import EditObject from "./EditObject";
 
 const ObjectStudio = () => {
    const [tableData, setTableData] = useState(null);
@@ -13,10 +13,11 @@ const ObjectStudio = () => {
    const [objectColumns, setObjectColumns] = useState(null);
    const [filterTypes, setFilterTypes] = useState(null);
    const [objectToEdit, setObjectToEdit] = useState(null);
+   const [isCIM, setIsCIM] = useState(false);
 
    useEffect(() => {
-      console.log("ran in useEffect");
       window.glimpseAPI.onLoadObjects((data) => {
+         if ("isCIM" in data) console.log("CIM data loaded", data.isCIM);
          // Create DataSet from edges
          const edges = new DataSet(data.edges);
          const nodes = new DataSet(data.nodes);
@@ -54,6 +55,7 @@ const ObjectStudio = () => {
             edgeTypes: Array.from(allEdgeTypes).sort()
          });
          setTableData({ edges, nodes });
+         setIsCIM(data.isCIM);
       });
    }, []);
 
@@ -69,13 +71,13 @@ const ObjectStudio = () => {
             nodes: new DataSet(
                tableData.nodes.get({ filter: (n) => filterTypes.nodes.includes(n.type) })
             ),
-            edges: new DataSet(tableData.edges.get())
+            edges: tableData.edges
          };
       }
 
       if ("edges" in filterTypes && !("nodes" in filterTypes)) {
          return {
-            nodes: new DataSet(tableData.nodes.get()),
+            nodes: tableData.nodes,
             edges: new DataSet(
                tableData.edges.get({ filter: (e) => filterTypes.edges.includes(e.type) })
             )
@@ -135,7 +137,7 @@ const ObjectStudio = () => {
                />
             )}
             {tabValue === 2 && objectToEdit ? (
-               <EditAttributeTable object={objectToEdit} onSave={(o) => console.log(o)} />
+               <EditObject isCIM={isCIM} object={objectToEdit} onSave={(o) => console.log(o)} />
             ) : (
                <p>Select a node or edge from the table to edit</p>
             )}

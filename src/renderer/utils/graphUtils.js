@@ -130,7 +130,7 @@ export const nodeFocus = (node, network) => {
       scale: 3,
       locked: false,
       animation: {
-         duration: 2000,
+         duration: 750,
          easing: "easeInOutQuart"
       }
    };
@@ -151,11 +151,13 @@ export const nodeFocus = (node, network) => {
 
 export const edgeFocus = (edge, network) => {
    let edgeID = edge.id;
+   const edgeObject = network.body.edges[edgeID];
+
    const options = {
       scale: 3,
       locked: false,
       animation: {
-         duration: 2000,
+         duration: 750,
          easing: "easeInOytQuart"
       }
    };
@@ -163,16 +165,20 @@ export const edgeFocus = (edge, network) => {
    const clusteredEdges = network.clustering.getClusteredEdges(edgeID);
    if (clusteredEdges.length > 1) {
       edgeID = clusteredEdges[0];
-   } else if (network.clustering.findNode(edge.from).length > 1) {
+   } else if (network.clustering.findNode(edgeObject.from.id).length > 1) {
       nodeFocus(
-         { id: edge.from, communityID: network.body.nodes[edge.from].options.communityID },
+         {
+            id: edgeObject.from.id,
+            communityID: network.body.nodes[edgeObject.from.id].options.communityID
+         },
          network
       );
    } else {
-      const x_1 = network.body.edges[edgeID].from.x;
-      const y_1 = network.body.edges[edgeID].from.y;
-      const x_2 = network.body.edges[edgeID].to.x;
-      const y_2 = network.body.edges[edgeID].to.y;
+      const focusedEdge = network.body.edges[edgeID];
+      const x_1 = focusedEdge.from.x;
+      const y_1 = focusedEdge.from.y;
+      const x_2 = focusedEdge.to.x;
+      const y_2 = focusedEdge.to.y;
 
       const midPoint = { x: (x_1 + x_2) / 2, y: (y_1 + y_2) / 2 };
 
@@ -192,11 +198,11 @@ export const setLegendData = (typeCounts, theme, legendData) => {
    const currentNodeTypes = [];
    const currentEdgeTypes = [];
 
-   Object.entries(typeCounts.nodes).forEach(([type, count], i) => {
+   Object.entries(typeCounts.nodes).forEach(([type, count]) => {
       if (count > 0) currentNodeTypes.push(type);
    });
 
-   Object.entries(typeCounts.edges).forEach(([type, count], i) => {
+   Object.entries(typeCounts.edges).forEach(([type, count]) => {
       if (count > 0) currentEdgeTypes.push(type);
    });
 
@@ -418,8 +424,8 @@ export const hideObjects = (objectType, type, data) => {
  * Grays out the edges and nodes but the edges that are of the passed edge type
  * @param {string} edgeType - The type of edges to highlight
  */
-export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, highlightedEdges) => {
-   if (highlightedNodes.current.length === 0) {
+export const HighlightEdges = (edgeType, highlightedObjs, data, edgeOptions) => {
+   if (!highlightedObjs.current.some((obj) => obj.type === "node")) {
       const nodeItems = data.nodes.map((node) => {
          node.group = "inactive";
          node.label = " ";
@@ -430,19 +436,25 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
    }
 
    const edgesToUpdate = data.edges.map((edge) => {
-      if (edge.type === edgeType && highlightedEdges.current.includes(edge.id)) {
+      if (edge.type === edgeType && highlightedObjs.current.some((obj) => obj === edge.id)) {
          edge.color = "rgba(200, 200, 200, 0.4)";
          edge.width = edgeOptions[edge.type].width;
 
-         highlightedEdges.current = highlightedEdges.current.filter((edgeid) => edgeid !== edge.id);
-      } else if (edge.type !== edgeType && !highlightedEdges.current.includes(edge.id)) {
+         highlightedObjs.current = highlightedObjs.current.filter((obj) => obj.id !== edge.id);
+      } else if (
+         edge.type !== edgeType &&
+         !highlightedObjs.current.some((obj) => obj.id === edge.id)
+      ) {
          edge.color = "rgba(200, 200, 200, 0.4)";
          edge.width = edgeOptions[edge.type].width;
-      } else if (edge.type === edgeType && !highlightedEdges.current.includes(edge.id)) {
+      } else if (
+         edge.type === edgeType &&
+         !highlightedObjs.current.some((obj) => obj.id === edge.id)
+      ) {
          edge.color = edgeOptions[edge.type].color;
          edge.width = edgeOptions[edge.type].width * 3;
 
-         highlightedEdges.current.push(edge.id);
+         highlightedObjs.current.push({ id: edge.id, type: "edge" });
       }
 
       return edge;
@@ -452,33 +464,38 @@ export const HighlightEdges = (edgeType, highlightedNodes, data, edgeOptions, hi
 };
 
 /**
- * Grays out all edges and nodes that dont mach the node type
+ * Grays out all edges and nodes that don't mach the node type
  * @param {string} nodeType - The type of nodes to highlight
+ * @param {Object} highlightedObjs - useRef to keep track of highlighted nodes and edges
+ * @param {Object} data - the visjs data object containing nodes and edges
  */
-export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdges) => {
+export const HighlightGroup = (nodeType, data, highlightedObjs) => {
    const updateNodes = data.nodes.map((node) => {
-      if (node.type === nodeType && highlightedNodes.current.includes(node.id)) {
+      if (node.type === nodeType && highlightedObjs.current.includes(node.id)) {
          node.group = "inactive";
          node.label = " ";
 
-         highlightedNodes.current = highlightedNodes.current.filter((nodeid) => nodeid !== node.id);
-      } else if (node.type !== nodeType && !highlightedNodes.current.includes(node.id)) {
+         highlightedObjs.current = highlightedObjs.current.filter((obj) => obj.id !== node.id);
+      } else if (
+         node.type !== nodeType &&
+         !highlightedObjs.current.some((obj) => obj.id === node.id)
+      ) {
          node.group = "inactive";
          node.label = " ";
-      } else if (node.type === nodeType && !highlightedNodes.current.includes(node.id)) {
+      } else if (node.type === nodeType && !highlightedObjs.current.includes(node.id)) {
          if (node.group === "inactive") {
             node.group = node.type;
             if (node.attributes && "name" in node.attributes) node.label = node.attributes.name;
             else node.label = node.id;
          }
 
-         highlightedNodes.current.push(node.id);
+         highlightedObjs.current.push({ id: node.id, type: "node" });
       }
 
       return node;
    });
 
-   if (highlightedEdges.current.length === 0) {
+   if (!highlightedObjs.current.some((obj) => obj.type === "edge")) {
       const updateEdges = data.edges.map((edge) => {
          edge.color = "rgba(200, 200, 200, 0.5)";
 
@@ -495,24 +512,30 @@ export const HighlightGroup = (nodeType, data, highlightedNodes, highlightedEdge
  * Generates an array of highlighted nodes and focuses on a node
  * starting at the beginning of the array then moves up by one every function call
  */
-export const Next = (glmNetwork, highlightedNodes, counter) => {
+export const Next = (glmNetwork, highlightedObjs, counter) => {
    // starting counter is -1 so that when adding one is 0 to start at index 0
    counter.value++;
 
    // if the counter matches the length of the array then the count starts back at 0
-   if (counter.value === highlightedNodes.current.length) {
+   if (counter.value === highlightedObjs.current.length) {
       counter.value = 0;
    }
 
    try {
-      glmNetwork.focus(highlightedNodes.current[counter.value], {
-         scale: 3,
-         animation: {
-            duration: 750
-         },
-         easingFunction: "easeInQuad"
-      });
-   } catch {
+      const objToFocus = highlightedObjs.current[counter.value];
+      if (objToFocus.type === "edge") {
+         edgeFocus(objToFocus, glmNetwork);
+      } else {
+         glmNetwork.focus(objToFocus.id, {
+            scale: 3,
+            animation: {
+               duration: 750
+            },
+            easingFunction: "easeInQuad"
+         });
+      }
+   } catch (error) {
+      console.error(error);
       alert("There are no highlighted nodes to cycle through...");
    }
 };
@@ -521,22 +544,27 @@ export const Next = (glmNetwork, highlightedNodes, counter) => {
  * Generates an array of highlighted nodes and focuses on a node
  * starting at the end of the array then moves down every function call
  */
-export const Prev = (glmNetwork, highlightedNodes, counter) => {
+export const Prev = (glmNetwork, highlightedObjs, counter) => {
    counter.value--;
 
    //if the counter ends up less than 0 the counter starts over at the end of the array
    if (counter.value < 0) {
-      counter.value = highlightedNodes.current.length - 1;
+      counter.value = highlightedObjs.current.length - 1;
    }
 
    try {
-      glmNetwork.focus(highlightedNodes.current[counter.value], {
-         scale: 3,
-         animation: {
-            duration: 750
-         },
-         easingFunction: "easeInQuad"
-      });
+      const objToFocus = highlightedObjs.current[counter.value];
+      if (objToFocus.type === "edge") {
+         edgeFocus(objToFocus, glmNetwork);
+      } else {
+         glmNetwork.focus(objToFocus.id, {
+            scale: 3,
+            animation: {
+               duration: 750
+            },
+            easingFunction: "easeInQuad"
+         });
+      }
    } catch {
       alert("There are no highlighted nodes to cycle through...");
    }

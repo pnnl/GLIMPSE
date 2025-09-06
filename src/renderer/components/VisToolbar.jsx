@@ -20,7 +20,7 @@ import {
    TableChart
 } from "@mui/icons-material";
 
-const VisRibbon = ({
+const VisToolbar = ({
    rotateCW,
    rotateCCW,
    next,
@@ -199,4 +199,4 @@ const VisRibbon = ({
    );
 };
 
-export default VisRibbon;
+export default VisToolbar;

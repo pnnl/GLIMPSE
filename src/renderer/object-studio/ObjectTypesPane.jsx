@@ -19,6 +19,7 @@ function ObjectTypesPane({ objectTypes, setFilterTypes, filterTypes }) {
    const handleFilterChipClick = (type, objectType) => {
       if (filterTypes && type in filterTypes) {
          const newFilterTypes = { ...filterTypes };
+
          if (newFilterTypes[type].includes(objectType)) {
             newFilterTypes[type] = newFilterTypes[type].filter((t) => t !== objectType);
 

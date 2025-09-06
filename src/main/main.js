@@ -629,7 +629,7 @@ const initiateServer = () => {
       });
    } else {
       serverProcess = spawn("python", [
-         path.join(__dirname, "..", "..", "local-server", "server.py")
+         path.join(__dirname, "..", "..", "local-server", "server_2.py")
       ]);
       serverProcess.stdout.on("data", (data) => {
          console.log("data: ", data.toString("utf8"));

@@ -37,17 +37,33 @@ const isXmlFile = (path) => {
 export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => {
    setFileData({ loading: true });
 
+   // default theme
+   let theme = {
+      groups: {
+         inactive: {
+            color: "rgba(200, 200, 200, 0.4)",
+            shape: "dot"
+         }
+      },
+      edgeOptions: {}
+   };
+
    const selectedThemePromise = window.glimpseAPI.getTheme();
    const selectedTheme = await selectedThemePromise;
+
+   if (selectedTheme === "power-grid-theme") {
+      theme = await window.glimpseAPI.getThemeJsonData("PowerGrid.theme.json");
+   }
+
+   if (selectedTheme === "custom-theme" && paths.some((p) => p.split(".")[1] === "theme")) {
+      theme = await getCustomTheme(paths);
+   }
 
    if (paths.every(isGlmFile) && selectedTheme === "power-grid-theme") {
       setFilesUploaded(true);
 
-      const themePromise = window.glimpseAPI.getThemeJsonData("PowerGrid.theme.json");
       const dataPromise = window.glimpseAPI.glm2json(paths);
-
       const data = await dataPromise;
-      const theme = await themePromise;
 
       if (!data) {
          alert("Something went wrong... \n Re-upload or reset app");
@@ -66,13 +82,11 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
             loading: false
          });
       }
-   } else if (paths.every(isXmlFile) && selectedTheme === "power-grid-theme") {
+   } else if (paths.every(isXmlFile)) {
       setFilesUploaded(true);
-      const dataPromise = window.glimpseAPI.cimToGS(paths);
-      const themePromise = window.glimpseAPI.getThemeJsonData("PowerGrid.theme.json");
 
+      const dataPromise = window.glimpseAPI.cimToGS(paths);
       const data = await dataPromise;
-      const theme = await themePromise;
 
       if (!data) {
          alert("Something went wrong... \n Re-upload or reset app");
@@ -91,19 +105,7 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
             loading: false
          });
       }
-   } else if (paths.every(isJsonFile) && selectedTheme === "custom-theme") {
-      let themeData = {
-         groups: {
-            inactive: {
-               color: "rgba(200, 200, 200, 0.4)",
-               shape: "dot"
-            }
-         },
-         edgeOptions: {}
-      };
-
-      if (paths.length > 1) themeData = await getCustomTheme(paths);
-
+   } else if (paths.every(isJsonFile)) {
       setFilesUploaded(true);
       const fileDataValidationPromise = window.glimpseAPI.validate(paths);
       const validFileData = JSON.parse(await fileDataValidationPromise);
@@ -115,7 +117,7 @@ export const handleFileUpload = async (paths, setFileData, setFilesUploaded) => 
       } else {
          setFileData({
             visData: validFileData,
-            theme: themeData,
+            theme: theme,
             isGlm: false,
             isCim: false,
             loading: false
