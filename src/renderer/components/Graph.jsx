@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import React, { useEffect, useRef } from "react";
 import { Box, Stack } from "@mui/material";
 import axios from "axios";
@@ -31,7 +32,7 @@ import NewNodeForm from "./NewNodeForm";
 import EditObjectModal from "./EditObjectModal";
 import { isGlmFile } from "../utils/appUtils";
 import { NewEdgeForm } from "./NewEdgeForm";
-import VisRibbon from "./VisRibbon";
+import VisToolbar from "./VisToolbar";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
@@ -47,8 +48,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    const edgeTypes = Object.keys(theme.edgeOptions);
 
    const counter = { value: -1 }; // counter to navigate through highlighted nodes
-   const highlightedNodes = useRef([]);
-   const highlightedEdges = useRef([]);
+   const highlightedObjects = useRef([]);
    let network = null; // global network variable
    let edgesToAnimate = {};
    let edgesToAnimateCount = 0;
@@ -92,8 +92,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       edgesToAnimate = {};
       edgesToAnimateCount = 0;
 
-      highlightedNodes.current.length = 0;
-      highlightedEdges.current.length = 0;
+      highlightedObjects.current.length = 0;
 
       const nodesToReset = graphData.nodes.map((node) => {
          node.group = node.type;
@@ -447,13 +446,13 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       );
 
       if (isCim) {
-         const NEW_C_NODE_ID = `${v4()}`; // new node for new terminal
-         const NEW_NODE_ID = `${v4()}`; // new terminal with type
+         const NEW_C_NODE_ID = v4(); // new node for new terminal
+         const NEW_NODE_ID = v4(); // new terminal with type
          const newNodes = [];
          const newEdges = [];
 
          const CimObj = [];
-         // [0] = new nerminal with type
+         // [0] = new terminal with type
          // [1] = new connectivity node
          // [2] = existing connectivity node
 
@@ -535,7 +534,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             color: theme.edgeOptions[edgeTypes[edgeType]].color,
             width: theme.edgeOptions[edgeTypes[edgeType]].width
          };
-         newEdge.title = getTitle({ objectType: edgeTypes[edgeType], ...newEdge.attributes });
+         newEdge.title = getTitle({ objectType: newEdge.type, ...newEdge.attributes });
          newEdges.push(newEdge);
 
          // get existing connectTo node name
@@ -564,21 +563,25 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             }
          };
 
-         newNode.title = getTitle({ objectType: nodeTypes[nodeType], ...newNode.attributes });
+         newNode.title = getTitle({ objectType: newNode.type, ...newNode.attributes });
          objectTypeCount.nodes[newNode.type]++;
 
          const newEdge = {
             id: `${connectTo}-${newNode.id}`,
             from: connectTo,
             to: newNode.id,
+            attributes: {
+               id: `${connectTo}-${newNode.id}`,
+               from: connectTo,
+               to: newNode.id
+            },
             type: edgeTypes[edgeType],
             elementType: "edge",
             color: theme.edgeOptions[edgeTypes[edgeType]].color,
             width: theme.edgeOptions[edgeTypes[edgeType]].width
          };
 
-         const { color, width, elementType, type, ...rest } = newEdge;
-         newEdge.title = getTitle({ ObjectType: edgeTypes[edgeType], ...rest });
+         newEdge.title = getTitle({ ObjectType: newEdge.type, ...newEdge.attributes });
          objectTypeCount.edges[newEdge.type]++;
 
          try {
@@ -677,7 +680,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          const clusteredEdges = network.clustering.getClusteredEdges(edge.id);
 
          if ("animation" in updateData.updates) {
-            const { animation, increment, startFrom, ...rest } = updateData.updates;
+            const { increment, startFrom, ...rest } = updateData.updates;
 
             // if the first element of the clustered edges array is not the passed edge ID
             // then there are clustered edges
@@ -688,6 +691,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                animateEdge(edge.id, increment, startFrom);
             }
 
+            // Remove animation key from rest if present
+            if ("animation" in rest) {
+               delete rest.animation;
+            }
             graphData.edges.update({ ...edge, ...rest });
 
             if (!redrawIntervalID) {
@@ -1025,7 +1032,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             // if the communityID is a string then it has a cluster value of CID_[n]
             return childOptions.communityID === newClusterValue;
          },
-         processProperties: (clusterOptions, childNodes, childEdges) => {
+         processProperties: (clusterOptions, childNodes) => {
             clusterOptions.value = childNodes.length;
             clusterOptions.title = `Nodes in Cluster: ${childNodes.length}`;
             clusterOptions.mass = childNodes.length * 0.25;
@@ -1156,7 +1163,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          graphOptions.physics.stabilization.enabled = true;
          graphOptions.physics.enabled = true;
       };
-   }, []);
+   });
    /* ---- End Establish Listeners Between Main process and renderer process --- */
 
    /* --------------------------- visualization hook --------------------------- */
@@ -1338,7 +1345,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
    return (
       <>
-         <VisRibbon
+         <VisToolbar
             reset={Reset}
             setOverlay={setOverlay}
             physicsToggle={TogglePhysics}
@@ -1350,8 +1357,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             networkContainerRef={networkContainerRef}
             layoutContainerRef={layoutFormContainerRef}
             rotateCCW={() => rotateCCW(network, ANGLE)}
-            prev={() => Prev(network, highlightedNodes, counter)}
-            next={() => Next(network, highlightedNodes, counter)}
+            prev={() => Prev(network, highlightedObjects, counter)}
+            next={() => Next(network, highlightedObjects, counter)}
             isCIM={isCim}
          />
 
@@ -1370,16 +1377,10 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
             <Legend
                highlightNodes={(nodeType) =>
-                  HighlightGroup(nodeType, graphData, highlightedNodes, highlightedEdges)
+                  HighlightGroup(nodeType, graphData, highlightedObjects)
                }
                highlightEdges={(edgeType) =>
-                  HighlightEdges(
-                     edgeType,
-                     highlightedNodes,
-                     graphData,
-                     theme.edgeOptions,
-                     highlightedEdges
-                  )
+                  HighlightEdges(edgeType, highlightedObjects, graphData, theme.edgeOptions)
                }
                hideObjects={(objType, type) => hideObjects(objType, type, graphData)}
                legendData={legendData}
