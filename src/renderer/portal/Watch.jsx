@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Stack, Typography, Box, Paper, Grid } from "@mui/material";
+import { Stack, Typography, Box, Paper, Grid, colors } from "@mui/material";
 import Plot from "react-plotly.js";
 
 const chartColors = [
@@ -17,9 +17,9 @@ const Watch = () => {
 
       const csvData =
          typeof updateObj === "string" ? JSON.parse(updateObj)["csv_data"] : updateObj["csv_data"];
-      for (let [id, propValues] of Object.entries(csvData)) {
-         console.log(watchData);
-         if (propValues.length < watchData[id].props.length) {
+
+      for (let [id, propValues] of Object.entries(watchData)) {
+         if (csvData[propValues.adjacentNodeID ?? id].length < propValues.props.length) {
             return null;
          }
       }
@@ -27,24 +27,22 @@ const Watch = () => {
       const dataUpdate = {};
 
       for (let [id, info] of Object.entries(watchData)) {
-         const { type, props: properties } = info;
+         const { props: properties, adjacentNodeID } = info;
          try {
             let watchPropUpdates = properties.reduce((acc, propName, index) => {
-               const value = csvData[id][index + 1];
+               // use the adjacent node id instead of the forward facing id
+               const value = csvData[adjacentNodeID ?? id][index + 1];
                const matches = value.match(regex);
                acc[propName] = matches && matches.length > 0 ? matches[0] : value;
                return acc;
             }, {});
 
-            dataUpdate[id] = {
-               type: type,
-               properties: [
-                  {
-                     timestamp: csvData[id][0].split(" ")[1],
-                     ...watchPropUpdates,
-                  },
-               ],
-            };
+            dataUpdate[id] = [
+               {
+                  timestamp: csvData[adjacentNodeID ?? id][0].split(" ")[1],
+                  ...watchPropUpdates,
+               },
+            ];
          } catch (error) {
             console.log(error);
          }
@@ -57,10 +55,7 @@ const Watch = () => {
             try {
                const newUpdates = { ...prevUpdates };
                for (const [id, propUpdate] of Object.entries(dataUpdate)) {
-                  newUpdates[id] = {
-                     ...newUpdates[id],
-                     properties: [...newUpdates[id].properties, ...propUpdate.properties],
-                  };
+                  newUpdates[id] = [...newUpdates[id], ...propUpdate];
                }
                return newUpdates;
             } catch (error) {
@@ -74,12 +69,12 @@ const Watch = () => {
       const listners = [];
       listners.push(
          window.glimpseAPI.onShowWatch((watchObject) => {
-            console.log(watchObject);
             setWatchData(watchObject);
          }),
       );
       listners.push(
          window.glimpseAPI.onUpdateWatchItem((update) => {
+            console.log(watchData);
             if (watchData) {
                handleUpdateWatchItem(update);
             }
@@ -90,106 +85,39 @@ const Watch = () => {
       };
    });
 
-   // Helper to build plotly traces
-   const buildTraces = (labels, dataProps, keys, colors) => {
-      try {
-         return keys.map((key, idx) => ({
-            x: labels,
-            y: Object.values(dataProps.properties).map((prop) => prop[key]),
-            type: "scatter",
-            mode: "lines+markers",
-            name: key,
-            line: { color: colors[idx % colors.length], shape: "hv" },
-            marker: { color: colors[idx % colors.length] },
-         }));
-      } catch (error) {
-         console.log(error);
-      }
-   };
-
    return (
       <Box sx={{ height: "100%", width: "100%" }}>
          <Stack direction={"column"}>
             {watchUpdates ? (
                <>
                   {Object.entries(watchUpdates).map(([id, dataProps], index) => {
-                     const dataType = dataProps.type;
-                     const labels = dataProps.properties.map((prop) => prop.timestamp);
-                     let chartContent = [];
-
-                     if (dataType === "switch") {
-                        chartContent = [
-                           {
-                              title: "Current Output",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["current_out_A", "current_out_B", "current_out_C"],
-                                 chartColors,
-                              ),
-                           },
-                           {
-                              title: "Power Output",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["power_out_A", "power_out_B", "power_out_C"],
-                                 chartColors,
-                              ),
-                           },
-                        ];
-                     } else if (dataType === "inverter") {
-                        chartContent = [
-                           {
-                              title: "Power Output",
-                              traces: buildTraces(labels, dataProps, ["VA_Out"], [chartColors[0]]),
-                           },
-                           {
-                              title: "Inverter Efficiency",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["inverter_efficiency"],
-                                 [chartColors[1]],
-                              ),
-                           },
-                           {
-                              title: "Rated Power",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["rated_power"],
-                                 [chartColors[2]],
-                              ),
-                           },
-                        ];
-                     } else if (dataType === "diesel_dg") {
-                        chartContent = [
-                           {
-                              title: "Power Output",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["power_out_A", "power_out_B", "power_out_C"],
-                                 chartColors,
-                              ),
-                           },
-                           {
-                              title: "PRef & QRef",
-                              traces: buildTraces(
-                                 labels,
-                                 dataProps,
-                                 ["Pref", "Qref"],
-                                 [chartColors[0], chartColors[1]],
-                              ),
-                           },
-                        ];
-                     }
+                     // A chart for each object's property being watched
+                     const chartContent = watchData[id].props.map((propName, i) => {
+                        // cycle through the 3 colors
+                        const color = chartColors[i % chartColors.length];
+                        const x = dataProps.map((prop) => prop.timestamp);
+                        // property names are like power_out_A, rated_VA, ect...
+                        const y = dataProps.map((prop) => prop[propName]);
+                        return {
+                           title: propName,
+                           data: [
+                              {
+                                 x: x,
+                                 y: y,
+                                 type: "scatter",
+                                 mode: "lines+markers",
+                                 name: propName,
+                                 line: { color: color, shape: "hv" },
+                                 marker: { color: color },
+                              },
+                           ],
+                        };
+                     });
 
                      return (
                         <>
                            <Typography sx={{ m: "1.5rem auto" }} variant="h4">
-                              {`${id} (${dataType})`}
+                              {id}
                            </Typography>
                            <Grid
                               key={index}
@@ -221,7 +149,7 @@ const Watch = () => {
                                           }}
                                        >
                                           <Plot
-                                             data={chart.traces}
+                                             data={chart.data}
                                              layout={{
                                                 title: { text: chart.title, font: { size: 18 } },
                                                 uirevision: "true",

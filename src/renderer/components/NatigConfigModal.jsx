@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import {
    Dialog,
@@ -34,6 +34,18 @@ const packetSizeOptions = [500, 1280, 1500];
 const topologyNames = ["mesh", "ring"];
 const rates = ["100Kbps", "500Kbps", "10Mbps", "80Mbps", "100Mbps", "500Mbps", "1Gbps", "10Gbps"];
 const nodeTypes = ["Microgrid", "Communication Node", "Control Center"];
+const validInverters = [
+   "inv_pv_pv_1043",
+   "inv_pv_pv_1003",
+   "inv_pv_pv_1177",
+   "inv_pv_pv_1081",
+   "inv_pv_pv_1015",
+   "inv_pv_pv_1115",
+   "inv_pv_pv_1057",
+   "inv_pv_pv_1153",
+   "inv_pv_pv_1159",
+   "inv_pv_pv_1173",
+];
 
 const switchWatchProporties = {
    status: true,
@@ -61,9 +73,20 @@ const genoratorWatchProperties = {
    power_out_A: true, // Voltage: power_out_A-C
    power_out_B: true,
    power_out_C: true,
-   measured_frequency: false, // Frequency
+   frequency: false, // Frequency
    Pref: true,
    Qref: true,
+};
+
+const meterWatchProperties = {
+   GFA_status: true,
+   measured_frequency: true,
+   power_A: true, // Voltage: power_out_A-C
+   power_B: true,
+   power_C: true,
+   voltage_A: true,
+   voltage_B: true,
+   voltage_C: true,
 };
 
 /**
@@ -91,6 +114,8 @@ const NatigConfigModal = ({
    const [selectedModelSet, setSelectedModelSet] = useState(3000);
    const [modelLoaded, setModelLoaded] = useState(false);
    const [watchList, setWatchList] = useState({});
+   const maskMeter = useRef(null);
+
    useEffect(() => {
       window.glimpseAPI.getDefaultModelFiles().then(setModelfiles);
    }, []);
@@ -222,9 +247,12 @@ const NatigConfigModal = ({
 
       const switches = graphData.current.edges.get({ filter: (e) => e.type === "switch" });
       const inverters = graphData.current.nodes.get({
-         filter: (n) => ["inverter", "inverter_dyn"].includes(n.type),
+         filter: (n) =>
+            ["inverter", "inverter_dyn"].includes(n.type) &&
+            validInverters.includes(n.attributes.name),
       });
       const genorators = graphData.current.nodes.get({ filter: (n) => n.type === "diesel_dg" });
+      maskMeter.current = graphData.current.nodes.get("m1026chp-3_dgmtr");
 
       return [...switches, ...inverters, ...genorators];
    }, [graphData.current]);
@@ -407,13 +435,15 @@ const NatigConfigModal = ({
          }
 
          if (obj.type === "diesel_dg") {
-            const attributeProperties = Object.keys(obj.attributes)
+            /* const attributeProperties = Object.keys(obj.attributes)
                .filter((k) => isValidAttackPoint(k))
-               .reduce((acc, key) => ({ ...acc, [key]: true }), {});
-            return { ...genoratorWatchProperties, ...attributeProperties };
+               .reduce((acc, key) => ({ ...acc, [key]: true }), {}); */
+            return { ...meterWatchProperties };
          }
+
          return null;
       };
+
       if (Object.keys(watchList).length === 0) {
          // Initialize with first item
          const obj = itemsToWatch[0]; //to fix "obj is not defined" error. However, line 444 maybe not be accessing the same obj as the one above that has the actual type data?
@@ -466,13 +496,13 @@ const NatigConfigModal = ({
          const { type, props } = value;
          const selectedProps = Object.keys(props).filter((prop) => props[prop]);
 
-         return {
-            ...o,
-            [id]: {
-               type: type,
-               props: selectedProps,
-            },
+         o[id] = {
+            adjacentNodeID: id === "dg_steamgen1" ? maskMeter.current.id : undefined,
+            type: type,
+            props: selectedProps,
          };
+
+         return o;
       }, {});
 
       return watchObj;
@@ -527,7 +557,9 @@ const NatigConfigModal = ({
             ...getMIMSendObj(),
             topology: { ...topology },
             watchList: Object.entries(watchData).reduce((acc, [id, values]) => {
-               acc[id] = values.props;
+               console.log(maskMeter);
+               console.log(id);
+               acc[id === "dg_steamgen1" ? maskMeter.current.id : id] = values.props;
                return acc;
             }, {}),
          };

@@ -89,7 +89,7 @@ def get_avg_betweenness_centrality() -> float:
 
 app = Flask(__name__)
 # socketio = SocketIO(app)
-CORS(app, origins=["http://localhost:5173", "http://localhost:65432", "http://localhost:*"])
+CORS(app, origins=["http://127.0.0.1:5173", "http://127.0.0.1:65432", "http://localhost:*"])
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode="gevent")
 
 #------------------------------ End Server ------------------------------#

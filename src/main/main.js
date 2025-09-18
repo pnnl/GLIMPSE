@@ -568,12 +568,7 @@ app.whenReady().then(() => {
 
       // run test socket regardless
       const testSocketScript = join(__dirname, "..", "..", "natig", "testsocket.py");
-      subprocesses.push(
-         spawn("python", [testSocketScript], {
-            shell: true,
-            stdio: "overlapped",
-         }),
-      );
+      subprocesses.push(spawn("python", [testSocketScript]));
 
       if (process.env.CONTAINER_NAME) {
          if (process.platform === "win32") {
@@ -589,8 +584,6 @@ app.whenReady().then(() => {
                   ],
                   {
                      cwd: join(__dirname, "..", "..", "natig"),
-                     shell: true,
-                     stdio: "overlapped",
                   },
                ),
             );
@@ -598,8 +591,6 @@ app.whenReady().then(() => {
             subprocesses.push(
                spawn("bash", ["simulation.sh", process.env.CONTAINER_NAME], {
                   cwd: join(__dirname, "..", "..", "natig"),
-                  stdio: "overlapped",
-                  shell: true,
                }),
             );
          }
@@ -615,7 +606,8 @@ app.whenReady().then(() => {
       socket.on("delete-node", (nodeID) => mainWindow.webContents.send("delete-node", nodeID));
       socket.on("delete-edge", (edgeID) => mainWindow.webContents.send("delete-edge", edgeID));
       socket.on("update-watch-item", (watchUpdate) => {
-         if (portalWindow) {
+         if (portalWindow !== null) {
+            console.log(watchUpdate);
             portalWindow.webContents.send("update-watch-item", watchUpdate);
          }
       });
