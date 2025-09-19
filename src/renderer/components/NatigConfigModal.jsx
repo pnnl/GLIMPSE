@@ -252,7 +252,7 @@ const NatigConfigModal = ({
             validInverters.includes(n.attributes.name),
       });
       const genorators = graphData.current.nodes.get({ filter: (n) => n.type === "diesel_dg" });
-      maskMeter.current = graphData.current.nodes.get("m1026chp-3_dgmtr");
+      maskMeter.current = graphData.current.nodes.get("m1026chp-3");
 
       return [...switches, ...inverters, ...genorators];
    }, [graphData.current]);
@@ -364,17 +364,32 @@ const NatigConfigModal = ({
             ...MIMConfig,
             objectsToAttack: {
                ...MIMConfig.objectsToAttack,
-               value: selectedObjs.map((obj) => ({
-                  id: obj.id,
-                  type: obj.type,
-                  attributes: obj.attributes,
-                  start: "",
-                  end: "",
-                  attackPoint: "",
-                  attackValue: "",
-                  realValue: "",
-                  isInt: obj.type === "switch" ? "3" : "4",
-               })),
+               value: selectedObjs.map((obj) => {
+                  // rename q out and p out to Qref and Pref
+                  if (obj.type === "inverter" || objects.type === "invert_dyn") {
+                     if ("Q_Out" in obj.attributes) {
+                        obj.attributes.Qref = obj.attributes.Q_Out;
+                        delete obj.attributes.Q_Out;
+                     }
+
+                     if ("P_Out" in obj.attributes) {
+                        obj.attributes.Pref = obj.attributes.P_Out;
+                        delete obj.attributes.P_Out;
+                     }
+                  }
+
+                  return {
+                     id: obj.id,
+                     type: obj.type,
+                     attributes: obj.attributes,
+                     start: "",
+                     end: "",
+                     attackPoint: "",
+                     attackValue: "",
+                     realValue: "",
+                     isInt: obj.type === "switch" ? "3" : "4",
+                  };
+               }),
             },
          });
       } else if (selectedObjs.length > currentObjs.length) {
@@ -388,17 +403,32 @@ const NatigConfigModal = ({
                ...MIMConfig.objectsToAttack,
                value: [
                   ...currentObjs,
-                  ...newSwitches.map((obj) => ({
-                     id: obj.id,
-                     type: obj.type,
-                     attributes: obj.attributes,
-                     start: 0,
-                     end: 0,
-                     attackPoint: "",
-                     attackValue: "",
-                     realValue: "",
-                     isInt: obj.type === "switch" ? "3" : "4",
-                  })),
+                  ...newSwitches.map((obj) => {
+                     // rename q out and p out to Qref and Pref
+                     if (obj.type === "inverter" || objects.type === "invert_dyn") {
+                        if ("Q_Out" in obj.attributes) {
+                           obj.attributes.Qref = obj.attributes.Q_Out;
+                           delete obj.attributes.Q_Out;
+                        }
+
+                        if ("P_Out" in obj.attributes) {
+                           obj.attributes.Pref = obj.attributes.P_Out;
+                           delete obj.attributes.P_Out;
+                        }
+                     }
+
+                     return {
+                        id: obj.id,
+                        type: obj.type,
+                        attributes: obj.attributes,
+                        start: 0,
+                        end: 0,
+                        attackPoint: "",
+                        attackValue: "",
+                        realValue: "",
+                        isInt: obj.type === "switch" ? "3" : "4",
+                     };
+                  }),
                ],
             },
          });

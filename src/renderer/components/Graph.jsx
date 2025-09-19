@@ -380,9 +380,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       graphData.nodes.add(newNodes);
       graphData.edges.add(newEdges);
 
-      const microgridNodes = newNodes
-         .filter((n) => n.type === "microgrid")
-         .map((n) => n.id);
+      const microgridNodes = newNodes.filter((n) => n.type === "microgrid").map((n) => n.id);
 
       for (const nodeID of network.body.nodeIndices) {
          if (network.clustering.isCluster(nodeID)) {
@@ -418,9 +416,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          const data = await window.glimpseAPI.glm2json(filePaths);
 
          if (!data) {
-            alert(
-               "Something went wrong... \n try re-uploading or reset the application app",
-            );
+            alert("Something went wrong... \n try re-uploading or reset the application app");
          } else if ("alert" in data) {
             alert(data.alert);
          } else {
@@ -536,89 +532,96 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
    };
 
    const updateVisObjects = (updateData) => {
+      console.log("UPDATE DATA");
+      console.log(updateData);
       console.log(`Updating ${updateData.elementType} with ID: ${updateData.id}`);
+      console.log("---------updates---------");
       console.log(updateData.updates);
       console.log("-------------------------------");
 
-      if (updateData.elementType === "node") {
-         const node = graphData.nodes.get(updateData.id);
+      try {
+         if (updateData.elementType === "node") {
+            const node = graphData.nodes.get(updateData.id);
 
-         if ("attributes" in updateData.updates) {
-            const { attributes, ...rest } = updateData.updates;
+            if ("attributes" in updateData.updates) {
+               const { attributes, ...rest } = updateData.updates;
 
-            node.attributes = {
-               ...node.attributes,
-               ...attributes,
-            };
+               node.attributes = {
+                  ...node.attributes,
+                  ...attributes,
+               };
 
-            node.title = getHtmlTitle(node.attributes);
+               node.title = getHtmlTitle(node.attributes);
 
-            graphData.nodes.update({ ...node, ...rest });
-            return;
+               graphData.nodes.update({ ...node, ...rest });
+               return;
+            }
+
+            // if ("group" in updateData.updates && updateData.updates.group === "defualt") {
+            //    node.group = node.type;
+            // }
+
+            graphData.nodes.update({ ...node, ...updateData.updates });
+         } else if (updateData.elementType === "edge") {
+            const edge = graphData.edges.get(updateData.id);
+            const clusteredEdges = network.clustering.getClusteredEdges(edge.id);
+
+            if ("animation" in updateData.updates) {
+               const { animation, increment, startFrom, ...rest } = updateData.updates;
+
+               // if the first element of the clustered edges array is not the passed edge ID
+               // then there are clustered edges
+               if (!(clusteredEdges[0] === edge.id)) {
+                  // the first element will then be the current visible clustered edge
+                  animateEdge(clusteredEdges[0], increment, startFrom);
+               } else {
+                  animateEdge(edge.id, increment, startFrom);
+               }
+
+               graphData.edges.update({ ...edge, ...rest });
+
+               if (!redrawIntervalID) {
+                  redrawIntervalID = setInterval(() => network.redraw(), 16.67);
+               }
+               return;
+            } else if ("attributes" in updateData.updates) {
+               const { attributes: updateAttributes, ...rest } = updateData.updates;
+
+               edge.attributes = {
+                  ...edge.attributes,
+                  ...updateAttributes,
+               };
+
+               edge.title = getHtmlTitle(edge.attributes);
+
+               if (
+                  edge.type === "switch" &&
+                  "status" in edge.attributes &&
+                  updateAttributes.status === "TRIP"
+               ) {
+                  edge.arrows.middle.src = "./imgs/switch-open.svg";
+                  edge.attributes.status = "OPEN";
+               } else if (
+                  edge.type === "switch" &&
+                  "status" in edge.attributes &&
+                  updateAttributes.status === "CLOSED"
+               ) {
+                  edge.attributes.status = "CLOSED";
+                  edge.arrows.middle.src = "./imgs/switch-closed.svg";
+               }
+
+               if (clusteredEdges.length > 1) {
+                  network.clustering.updateEdge(edge.id, { ...edge, ...rest });
+               }
+
+               graphData.edges.update({ ...edge, ...rest });
+               return;
+            }
+
+            graphData.edges.update({ ...edge, ...updateData.updates });
          }
-
-         // if ("group" in updateData.updates && updateData.updates.group === "defualt") {
-         //    node.group = node.type;
-         // }
-
-         graphData.nodes.update({ ...node, ...updateData.updates });
-      } else if (updateData.elementType === "edge") {
-         const edge = graphData.edges.get(updateData.id);
-         const clusteredEdges = network.clustering.getClusteredEdges(edge.id);
-
-         if ("animation" in updateData.updates) {
-            const { animation, increment, startFrom, ...rest } = updateData.updates;
-
-            // if the first element of the clustered edges array is not the passed edge ID
-            // then there are clustered edges
-            if (!(clusteredEdges[0] === edge.id)) {
-               // the first element will then be the current visible clustered edge
-               animateEdge(clusteredEdges[0], increment, startFrom);
-            } else {
-               animateEdge(edge.id, increment, startFrom);
-            }
-
-            graphData.edges.update({ ...edge, ...rest });
-
-            if (!redrawIntervalID) {
-               redrawIntervalID = setInterval(() => network.redraw(), 16.67);
-            }
-            return;
-         } else if ("attributes" in updateData.updates) {
-            const { attributes: updateAttributes, ...rest } = updateData.updates;
-
-            edge.attributes = {
-               ...edge.attributes,
-               ...updateAttributes,
-            };
-
-            edge.title = getHtmlTitle(edge.attributes);
-
-            if (
-               edge.type === "switch" &&
-               "status" in edge.attributes &&
-               updateAttributes.status === "TRIP"
-            ) {
-               edge.arrows.middle.src = "./imgs/switch-open.svg";
-               edge.attributes.status = "OPEN";
-            } else if (
-               edge.type === "switch" &&
-               "status" in edge.attributes &&
-               updateAttributes.status === "CLOSED"
-            ) {
-               edge.attributes.status = "CLOSED";
-               edge.arrows.middle.src = "./imgs/switch-closed.svg";
-            }
-
-            if (clusteredEdges.length > 1) {
-               network.clustering.updateEdge(edge.id, { ...edge, ...rest });
-            }
-
-            graphData.edges.update({ ...edge, ...rest });
-            return;
-         }
-
-         graphData.edges.update({ ...edge, ...updateData.updates });
+      } catch (error) {
+         console.log(error);
       }
    };
 
@@ -782,9 +785,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
       // delete from file data
       Object.keys(dataToVis).forEach((filename) => {
          const objects = dataToVis[filename].objects;
-         dataToVis[filename].objects = objects.filter(
-            (obj) => obj.attributes.name !== nodeID,
-         );
+         dataToVis[filename].objects = objects.filter((obj) => obj.attributes.name !== nodeID);
       });
 
       const nodeObject = graphData.nodes.get(nodeID);
@@ -967,8 +968,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
          for (let i = 0; i < clusterNode.edges.length; i++) {
             const currentClusteredEdge = clusterNode.edges[i];
             const [baseEdge] = network.clustering.getBaseEdges(currentClusteredEdge.id);
-            const previousClusteredEdge =
-               currentClusteredEdge.clusteringEdgeReplacingIds[0];
+            const previousClusteredEdge = currentClusteredEdge.clusteringEdgeReplacingIds[0];
 
             if (baseEdge in edgesToAnimate) {
                removeEdgeAnimation(baseEdge);
@@ -1254,12 +1254,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
 
          network.on("afterDrawing", (ctx) => animateEdges(ctx));
 
-         network.on("selectEdge", (params) =>
-            console.log(network.body.edges[params.edges[0]]),
-         );
-         network.on("selectNode", (params) =>
-            console.log(network.body.nodes[params.nodes[0]]),
-         );
+         network.on("selectEdge", (params) => console.log(network.body.edges[params.edges[0]]));
+         network.on("selectNode", (params) => console.log(network.body.nodes[params.nodes[0]]));
 
          network.setOptions({
             configure: {
@@ -1341,10 +1337,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, modelNumber, setSearchReqs }) =
                legendContainerRef={legendContainerRef}
             />
 
-            <Box
-               sx={{ display: "none", width: "32.5rem" }}
-               ref={layoutFormContainerRef}
-            />
+            <Box sx={{ display: "none", width: "32.5rem" }} ref={layoutFormContainerRef} />
          </Stack>
 
          <div ref={circularProgressRef} id="circularProgress">

@@ -264,6 +264,7 @@ const createPortalWindow = (watchData) => {
       height: 840,
       minWidth: 660,
       minHeight: 550,
+      show: false,
       autoHideMenuBar: true,
       webPreferences: {
          sandbox: false,
@@ -282,6 +283,7 @@ const createPortalWindow = (watchData) => {
 
    // When window is ready, send component data
    portalWindow.webContents.on("did-finish-load", () => {
+      portalWindow.show();
       portalWindow.webContents.send("show-watch", watchData);
    });
 
@@ -480,7 +482,11 @@ const makeWindow = () => {
    });
 
    ipcMain.on("open-portal-window", (_, watchData) => {
-      if (!portalWindow) createPortalWindow(watchData);
+      if (!watchData)
+         new Notification("Alert", {
+            body: "Select objects to watch and start a scenario first",
+         }).show();
+      else if (!portalWindow) createPortalWindow(watchData);
       else portalWindow.focus();
    });
 
