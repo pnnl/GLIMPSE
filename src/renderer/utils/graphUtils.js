@@ -363,7 +363,7 @@ export const hideEdges = (edgeID, data) => {
    data.edges.update(edgesToHide);
 };
 
-export const showAttributes = (show, data) => {
+export const showAttributes = (show, data, filteredAttributes) => {
    if (!show) {
       data.nodes.update(
          data.nodes.map((node) => {
@@ -379,16 +379,36 @@ export const showAttributes = (show, data) => {
          })
       );
    } else {
+      console.log(filteredAttributes);
       data.nodes.update(
          data.nodes.map((node) => {
-            node.label = getHtmlLabel(node.id, node.attributes);
+            const labelAttributes = Object.entries(node.attributes).reduce(
+               (acc, [attrName, value]) => {
+                  if (filteredAttributes[node.type][attrName]) {
+                     acc[attrName] = value;
+                  }
+                  return acc;
+               },
+               {}
+            );
+            node.label = getTitle(labelAttributes);
             return node;
          })
       );
 
       data.edges.update(
          data.edges.map((edge) => {
-            edge.label = getHtmlLabel(edge.id, edge.attributes);
+            const labelAttributes = Object.entries(edge.attributes).reduce(
+               (acc, [attrName, value]) => {
+                  if (edge.type === "parentChild") return acc;
+                  if (filteredAttributes[edge.type][attrName]) {
+                     acc[attrName] = value;
+                  }
+                  return acc;
+               },
+               {}
+            );
+            edge.label = getTitle(labelAttributes);
             return edge;
          })
       );
@@ -608,7 +628,8 @@ export const setGraphData = (
    objectTypeCount,
    GLIMPSE_OBJECT,
    theme,
-   graphOptions
+   graphOptions,
+   filteredAttributes
 ) => {
    /*
       acceptable keys object and its attributes ex:
@@ -635,10 +656,15 @@ export const setGraphData = (
          const objectType = obj[nameForObjType];
          // get the key that is used for the objects id which can be "id" or "name"
          const nameForObjID = keys.find((key) => key in attributes);
-
          const nodeID = attributes[nameForObjID];
 
          if (nodeTypes.length > 0 && nodeTypes.includes(objectType)) {
+            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+
+            Object.keys(attributes).forEach((key) => {
+               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+            });
+
             if ("x" in attributes && "y" in attributes) {
                objectTypeCount.nodes[objectType]++;
 
@@ -734,6 +760,12 @@ export const setGraphData = (
 
             continue;
          } else if ("elementType" in obj && obj.elementType === "node") {
+            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+
+            Object.keys(attributes).forEach((key) => {
+               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+            });
+
             if (!(objectType in theme.groups)) {
                theme.groups[objectType] = {
                   color: getRandomColor(),
@@ -811,6 +843,12 @@ export const setGraphData = (
 
             continue;
          } else if (edgeTypes.includes(objectType)) {
+            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+
+            Object.keys(attributes).forEach((key) => {
+               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+            });
+
             const edgeFrom =
                currentUploadCounter.value > 0
                   ? `${attributes.from}-${currentUploadCounter.value}`
@@ -838,13 +876,19 @@ export const setGraphData = (
                elementType: "edge",
                type: objectType,
                attributes: attributes,
-               // length: "length" in attributes ? attributes.length : undefined,
                ...theme.edgeOptions[objectType],
                title: `Object Type: ${objectType}\n${getTitle(attributes)}`
+               // length: "length" in attributes ? attributes.length : undefined,
             });
 
             continue;
          } else if ("elementType" in obj && obj.elementType === "edge") {
+            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+
+            Object.keys(attributes).forEach((key) => {
+               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+            });
+
             const edgeFrom =
                currentUploadCounter.value > 0
                   ? `${attributes.from}-${currentUploadCounter.value}`

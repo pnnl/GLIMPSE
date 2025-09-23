@@ -8,6 +8,10 @@ const api = {
       ipcRenderer.on("show-attributes", (_, showBool) => callback(showBool));
       return () => ipcRenderer.removeAllListeners("show-attributes");
    },
+   onFilterAttributes: (callback) => {
+      ipcRenderer.on("filter-attributes", (_, showBool) => callback(showBool));
+      return () => ipcRenderer.removeAllListeners("filter-attributes");
+   },
    onUpdateData: (callback) => {
       ipcRenderer.on("update-data", (_, data) => callback(data));
       return () => ipcRenderer.removeAllListeners("update-data");
@@ -66,6 +70,13 @@ const api = {
    onLoadObjects: (callback) => {
       ipcRenderer.on("load-objects", (_, graphData) => callback(graphData));
       return () => ipcRenderer.removeAllListeners("load-objects");
+   },
+   saveStudioChanges: (changes) => {
+      ipcRenderer.invoke("save-studio-changes", changes);
+   },
+   onChangesFromStudio: (callback) => {
+      ipcRenderer.on("changes-from-studio", (_, changes) => callback(changes));
+      return () => ipcRenderer.removeAllListeners("changes-from-studio");
    }
 };
 

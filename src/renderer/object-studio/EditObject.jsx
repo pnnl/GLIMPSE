@@ -1,39 +1,45 @@
-import React, { Suspense, useEffect, useState } from "react";
-import PropTypes from "prop-types";
-import {
-   Table,
-   TableBody,
-   TableContainer,
-   TableCell,
-   TableRow,
-   TableHead,
-   Paper,
-   Typography,
-   TextField,
-   Button,
-   Box,
-   Tabs,
-   Tab
-} from "@mui/material";
+import React, { useEffect, useState, useRef } from "react";
+import { Box, Tabs, Tab, Paper } from "@mui/material";
 import axios from "axios";
 import AttributesTable from "./AttributesTable";
+import MermaidDiagram from "./MermaidDiagram";
 
-const EditObject = ({ object, onSave, isCIM }) => {
+const EditObject = ({ objectID, isCIM, setObject, tableData }) => {
    const [objectToEdit, setObjectToEdit] = useState(null);
+   const [mermaidContent, setMermaidContent] = useState(null);
    const [tabValue, setTabValue] = useState(0);
-   const [loading, setLoading] = useState(true);
+   const readOnlyAttributes = useRef(
+      new Set(["name", "identifier", "mRID", "to", "from", "ConnectivityNodeContainer"])
+   );
 
    const handleChange = (event) => {
       const { name, value } = event.target;
       setObjectToEdit((prev) => ({
          ...prev,
-         [name]: value
+         attributes: { ...prev.attributes, [name]: value }
       }));
    };
 
    const handleSave = () => {
-      if (onSave) {
-         onSave({ ...object, attributes: { ...object.attributes, ...objectToEdit } });
+      if (isCIM) {
+         const mRID = objectToEdit.attributes.mRID;
+         // go through each attributes that is not read only and update the object
+         Object.entries(objectToEdit.attributes).forEach(async ([key, val]) => {
+            if (!readOnlyAttributes.current.has(key)) {
+               try {
+                  await axios
+                     .put(`http://127.0.0.1:5051/api/objects/${mRID}`, {
+                        attribute: key,
+                        value: val
+                     })
+                     .then((res) => console.log(res.data));
+               } catch (error) {
+                  console.log(error);
+               }
+            }
+         });
+      } else {
+         window.glimpseAPI.saveStudioChanges(objectToEdit);
       }
    };
 
@@ -45,6 +51,17 @@ const EditObject = ({ object, onSave, isCIM }) => {
          console.log(response.data);
 
          setObjectToEdit({ ...response.data.object });
+         setTabValue(0);
+      } catch (error) {
+         console.log(error);
+      }
+   };
+
+   const getMermaidDiagram = async (mRID) => {
+      try {
+         const responsePromise = axios.get(`http://127.0.0.1:5051/api/objects/${mRID}/mermaid`);
+         const response = await responsePromise;
+         setMermaidContent(response.data.mermaid);
       } catch (error) {
          console.log(error);
       }
@@ -52,13 +69,12 @@ const EditObject = ({ object, onSave, isCIM }) => {
 
    useEffect(() => {
       if (isCIM) {
-         getCIMObject(object.attributes.mRID);
-         setLoading(false);
+         getCIMObject(objectID);
+         getMermaidDiagram(objectID);
       } else {
-         setObjectToEdit(object ? object.attributes : null);
-         setLoading(false);
+         setObjectToEdit(tableData[objectID.type === "edge" ? "edges" : "nodes"].get(objectID.id));
       }
-   }, [object, isCIM]);
+   }, [objectID, isCIM]);
 
    const handleTabChange = (_, newValue) => {
       setTabValue(newValue);
@@ -76,36 +92,35 @@ const EditObject = ({ object, onSave, isCIM }) => {
                sx={{ ["& .MuiTabs-indicator"]: { backgroundColor: "#45AB46" } }}
             >
                <Tab label="Attributes" />
-               <Tab label="Associations" />
-               <Tab label="Mermaid" />
+               {isCIM && [<Tab key={0} label="Associations" />, <Tab key={1} label="Mermaid" />]}
             </Tabs>
          </Box>
          {tabValue === 0 && (
-            <Suspense fallback={<div>Loading Attributes...</div>}>
-               <AttributesTable
-                  name={object.attributes.name}
-                  attributes={objectToEdit.attributes}
-               />
-            </Suspense>
+            <AttributesTable
+               heading={objectToEdit.attributes.name}
+               readOnlyAttributesList={readOnlyAttributes}
+               onChange={handleChange}
+               attributes={objectToEdit.attributes}
+               setObject={setObject}
+               save={handleSave}
+            />
          )}
-         {tabValue === 1 && (
-            <Suspense fallback={<div>Loading Associations...</div>}>
-               <AttributesTable
-                  name={object.attributes.name}
-                  attributes={objectToEdit.associations}
-               />
-            </Suspense>
+         {isCIM && tabValue === 1 && (
+            <AttributesTable
+               heading={objectToEdit.attributes.name}
+               readOnlyAttributesList={readOnlyAttributes}
+               attributes={objectToEdit.associations}
+               setObject={setObject}
+            />
+         )}
+         {isCIM && tabValue === 2 && (
+            <MermaidDiagram
+               mermaidContent={mermaidContent}
+               objectID={objectToEdit.attributes.name}
+            />
          )}
       </Box>
    );
-};
-
-EditObject.propTypes = {
-   object: PropTypes.shape({
-      attributes: PropTypes.object.isRequired
-   }).isRequired,
-   onSave: PropTypes.func,
-   isCIM: PropTypes.bool
 };
 
 export default EditObject;

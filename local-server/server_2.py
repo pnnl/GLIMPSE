@@ -951,6 +951,7 @@ def get_object_mermaid(uuid):
         # Try to use cimgraph.utils method
         try:
             mermaid_diagram = cim_utils.get_mermaid(obj)
+            print(mermaid_diagram)
             return jsonify({
                 'uuid': uuid,
                 'mermaid': mermaid_diagram
@@ -1961,6 +1962,34 @@ def cim_to_glimpse():
   glimpse_structure_data = cim2GS(cim_filepath[0])
 
   return glimpse_structure_data
+
+@app.route("/export-cim", methods=["POST"])
+def export_cim():
+  cim_data = req.get_json()
+
+  export_dir = cim_data["savepath"]
+  print(export_dir)
+  data = cim_data["objs"]
+  og_filepath = cim_data["filename"]
+
+  exportCIM(export_dir, og_filepath, data)
+  return "", 204
+
+@app.route("/export-cim-coordinates", methods=["POST"])
+def export_cim_():
+   """
+   This endpoint exports the new coordinates of the nodes to the CIM file
+   """
+   cim_data = req.get_json()
+   new_coords_obj = cim_data["data"]
+   output_path = cim_data["filepath"]
+
+   try:
+      export_cim_coords(new_coords_obj, output_path)
+   except Exception as e:
+      print(f"Error exporting CIM coordinates: {e}")
+      return {"error": str(e)}, 500
+   return "", 201
 # ================================================================================================
 # WEBSOCKET EVENTS (from your original server.py)
 # ================================================================================================

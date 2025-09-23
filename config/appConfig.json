@@ -32,7 +32,9 @@
          },
          "font": {
             "multi": true,
-            "align": "horizontal"
+            "align": "horizontal",
+            "strokeWidth": 3,
+            "strokeColor": "#FFFFFF"
          },
          "smooth": {
             "enabled": false,
@@ -48,6 +50,7 @@
          "font": {
             "color": "#000000",
             "multi": true,
+            "align": "center",
             "bold": "15px arial black"
          },
          "scaling": {

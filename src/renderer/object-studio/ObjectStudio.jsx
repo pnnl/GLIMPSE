@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Box, Tabs, Tab } from "@mui/material";
+import { Box, Tabs, Tab, Autocomplete } from "@mui/material";
 import { DataSet } from "vis-data";
 import ObjectTable from "./ObjectTable";
 import ObjectTypesPane from "./ObjectTypesPane";
@@ -12,7 +12,7 @@ const ObjectStudio = () => {
    const [tabValue, setTabValue] = useState(0);
    const [objectColumns, setObjectColumns] = useState(null);
    const [filterTypes, setFilterTypes] = useState(null);
-   const [objectToEdit, setObjectToEdit] = useState(null);
+   const [objectToEditID, setObjectToEditID] = useState(null);
    const [isCIM, setIsCIM] = useState(false);
 
    useEffect(() => {
@@ -66,24 +66,27 @@ const ObjectStudio = () => {
    const filteredTableData = useMemo(() => {
       if (!filterTypes || Object.keys(filterTypes).length === 0) return tableData;
 
+      // Only nodes filter
       if ("nodes" in filterTypes && !("edges" in filterTypes)) {
          return {
             nodes: new DataSet(
                tableData.nodes.get({ filter: (n) => filterTypes.nodes.includes(n.type) })
             ),
-            edges: tableData.edges
+            edges: tableData.edges // show all edges
          };
       }
 
+      // Only edges filter
       if ("edges" in filterTypes && !("nodes" in filterTypes)) {
          return {
-            nodes: tableData.nodes,
+            nodes: tableData.nodes, // show all nodes
             edges: new DataSet(
                tableData.edges.get({ filter: (e) => filterTypes.edges.includes(e.type) })
             )
          };
       }
 
+      // Both filters
       if ("nodes" in filterTypes && "edges" in filterTypes) {
          return {
             nodes: new DataSet(
@@ -109,8 +112,10 @@ const ObjectStudio = () => {
          <Panel>
             <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
                <Tabs
-                  sx={{ ["& .MuiTabs-indicator"]: { backgroundColor: "#45AB46" } }}
                   textColor="#333333"
+                  sx={{
+                     ["& .MuiTabs-indicator"]: { backgroundColor: "#45AB46" }
+                  }}
                   value={tabValue}
                   onChange={handleTabChange}
                >
@@ -121,23 +126,32 @@ const ObjectStudio = () => {
             </Box>
             {tabValue === 0 && (
                <ObjectTable
+                  isCIM={isCIM}
                   tableData={filteredTableData}
+                  unfilteredData={tableData}
                   objectColumns={objectColumns}
                   setTabValue={setTabValue}
-                  setObjectToEdit={setObjectToEdit}
+                  setObjectToEdit={setObjectToEditID}
                />
             )}
             {tabValue === 1 && (
                <ObjectTable
                   nodes
+                  isCIM={isCIM}
                   setTabValue={setTabValue}
                   tableData={filteredTableData}
+                  unfilteredData={tableData}
                   objectColumns={objectColumns}
-                  setObjectToEdit={setObjectToEdit}
+                  setObjectToEdit={setObjectToEditID}
                />
             )}
-            {tabValue === 2 && objectToEdit ? (
-               <EditObject isCIM={isCIM} object={objectToEdit} onSave={(o) => console.log(o)} />
+            {tabValue === 2 && objectToEditID ? (
+               <EditObject
+                  isCIM={isCIM}
+                  tableData={tableData}
+                  objectID={objectToEditID}
+                  setObject={setObjectToEditID}
+               />
             ) : (
                <p>Select a node or edge from the table to edit</p>
             )}

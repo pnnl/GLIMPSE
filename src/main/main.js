@@ -436,6 +436,9 @@ const establishIpcHandlers = () => {
          studioWindow.show();
       }
    });
+   ipcMain.handle("save-studio-changes", (_, changes) =>
+      mainWindow.webContents.send("changes-from-studio", changes)
+   );
    ipcMain.on("json2glm", (_, jsonData) => json2glmFunc(jsonData));
    ipcMain.on("exportTheme", (_, themeData) => exportThemeFile(themeData));
    ipcMain.on("exportCIM", (_, CimObjs) => exportCIM(CimObjs));
@@ -539,11 +542,15 @@ const makeWindow = () => {
          label: "Graph View",
          submenu: [
             {
-               label: "show attributes",
+               label: "Filter Attributes",
+               click: () => mainWindow.webContents.send("filter-attributes", true)
+            },
+            {
+               label: "Show Attributes",
                click: () => mainWindow.webContents.send("show-attributes", true)
             },
             {
-               label: "hide attributes",
+               label: "Hide Attributes",
                click: () => mainWindow.webContents.send("show-attributes", false)
             }
          ]

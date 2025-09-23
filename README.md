@@ -1,4 +1,4 @@
-# GLIMPSE v0.5.0 ✨
+# GLIMPSE v0.5.1 ✨
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
