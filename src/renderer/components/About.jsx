@@ -23,7 +23,7 @@ const About = ({ show, close }) => {
          </div>
          <DialogContent sx={{ maxWidth: "72rem", padding: "0 2rem" }}>
             <div className="about-title">
-               <h1>GLIMPSE v0.5.1</h1>
+               <h1>GLIMPSE v0.6.0</h1>
                <h3>(Grid Layout Interface for Model Preview and System Exploration)</h3>
             </div>
             <div className="description">

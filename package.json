@@ -1,6 +1,6 @@
 {
    "name": "glimpse",
-   "version": "0.5.1",
+   "version": "0.6.0",
    "productName": "GLIMPSE",
    "description": "GLIMPSE",
    "main": "./out/main/main.js",
