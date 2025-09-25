@@ -1,6 +1,6 @@
 {
    "name": "glimpse",
-   "version": "0.5.0",
+   "version": "0.6.0",
    "productName": "GLIMPSE",
    "description": "GLIMPSE",
    "main": "./out/main/main.js",
@@ -27,6 +27,7 @@
       "@mui/material": "^7.0.2",
       "ajv": "^6.12.6",
       "axios": "^1.8.4",
+      "mermaid": "^11.10.1",
       "mui-color-input": "^7.0.0",
       "react-draggable": "^4.4.6",
       "react-resizable-panels": "^3.0.3",

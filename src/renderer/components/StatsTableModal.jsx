@@ -28,7 +28,7 @@ const StatsTableModal = ({ show, close, data }) => {
                   <TableBody>
                      {Object.entries(data).map(([key, val], index) => {
                         return (
-                           <TableRow>
+                           <TableRow key={index}>
                               <TableCell align="left">{key}</TableCell>
                               <TableCell align="left">{val}</TableCell>
                            </TableRow>

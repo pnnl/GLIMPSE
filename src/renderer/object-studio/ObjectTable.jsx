@@ -10,7 +10,15 @@ import {
    Table
 } from "@mui/material";
 
-const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabValue }) => {
+const ObjectTable = ({
+   tableData,
+   unfilteredData,
+   objectColumns,
+   nodes,
+   setObjectToEdit,
+   setTabValue,
+   isCIM
+}) => {
    const [page, setPage] = useState(0);
    const [rowsPerPage, setRowsPerPage] = useState(25);
 
@@ -24,8 +32,9 @@ const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabV
       setPage(0);
    };
 
-   const handleNameClick = (node) => {
-      setObjectToEdit(node);
+   const handleNameClick = (obj) => {
+      if (isCIM) setObjectToEdit(obj.attributes.mRID);
+      else setObjectToEdit({ type: obj.elementType, id: obj.attributes.name });
       setTabValue(2);
    };
 
@@ -41,13 +50,13 @@ const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabV
             }
 
             if (columnName === "from" || columnName === "to") {
-               const node = tableData.nodes.get(obj.attributes[columnName]);
+               const node = unfilteredData.nodes.get(obj.attributes[columnName]);
                return (
                   <StyledTableCell align="right" key={i}>
                      <Link
                         component={"button"}
                         name={columnName}
-                        value={node?.id}
+                        value={node.id}
                         variant="button"
                         onClick={() => handleNameClick(node)}
                      >
@@ -60,7 +69,9 @@ const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabV
             if (columnName === "name" && "name" in obj.attributes) {
                const objectName = obj.attributes.name;
 
-               const object = nodes ? tableData.nodes.get(obj.id) : tableData.edges.get(obj.id);
+               const object = nodes
+                  ? unfilteredData.nodes.get(obj.id)
+                  : unfilteredData.edges.get(obj.id);
 
                return (
                   <StyledTableCell align="right" key={i}>
@@ -89,7 +100,7 @@ const ObjectTable = ({ tableData, objectColumns, nodes, setObjectToEdit, setTabV
    if (!tableData) return null;
 
    return (
-      <Paper sx={{ width: "100%", overflow: "hidden" }}>
+      <Paper elevation={0} sx={{ width: "100%", overflow: "hidden" }}>
          <TableContainer sx={{ height: "calc(100vh - 6.25rem)" }}>
             <Table size="small" stickyHeader>
                <TableHead>

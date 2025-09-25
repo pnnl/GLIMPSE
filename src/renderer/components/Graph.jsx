@@ -29,10 +29,11 @@ import {
 import ContextMenu from "./ContextMenu";
 import Legend from "./Legend";
 import NewNodeForm from "./NewNodeForm";
-import EditObjectModal from "./EditObjectModal";
+import EditObjectModal from "./EditObjectDialog";
 import { isGlmFile } from "../utils/appUtils";
 import { NewEdgeForm } from "./NewEdgeForm";
 import VisToolbar from "./VisToolbar";
+import FilterAttributesDialog from "./FilterAttributesDialog";
 const { graphOptions } = JSON.parse(await window.glimpseAPI.getConfig());
 
 const ANGLE = Math.PI / 12; // 15 degrees in radians
@@ -51,6 +52,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    const highlightedObjects = useRef([]);
    let network = null; // global network variable
    let edgesToAnimate = {};
+   let filteredAttributes = {};
    let edgesToAnimateCount = 0;
    let redrawIntervalID = null;
 
@@ -404,7 +406,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                objectTypeCount,
                GLIMPSE_OBJECT,
                theme,
-               graphOptions
+               graphOptions,
+               filteredAttributes
             );
 
             setLegendData(objectTypeCount, theme, legendData);
@@ -670,16 +673,24 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    };
 
    const updateVisObjects = (updateData) => {
-      console.log(updateData);
-
+      // get the ID from the object or from its attributes if id is undefined or null
+      const objectToUpdateID = updateData.id;
       if (updateData.elementType === "node") {
-         const node = graphData.nodes.get(updateData.id);
-         graphData.nodes.update({ ...node, ...updateData.updates });
+         const node = graphData.nodes.get(objectToUpdateID);
+
+         if ("attributes" in updateData) {
+            node.attributes = { ...node.attributes, ...updateData.attributes };
+            node.title = getTitle({ objectType: node.type, ...node.attributes });
+            graphData.nodes.update(node);
+            return;
+         }
+
+         graphData.nodes.update({ ...node, ...graphData.updates });
       } else {
-         const edge = graphData.edges.get(updateData.id);
+         const edge = graphData.edges.get(objectToUpdateID);
          const clusteredEdges = network.clustering.getClusteredEdges(edge.id);
 
-         if ("animation" in updateData.updates) {
+         if ("updates" in updateData && "animation" in updateData.updates) {
             const { increment, startFrom, ...rest } = updateData.updates;
 
             // if the first element of the clustered edges array is not the passed edge ID
@@ -700,9 +711,14 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             if (!redrawIntervalID) {
                redrawIntervalID = setInterval(() => network.redraw(), 16.67);
             }
-         } else {
-            graphData.edges.update({ ...edge, ...updateData.updates });
+         } else if ("attributes" in updateData) {
+            edge.attributes = { ...edge.attributes, ...updateData.attributes };
+            edge.title = getTitle({ objectType: edge.type, ...edge.attributes });
+            graphData.edges.update(edge);
+            return;
          }
+
+         graphData.edges.update({ ...edge, ...updateData.updates });
       }
    };
 
@@ -1101,9 +1117,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          )
       );
       removeListenerArr.push(
-         window.glimpseAPI.onShowAttributes((show) => showAttributes(show, graphData))
-      );
-      removeListenerArr.push(
          window.glimpseAPI.onExportTheme(() =>
             window.glimpseAPI.exportTheme(JSON.stringify(theme, null, 3))
          )
@@ -1120,7 +1133,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                attributes: newNodeData.attributes,
                type: newNodeData.objectType,
                group: newNodeData.objectType,
-               title: `ObjectType: ${newNodeData.objectType}\n${getTitle(newNodeData.attributes)}`,
+               title: getTitle({ ObjectType: newNodeData.objectType, ...newNodeData.attributes }),
                ...newNodeData.styles
             });
          })
@@ -1133,7 +1146,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
                from: newEdgeData.attributes.from,
                attributes: newEdgeData.attributes,
                elementType: "edge",
-               title: `Type: ${newEdgeData.objectType}\n${getTitle(newEdgeData.attributes)}`,
+               title: getTitle({ ObjectType: newEdgeData.objectType, ...newEdgeData.attributes }),
                ...newEdgeData.styles
             });
          })
@@ -1146,6 +1159,11 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
       removeListenerArr.push(
          window.glimpseAPI.onDeleteEdgeEvent((edgeID) => {
             graphData.edges.remove(edgeID);
+         })
+      );
+      removeListenerArr.push(
+         window.glimpseAPI.onChangesFromStudio((changes) => {
+            updateVisObjects(changes);
          })
       );
 
@@ -1180,7 +1198,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          objectTypeCount,
          GLIMPSE_OBJECT,
          theme,
-         graphOptions
+         graphOptions,
+         filteredAttributes
       );
       /* ---------------------------- Establish Network --------------------------- */
       setLegendData(objectTypeCount, theme, legendData);
@@ -1339,6 +1358,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          graphData.edges.clear();
          graphData.nodes.clear();
          network = null;
+         filteredAttributes = {};
       };
    }, []);
    /* ------------------------- End visualization hook ------------------------- */
@@ -1397,6 +1417,8 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             close={closePopUp}
             graphData={graphData}
          />
+
+         <FilterAttributesDialog filteredAttributes={filteredAttributes} graphData={graphData} />
 
          <NewEdgeForm
             onMount={onNewEdgeFormMount}
