@@ -103,19 +103,20 @@ git clone https://github.com/NREL/glm.git
 Then in `GLIMPSE/local-server/glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
 
 ```bash
-nim c -d:release --opt:size --cpu:arm64 --passC:"-flto -target arm64-apple-macos11" --passL:"-flto -target arm64-apple-macos11" --app:lib --out:lib/_glm.so src/glm.nim
+nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
 ```
 
 Next run the following command to create the glm python library wheel
 
 ```bash
-python setup.py bdist_wheel --plat-name=macosx_11_0_arm64
+python setup.py bdist_wheel
 ```
 
 Once that is done, in `GLIMPSE/local-server/glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
 
 ```bash
-python -m pip install ./dist/glm-0.4.4-py2.py3-none-macosx_11_0_arm64.whl
+# .whl file name will vary based on system
+pip install dist/*.whl
 ```
 
 ## Start GLIMPSE
@@ -123,7 +124,7 @@ python -m pip install ./dist/glm-0.4.4-py2.py3-none-macosx_11_0_arm64.whl
 In `GLIMPSE/` start the application with the following command:
 
 ```bash
-npm run dev
+npm run start
 ```
 
 ## Supported Input Files
@@ -131,12 +132,12 @@ npm run dev
 ### GLIMPSE supports two different JSON file formats for custom graph visualizations.
 
 1. GLIMPSE's data structure based off the [glm2json](https://github.com/NREL/glm) parser output used by GLIMPSE.
-   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/customModelExample.json)
-   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/levelExample.json)
-   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/socialExample.json)
-   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/test.json)
-2. Networkx's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
-   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/glimpse/data/demo_examples/gdata.json)
+   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
+   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
+   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
+   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
+1. NetworkX's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
+   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
 
 ### GLIMPSE glm (GridLAB-D Model) file support
 
