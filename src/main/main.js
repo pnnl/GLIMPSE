@@ -660,8 +660,6 @@ app.whenReady().then(() => {
    globalShortcut.register("ctrl+p", () => mainWindow.webContents.send("show-vis-options"));
    initiateServer();
 
-   // Set app user model id for windows
-   electronApp.setAppUserModelId("com.pnnl.GLIMPSE");
    app.on("browser-window-created", (_, window) => {
       optimizer.watchWindowShortcuts(window);
    });

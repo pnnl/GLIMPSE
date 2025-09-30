@@ -1,12 +1,12 @@
 /* eslint-disable react/prop-types */
 import React, { useEffect, useRef } from "react";
-import { Box, Stack } from "@mui/material";
 import axios from "axios";
+import "../other-styles/vis-network.css";
+import "../styles/Graph.css";
+import { Box, Stack } from "@mui/material";
 import { v4 } from "uuid";
 import { DataSet } from "vis-data";
 import { Network } from "vis-network";
-import "../styles/Graph.css";
-import "../other-styles/vis-network.css";
 import {
    currentUploadCounter,
    Export,
@@ -23,8 +23,7 @@ import {
    Prev,
    rotateCCW,
    rotateCW,
-   setGraphData,
-   showAttributes
+   setGraphData
 } from "../utils/graphUtils";
 import ContextMenu from "./ContextMenu";
 import Legend from "./Legend";

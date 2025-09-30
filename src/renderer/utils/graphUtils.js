@@ -367,7 +367,7 @@ export const showAttributes = (show, data, filteredAttributes) => {
    if (!show) {
       data.nodes.update(
          data.nodes.map((node) => {
-            node.label = node.id;
+            node.label = "name" in node.attributes ? node.attributes.name : node.id;
             return node;
          })
       );
@@ -456,7 +456,7 @@ export const HighlightEdges = (edgeType, highlightedObjs, data, edgeOptions) => 
    }
 
    const edgesToUpdate = data.edges.map((edge) => {
-      if (edge.type === edgeType && highlightedObjs.current.some((obj) => obj === edge.id)) {
+      if (edge.type === edgeType && highlightedObjs.current.some((obj) => obj.id === edge.id)) {
          edge.color = "rgba(200, 200, 200, 0.4)";
          edge.width = edgeOptions[edge.type].width;
 
@@ -491,7 +491,7 @@ export const HighlightEdges = (edgeType, highlightedObjs, data, edgeOptions) => 
  */
 export const HighlightGroup = (nodeType, data, highlightedObjs) => {
    const updateNodes = data.nodes.map((node) => {
-      if (node.type === nodeType && highlightedObjs.current.includes(node.id)) {
+      if (node.type === nodeType && highlightedObjs.current.some((obj) => obj.id === node.id)) {
          node.group = "inactive";
          node.label = " ";
 
@@ -502,7 +502,10 @@ export const HighlightGroup = (nodeType, data, highlightedObjs) => {
       ) {
          node.group = "inactive";
          node.label = " ";
-      } else if (node.type === nodeType && !highlightedObjs.current.includes(node.id)) {
+      } else if (
+         node.type === nodeType &&
+         !highlightedObjs.current.some((obj) => obj.id === node.id)
+      ) {
          if (node.group === "inactive") {
             node.group = node.type;
             if (node.attributes && "name" in node.attributes) node.label = node.attributes.name;
