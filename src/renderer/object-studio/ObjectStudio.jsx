@@ -17,7 +17,6 @@ const ObjectStudio = () => {
 
    useEffect(() => {
       window.glimpseAPI.onLoadObjects((data) => {
-         if ("isCIM" in data) console.log("CIM data loaded", data.isCIM);
          // Create DataSet from edges
          const edges = new DataSet(data.edges);
          const nodes = new DataSet(data.nodes);

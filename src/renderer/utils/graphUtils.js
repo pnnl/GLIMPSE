@@ -57,7 +57,6 @@ export const Export = (network, graphData, isGlm, isCim, fileData, newCIMobjs) =
 
       window.glimpseAPI.json2glm(JSON.stringify(fileData));
    } else if (isCim) {
-      console.log(Object.keys(fileData)[0]);
       if (newCIMobjs.length === 0) {
          const nodesWithoutCoords = graphData.nodes
             .get()
@@ -379,12 +378,13 @@ export const showAttributes = (show, data, filteredAttributes) => {
          })
       );
    } else {
-      console.log(filteredAttributes);
       data.nodes.update(
          data.nodes.map((node) => {
+            if (node.group === "inactive") return node;
+
             const labelAttributes = Object.entries(node.attributes).reduce(
                (acc, [attrName, value]) => {
-                  if (filteredAttributes[node.type][attrName]) {
+                  if (filteredAttributes.nodes[node.type][attrName]) {
                      acc[attrName] = value;
                   }
                   return acc;
@@ -398,10 +398,12 @@ export const showAttributes = (show, data, filteredAttributes) => {
 
       data.edges.update(
          data.edges.map((edge) => {
+            if (edge.color === "rgba(200, 200, 200, 0.4)") return edge;
+
             const labelAttributes = Object.entries(edge.attributes).reduce(
                (acc, [attrName, value]) => {
                   if (edge.type === "parentChild") return acc;
-                  if (filteredAttributes[edge.type][attrName]) {
+                  if (filteredAttributes.edges[edge.type][attrName]) {
                      acc[attrName] = value;
                   }
                   return acc;
@@ -459,6 +461,7 @@ export const HighlightEdges = (edgeType, highlightedObjs, data, edgeOptions) => 
       if (edge.type === edgeType && highlightedObjs.current.some((obj) => obj.id === edge.id)) {
          edge.color = "rgba(200, 200, 200, 0.4)";
          edge.width = edgeOptions[edge.type].width;
+         edge.label = " ";
 
          highlightedObjs.current = highlightedObjs.current.filter((obj) => obj.id !== edge.id);
       } else if (
@@ -467,6 +470,7 @@ export const HighlightEdges = (edgeType, highlightedObjs, data, edgeOptions) => 
       ) {
          edge.color = "rgba(200, 200, 200, 0.4)";
          edge.width = edgeOptions[edge.type].width;
+         edge.label = " ";
       } else if (
          edge.type === edgeType &&
          !highlightedObjs.current.some((obj) => obj.id === edge.id)
@@ -647,6 +651,9 @@ export const setGraphData = (
    */
    const keys = ["id", "objectType", "name"];
    const files = Object.keys(dataFromFiles).map((file) => dataFromFiles[file]);
+   GLIMPSE_OBJECT.objects.length = 0;
+   graphData.nodes.clear();
+   graphData.edges.clear();
    const newNodes = [];
    const newEdges = [];
 
@@ -662,10 +669,10 @@ export const setGraphData = (
          const nodeID = attributes[nameForObjID];
 
          if (nodeTypes.length > 0 && nodeTypes.includes(objectType)) {
-            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+            if (!(objectType in filteredAttributes)) filteredAttributes.nodes[objectType] = {};
 
             Object.keys(attributes).forEach((key) => {
-               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+               if (!(key in filteredAttributes)) filteredAttributes.nodes[objectType][key] = true;
             });
 
             if ("x" in attributes && "y" in attributes) {
@@ -763,10 +770,10 @@ export const setGraphData = (
 
             continue;
          } else if ("elementType" in obj && obj.elementType === "node") {
-            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+            if (!(objectType in filteredAttributes)) filteredAttributes.nodes[objectType] = {};
 
             Object.keys(attributes).forEach((key) => {
-               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+               if (!(key in filteredAttributes)) filteredAttributes.nodes[objectType][key] = true;
             });
 
             if (!(objectType in theme.groups)) {
@@ -846,10 +853,10 @@ export const setGraphData = (
 
             continue;
          } else if (edgeTypes.includes(objectType)) {
-            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+            if (!(objectType in filteredAttributes)) filteredAttributes.edges[objectType] = {};
 
             Object.keys(attributes).forEach((key) => {
-               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+               if (!(key in filteredAttributes)) filteredAttributes.edges[objectType][key] = true;
             });
 
             const edgeFrom =
@@ -886,10 +893,10 @@ export const setGraphData = (
 
             continue;
          } else if ("elementType" in obj && obj.elementType === "edge") {
-            if (!(objectType in filteredAttributes)) filteredAttributes[objectType] = {};
+            if (!(objectType in filteredAttributes)) filteredAttributes.edges[objectType] = {};
 
             Object.keys(attributes).forEach((key) => {
-               if (!(key in filteredAttributes)) filteredAttributes[objectType][key] = true;
+               if (!(key in filteredAttributes)) filteredAttributes.edges[objectType][key] = true;
             });
 
             const edgeFrom =

@@ -34,7 +34,7 @@ const ObjectTable = ({
 
    const handleNameClick = (obj) => {
       if (isCIM) setObjectToEdit(obj.attributes.mRID);
-      else setObjectToEdit({ type: obj.elementType, id: obj.attributes.name });
+      else setObjectToEdit({ type: obj.elementType, id: obj.attributes.name ?? obj.id });
       setTabValue(2);
    };
 
@@ -60,14 +60,14 @@ const ObjectTable = ({
                         variant="button"
                         onClick={() => handleNameClick(node)}
                      >
-                        {node?.attributes.name}
+                        {node.attributes.name ?? node.id}
                      </Link>
                   </StyledTableCell>
                );
             }
 
-            if (columnName === "name" && "name" in obj.attributes) {
-               const objectName = obj.attributes.name;
+            if (columnName === "id" || (columnName === "name" && "name" in obj.attributes)) {
+               const objectName = obj.attributes.name ?? obj.id;
 
                const object = nodes
                   ? unfilteredData.nodes.get(obj.id)
@@ -82,7 +82,7 @@ const ObjectTable = ({
                         variant="button"
                         onClick={() => handleNameClick(object)}
                      >
-                        {obj.attributes.name}
+                        {obj.attributes[columnName]}
                      </Link>
                   </StyledTableCell>
                );

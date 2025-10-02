@@ -7,7 +7,9 @@ import {
    Checkbox,
    DialogContent,
    DialogActions,
-   DialogTitle
+   DialogTitle,
+   Typography,
+   Box
 } from "@mui/material";
 import {
    CustomAccordion,
@@ -35,23 +37,44 @@ const FilterAttributesDialog = ({ filteredAttributes, graphData }) => {
       }
    }, [open, filteredAttributes]);
 
-   const handleChecked = (e, objectType) => {
+   const handleChecked = (e, objectType, elementType) => {
       const { name, checked } = e.target;
 
       setLocalFilters((prev) => {
-         const copy = { ...prev };
-         copy[objectType] = { ...copy[objectType], [name]: checked };
-         filteredAttributes[objectType] = copy[objectType];
-         return copy;
+         const newLocalFilters = { ...prev };
+         // copy[objectType] = { ...copy[objectType], [name]: checked };
+         newLocalFilters[elementType][objectType][name] = checked;
+         filteredAttributes[elementType][objectType] = newLocalFilters[objectType];
+         return newLocalFilters;
       });
    };
 
    // Add this useEffect to handle the visualization update
-   React.useEffect(() => {
+   const handleApply = () => {
       if (open) {
-         showAttributes(true, graphData, filteredAttributes);
+         showAttributes(true, graphData, localFilters);
       }
-   }, [localFilters, open, graphData, filteredAttributes]);
+   };
+
+   const handleSelectAll = (elementType, objectType, e) => {
+      const { checked } = e.target;
+
+      setLocalFilters((prev) => {
+         const newLocalFilters = { ...prev };
+         // create a new object where each attribute is set to checked
+         const updatedAttributes = Object.keys(newLocalFilters[elementType][objectType]).reduce(
+            (acc, attr) => {
+               acc[attr] = checked;
+               return acc;
+            },
+            {}
+         );
+
+         newLocalFilters[elementType][objectType] = updatedAttributes;
+         filteredAttributes[elementType][objectType] = updatedAttributes;
+         return newLocalFilters;
+      });
+   };
 
    React.useEffect(() => {
       const removeListenerArr = [];
@@ -61,6 +84,7 @@ const FilterAttributesDialog = ({ filteredAttributes, graphData }) => {
             showAttributes(show, graphData, filteredAttributes)
          )
       );
+
       return () => removeListenerArr.forEach((remove) => remove());
    }, []);
 
@@ -73,55 +97,74 @@ const FilterAttributesDialog = ({ filteredAttributes, graphData }) => {
       >
          <DialogTitle>Filter Attributes</DialogTitle>
          <DialogContent dividers>
-            {Object.entries(localFilters).map(([objectType, attributes], index) => (
-               <CustomAccordion key={index}>
-                  <CustomAccordionSummary>{objectType}</CustomAccordionSummary>
-                  <CustomAccordionDetails>
-                     <FormControl
-                        sx={{
-                           width: "100%",
-                           justifyContent: "space-between",
-                           flexDirection: "row",
-                           flexWrap: "wrap"
-                        }}
-                        component={"fieldset"}
-                        variant="standards"
-                     >
-                        {Object.entries(attributes).map(([attribute], index) => (
-                           <FormControlLabel
-                              sx={{
-                                 width: "13rem",
-                                 whiteSpace: "nowrap",
-                                 overflow: "hidden",
-                                 textOverflow: "ellipsis"
-                              }}
-                              title={attribute}
-                              key={index}
-                              label={attribute}
-                              control={
-                                 <Checkbox
-                                    checked={
-                                       !!(
-                                          localFilters &&
-                                          localFilters[objectType] &&
-                                          localFilters[objectType][attribute]
-                                       )
-                                    }
-                                    name={attribute}
-                                    size="small"
-                                    onChange={(e) => handleChecked(e, objectType)}
-                                 />
-                              }
-                           />
-                        ))}
-                     </FormControl>
-                  </CustomAccordionDetails>
-               </CustomAccordion>
+            {Object.entries(localFilters).map(([elementType, objectTypes], idx) => (
+               <Box key={idx} sx={{ marginBottom: "1rem" }}>
+                  <Typography variant="h4" gutterBottom>
+                     {elementType}
+                  </Typography>
+                  {Object.entries(objectTypes).map(([objectType, attributes], index) => {
+                     const allSelected = Object.values(attributes).every((v) => v === true);
+                     const someSelected =
+                        Object.values(attributes).some((v) => v === true) && !allSelected;
+
+                     return (
+                        <CustomAccordion key={index}>
+                           <CustomAccordionSummary>{objectType}</CustomAccordionSummary>
+                           <CustomAccordionDetails>
+                              <FormControlLabel
+                                 label="Select All"
+                                 control={
+                                    <Checkbox
+                                       checked={allSelected}
+                                       indeterminate={someSelected}
+                                       onChange={(e) => handleSelectAll(elementType, objectType, e)}
+                                    />
+                                 }
+                              />
+                              <FormControl
+                                 sx={{
+                                    width: "100%",
+                                    justifyContent: "space-between",
+                                    flexDirection: "row",
+                                    flexWrap: "wrap"
+                                 }}
+                                 component={"fieldset"}
+                                 variant="standards"
+                              >
+                                 {Object.entries(attributes).map(([attribute, checked], index) => (
+                                    <FormControlLabel
+                                       sx={{
+                                          width: "13rem",
+                                          whiteSpace: "nowrap",
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis"
+                                       }}
+                                       title={attribute}
+                                       key={index}
+                                       label={attribute}
+                                       control={
+                                          <Checkbox
+                                             checked={checked}
+                                             name={attribute}
+                                             size="small"
+                                             onChange={(e) =>
+                                                handleChecked(e, objectType, elementType)
+                                             }
+                                          />
+                                       }
+                                    />
+                                 ))}
+                              </FormControl>
+                           </CustomAccordionDetails>
+                        </CustomAccordion>
+                     );
+                  })}
+               </Box>
             ))}
          </DialogContent>
          <DialogActions>
             <CustomButton onClick={() => setOpen(false)}>Close</CustomButton>
-            {/* <CustomButton onClick={handleApply}>Apply</CustomButton> */}
+            <CustomButton onClick={handleApply}>Apply</CustomButton>
          </DialogActions>
       </Dialog>
    );

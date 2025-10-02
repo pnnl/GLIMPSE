@@ -51,7 +51,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
    const highlightedObjects = useRef([]);
    let network = null; // global network variable
    let edgesToAnimate = {};
-   let filteredAttributes = {};
+   let filteredAttributes = { nodes: {}, edges: {} };
    let edgesToAnimateCount = 0;
    let redrawIntervalID = null;
 
@@ -110,6 +110,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
 
          if (edgeTypes.includes(edgeType) || edgeType in theme.edgeOptions) {
             Object.assign(edge, theme.edgeOptions[edgeType]);
+            edge.label = " ";
             edge.hidden = false;
 
             return edge;
@@ -300,8 +301,6 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
             }
          }
       }
-
-      console.log(topology);
 
       if (topology) {
          for (const commNode of topology.Node) {
@@ -1357,7 +1356,7 @@ const Graph = ({ dataToVis, theme, isGlm, isCim, setSearchReqs }) => {
          graphData.edges.clear();
          graphData.nodes.clear();
          network = null;
-         filteredAttributes = {};
+         filteredAttributes = { nodes: {}, edges: {} };
       };
    }, []);
    /* ------------------------- End visualization hook ------------------------- */

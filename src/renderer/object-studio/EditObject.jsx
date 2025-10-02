@@ -48,8 +48,6 @@ const EditObject = ({ objectID, isCIM, setObject, tableData }) => {
          const responsePromise = axios.get(`http://127.0.0.1:5051/api/objects/${mRID}`);
          const response = await responsePromise;
 
-         console.log(response.data);
-
          setObjectToEdit({ ...response.data.object });
          setTabValue(0);
       } catch (error) {
@@ -97,7 +95,7 @@ const EditObject = ({ objectID, isCIM, setObject, tableData }) => {
          </Box>
          {tabValue === 0 && (
             <AttributesTable
-               heading={objectToEdit.attributes.name}
+               heading={objectToEdit.attributes.name ?? objectToEdit.id}
                readOnlyAttributesList={readOnlyAttributes}
                onChange={handleChange}
                attributes={objectToEdit.attributes}
@@ -107,7 +105,7 @@ const EditObject = ({ objectID, isCIM, setObject, tableData }) => {
          )}
          {isCIM && tabValue === 1 && (
             <AttributesTable
-               heading={objectToEdit.attributes.name}
+               heading={objectToEdit.attributes.name ?? objectToEdit.id}
                readOnlyAttributesList={readOnlyAttributes}
                attributes={objectToEdit.associations}
                setObject={setObject}
