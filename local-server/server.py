@@ -1,12 +1,13 @@
-from typing import Any, Hashable
-
+from werkzeug.utils import secure_filename
 from flask import Flask, request as req
-from flask_cors import CORS
 from flask_socketio import SocketIO
+from flask_cors import CORS
 import networkx as nx
 from uuid import UUID
-import glm
+import tempfile
+import shutil
 import json
+import glm
 import os
 
 from cimbuilder.object_builder import new_energy_consumer
@@ -17,8 +18,10 @@ from cimbuilder.object_builder import new_two_terminal_object
 from cimgraph.models import FeederModel
 from cimgraph.databases import XMLFile
 from dataclasses import fields
+
 import cimgraph.utils as cim_utils
 import cimgraph.data_profile.cimhub_2023 as cim
+
 os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
 os.environ["CIMG_IEC61970_301"] = "8"
 
@@ -79,7 +82,6 @@ def create_graph(data: dict, set_communities: bool=False) -> dict[Hashable | Any
       nx.set_node_attributes(NX_GRAPH, community_ids, "glimpse_community_id")
       return nx.get_node_attributes(G=NX_GRAPH, name="glimpse_community_id")
    return None
-
 
 def get_modularity() -> float:
    modularity = nx.algorithms.community.modularity(NX_GRAPH, nx.community.label_propagation_communities(NX_GRAPH))
@@ -486,6 +488,43 @@ def glm_to_json():
   glm_dict = glm_to_dict(paths)
 
   return dict2json(glm_dict)
+
+@app.route("/upload/glm-to-json", methods=["POST"])
+def upload_glm_to_json():
+    """
+    This endpoint receives one or more .glm files via multipart/form-data,
+    saves them to a temp directory, collects their paths, and converts to JSON.
+    """
+    # Validate presence of 'files' in form-data
+    if "files" not in req.files:
+        return {"error": "No 'files' part in the form data."}, 400
+
+    files = req.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
+
+    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
+    paths = []
+
+    try:
+        for f in files:
+            if not f or f.filename == "":
+                continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+
+        if not paths:
+            return {"error": "No valid files received."}, 400
+
+        # Your existing conversion logic
+        glm_dict = glm_to_dict(paths)     # expects list of paths
+        return dict2json(glm_dict)        # your existing helper
+
+    finally:
+        # Clean up temp files/dir
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 @app.route("/json2glm", methods=["POST"])
 def json_to_glm():

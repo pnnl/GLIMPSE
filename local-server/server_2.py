@@ -1,4 +1,4 @@
-from typing import Any, Hashable, Dict, List, Optional, Callable
+from typing import Any, Hashable, Dict, Callable
 import os
 import json
 import logging
@@ -12,6 +12,8 @@ from flask_cors import CORS
 from flask_socketio import SocketIO
 import networkx as nx
 import glm
+from werkzeug.utils import secure_filename
+import shutil
 
 from cimbuilder.object_builder import new_energy_consumer
 from cimbuilder.object_builder import new_synchronous_generator
@@ -217,8 +219,8 @@ def parse_search_condition(condition: str) -> Callable:
 # ================================================================================================
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:5173", "http://localhost:3000"])
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "http://localhost:3000"], async_mode="gevent")
+CORS(app, origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"])
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"], async_mode="gevent")
 
 # ================================================================================================
 # GRAPH MODEL MANAGEMENT ENDPOINTS
@@ -1396,19 +1398,42 @@ def get_subgraph():
 # EXISTING GLM CONVERSION ENDPOINTS (from your original server.py)
 # ================================================================================================
 
-@app.route("/glm2json", methods=["POST"])
-def glm_to_json():
+@app.route("/api/upload/glm-to-json", methods=["POST"])
+def upload_glm_to_json():
     """
-    Convert GridLAB-D model files (.glm) to JSON format
-
-    Expected JSON body: List of file paths
-
-    Returns:
-        JSON string representation of the GLM files
+    This endpoint receives one or more .glm files via multipart/form-data,
+    saves them to a temp directory, collects their paths, and converts to JSON.
     """
-    paths = req.get_json()
-    glm_dict = glm_to_dict(paths)
-    return dict2json(glm_dict)
+    # Validate presence of 'files' in form-data
+    if "files" not in req.files:
+        return {"error": "No 'files' part in the form data."}, 400
+
+    files = req.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
+
+    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
+    paths = []
+
+    try:
+        for f in files:
+            if not f or f.filename == "":
+                continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+
+        if not paths:
+            return {"error": "No valid files received."}, 400
+
+        # Your existing conversion logic
+        glm_dict = glm_to_dict(paths)     # expects list of paths
+        return dict2json(glm_dict)        # your existing helper
+
+    finally:
+        # Clean up temp files/dir
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 @app.route("/json2glm", methods=["POST"])
 def json_to_glm():
@@ -1956,14 +1981,44 @@ def exportCIM(dir2save: str, filename: str, data: list) -> None:
    cim_utils.get_all_data(CIM_NETWORK)
    cim_utils.write_xml(CIM_NETWORK, os.path.join(dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"))
 
-@app.route("/cimg-to-GS", methods=["POST"])
+@app.route("/api/upload/cimg-to-GS", methods=["POST"])
 def cim_to_glimpse():
-  cim_filepath = req.get_json()
-  glimpse_structure_data = cim2GS(cim_filepath[0])
+   
+      # Validate presence of 'files' in form-data
+   if "files" not in req.files:
+      return {"error": "No 'files' part in the form data."}, 400
 
-  return glimpse_structure_data
+   files = req.files.getlist("files")
+   if not files:
+      return {"error": "No files uploaded."}, 400
 
-@app.route("/export-cim", methods=["POST"])
+   tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
+   paths = []
+
+   try:
+      for f in files:
+         if not f or f.filename == "":
+            continue
+         filename = secure_filename(f.filename)
+         dest_path = os.path.join(tmpdir, filename)
+         f.save(dest_path)
+         paths.append(dest_path)
+
+      if not paths:
+         return {"error": "No valid files received."}, 400
+
+      # Your existing conversion logic
+      glimpse_structure_data = cim2GS(paths[0])
+      return glimpse_structure_data
+
+   finally:
+      # Clean up temp files/dir
+      shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+
+
+@app.route("/api/export/export-cim", methods=["POST"])
 def export_cim():
   cim_data = req.get_json()
 
@@ -1975,7 +2030,7 @@ def export_cim():
   exportCIM(export_dir, og_filepath, data)
   return "", 204
 
-@app.route("/export-cim-coordinates", methods=["POST"])
+@app.route("/api/export/export-cim-coordinates", methods=["POST"])
 def export_cim_():
    """
    This endpoint exports the new coordinates of the nodes to the CIM file
