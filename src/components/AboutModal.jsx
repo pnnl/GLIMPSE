@@ -7,7 +7,7 @@ const AboutModal = ({ open, close }) => {
       <Modal
          centered
          open={open}
-         title={"About GLIMPSE"}
+         title={"About"}
          cancelButtonProps={{ disabled: true, style: { display: "none" } }}
          onCancel={close}
          onOk={close}

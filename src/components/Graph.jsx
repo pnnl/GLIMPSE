@@ -11,15 +11,13 @@ const Graph = ({ onGraphLoaded }) => {
    const sigma = useSigma();
 
    useEffect(() => {
-      if (location.state && location.state.fileData) {
-         graphHelper.setGraphData(location.state.fileData);
-         // load into sigma
-         loadGraph(graphHelper.graph);
-         graphHelper.sigmaInstance = sigma;
+      graphHelper.setGraphData(location.state.fileData);
+      // load into sigma
+      loadGraph(graphHelper.graph);
+      graphHelper.sigmaInstance = sigma;
 
-         // If loadGraph returns a promise-like, try to wait, otherwise update immediately
-         onGraphLoaded && onGraphLoaded(graphHelper.graph.order);
-      }
+      // If loadGraph returns a promise-like, try to wait, otherwise update immediately
+      onGraphLoaded && onGraphLoaded(graphHelper.graph.order);
 
       return () => {
          graphHelper.graph.clear();

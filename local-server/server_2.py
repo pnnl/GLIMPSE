@@ -23,7 +23,7 @@ from cimbuilder.object_builder import new_two_terminal_object
 from cimgraph.models import FeederModel, BusBranchModel, NodeBreakerModel
 import cimgraph.utils as cim_utils
 from cimgraph.databases import XMLFile
-import cimgraph.data_profile.cimhub_2023 as cim
+# import cimgraph.data_profile.cimhub_2023 as cim
 from cimbuilder.object_builder import new_energy_consumer, new_synchronous_generator, new_two_terminal_object
 
 # Configure logging
@@ -31,8 +31,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 _log = logging.getLogger(__name__)
 
 # Environment setup
-os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
+# os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
 os.environ["CIMG_IEC61970_301"] = "8"
+
+os.environ['CIMG_VALIDATION_LOG_LEVEL'] = 'WARNING'
+os.environ['CIMG_CIM_PROFILE'] = 'cimgraph.data_profile.cim18gmdm.canonical'
+import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
+ 
+namespaces={'cim': 'http://cim.ucaiug.io/CIM101/draft#',
+            'gmdm': 'http://epri.com/gmdm/2025#',
+            'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'}
 
 # ================================================================================================
 # GLOBAL VARIABLES AND CONSTANTS
@@ -221,215 +229,6 @@ def parse_search_condition(condition: str) -> Callable:
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"])
 socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:4173"], async_mode="gevent")
-
-# ================================================================================================
-# GRAPH MODEL MANAGEMENT ENDPOINTS
-# ================================================================================================
-
-@app.route('/api/graph/models/create', methods=['POST'])
-def create_cim_model():
-    """
-    Create a new CIM Graph model from a specific container
-
-    Expected JSON body:
-        {
-            "container_id": "uuid_of_feeder_or_substation",
-            "model_type": "feeder|substation|nodebreaker"
-        }
-
-    Returns:
-        Model creation status and basic statistics
-    """
-    global CIM_NETWORK
-
-    try:
-        data = req.get_json()
-        container_id = data.get('container_id')
-        model_type = data.get('model_type', 'feeder')
-
-        if not container_id:
-            return jsonify({'error': 'container_id is required'}), 400
-
-        if not CURRENT_CONNECTION:
-            return jsonify({'error': 'No database connection available'}), 400
-
-        # Create appropriate model type based on container and model type
-        if model_type.lower() == 'feeder':
-            # Create a feeder model
-            if hasattr(cim, 'Feeder'):
-                container = cim.Feeder(mRID=container_id)
-                CIM_NETWORK = FeederModel(
-                    connection=CURRENT_CONNECTION,
-                    container=container,
-                    distributed=False
-                )
-            else:
-                return jsonify({'error': 'Feeder class not available in CIM profile'}), 500
-
-        elif model_type.lower() == 'substation':
-            # Create a substation model
-            if hasattr(cim, 'Substation'):
-                container = cim.Substation(mRID=container_id)
-                CIM_NETWORK = BusBranchModel(
-                    connection=CURRENT_CONNECTION,
-                    container=container,
-                    distributed=False
-                )
-            else:
-                return jsonify({'error': 'Substation class not available in CIM profile'}), 500
-
-        elif model_type.lower() == 'nodebreaker':
-            # Create a node-breaker model
-            if hasattr(cim, 'Substation'):
-                container = cim.Substation(mRID=container_id)
-                CIM_NETWORK = NodeBreakerModel(
-                    connection=CURRENT_CONNECTION,
-                    container=container,
-                    distributed=False
-                )
-            else:
-                return jsonify({'error': 'NodeBreakerModel not available'}), 500
-        else:
-            return jsonify({'error': f'Unsupported model type: {model_type}'}), 400
-
-        # Get basic statistics about the created model
-        stats = _get_model_statistics()
-
-        _log.info(f"Created {model_type} model for container {container_id}")
-
-        return jsonify({
-            'success': True,
-            'model_type': model_type,
-            'container_id': container_id,
-            'statistics': stats
-        })
-
-    except Exception as e:
-        _log.error(f"Error creating model: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-def _get_model_statistics():
-    """
-    Get basic statistics about the current CIM model
-
-    Returns:
-        Dictionary with model statistics
-    """
-    if not CIM_NETWORK or not hasattr(CIM_NETWORK, 'graph'):
-        return {'total_classes': 0, 'total_objects': 0, 'class_breakdown': {}}
-
-    class_breakdown = {}
-    total_objects = 0
-
-    for cim_class, instances in CIM_NETWORK.graph.items():
-        class_name = cim_class.__name__
-        instance_count = len(instances)
-        class_breakdown[class_name] = instance_count
-        total_objects += instance_count
-
-    return {
-        'total_classes': len(class_breakdown),
-        'total_objects': total_objects,
-        'class_breakdown': class_breakdown
-    }
-
-@app.route('/api/graph/data/categories', methods=['GET'])
-def get_data_categories():
-    """
-    Get available data categories and their loading status
-
-    Returns:
-        Dictionary of data categories with loading status
-    """
-    try:
-        return jsonify({
-            'categories': DATA_CATEGORIES_LOADED,
-            'model_available': CIM_NETWORK is not None
-        })
-    except Exception as e:
-        _log.error(f"Error getting data categories: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/graph/data/load-categories', methods=['POST'])
-def load_data_categories():
-    """
-    Load specific data categories into the current model
-
-    Expected JSON body:
-        {
-            "categories": ["lines", "transformers", "loads"]
-        }
-
-    Returns:
-        Loading results for each category
-    """
-    global DATA_CATEGORIES_LOADED
-
-    try:
-        data = req.get_json()
-        categories = data.get('categories', [])
-
-        if not categories:
-            return jsonify({'error': 'No categories specified'}), 400
-
-        if not CIM_NETWORK:
-            return jsonify({'error': 'No active model available'}), 400
-
-        results = {}
-
-        for category in categories:
-            try:
-                if category == 'lines':
-                    # Load line equipment (ACLineSegment, etc.)
-                    _load_line_equipment()
-                    DATA_CATEGORIES_LOADED['lines'] = True
-                    results[category] = {'success': True, 'message': 'Lines loaded'}
-
-                elif category == 'transformers':
-                    # Load transformer equipment
-                    _load_transformer_equipment()
-                    DATA_CATEGORIES_LOADED['transformers'] = True
-                    results[category] = {'success': True, 'message': 'Transformers loaded'}
-
-                elif category == 'loads':
-                    # Load load equipment
-                    _load_load_equipment()
-                    DATA_CATEGORIES_LOADED['loads'] = True
-                    results[category] = {'success': True, 'message': 'Loads loaded'}
-
-                # Add more categories as needed...
-                else:
-                    results[category] = {'success': False, 'message': f'Category {category} not implemented'}
-
-            except Exception as e:
-                results[category] = {'success': False, 'message': str(e)}
-
-        return jsonify({
-            'results': results,
-            'categories_status': DATA_CATEGORIES_LOADED
-        })
-
-    except Exception as e:
-        _log.error(f"Error loading data categories: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-def _load_line_equipment():
-    """Load line equipment into the model"""
-    if hasattr(CIM_NETWORK, 'get_all_equipment'):
-        CIM_NETWORK.get_all_equipment(cim.ACLineSegment)
-        CIM_NETWORK.get_all_equipment(cim.OverheadWireInfo)
-
-def _load_transformer_equipment():
-    """Load transformer equipment into the model"""
-    if hasattr(CIM_NETWORK, 'get_all_equipment'):
-        CIM_NETWORK.get_all_equipment(cim.PowerTransformer)
-        CIM_NETWORK.get_all_equipment(cim.PowerTransformerEnd)
-
-def _load_load_equipment():
-    """Load load equipment into the model"""
-    if hasattr(CIM_NETWORK, 'get_all_equipment'):
-        CIM_NETWORK.get_all_equipment(cim.EnergyConsumer)
-        CIM_NETWORK.get_all_equipment(cim.ConformLoad)
 
 # ================================================================================================
 # CIM CLASS INSPECTION ENDPOINTS
@@ -1679,8 +1478,8 @@ def cim2GS(cim_filepath: str) -> str:
    """
    global CIM_NETWORK
    phantom_node_count = 0
-   cim_file = XMLFile(cim_filepath)
-   CIM_NETWORK = FeederModel(container=cim.Feeder(), connection=cim_file)
+   cim_file = XMLFile(cim_filepath, namespaces=namespaces)
+   CIM_NETWORK = FeederModel(container=None, connection=cim_file)
    objects = []
 
    for node in CIM_NETWORK.graph[cim.ConnectivityNode].values():
@@ -2014,9 +1813,6 @@ def cim_to_glimpse():
    finally:
       # Clean up temp files/dir
       shutil.rmtree(tmpdir, ignore_errors=True)
-
-
-
 
 @app.route("/api/export/export-cim", methods=["POST"])
 def export_cim():
