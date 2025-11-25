@@ -69,7 +69,7 @@ const FileUpload = () => {
          // Navigate to graph view with the response data
          navigate("/graph", { state: { fileData: res.data } });
       } catch (err) {
-         console.error("upload error", err);
+         alert("An internal issue with the upload occurred...\n" + err);
       } finally {
          setUploading(false);
          // reset progress after a short delay

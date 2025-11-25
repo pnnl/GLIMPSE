@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router";
 import "../styles/App.css";
-import { Button, Flex, Layout, Dropdown, Modal } from "antd";
+import { Button, Flex, Layout, Dropdown, Modal, Select } from "antd";
 import { Content, Header } from "antd/es/layout/layout";
 import FileUpload from "../content/FileUpload";
-import GraphView from "../content/GraphView";
 import AboutModal from "../Components/AboutModal";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ExclamationCircleFilled } from "@ant-design/icons";
+import graphHelper from "../graphHelper/GraphHelper";
+import GraphLayout from "../content/GraphLayout";
 
 const { confirm } = Modal;
 
@@ -50,10 +51,45 @@ const menuItems = [
 ];
 
 function App() {
-   const [openAbout, setOpenAbout] = useState(false);
    const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
+   const [showSelectSearch, setShowSelectSearch] = useState(false);
    const navigate = useNavigate();
    const location = useLocation();
+   let openAboutModal = null;
+
+   // Listen for graph load/clear events emitted by the Graph component
+   useEffect(() => {
+      const handleGraphLoaded = () => setShowSelectSearch(true);
+      const handleGraphCleared = () => setShowSelectSearch(false);
+
+      window.addEventListener("graph-loaded", handleGraphLoaded);
+      window.addEventListener("graph-cleared", handleGraphCleared);
+
+      return () => {
+         window.removeEventListener("graph-loaded", handleGraphLoaded);
+         window.removeEventListener("graph-cleared", handleGraphCleared);
+      };
+   }, []);
+
+   // Make sure search is hidden when navigating to Home
+   useEffect(() => {
+      if (location.pathname === "/") setShowSelectSearch(false);
+   }, [location]);
+
+   const searchOptions = useMemo(() => {
+      if (!showSelectSearch) return [];
+
+      const edgeOptions = graphHelper.graph.mapEdges((id, attributes) => ({
+         label: attributes.name ?? id,
+         value: JSON.stringify({ id: id, type: "edge" }),
+      }));
+      const nodeOptions = graphHelper.graph.mapNodes((id, attributes) => ({
+         label: attributes.name ?? id,
+         value: JSON.stringify({ id: id, type: "node" }),
+      }));
+
+      return [...nodeOptions, ...edgeOptions];
+   }, [showSelectSearch]);
 
    const showConfirm = () => {
       if (location.pathname === "/") {
@@ -86,6 +122,10 @@ function App() {
       }
    };
 
+   const handleMount = (aboutSetter) => {
+      openAboutModal = aboutSetter;
+   };
+
    return (
       <>
          <Layout style={{ backgroundColor: "#FFFFFF" }}>
@@ -108,6 +148,17 @@ function App() {
                   <Button size="large" type="text" icon={<GiHamburgerMenu size="1.5rem" />} />
                </Dropdown>
                <img className="nav-logo" src="./GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
+               {showSelectSearch && (
+                  <Select
+                     style={{ width: "30rem", marginLeft: "auto" }}
+                     size="middle"
+                     showSearch
+                     optionFilterProp="label"
+                     options={searchOptions}
+                     placeholder="Search by ID"
+                     onSelect={(val) => graphHelper.focus(JSON.parse(val))}
+                  />
+               )}
                <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
                   <Button
                      style={{ textTransform: "uppercase" }}
@@ -121,7 +172,7 @@ function App() {
                      type="primary"
                      size="middle"
                      style={{ textTransform: "uppercase" }}
-                     onClick={() => setOpenAbout(true)}
+                     onClick={() => openAboutModal(true)}
                   >
                      About
                   </Button>
@@ -131,11 +182,11 @@ function App() {
             <Content style={{ height: "calc(100vh - 4rem)", width: "100%", padding: "1px" }}>
                <Routes>
                   <Route path="/" element={<FileUpload />} />
-                  <Route path="/graph" element={<GraphView />} />
+                  <Route path="/graph" element={<GraphLayout />} />
                </Routes>
             </Content>
          </Layout>
-         <AboutModal open={openAbout} close={() => setOpenAbout(false)} />
+         <AboutModal onMount={handleMount} />
       </>
    );
 }

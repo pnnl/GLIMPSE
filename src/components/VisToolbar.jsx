@@ -1,7 +1,8 @@
 import "../styles/VisToolbar.css";
-import { Button, Divider, Space, Tooltip } from "antd";
+import { Button, Divider, Space, Tooltip, Switch } from "antd";
 import graphHelper from "../graphHelper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
+import { CameraControls } from "./CameraControls";
 
 const VisToolbar = () => {
    const rotateCCW = () => {
@@ -9,64 +10,46 @@ const VisToolbar = () => {
       graphHelper.sigmaInstance.refresh();
    };
 
-   const focus = (nodeID) => {
-      console.log("Focusing on node: " + nodeID);
-      graphHelper.graph.setNodeAttribute(nodeID, "highlighted", true);
-      const nodeDisplayData = graphHelper.sigmaInstance.getNodeDisplayData(nodeID);
-
-      if (nodeDisplayData) {
-         graphHelper.sigmaInstance.getCamera().animate(
-            { ...nodeDisplayData, ratio: 0.05 },
-            {
-               duration: 600,
-            }
-         );
-      }
-   };
-
    const rotateCW = () => {
       graphHelper.rotateCW();
       graphHelper.sigmaInstance.refresh();
    };
 
-   const goToPrevious = () => {
-      if (graphHelper.getCurrentHighlightedObject()) {
-         graphHelper.graph.setNodeAttribute(
-            graphHelper.getCurrentHighlightedObject(),
-            "highlighted",
-            false
-         );
-
-         focus(graphHelper.getPrevious());
-         graphHelper.sigmaInstance.refresh();
+   const unHighlightCurrent = (obj) => {
+      if (obj.type === "edge") {
+         graphHelper.graph.setEdgeAttribute(obj.id, "highlighted", false);
+      } else {
+         graphHelper.graph.setNodeAttribute(obj.id, "highlighted", false);
       }
+   };
+
+   const goToPrevious = () => {
+      if (graphHelper.highlightedObjects.length === 0) return;
+
+      if (graphHelper.getCurrentHighlightedObject()) {
+         unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
+      }
+
+      graphHelper.focus(graphHelper.getPrevious());
    };
 
    const goToNext = () => {
       if (graphHelper.highlightedObjects.length === 0) return;
 
       if (graphHelper.getCurrentHighlightedObject()) {
-         graphHelper.graph.setNodeAttribute(
-            graphHelper.getCurrentHighlightedObject(),
-            "highlighted",
-            false
-         );
+         unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
       }
 
-      focus(graphHelper.getNext());
-      graphHelper.sigmaInstance.refresh();
+      graphHelper.focus(graphHelper.getNext());
    };
 
    const handleReset = () => {
       if (graphHelper.highlightedObjects.length === 0) return;
 
       if (graphHelper.getCurrentHighlightedObject()) {
-         graphHelper.graph.setNodeAttribute(
-            graphHelper.getCurrentHighlightedObject(),
-            "highlighted",
-            false
-         );
+         unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
       }
+
       graphHelper.reset();
       graphHelper.sigmaInstance.refresh();
    };
@@ -76,10 +59,10 @@ const VisToolbar = () => {
          <Space size={2} style={{ marginLeft: "auto" }} split={<Divider type="vertical" />}>
             <Space.Compact block>
                <Tooltip title="Rotate Counter-Clockwise">
-                  <Button onClick={rotateCCW} icon={<BiRotateLeft />} />
+                  <Button onClick={rotateCCW} icon={<BiRotateLeft size={"1.375rem"} />} />
                </Tooltip>
                <Tooltip title="Rotate Clockwise">
-                  <Button onClick={rotateCW} icon={<BiRotateRight />} />
+                  <Button onClick={rotateCW} icon={<BiRotateRight size={"1.375rem"} />} />
                </Tooltip>
             </Space.Compact>
 

@@ -1,8 +1,20 @@
+import { useEffect, useState } from "react";
 import { Modal } from "antd";
 import ReactDom from "react-dom";
 import "../styles/About.css";
 
-const AboutModal = ({ open, close }) => {
+const AboutModal = ({ onMount }) => {
+   const [open, setOpen] = useState(false);
+
+   // Sending state setter to parent on mount
+   useEffect(() => {
+      if (onMount) {
+         onMount(setOpen);
+      }
+   }, [onMount]);
+
+   const close = () => setOpen(false);
+
    return ReactDom.createPortal(
       <Modal
          centered

@@ -1,8 +1,9 @@
 import { MultiUndirectedGraph, MultiGraph } from "graphology";
-// import louvain from "graphology-communities-louvain";
+import louvain from "graphology-communities-louvain";
+import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
-// import circular from "graphology-layout/circular";
 import theme from "../themes/PowerGrid.theme.json";
+import { Sigma } from "sigma";
 
 class GraphHelper {
    // private
@@ -23,6 +24,9 @@ class GraphHelper {
    focusIndex = -1;
    nodeTypes = null;
    edgeTypes = null;
+   communitiesArray = [];
+   communityColorPallet = {};
+   layout = null;
 
    constructor() {
       this.graph = new MultiUndirectedGraph({
@@ -61,9 +65,10 @@ class GraphHelper {
          this.#highlightedEdgeTypes.push(edgeType);
       }
 
-      this.highlightedEdgeIDs = this.graph.filterEdges((e, attrs) =>
-         this.#highlightedEdgeTypes.includes(attrs.group)
-      );
+      this.highlightedEdgeIDs = this.graph
+         .filterEdges((e, attrs) => this.#highlightedEdgeTypes.includes(attrs.group))
+         .map((e) => ({ type: "edge", id: e }));
+
       this.highlightedObjects = [...this.highlightedNodeIDs, ...this.highlightedEdgeIDs];
    };
 
@@ -75,9 +80,9 @@ class GraphHelper {
          this.#highlightedGroups.push(groupName);
       }
 
-      this.highlightedNodeIDs = this.graph.filterNodes((n, attrs) =>
-         this.#highlightedGroups.includes(attrs.group)
-      );
+      this.highlightedNodeIDs = this.graph
+         .filterNodes((n, attrs) => this.#highlightedGroups.includes(attrs.group))
+         .map((n) => ({ type: "node", id: n }));
       this.highlightedObjects = [...this.highlightedNodeIDs, ...this.highlightedEdgeIDs];
    };
 
@@ -128,6 +133,40 @@ class GraphHelper {
    getCurrentHighlightedObject = () => {
       if (this.focusIndex === -1 || this.highlightedObjects.length === 0) return null;
       return this.highlightedObjects[this.focusIndex];
+   };
+
+   focus = (obj) => {
+      console.log("Focusing on: " + obj.id);
+
+      if (obj.type === "node") {
+         this.graph.setNodeAttribute(obj.id, "highlighted", true);
+         const { x, y } = this.sigmaInstance.getNodeDisplayData(obj.id);
+
+         this.sigmaInstance.getCamera().animate({ x: x, y: y, ratio: 0.05 }, { duration: 1000 });
+      } else if (obj.type === "edge") {
+         this.graph.setEdgeAttribute(obj.id, "highlighted", true);
+         const { attributes } = this.graph.getEdgeAttributes(obj.id);
+         const fromNode = this.sigmaInstance.getNodeDisplayData(attributes.from);
+         const toNode = this.sigmaInstance.getNodeDisplayData(attributes.to);
+
+         const x_1 = fromNode.x;
+         const y_1 = fromNode.y;
+         const x_2 = toNode.x;
+         const y_2 = toNode.y;
+
+         const midPoint = { x: (x_1 + x_2) / 2, y: (y_1 + y_2) / 2 };
+
+         this.sigmaInstance.getCamera().animate(
+            {
+               x: midPoint.x,
+               y: midPoint.y,
+               ration: 0.05,
+            },
+            { duration: 1000 }
+         );
+      }
+
+      this.sigmaInstance.refresh();
    };
 
    /**
@@ -333,6 +372,7 @@ class GraphHelper {
    setGraphData = (fileData) => {
       this.resetObjectTypeCounts();
       this.resetGreatestCoords();
+      this.graph.clear();
       const keys = ["id", "objectType", "name"];
       const files = Object.keys(fileData).map((file) => fileData[file]);
 
@@ -355,8 +395,9 @@ class GraphHelper {
                      attributes: attributes,
                      group: objectType,
                      fixed: true,
-                     x: attributes.x.length > 0 ? parseInt(attributes.x, 10) : undefined,
-                     y: attributes.y.length > 0 ? parseInt(attributes.y, 10) : undefined,
+                     community: attributes.feeder ?? undefined,
+                     x: attributes.x.length > 0 ? parseFloat(attributes.x) : undefined,
+                     y: attributes.y.length > 0 ? parseFloat(attributes.y) : undefined,
                      ...theme.groups[objectType],
                   };
 
@@ -385,6 +426,7 @@ class GraphHelper {
                   elementType: "node",
                   attributes: attributes,
                   group: objectType,
+                  community: attributes.feeder ?? undefined,
                   fixed: false,
                   ...theme.groups[objectType],
                };
@@ -424,6 +466,7 @@ class GraphHelper {
                   group: "parentChild",
                   type: "line",
                   size: this.#theme.edgeOptions.parentChild.width,
+                  length: "length" in attributes ? parseFloat(attributes.length) : null,
                   attributes: { to: parent, from: nodeID, id: edgeID },
                });
 
@@ -444,7 +487,7 @@ class GraphHelper {
                   type: "line",
                   color: this.#theme.edgeOptions[objectType].color,
                   size: this.#theme.edgeOptions[objectType].width,
-                  // length: "length" in attributes ? parseFloat(attributes.length) : undefined,
+                  length: "length" in attributes ? parseFloat(attributes.length) : null,
                   attributes: attributes,
                });
 
@@ -468,6 +511,7 @@ class GraphHelper {
                   elementType: "edge",
                   group: objectType,
                   type: "line",
+                  length: "length" in attributes ? parseFloat(attributes.length) : null,
                   size: this.#theme.edgeOptions[objectType].width,
                   attributes: attributes,
                });
@@ -507,9 +551,46 @@ class GraphHelper {
                }
             }
          });
+
+         if (this.graph.order > 1500) {
+            // Color all nodes that belong to a certain feeder
+            const communitiesSet = new Set();
+
+            this.graph.forEachNode((_nodeID, attrs) => {
+               if (attrs.community) {
+                  communitiesSet.add(attrs.attributes.feeder);
+               }
+            });
+
+            if (!communitiesSet.size) {
+               this.setLegendData();
+               return;
+            }
+
+            this.communitiesArray = Array.from(communitiesSet);
+            this.communityColorPallet = iwanthue(communitiesSet.size).reduce(
+               (acc, color, i) => ({ ...acc, [this.communitiesArray[i]]: color }),
+               {}
+            );
+
+            this.graph.forEachNode((nodeID, attrs) => {
+               if ("feeder" in attrs.attributes) {
+                  this.graph.setNodeAttribute(
+                     nodeID,
+                     "color",
+                     this.communityColorPallet[attrs.attributes.feeder]
+                  );
+               }
+            });
+         }
       } else {
          // apply circlepack layout for initial node positions
-         circlepack.assign(this.graph);
+         if (this.graph.order > 1000) {
+            louvain.assign(this.graph, { nodeCommunityAttribute: "CID", resolution: 0.7 });
+            circlepack.assign(this.graph, { hierarchyAttributes: ["CID"] });
+         } else {
+            circlepack.assign(this.graph);
+         }
       }
 
       // create the legend graph object

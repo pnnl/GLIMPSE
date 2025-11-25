@@ -1,11 +1,11 @@
-from typing import Any, Hashable, Dict, Callable
 import os
 import json
 import logging
 import tempfile
 import re
 from uuid import UUID
-from dataclasses import fields, is_dataclass, asdict
+from dataclasses import fields, is_dataclass
+from typing import Any, Hashable, Dict, Callable
 
 from flask import Flask, request as req, jsonify, send_file
 from flask_cors import CORS
@@ -20,10 +20,11 @@ from cimbuilder.object_builder import new_synchronous_generator
 from cimbuilder.object_builder import new_two_terminal_object
 
 # CIM-graph imports
-from cimgraph.models import FeederModel, BusBranchModel, NodeBreakerModel
+from cimgraph.models import FeederModel
 import cimgraph.utils as cim_utils
 from cimgraph.databases import XMLFile
 # import cimgraph.data_profile.cimhub_2023 as cim
+import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
 from cimbuilder.object_builder import new_energy_consumer, new_synchronous_generator, new_two_terminal_object
 
 # Configure logging
@@ -31,17 +32,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 _log = logging.getLogger(__name__)
 
 # Environment setup
-# os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
+os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
 os.environ["CIMG_IEC61970_301"] = "8"
-
-os.environ['CIMG_VALIDATION_LOG_LEVEL'] = 'WARNING'
-os.environ['CIMG_CIM_PROFILE'] = 'cimgraph.data_profile.cim18gmdm.canonical'
-import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
  
-namespaces={'cim': 'http://cim.ucaiug.io/CIM101/draft#',
-            'gmdm': 'http://epri.com/gmdm/2025#',
-            'rdf': 'http://www.w3.org/1999/02/22-rdf-syntax-ns#'}
-
 # ================================================================================================
 # GLOBAL VARIABLES AND CONSTANTS
 # ================================================================================================
@@ -1477,9 +1470,14 @@ def cim2GS(cim_filepath: str) -> str:
    Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
    """
    global CIM_NETWORK
+   
+   from readmultifeeder import read_feeder_cim
+   CIM_NETWORK = read_feeder_cim(cim_filepath)
+
+   #cim_file = XMLFile(cim_filepath)
+   #CIM_NETWORK = FeederModel(container=cim.Feeder(), connection=cim_file)
+
    phantom_node_count = 0
-   cim_file = XMLFile(cim_filepath, namespaces=namespaces)
-   CIM_NETWORK = FeederModel(container=None, connection=cim_file)
    objects = []
 
    for node in CIM_NETWORK.graph[cim.ConnectivityNode].values():
@@ -1494,6 +1492,9 @@ def cim2GS(cim_filepath: str) -> str:
          }
       }
 
+      if "dso_9500" in node.ConnectivityNodeContainer.name:
+         c_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
+      
       if coordinates["x"] and coordinates["y"]:
          c_node["attributes"]["x"] = coordinates["x"]
          c_node["attributes"]["y"] = coordinates["y"]
@@ -1501,105 +1502,105 @@ def cim2GS(cim_filepath: str) -> str:
       add_attributes(node, c_node)
       objects.append(c_node)
 
-      for terminal in node.Terminals:
-         equipment = terminal.ConductingEquipment
-         eq_class_type = equipment.__class__.__name__
+      # for terminal in node.Terminals:
+      #    equipment = terminal.ConductingEquipment
+      #    eq_class_type = equipment.__class__.__name__
 
-         if eq_class_type in LOAD_TYPES:
-            new_load = {
-               "objectType": "load",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_load)
+         # if eq_class_type in LOAD_TYPES:
+         #    new_load = {
+         #       "objectType": "load",
+         #       "elementType": "node",
+         #       "attributes": {
+         #          "id": terminal.mRID,
+         #          "name": terminal.name,
+         #          "sequenceNumber": terminal.sequenceNumber,
+         #          "eq_class_type": eq_class_type
+         #       }
+         #    }
+         #    add_attributes(terminal, new_load)
 
-            objects.append(new_load)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+         #    objects.append(new_load)
+         #    objects.append({
+         #       "objectType": "line",
+         #       "elementType": "edge",
+         #       "attributes": {
+         #          "id": f"{node.mRID}_{terminal.mRID}",
+         #          "from": node.mRID,
+         #          "to": terminal.mRID
+         #       }
+         #    })
 
-         if eq_class_type in GEN_TYPES:
-            new_gen = {
-               "objectType": "diesel_dg",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_gen)
+         # if eq_class_type in GEN_TYPES:
+         #    new_gen = {
+         #       "objectType": "diesel_dg",
+         #       "elementType": "node",
+         #       "attributes": {
+         #          "id": terminal.mRID,
+         #          "name": terminal.name,
+         #          "sequenceNumber": terminal.sequenceNumber,
+         #          "eq_class_type": eq_class_type
+         #       }
+         #    }
+         #    add_attributes(terminal, new_gen)
 
-            objects.append(new_gen)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+         #    objects.append(new_gen)
+         #    objects.append({
+         #       "objectType": "line",
+         #       "elementType": "edge",
+         #       "attributes": {
+         #          "id": f"{node.mRID}_{terminal.mRID}",
+         #          "from": node.mRID,
+         #          "to": terminal.mRID
+         #       }
+         #    })
 
-         if eq_class_type in CAP_TYPES:
-            new_cap = {
-               "objectType": "capacitor",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_cap)
+         # if eq_class_type in CAP_TYPES:
+         #    new_cap = {
+         #       "objectType": "capacitor",
+         #       "elementType": "node",
+         #       "attributes": {
+         #          "id": terminal.mRID,
+         #          "name": terminal.name,
+         #          "sequenceNumber": terminal.sequenceNumber,
+         #          "eq_class_type": eq_class_type
+         #       }
+         #    }
+         #    add_attributes(terminal, new_cap)
 
-            objects.append(new_cap)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+         #    objects.append(new_cap)
+         #    objects.append({
+         #       "objectType": "line",
+         #       "elementType": "edge",
+         #       "attributes": {
+         #          "id": f"{node.mRID}_{terminal.mRID}",
+         #          "from": node.mRID,
+         #          "to": terminal.mRID
+         #       }
+         #    })
 
-         if eq_class_type in INV_TYPES:
-            new_inv = {
-               "objectType": "inverter_dyn",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type,
-               }
-            }
-            add_attributes(terminal, new_inv)
+         # if eq_class_type in INV_TYPES:
+         #    new_inv = {
+         #       "objectType": "inverter_dyn",
+         #       "elementType": "node",
+         #       "attributes": {
+         #          "id": terminal.mRID,
+         #          "name": terminal.name,
+         #          "sequenceNumber": terminal.sequenceNumber,
+         #          "eq_class_type": eq_class_type,
+         #       }
+         #    }
+         #    add_attributes(terminal, new_inv)
 
-            objects.append(new_inv)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+         #    objects.append(new_inv)
+         #    objects.append({
+         #       "objectType": "line",
+         #       "elementType": "edge",
+         #       "attributes": {
+         #          "id": f"{node.mRID}_{terminal.mRID}",
+         #          "from": node.mRID,
+         #          "to": terminal.mRID
+         #       }
+         #    })
 
    CIM_NETWORK.get_all_edges(cim.ACLineSegment)
    for line in CIM_NETWORK.graph[cim.ACLineSegment].values():
@@ -1611,7 +1612,8 @@ def cim2GS(cim_filepath: str) -> str:
             "from": line.Terminals[0].ConnectivityNode.mRID,
             "to": line.Terminals[1].ConnectivityNode.mRID,
             "class_type": line.__class__.__name__,
-            "length": line.length
+            "length": line.length,
+            "feeder": line.EquipmentContainer.name
          }
       }
 
@@ -1624,7 +1626,6 @@ def cim2GS(cim_filepath: str) -> str:
    CIM_NETWORK.get_all_edges(cim.TransformerTankEnd)
 
    for line in CIM_NETWORK.graph[cim.TransformerTank].values():
-
       new_edge = {
          "objectType": "transformer",
          "elementType": "edge",
@@ -1632,7 +1633,8 @@ def cim2GS(cim_filepath: str) -> str:
             "id": line.mRID,
             "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
             "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
-            "class_type": line.__class__.__name__
+            "class_type": line.__class__.__name__,
+            "feeder": line.EquipmentContainer.name
          }
       }
 
@@ -1730,7 +1732,8 @@ def cim2GS(cim_filepath: str) -> str:
                   "id": line.mRID,
                   "from": line.Terminals[0].ConnectivityNode.mRID,
                   "to": line.Terminals[1].ConnectivityNode.mRID,
-                  "class_type": line.__class__.__name__
+                  "class_type": line.__class__.__name__,
+                  "feeder": line.EquipmentContainer.name
                }
             }
 
@@ -1877,17 +1880,7 @@ def delete_edge(edge_id):
 @app.route("/")
 def hello():
     """Basic API information endpoint"""
-    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "2.0.0"}
-
-@app.route('/api/health')
-def health_check():
-    """Health check endpoint"""
-    return {
-        'status': 'healthy',
-        'version': '2.0.0',
-        'active_model': CIM_NETWORK is not None,
-        'active_connection': CURRENT_CONNECTION is not None
-    }
+    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "1.0.0"}
 
 # ================================================================================================
 # MAIN APPLICATION ENTRY POINT
