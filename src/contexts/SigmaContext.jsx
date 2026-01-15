@@ -1,4 +1,4 @@
-import React, { createContext, useRef, useCallback } from "react";
+import { createContext, useRef, useCallback } from "react";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const SigmaContext = createContext(null);

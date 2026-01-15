@@ -24,11 +24,11 @@ const isXmlFile = (path) => {
 
 const validateFiles = (paths) => {
    if (paths.every(isGlmFile)) {
-      return "api/upload/glm-to-json";
+      return "api/upload/glm";
    } else if (paths.every(isXmlFile)) {
-      return "api/upload/cimg-to-GS";
+      return "api/upload/cim";
    } else if (paths.every(isJsonFile)) {
-      console.log(paths);
+      return "api/upload/json";
    } else {
       alert(
          "Upload glm files with the Power Grid theme or any JSON file with the custom theme selected"
@@ -46,8 +46,8 @@ const FileUpload = () => {
    const uploadFiles = async (fileList) => {
       if (!fileList || fileList.length === 0) return;
       const filenames = Array.from(fileList).map((file) => file.name);
-      const UPLOAD_URL = validateFiles(filenames);
       const formData = new FormData();
+      const UPLOAD_URL = validateFiles(filenames);
 
       // append files; backend should accept `files` or adjust name accordingly
       Array.from(fileList).forEach((file) => {
@@ -65,6 +65,8 @@ const FileUpload = () => {
                setProgress(percent);
             },
          });
+
+         if ("error" in res.data) throw new Error(res.data.error);
 
          // Navigate to graph view with the response data
          navigate("/graph", { state: { fileData: res.data } });

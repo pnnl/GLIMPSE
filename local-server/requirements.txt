@@ -9,3 +9,4 @@ requests
 wheel
 setuptools
 cim-graph
+pyinstaller

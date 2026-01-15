@@ -1,33 +1,71 @@
-from werkzeug.utils import secure_filename
-from flask import Flask, request as req
-from flask_socketio import SocketIO
-from flask_cors import CORS
-import networkx as nx
-from uuid import UUID
-import tempfile
-import shutil
-import json
-import glm
 import os
+import json
+import logging
+import tempfile
+import re
+import glm
+
+from uuid import UUID
+from dataclasses import fields, is_dataclass
+from typing import Any, Dict, Callable
+
+from flask import Flask, request as req, jsonify, send_file
+from flask_cors import CORS
+from flask_socketio import SocketIO
+from werkzeug.utils import secure_filename
+import shutil
+import jsonschema
 
 from cimbuilder.object_builder import new_energy_consumer
 from cimbuilder.object_builder import new_synchronous_generator
 from cimbuilder.object_builder import new_two_terminal_object
 
-#cim-graph imports
+# CIM-graph imports
 from cimgraph.models import FeederModel
-from cimgraph.databases import XMLFile
-from dataclasses import fields
-
 import cimgraph.utils as cim_utils
-import cimgraph.data_profile.cimhub_2023 as cim
+from cimgraph.databases import XMLFile
+# import cimgraph.data_profile.cimhub_2023 as cim
+import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
+from cimbuilder.object_builder import new_energy_consumer, new_synchronous_generator, new_two_terminal_object
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+_log = logging.getLogger(__name__)
+
+# Environment setup
 os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
 os.environ["CIMG_IEC61970_301"] = "8"
+ 
+# ================================================================================================
+# GLOBAL VARIABLES AND CONSTANTS
+# ================================================================================================
 
-# CIM-G Globals and constants
-NX_GRAPH = nx.MultiGraph()
+# Current CIM network model - this holds the main graph data
 CIM_NETWORK = None
+
+# Current database connection (can be XML file, Neo4j, etc.)
+CURRENT_CONNECTION = None
+
+# CIM profile being used (default: cimhub_2023)
+CIM_PROFILE = cim
+
+# Available container objects (feeders, substations, etc.) from database
+AVAILABLE_CONTAINERS = []
+
+# Data loading status tracking
+DATA_CATEGORIES_LOADED = {
+   'lines': False,
+   'transformers': False,
+   'loads': False,
+   'inverters': False,
+   'switches': False,
+   'buses': False,
+   'measurements': False,
+   'limits': False,
+   'locations': False
+}
+
+# CIM object type classifications for easier filtering
 LOAD_TYPES = ["EnergyConsumer", "ConformLoad", "NonConformLoad"]
 GEN_TYPES = ["RotatingMachine", "SynchronousMachine", "AsynchronousMachine", "EnergySource"]
 CAP_TYPES = ["ShuntCompensator", "LinearShuntCompensator"]
@@ -35,57 +73,1315 @@ INV_TYPES = ["PowerElectronicsConnection"]
 TRANS_TYPES = ["PowerTransformer"]
 SWITCH_TYPES = ["LoadBreakSwitch"]
 
-def glm_to_dict( file_paths: list ) -> dict:
-   glm_dicts = {}
-   for glm_path in file_paths:
-      glm_dicts[ os.path.basename(glm_path).split(".")[0] + ".json" ] = glm.load(glm_path)
+# ================================================================================================
+# UTILITY FUNCTIONS
+# ================================================================================================
 
-   return glm_dicts
+def parse_glm(file_paths: list) -> dict:
+    """
+    Convert GridLAB-D model files (.glm) to dictionary format
 
-def dict2json( glm_dict: dict ) -> str:
-   glm_json = json.dumps( glm_dict, indent= 3 )
-   return glm_json
+    Args:
+        file_paths: List of paths to .glm files
 
-def create_graph(data: dict, set_communities: bool=False) -> dict[Hashable | Any, Any] | None:
-   global NX_GRAPH
-   NX_GRAPH.clear()
+    Returns:
+        Dictionary with filename as key and GLM content as value
+    """
+    glm_dicts = {}
+    for glm_path in file_paths:
+        glm_dicts[os.path.basename(glm_path).split(".")[0] + ".json"] = glm.load(glm_path)
+    return glm_dicts
 
-   community_ids = {}
+def object_to_detail(obj) -> Dict[str, Any]:
+    """
+    Convert a CIM object to detailed dictionary representation
 
-   for obj in data["objects"]:
-      if obj["elementType"] == "node":
-         if "id" in obj["attributes"]:
-            node_id = obj["attributes"]["id"]
-         elif "name" in obj["attributes"]:
-            node_id = obj["attributes"]["name"]
+    Args:
+        obj: CIM object instance
 
-         NX_GRAPH.add_node(node_id)
-      elif obj["elementType"] == "edge":
-         if "id" in obj["attributes"]:
-            edge_id = obj["attributes"]["id"]
-         elif "name" in obj["attributes"]:
-            edge_id = obj["attributes"]["name"]
+    Returns:
+        Dictionary with object details including attributes and associations
+    """
+    if not obj:
+        return {}
 
-         NX_GRAPH.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], edge_id)
+    detail = {
+        'identifier': str(getattr(obj, 'identifier', getattr(obj, 'mRID', 'unknown'))),
+        'class_name': obj.__class__.__name__,
+        'display_name': getattr(obj, 'name', str(getattr(obj, 'identifier', 'unnamed'))),
+        'attributes': {},
+        'associations': {}
+    }
 
-   if set_communities :
-      # favor smaller communities and stop at 151 communities
-      # partition = nx.algorithms.community.greedy_modularity_communities(G=NX_GRAPH, resolution=1.42)
-      partition = nx.algorithms.community.louvain_communities(G=NX_GRAPH, resolution=1.2, threshold=1.e-6, max_level=5)
+    # Get all dataclass fields if this is a dataclass
+    if is_dataclass(obj):
+        for field in fields(obj):
+            value = getattr(obj, field.name, None)
+            if value is not None:
+                if field.metadata.get('type') == 'Association':
+                    # This is a relationship to another object
+                    if hasattr(value, 'identifier'):
+                        detail['associations'][field.name] = str(value.identifier)
+                    else:
+                        detail['associations'][field.name] = str(value)
+                else:
+                    # This is a simple attribute
+                    detail['attributes'][field.name] = str(value)
 
-      # print(f"Number of communities: {len(partition)}")
+    return detail
 
-      for community_id, community in enumerate(partition):
-         for node in community:
-            community_ids[node] = f"CID_{community_id}"
+def object_to_summary(obj) -> Dict[str, Any]:
+    """
+    Convert a CIM object to summary representation (for lists and search results)
 
-      nx.set_node_attributes(NX_GRAPH, community_ids, "glimpse_community_id")
-      return nx.get_node_attributes(G=NX_GRAPH, name="glimpse_community_id")
-   return None
+    Args:
+        obj: CIM object instance
 
-def get_modularity() -> float:
-   modularity = nx.algorithms.community.modularity(NX_GRAPH, nx.community.label_propagation_communities(NX_GRAPH))
-   return modularity
+    Returns:
+        Dictionary with basic object information
+    """
+    summary = {
+        'identifier': str(getattr(obj, 'identifier', getattr(obj, 'mRID', 'unknown'))),
+        'class_name': obj.__class__.__name__,
+        'display_name': getattr(obj, 'name', str(getattr(obj, 'identifier', 'unnamed'))),
+        'key_attributes': {}
+    }
+
+    # Add some key attributes for preview
+    key_attrs = ['name', 'description', 'mRID', 'p', 'q', 'voltage', 'length']
+    for attr in key_attrs:
+        if hasattr(obj, attr):
+            value = getattr(obj, attr)
+            if value is not None:
+                summary['key_attributes'][attr] = str(value)
+
+    return summary
+
+def parse_search_condition(condition: str) -> Callable:
+    """
+    Parse a search condition string into a callable predicate function
+
+    Args:
+        condition: String like ">10", "contains:text", "regex:pattern"
+
+    Returns:
+        Function that can be called with a value to test the condition
+    """
+    condition = condition.strip()
+
+    # Numeric comparisons
+    if condition.startswith('>'):
+        threshold = float(condition[1:])
+        return lambda x: float(x) > threshold
+    elif condition.startswith('<'):
+        threshold = float(condition[1:])
+        return lambda x: float(x) < threshold
+    elif condition.startswith('>='):
+        threshold = float(condition[2:])
+        return lambda x: float(x) >= threshold
+    elif condition.startswith('<='):
+        threshold = float(condition[2:])
+        return lambda x: float(x) <= threshold
+
+    # String operations
+    elif condition.startswith('contains:'):
+        search_str = condition[9:].strip()
+        return lambda x: search_str.lower() in str(x).lower()
+    elif condition.startswith('regex:'):
+        pattern = condition[6:].strip()
+        regex = re.compile(pattern, re.IGNORECASE)
+        return lambda x: regex.search(str(x)) is not None
+    elif condition.startswith('startswith:'):
+        search_str = condition[11:].strip()
+        return lambda x: str(x).lower().startswith(search_str.lower())
+    elif condition.startswith('endswith:'):
+        search_str = condition[9:].strip()
+        return lambda x: str(x).lower().endswith(search_str.lower())
+
+    # Default: exact string match
+    return lambda x: str(x) == condition
+
+def validate_json_data(json_data: Dict) -> Dict:
+   """
+   Validate and transform JSON data for GLIMPSE visualization
+   
+   Args:
+      json_data: Dictionary where keys are file paths and values are JSON content
+   
+   Returns:
+      Transformed data structure with validated objects
+   
+   Raises:
+      ValueError: If validation fails
+   """
+   # Load the JSON schema
+   schema_path = os.path.join(os.path.dirname(__file__), 'schemas', 'json_upload.schema.json')
+   with open(schema_path, 'r') as f:
+      json_schema = json.load(f)
+   
+   data = {}
+   node_link_data_keys = ["directed", "multigraph", "graph", "nodes", "edges"]
+   
+   for file_path, file_data in json_data.items():
+      # Check if data is in node-link format
+      if all(key in file_data for key in node_link_data_keys):
+         # Transform node-link data to GLIMPSE format
+         data[file_path] = {"objects": []}
+         
+         # Process nodes
+         for node in file_data.get("nodes", []):
+            object_type = None
+            
+            if "type" in node and isinstance(node["type"], dict):
+               object_type = "-".join(node["type"].get("path", []))
+            elif "type" in node:
+               object_type = node["type"]
+            else:
+               object_type = "node"
+            
+            data[file_path]["objects"].append({
+               "objectType": object_type,
+               "elementType": "node",
+               "attributes": node
+            })
+         
+         # Process edges
+         for edge in file_data.get("edges", []):
+            source = edge["source"]
+            target = edge["target"]
+            key = edge["key"]
+            edge_id = f"{source}-{target}-{key}"
+            print("Processing edge: " + edge_id)
+            
+            new_edge = {
+               "objectType": edge.get("type", "edge"),
+               "elementType": "edge",
+               "attributes": {
+                  "id": edge_id,
+                  "from": source,
+                  "to": target
+               }
+            }
+
+            for k, v in edge.items():
+               if k not in ["source", "target", "key"]:
+                  new_edge["attributes"][k] = v
+             
+            data[file_path]["objects"].append(new_edge)
+      else:
+         # Validate against JSON schema
+         try:
+            jsonschema.validate(instance=file_data, schema=json_schema)
+            data[file_path] = file_data
+         except jsonschema.ValidationError as e:
+            raise ValueError(f"JSON validation error for {file_path}: {e.message}")
+   
+   return data
+
+# ================================================================================================
+# FLASK APP SETUP
+# ================================================================================================
+cors_origins = [
+   "http://localhost:5173/",
+   "http://localhost:3000/",
+   "http://localhost:4173/",
+   "http://127.0.0.1:5173/",
+   "http://127.0.0.1:4173/",
+   "http://127.0.0.1:3000/",
+]
+
+app = Flask(__name__)
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:5173"}})
+socketio = SocketIO(app, async_mode="gevent")
+
+# ================================================================================================
+# CIM CLASS INSPECTION ENDPOINTS
+# ================================================================================================
+
+@app.route('/api/classes/hierarchy', methods=['GET'])
+def get_class_hierarchy():
+    """
+    Get CIM class hierarchy from loaded graph model
+
+    Returns:
+        Hierarchical and functional organization of CIM classes with instance counts
+    """
+    try:
+        if not CIM_NETWORK or not hasattr(CIM_NETWORK, 'graph'):
+            return jsonify({'hierarchical': {}, 'functional': {'equipment': {}}, 'summary': {}})
+
+        # Get classes that actually have instances in the graph
+        loaded_classes = {}
+        for cim_class, instances in CIM_NETWORK.graph.items():
+            instance_count = len(instances)
+            class_name = cim_class.__name__
+            loaded_classes[class_name] = _get_class_metadata(cim_class, instance_count)
+
+        # Build hierarchy relationships
+        hierarchical = _build_class_hierarchy(loaded_classes)
+
+        # Build functional groupings
+        functional = _build_functional_groups(loaded_classes)
+
+        summary = {
+            'total_classes': len(loaded_classes),
+            'loaded_classes': len([c for c in loaded_classes.values() if c['instance_count'] > 0]),
+            'total_instances': sum(c['instance_count'] for c in loaded_classes.values())
+        }
+
+        return jsonify({
+            'hierarchical': hierarchical,
+            'functional': functional,
+            'summary': summary
+        })
+
+    except Exception as e:
+        _log.error(f"Error getting class hierarchy: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+def _get_class_metadata(cim_class, instance_count: int) -> Dict[str, Any]:
+    """
+    Get detailed metadata for a CIM class
+
+    Args:
+        cim_class: The CIM class object
+        instance_count: Number of instances of this class
+
+    Returns:
+        Dictionary with class metadata
+    """
+    metadata = {
+        'name': cim_class.__name__,
+        'stereotype': 'Concrete',
+        'is_abstract': False,
+        'parent_classes': [base.__name__ for base in cim_class.__bases__ if base != object],
+        'namespace': getattr(cim_class, '__module__', 'unknown'),
+        'docstring': getattr(cim_class, '__doc__', '') or '',
+        'instance_count': instance_count,
+        'attributes': [],
+        'associations': []
+    }
+
+    # Get stereotype if available
+    if hasattr(cim_class, '__stereotype__'):
+        if hasattr(cim_class.__stereotype__, 'value'):
+            metadata['stereotype'] = cim_class.__stereotype__.value
+        else:
+            metadata['stereotype'] = str(cim_class.__stereotype__)
+
+    # Get dataclass fields if available
+    if is_dataclass(cim_class):
+        for field in fields(cim_class):
+            field_info = {
+                'name': field.name,
+                'type': str(field.type),
+                'field_type': field.metadata.get('type', 'Attribute')
+            }
+
+            if field.metadata.get('type') == 'Association':
+                metadata['associations'].append(field_info)
+            else:
+                metadata['attributes'].append(field_info)
+
+    return metadata
+
+def _build_class_hierarchy(loaded_classes: Dict) -> Dict:
+    """Build hierarchical class relationships"""
+    hierarchical = {}
+
+    for class_name, class_info in loaded_classes.items():
+        hierarchical[class_name] = {
+            'stereotype': class_info['stereotype'],
+            'instance_count': class_info['instance_count'],
+            'parent_classes': class_info['parent_classes'],
+            'namespace': class_info['namespace'],
+            'docstring': class_info['docstring'][:200] + '...' if len(class_info['docstring']) > 200 else class_info['docstring']
+        }
+
+    return hierarchical
+
+def _build_functional_groups(loaded_classes: Dict) -> Dict:
+    """Build functional groupings of classes"""
+    functional = {
+        'equipment': {},
+        'connectivity': {},
+        'measurements': {},
+        'topology': {}
+    }
+
+    for class_name, class_info in loaded_classes.items():
+        # Categorize classes based on naming patterns and inheritance
+        if any(term in class_name.lower() for term in ['line', 'transformer', 'generator', 'load', 'switch', 'breaker']):
+            functional['equipment'][class_name] = class_info['instance_count']
+        elif any(term in class_name.lower() for term in ['node', 'terminal', 'bay']):
+            functional['connectivity'][class_name] = class_info['instance_count']
+        elif any(term in class_name.lower() for term in ['measurement', 'analog', 'discrete']):
+            functional['measurements'][class_name] = class_info['instance_count']
+        else:
+            functional['topology'][class_name] = class_info['instance_count']
+
+    return functional
+
+@app.route('/api/classes/list', methods=['GET'])
+def get_class_list():
+    """
+    Get list of available CIM classes with instance counts
+
+    Returns:
+        List of classes with metadata and summary statistics
+    """
+    try:
+        hierarchy_data = get_class_hierarchy()
+        if hierarchy_data.status_code != 200:
+            return hierarchy_data
+
+        hierarchy = hierarchy_data.get_json()
+        classes = []
+
+        for class_name, class_info in hierarchy.get('hierarchical', {}).items():
+            classes.append({
+                'name': class_name,
+                'stereotype': class_info.get('stereotype', 'Concrete'),
+                'instance_count': class_info.get('instance_count', 0),
+                'namespace': class_info.get('namespace', ''),
+                'docstring': class_info.get('docstring', '')
+            })
+
+        # Sort by name
+        classes.sort(key=lambda x: x['name'])
+
+        return jsonify({
+            'classes': classes,
+            'summary': hierarchy.get('summary', {})
+        })
+
+    except Exception as e:
+        _log.error(f"Error getting class list: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classes/<class_name>/schema', methods=['GET'])
+def get_class_schema(class_name):
+    """
+    Get the dataclass schema (fields) for a specific class
+
+    Args:
+        class_name: Name of the CIM class
+
+    Returns:
+        Schema information including fields, associations, and attributes
+    """
+    try:
+        if not hasattr(cim, class_name):
+            return jsonify({'error': f'Class {class_name} not found'}), 404
+
+        cim_class = getattr(cim, class_name)
+
+        schema = {
+            'class_name': class_name,
+            'fields': [],
+            'associations': [],
+            'attributes': []
+        }
+
+        if is_dataclass(cim_class):
+            for field in fields(cim_class):
+                field_info = {
+                    'name': field.name,
+                    'type': str(field.type),
+                    'metadata': str(field.metadata),
+                    'default': str(field.default) if field.default else None,
+                    'field_type': str(field.metadata.get('type', 'Attribute'))
+                }
+
+                schema['fields'].append(field_info)
+
+                if field.metadata.get('type') == 'Association':
+                    schema['associations'].append(field_info)
+                else:
+                    schema['attributes'].append(field_info)
+
+        return jsonify(schema)
+
+    except Exception as e:
+        _log.error(f"Error getting class schema: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/classes/<class_name>/instances', methods=['GET'])
+def get_class_instances(class_name):
+    """
+    Get instances of a specific class with pagination
+
+    Args:
+        class_name: Name of the CIM class
+
+    Query parameters:
+        limit: Maximum number of instances to return (default: 100)
+        offset: Number of instances to skip (default: 0)
+
+    Returns:
+        Paginated list of class instances
+    """
+    try:
+        limit = int(req.args.get('limit', 100))
+        offset = int(req.args.get('offset', 0))
+
+        if not CIM_NETWORK or not hasattr(CIM_NETWORK, 'graph'):
+            return jsonify({'instances': [], 'total_count': 0, 'has_more': False})
+
+        if not hasattr(cim, class_name):
+            return jsonify({'error': f'Class {class_name} not found'}), 404
+
+        cim_class = getattr(cim, class_name)
+        if cim_class not in CIM_NETWORK.graph:
+            return jsonify({'instances': [], 'total_count': 0, 'has_more': False})
+
+        all_instances = list(CIM_NETWORK.graph[cim_class].values())
+        total_count = len(all_instances)
+
+        # Apply pagination
+        start_idx = offset
+        end_idx = offset + limit
+        paginated_instances = all_instances[start_idx:end_idx]
+
+        # Convert instances to summary format
+        instance_summaries = [object_to_summary(obj) for obj in paginated_instances]
+
+        return jsonify({
+            'instances': instance_summaries,
+            'total_count': total_count,
+            'has_more': end_idx < total_count,
+            'limit': limit,
+            'offset': offset
+        })
+
+    except Exception as e:
+        _log.error(f"Error getting class instances: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ================================================================================================
+# CIM OBJECT MANAGEMENT ENDPOINTS
+# ================================================================================================
+
+@app.route('/api/objects/<uuid>', methods=['GET'])
+def get_object(uuid):
+    """
+    Get object by UUID with full details
+
+    Args:
+        uuid: UUID of the object to retrieve
+
+    Returns:
+        Complete object information including attributes and associations
+    """
+    try:
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available'}), 400
+
+        # Use GraphModel's get_object method if available
+        if hasattr(CIM_NETWORK, 'get_object'):
+            obj = CIM_NETWORK.get_object(uuid)
+            if obj:
+                detail = object_to_detail(obj)
+                return jsonify({
+                    'uuid': uuid,
+                    'object': detail
+                })
+            else:
+                return jsonify({'error': f'Object {uuid} not found'}), 404
+        else:
+            # Manual search through all objects
+            for cim_class, instances in CIM_NETWORK.graph.items():
+                for obj in instances.values():
+                    obj_id = str(getattr(obj, 'identifier', getattr(obj, 'mRID', '')))
+                    if obj_id == uuid:
+                        detail = object_to_detail(obj)
+                        return jsonify({
+                            'uuid': uuid,
+                            'object': detail
+                        })
+
+            return jsonify({'error': f'Object {uuid} not found'}), 404
+
+    except Exception as e:
+        _log.error(f"Error getting object {uuid}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/objects/create', methods=['POST'])
+def create_object():
+    """
+    Create new CIM object
+
+    Expected JSON body:
+        {
+            "class_name": "EnergyConsumer",
+            "attributes": {
+                "name": "New Load",
+                "p": 100.0,
+                "q": 50.0
+            }
+        }
+
+    Returns:
+        Created object information
+    """
+    try:
+        data = req.get_json()
+
+        class_name = data.get('class_name')
+        attributes = data.get('attributes', {})
+
+        if not class_name:
+            return jsonify({'error': 'class_name is required'}), 400
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available'}), 400
+
+        if not hasattr(cim, class_name):
+            return jsonify({'error': f'Class {class_name} not found'}), 404
+
+        cim_class = getattr(cim, class_name)
+
+        # Use GraphModel's create method if available
+        if hasattr(CIM_NETWORK, 'create'):
+            new_obj = CIM_NETWORK.create(cim_class, **attributes)
+            return jsonify({
+                'success': True,
+                'uuid': str(new_obj.identifier),
+                'object': object_to_detail(new_obj)
+            })
+        else:
+            # Manual object creation
+            new_obj = cim_class(**attributes)
+            # Add to graph
+            if cim_class not in CIM_NETWORK.graph:
+                CIM_NETWORK.graph[cim_class] = {}
+            obj_id = str(getattr(new_obj, 'identifier', getattr(new_obj, 'mRID', len(CIM_NETWORK.graph[cim_class]))))
+            CIM_NETWORK.graph[cim_class][obj_id] = new_obj
+
+            return jsonify({
+                'success': True,
+                'uuid': obj_id,
+                'object': object_to_detail(new_obj)
+            })
+
+    except Exception as e:
+        _log.error(f"Error creating object: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/objects/<uuid>', methods=['PUT'])
+def update_object(uuid):
+    """
+    Update existing CIM object
+
+    Args:
+        uuid: UUID of object to update
+
+    Expected JSON body:
+        {
+            "attribute": "name",
+            "value": "Updated Name"
+        }
+
+    Returns:
+        Updated object information
+    """
+    try:
+        data = req.get_json()
+        attribute = data.get('attribute')
+        value = data.get('value')
+
+        if not attribute:
+            return jsonify({'error': 'attribute is required'}), 400
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available'}), 400
+
+        # Get the object first
+        obj = None
+        if hasattr(CIM_NETWORK, 'get_object'):
+            obj = CIM_NETWORK.get_object(uuid)
+        else:
+            # Manual search
+            for cim_class, instances in CIM_NETWORK.graph.items():
+                for instance in instances.values():
+                    obj_id = str(getattr(instance, 'identifier', getattr(instance, 'mRID', '')))
+                    if obj_id == uuid:
+                        obj = instance
+                        break
+                if obj:
+                    break
+
+        if not obj:
+            return jsonify({'error': f'Object {uuid} not found'}), 404
+
+        # Update the object
+        if hasattr(CIM_NETWORK, 'modify'):
+            CIM_NETWORK.modify(obj, attribute, value)
+        else:
+            # Manual update
+            if hasattr(obj, attribute):
+                setattr(obj, attribute, value)
+            else:
+                return jsonify({'error': f'Attribute {attribute} not found on object'}), 400
+
+        return jsonify({
+            'success': True,
+            'uuid': uuid,
+            'object': object_to_detail(obj)
+        })
+
+    except Exception as e:
+        _log.error(f"Error updating object {uuid}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/objects/<uuid>', methods=['DELETE'])
+def delete_object(uuid):
+    """
+    Delete CIM object
+
+    Args:
+        uuid: UUID of object to delete
+
+    Returns:
+        Deletion status
+    """
+    try:
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available'}), 400
+
+        # Get the object first
+        obj = None
+        obj_class = None
+        obj_key = None
+
+        if hasattr(CIM_NETWORK, 'get_object'):
+            obj = CIM_NETWORK.get_object(uuid)
+        else:
+            # Manual search
+            for cim_class, instances in CIM_NETWORK.graph.items():
+                for key, instance in instances.items():
+                    obj_id = str(getattr(instance, 'identifier', getattr(instance, 'mRID', '')))
+                    if obj_id == uuid:
+                        obj = instance
+                        obj_class = cim_class
+                        obj_key = key
+                        break
+                if obj:
+                    break
+
+        if not obj:
+            return jsonify({'error': f'Object {uuid} not found'}), 404
+
+        # Delete the object
+        if hasattr(CIM_NETWORK, 'delete'):
+            CIM_NETWORK.delete(obj)
+        else:
+            # Manual deletion
+            if obj_class and obj_key:
+                del CIM_NETWORK.graph[obj_class][obj_key]
+
+        return jsonify({
+            'success': True,
+            'uuid': uuid,
+            'message': 'Object deleted successfully'
+        })
+
+    except Exception as e:
+        _log.error(f"Error deleting object {uuid}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/objects/<uuid>/mermaid', methods=['GET'])
+def get_object_mermaid(uuid):
+    """
+    Get Mermaid.js diagram for object relationships
+
+    Args:
+        uuid: UUID of the object
+
+    Returns:
+        Mermaid diagram string for the object and its connections
+    """
+    try:
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available'}), 400
+
+        # Get the object
+        obj = None
+        if hasattr(CIM_NETWORK, 'get_object'):
+            obj = CIM_NETWORK.get_object(uuid)
+
+        if not obj:
+            return jsonify({'error': f'Object {uuid} not found'}), 404
+
+        # Try to use cimgraph.utils method
+        try:
+            mermaid_diagram = cim_utils.get_mermaid(obj)
+            print(mermaid_diagram)
+            return jsonify({
+                'uuid': uuid,
+                'mermaid': mermaid_diagram
+            })
+        except (ImportError, AttributeError):
+            # Fallback: create simple mermaid diagram
+            mermaid = f"graph TD\n    {uuid}[{obj.__class__.__name__}]\n"
+            return jsonify({
+                'uuid': uuid,
+                'mermaid': mermaid
+            })
+
+    except Exception as e:
+        _log.error(f"Error getting mermaid for object {uuid}: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ================================================================================================
+# SEARCH ENDPOINTS
+# ================================================================================================
+
+@app.route('/api/search/by-attribute', methods=['POST'])
+def search_by_attribute():
+    """
+    Search objects by attribute value
+
+    Expected JSON body:
+        {
+            "class_name": "EnergyConsumer",
+            "attribute": "name",
+            "value": "Load_1",
+            "limit": 100
+        }
+
+    Returns:
+        List of matching objects
+    """
+    try:
+        data = req.get_json()
+
+        class_name = data.get('class_name')
+        attribute = data.get('attribute')
+        value = data.get('value')
+        limit = data.get('limit', 100)
+
+        if not all([class_name, attribute, value is not None]):
+            return jsonify({'error': 'Missing required parameters: class_name, attribute, value'}), 400
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available', 'results': []})
+
+        if not hasattr(cim, class_name):
+            return jsonify({'error': f'Class {class_name} not found', 'results': []})
+
+        cim_class = getattr(cim, class_name)
+        results = []
+
+        # Use GraphModel's find_by_attribute method if available
+        if hasattr(CIM_NETWORK, 'find_by_attribute'):
+            results = CIM_NETWORK.find_by_attribute(cim_class, attribute, value)
+        else:
+            # Manual search
+            if cim_class in CIM_NETWORK.graph:
+                for obj in CIM_NETWORK.graph[cim_class].values():
+                    if hasattr(obj, attribute):
+                        obj_value = getattr(obj, attribute)
+                        if str(obj_value) == str(value):
+                            results.append(obj)
+
+        # Apply limit
+        if limit and len(results) > limit:
+            results = results[:limit]
+            has_more = True
+        else:
+            has_more = False
+
+        # Convert to summary format
+        summaries = [object_to_summary(obj) for obj in results]
+
+        return jsonify({
+            'query': {
+                'class_name': class_name,
+                'attribute': attribute,
+                'value': value
+            },
+            'results': summaries,
+            'total_found': len(summaries),
+            'has_more': has_more,
+            'success': True
+        })
+
+    except Exception as e:
+        _log.error(f"Error in search by attribute: {str(e)}")
+        return jsonify({'error': str(e), 'results': [], 'success': False}), 500
+
+@app.route('/api/search/by-condition', methods=['POST'])
+def search_by_condition():
+    """
+    Search objects by condition/predicate
+
+    Expected JSON body:
+        {
+            "class_name": "EnergyConsumer",
+            "attribute": "p",
+            "condition": ">100",
+            "limit": 100
+        }
+
+    Available conditions:
+        - ">value", "<value", ">=value", "<=value" for numeric comparisons
+        - "contains:text" for substring search
+        - "regex:pattern" for regular expression search
+        - "startswith:text", "endswith:text" for string matching
+
+    Returns:
+        List of matching objects
+    """
+    try:
+        data = req.get_json()
+
+        class_name = data.get('class_name')
+        attribute = data.get('attribute')
+        condition = data.get('condition')
+        limit = data.get('limit', 100)
+
+        if not all([class_name, attribute, condition]):
+            return jsonify({'error': 'Missing required parameters: class_name, attribute, condition'}), 400
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available', 'results': []})
+
+        if not hasattr(cim, class_name):
+            return jsonify({'error': f'Class {class_name} not found', 'results': []})
+
+        cim_class = getattr(cim, class_name)
+
+        # Parse condition into predicate function
+        predicate = parse_search_condition(condition)
+
+        results = []
+
+        # Use GraphModel's find_by_predicate method if available
+        if hasattr(CIM_NETWORK, 'find_by_predicate'):
+            results = CIM_NETWORK.find_by_predicate(cim_class, attribute, predicate)
+        else:
+            # Manual search
+            if cim_class in CIM_NETWORK.graph:
+                for obj in CIM_NETWORK.graph[cim_class].values():
+                    if hasattr(obj, attribute):
+                        try:
+                            obj_value = getattr(obj, attribute)
+                            if predicate(obj_value):
+                                results.append(obj)
+                        except Exception:
+                            continue  # Skip objects that cause predicate errors
+
+        # Apply limit
+        if limit and len(results) > limit:
+            results = results[:limit]
+            has_more = True
+        else:
+            has_more = False
+
+        # Convert to summary format
+        summaries = [object_to_summary(obj) for obj in results]
+
+        return jsonify({
+            'query': {
+                'class_name': class_name,
+                'attribute': attribute,
+                'condition': condition
+            },
+            'results': summaries,
+            'total_found': len(summaries),
+            'has_more': has_more,
+            'success': True
+        })
+
+    except Exception as e:
+        _log.error(f"Error in search by condition: {str(e)}")
+        return jsonify({'error': str(e), 'results': [], 'success': False}), 500
+
+@app.route('/api/search/advanced', methods=['POST'])
+def search_advanced():
+    """
+    Perform advanced search with multiple criteria
+
+    Expected JSON body:
+        {
+            "queries": [
+                {
+                    "class_name": "EnergyConsumer",
+                    "attribute": "p",
+                    "condition": ">100"
+                },
+                {
+                    "class_name": "EnergyConsumer",
+                    "attribute": "name",
+                    "condition": "contains:Load"
+                }
+            ],
+            "operator": "AND",  // OR "OR"
+            "limit": 100
+        }
+
+    Returns:
+        List of objects matching all (AND) or any (OR) of the criteria
+    """
+    try:
+        data = req.get_json()
+
+        queries = data.get('queries', [])
+        operator = data.get('operator', 'AND')
+        limit = data.get('limit', 100)
+
+        if not queries:
+            return jsonify({'error': 'No search queries provided'}), 400
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model available', 'results': []})
+
+        all_results = []
+
+        # Execute each query
+        for query in queries:
+            class_name = query.get('class_name')
+            attribute = query.get('attribute')
+
+            if not hasattr(cim, class_name):
+                continue
+
+            cim_class = getattr(cim, class_name)
+            query_results = []
+
+            if 'value' in query:
+                # Simple attribute search
+                value = query['value']
+                if cim_class in CIM_NETWORK.graph:
+                    for obj in CIM_NETWORK.graph[cim_class].values():
+                        if hasattr(obj, attribute):
+                            obj_value = getattr(obj, attribute)
+                            if str(obj_value) == str(value):
+                                query_results.append(obj)
+
+            elif 'condition' in query:
+                # Condition-based search
+                condition = query['condition']
+                predicate = parse_search_condition(condition)
+
+                if cim_class in CIM_NETWORK.graph:
+                    for obj in CIM_NETWORK.graph[cim_class].values():
+                        if hasattr(obj, attribute):
+                            try:
+                                obj_value = getattr(obj, attribute)
+                                if predicate(obj_value):
+                                    query_results.append(obj)
+                            except Exception:
+                                continue
+
+            all_results.append(set(query_results))
+
+        # Combine results based on operator
+        if operator.upper() == 'AND':
+            # Intersection of all result sets
+            final_results = all_results[0] if all_results else set()
+            for result_set in all_results[1:]:
+                final_results = final_results.intersection(result_set)
+        else:  # OR
+            # Union of all result sets
+            final_results = set()
+            for result_set in all_results:
+                final_results = final_results.union(result_set)
+
+        # Convert to list and apply limit
+        results_list = list(final_results)
+        if limit and len(results_list) > limit:
+            results_list = results_list[:limit]
+            has_more = True
+        else:
+            has_more = False
+
+        # Convert to summary format
+        summaries = [object_to_summary(obj) for obj in results_list]
+
+        return jsonify({
+            'queries': queries,
+            'operator': operator,
+            'results': summaries,
+            'total_found': len(summaries),
+            'has_more': has_more,
+            'success': True
+        })
+
+    except Exception as e:
+        _log.error(f"Error in advanced search: {str(e)}")
+        return jsonify({'error': str(e), 'results': [], 'success': False}), 500
+
+# ================================================================================================
+# GRAPH EXPORT AND VISUALIZATION ENDPOINTS
+# ================================================================================================
+
+@app.route('/api/graph/export', methods=['POST'])
+def export_graph():
+    """
+    Export graph data using cim_utils.write_xml() or write_json_ld()
+
+    Expected JSON body:
+        {
+            "filename": "export.xml",
+            "format": "xml",  // or "jsonld"
+            "description": "Export description"
+        }
+
+    Returns:
+        Export status and download information
+    """
+    try:
+        data = req.get_json()
+        filename = data.get('filename', 'export.xml')
+        format_type = data.get('format', 'xml')
+        description = data.get('description', '')
+
+        if not CIM_NETWORK:
+            return jsonify({'error': 'No active model to export', 'success': False}), 400
+
+        # Create temporary file
+        temp_dir = tempfile.gettempdir()
+        export_path = os.path.join(temp_dir, filename)
+
+        # Export based on format
+        if format_type.lower() == 'xml':
+            cim_utils.write_xml(CIM_NETWORK, export_path)
+        elif format_type.lower() == 'jsonld':
+            cim_utils.write_json_ld(CIM_NETWORK, export_path)
+        else:
+            return jsonify({'error': f'Unsupported format: {format_type}', 'success': False}), 400
+
+        _log.info(f"Graph exported to {export_path}. Description: {description}")
+
+        return jsonify({
+            'success': True,
+            'filename': filename,
+            'download_url': f'/api/graph/download/{filename}',
+            'file_size': os.path.getsize(export_path),
+            'description': description
+        })
+
+    except Exception as e:
+        _log.error(f"Error exporting graph: {str(e)}")
+        return jsonify({'error': str(e), 'success': False}), 500
+
+@app.route('/api/graph/download/<filename>', methods=['GET'])
+def download_exported_file(filename):
+    """
+    Download exported graph file
+
+    Args:
+        filename: Name of the exported file
+
+    Returns:
+        File download response
+    """
+    try:
+        temp_dir = tempfile.gettempdir()
+        file_path = os.path.join(temp_dir, filename)
+
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found'}), 404
+
+        return send_file(file_path, as_attachment=True, download_name=filename)
+
+    except Exception as e:
+        _log.error(f"Error downloading file: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# ================================================================================================
+# JSON CONVERSION 
+# ================================================================================================
+
+@app.route("/api/upload/json", methods=["POST"])
+def upload_json():
+      """
+      This endpoint receives one or more JSON files via multipart/form-data,
+      validates them against the schema, and returns the transformed data.
+      """
+      # Validate presence of 'files' in form-data
+      if "files" not in req.files:
+         return {"error": "No 'files' part in the form data."}, 400
+   
+      files = req.files.getlist("files")
+      if not files:
+         return {"error": "No files uploaded."}, 400
+   
+      tmpdir = tempfile.mkdtemp(prefix="json_upload_")
+      paths = []
+   
+      try:
+         # Save uploaded files
+         for f in files:
+            if not f or f.filename == "":
+               continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+   
+         if not paths:
+            return {"error": "No valid files received."}, 400
+   
+         # Read JSON files
+         json_dict = {}
+         for path in paths:
+            with open(path, 'r') as json_file:
+               json_dict[os.path.basename(path)] = json.load(json_file)
+         
+         # Validate and transform JSON data
+         try:
+            validated_data = validate_json_data(json_dict)
+            return jsonify(validated_data)
+         except ValueError as e:
+            return {"error": str(e)}, 400
+   
+      except Exception as e:
+         _log.error(f"Error in upload_json: {str(e)}")
+         return {"error": f"Server error: {str(e)}"}, 500
+      finally:
+         # Clean up temp files/dir
+         shutil.rmtree(tmpdir, ignore_errors=True)
+
+# ================================================================================================
+# GLM CONVERSION ENDPOINTS (from your original server.py)
+# ================================================================================================
+
+@app.route("/api/upload/glm", methods=["POST"])
+def upload_glm_to_json():
+    """
+    This endpoint receives one or more .glm files via multipart/form-data,
+    saves them to a temp directory, collects their paths, and converts to JSON.
+    """
+    # Validate presence of 'files' in form-data
+    if "files" not in req.files:
+        return {"error": "No 'files' part in the form data."}, 400
+
+    files = req.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
+
+    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
+    paths = []
+
+    try:
+        for f in files:
+            if not f or f.filename == "":
+                continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+
+        if not paths:
+            return {"error": "No valid files received."}, 400
+
+        glm_dict = parse_glm(paths) # expects list of paths
+        return json.dumps(glm_dict) 
+
+    finally:
+        # Clean up temp files/dir
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+@app.route("/api/parse/json-to-glm", methods=["POST"])
+def json_to_glm():
+    """
+    Convert JSON GLD model representation back to GLD model (.glm)
+
+    Expected JSON body:
+        {
+            "data": {...},  // GLM data
+            "saveDir": "/path/to/save"
+        }
+
+    Returns:
+        Status code 204 on success
+    """
+    if req.is_json:
+        req_data = req.get_json()
+        data = req_data["data"]
+        save_dir = req_data["saveDir"]
+
+        for filename in data.keys():
+            with open(os.path.join(save_dir, filename), "w") as glm_file:
+                glm.dump(data[filename], glm_file)
+                glm_file.close()
+
+    return "", 204
+
+# ================================================================================================
+# CIM OBJECT UPDATE ENDPOINT (from your original server.py)
+# ================================================================================================
+
+@app.route("/api/update/cim-attributes", methods=["PUT"])
+def update_object_attributes():
+    """
+    Update CIM object attributes (original implementation)
+
+    Expected JSON body:
+        {
+            "mRID": "object_uuid",
+            "attributes": {
+                "attribute_name": "new_value"
+            }
+        }
+
+    Returns:
+        Status code 204 on success
+    """
+    req_data = req.get_json()
+    print(req_data)
+
+    if not CIM_NETWORK:
+        return jsonify({'error': 'No active model available'}), 400
+
+    try:
+        cim_obj = CIM_NETWORK.get_object(UUID(req_data["mRID"].upper()))
+
+        if not cim_obj:
+            return jsonify({'error': 'Object not found'}), 404
+
+        for field in fields(cim_obj):
+            if (field.metadata["type"] == "Attribute" and
+                field.name in req_data["attributes"] and
+                req_data["attributes"][field.name] != "None"):
+                setattr(cim_obj, field.name, req_data["attributes"][field.name])
+
+        return "", 204
+    except Exception as e:
+        _log.error(f"Error updating object attributes: {e}")
+        return jsonify({'error': str(e)}), 500
+
+def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:float, yPosition:float):
+   for terminal in node.Terminals:
+      equipment = terminal.ConductingEquipment
+      location = equipment.Location
+      if location is None:
+         location = cim.Location(name=equipment.name+'_location')
+         equipment.Location = location
+         location.PowerSystemResources.append(equipment)
+         network.add_to_graph(location)
+
+      point = cim.PositionPoint()
+      point.sequenceNumber = terminal.sequenceNumber
+      point.xPosition = xPosition
+      point.yPosition = yPosition
+      point.Location = location
+      location.PositionPoints.append(point)
+      network.add_to_graph(point)
+
+def export_cim_coords(new_coords_obj: list, output_path: str) -> None:
+   global CIM_NETWORK
+
+   for obj in new_coords_obj:
+      c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(obj["mRID"].upper())]
+      print(f"Updating coordinates for node {c_node.name} ({c_node.mRID}) to x: {obj['x']}, y: {obj['y']}")
+      new_bus_location(network=CIM_NETWORK, node=c_node, xPosition=obj["x"], yPosition=obj["y"])
+
+   cim_utils.get_all_data(CIM_NETWORK)
+   cim_utils.write_xml(CIM_NETWORK, output_path)
 
 def get_multi_coordinate(coords: list):
    if len(coords) == 0:
@@ -127,14 +1423,22 @@ def add_attributes(cim_obj, new_obj):
       if field.metadata["type"] == "Attribute": # association, aggregateof, and ofaggregate
          new_obj["attributes"][field.name] = str(getattr(cim_obj, field.name))
 
-def cim2GS(cim_filepath: str) -> str:
+def cim_to_glimpse_structure(cim_filepath: str) -> str:
    """
    Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
    """
    global CIM_NETWORK
-   phantom_node_count = 0
+   
+   # For multi-feeder CIM file reading
+   print(f"Reading CIM file from {cim_filepath} with multi-feeder support...")
+   # from readmultifeeder import read_feeder_cim
+   # CIM_NETWORK = read_feeder_cim(cim_filepath)
+
+   # For regular CIM file reading without multi-feeder support
    cim_file = XMLFile(cim_filepath)
    CIM_NETWORK = FeederModel(container=cim.Feeder(), connection=cim_file)
+
+   phantom_node_count = 0
    objects = []
 
    for node in CIM_NETWORK.graph[cim.ConnectivityNode].values():
@@ -149,6 +1453,9 @@ def cim2GS(cim_filepath: str) -> str:
          }
       }
 
+      if "dso_9500" in node.ConnectivityNodeContainer.name:
+         c_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
+      
       if coordinates["x"] and coordinates["y"]:
          c_node["attributes"]["x"] = coordinates["x"]
          c_node["attributes"]["y"] = coordinates["y"]
@@ -156,105 +1463,105 @@ def cim2GS(cim_filepath: str) -> str:
       add_attributes(node, c_node)
       objects.append(c_node)
 
-      for terminal in node.Terminals:
-         equipment = terminal.ConductingEquipment
-         eq_class_type = equipment.__class__.__name__
+      # for terminal in node.Terminals:
+      #    equipment = terminal.ConductingEquipment
+      #    eq_class_type = equipment.__class__.__name__
 
-         if eq_class_type in LOAD_TYPES:
-            new_load = {
-               "objectType": "load",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_load)
+      #    if eq_class_type in LOAD_TYPES:
+      #       new_load = {
+      #          "objectType": "load",
+      #          "elementType": "node",
+      #          "attributes": {
+      #             "id": terminal.mRID,
+      #             "name": terminal.name,
+      #             "sequenceNumber": terminal.sequenceNumber,
+      #             "eq_class_type": eq_class_type
+      #          }
+      #       }
+      #       add_attributes(terminal, new_load)
 
-            objects.append(new_load)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+      #       objects.append(new_load)
+      #       objects.append({
+      #          "objectType": "line",
+      #          "elementType": "edge",
+      #          "attributes": {
+      #             "id": f"{node.mRID}_{terminal.mRID}",
+      #             "from": node.mRID,
+      #             "to": terminal.mRID
+      #          }
+      #       })
 
-         if eq_class_type in GEN_TYPES:
-            new_gen = {
-               "objectType": "diesel_dg",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_gen)
+      #    if eq_class_type in GEN_TYPES:
+      #       new_gen = {
+      #          "objectType": "diesel_dg",
+      #          "elementType": "node",
+      #          "attributes": {
+      #             "id": terminal.mRID,
+      #             "name": terminal.name,
+      #             "sequenceNumber": terminal.sequenceNumber,
+      #             "eq_class_type": eq_class_type
+      #          }
+      #       }
+      #       add_attributes(terminal, new_gen)
 
-            objects.append(new_gen)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+      #       objects.append(new_gen)
+      #       objects.append({
+      #          "objectType": "line",
+      #          "elementType": "edge",
+      #          "attributes": {
+      #             "id": f"{node.mRID}_{terminal.mRID}",
+      #             "from": node.mRID,
+      #             "to": terminal.mRID
+      #          }
+      #       })
 
-         if eq_class_type in CAP_TYPES:
-            new_cap = {
-               "objectType": "capacitor",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_cap)
+      #    if eq_class_type in CAP_TYPES:
+      #       new_cap = {
+      #          "objectType": "capacitor",
+      #          "elementType": "node",
+      #          "attributes": {
+      #             "id": terminal.mRID,
+      #             "name": terminal.name,
+      #             "sequenceNumber": terminal.sequenceNumber,
+      #             "eq_class_type": eq_class_type
+      #          }
+      #       }
+      #       add_attributes(terminal, new_cap)
 
-            objects.append(new_cap)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+      #       objects.append(new_cap)
+      #       objects.append({
+      #          "objectType": "line",
+      #          "elementType": "edge",
+      #          "attributes": {
+      #             "id": f"{node.mRID}_{terminal.mRID}",
+      #             "from": node.mRID,
+      #             "to": terminal.mRID
+      #          }
+      #       })
 
-         if eq_class_type in INV_TYPES:
-            new_inv = {
-               "objectType": "inverter_dyn",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type,
-               }
-            }
-            add_attributes(terminal, new_inv)
+      #    if eq_class_type in INV_TYPES:
+      #       new_inv = {
+      #          "objectType": "inverter_dyn",
+      #          "elementType": "node",
+      #          "attributes": {
+      #             "id": terminal.mRID,
+      #             "name": terminal.name,
+      #             "sequenceNumber": terminal.sequenceNumber,
+      #             "eq_class_type": eq_class_type,
+      #          }
+      #       }
+      #       add_attributes(terminal, new_inv)
 
-            objects.append(new_inv)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
+      #       objects.append(new_inv)
+      #       objects.append({
+      #          "objectType": "line",
+      #          "elementType": "edge",
+      #          "attributes": {
+      #             "id": f"{node.mRID}_{terminal.mRID}",
+      #             "from": node.mRID,
+      #             "to": terminal.mRID
+      #          }
+      #       })
 
    CIM_NETWORK.get_all_edges(cim.ACLineSegment)
    for line in CIM_NETWORK.graph[cim.ACLineSegment].values():
@@ -374,7 +1681,7 @@ def cim2GS(cim_filepath: str) -> str:
       cim.Disconnector,
       cim.Recloser
    ]
-
+   
    for cim_type in cim_switch_types:
       if cim_type in CIM_NETWORK.graph:
          for line in CIM_NETWORK.graph[cim_type].values():
@@ -391,39 +1698,34 @@ def cim2GS(cim_filepath: str) -> str:
 
             add_attributes(line, new_edge)
             objects.append(new_edge)
+   
+   for battery in CIM_NETWORK.graph[cim.BatteryUnit].values():
+      new_battery = {
+         "objectType": "battery",
+         "elementType": "node",
+         "attributes": {
+            "id": battery.mRID,
+            "name": battery.name,
+            "class_type": battery.__class__.__name__
+         }
+      }
+      add_attributes(battery, new_battery)
+      objects.append(new_battery)
+      
+      new_line = {
+         "objectType": "line",
+         "elementType": "edge",
+         "attributes": {
+            "id": f"{battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID}-{battery.mRID}",
+            "from": battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID,
+            "to": battery.mRID 
+         }
+      }
+      objects.append(new_line)
 
    return json.dumps({cim_filepath: {"objects": objects}})
 
-def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:float, yPosition:float):
-    for terminal in node.Terminals:
-        equipment = terminal.ConductingEquipment
-        location = equipment.Location
-        if location is None:
-            location = cim.Location(name=equipment.name+'_location')
-            equipment.Location = location
-            location.PowerSystemResources.append(equipment)
-            network.add_to_graph(location)
-
-        point = cim.PositionPoint()
-        point.sequenceNumber = terminal.sequenceNumber
-        point.xPosition = xPosition
-        point.yPosition = yPosition
-        point.Location = location
-        location.PositionPoints.append(point)
-        network.add_to_graph(point)
-
-def export_cim_coords(new_coords_obj: list, output_path: str) -> None:
-   global CIM_NETWORK
-
-   for obj in new_coords_obj:
-      c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(obj["mRID"].upper())]
-      print(f"Updating coordinates for node {c_node.name} ({c_node.mRID}) to x: {obj['x']}, y: {obj['y']}")
-      new_bus_location(network=CIM_NETWORK, node=c_node, xPosition=obj["x"], yPosition=obj["y"])
-
-   cim_utils.get_all_data(CIM_NETWORK)
-   cim_utils.write_xml(CIM_NETWORK, output_path)
-
-def exportCIM(dir2save: str, filename: str, data: list) -> None:
+def export_cim(dir2save: str, filename: str, data: list) -> None:
    global CIM_NETWORK
 
    if len(data) == 0:
@@ -464,126 +1766,46 @@ def exportCIM(dir2save: str, filename: str, data: list) -> None:
    cim_utils.get_all_data(CIM_NETWORK)
    cim_utils.write_xml(CIM_NETWORK, os.path.join(dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"))
 
-#------------------------------ Server ------------------------------#
-
-app = Flask(__name__)
-# socketio = SocketIO(app)
-CORS(app, origins=["http://localhost:5173"])
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173"], async_mode="gevent")
-
-#------------------------------ End Server ------------------------------#
-
-#------------------------------ Server Routes ------------------------------#
-
-@app.route("/")
-def hello():
-  return {"api": "GLIMPSE flask backend"}
-
-@app.route("/glm2json", methods=["POST"])
-def glm_to_json():
-  """
-  This endpoint gets the paths of the uploaded glm files to be converted to JSON
-  """
-  paths = req.get_json()
-  glm_dict = glm_to_dict(paths)
-
-  return dict2json(glm_dict)
-
-@app.route("/upload/glm-to-json", methods=["POST"])
-def upload_glm_to_json():
-    """
-    This endpoint receives one or more .glm files via multipart/form-data,
-    saves them to a temp directory, collects their paths, and converts to JSON.
-    """
-    # Validate presence of 'files' in form-data
-    if "files" not in req.files:
-        return {"error": "No 'files' part in the form data."}, 400
-
-    files = req.files.getlist("files")
-    if not files:
-        return {"error": "No files uploaded."}, 400
-
-    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
-    paths = []
-
-    try:
-        for f in files:
-            if not f or f.filename == "":
-                continue
-            filename = secure_filename(f.filename)
-            dest_path = os.path.join(tmpdir, filename)
-            f.save(dest_path)
-            paths.append(dest_path)
-
-        if not paths:
-            return {"error": "No valid files received."}, 400
-
-        # Your existing conversion logic
-        glm_dict = glm_to_dict(paths)     # expects list of paths
-        return dict2json(glm_dict)        # your existing helper
-
-    finally:
-        # Clean up temp files/dir
-        shutil.rmtree(tmpdir, ignore_errors=True)
-
-@app.route("/json2glm", methods=["POST"])
-def json_to_glm():
-  """
-  converts json GLD model representation back to GLD model (.glm)
-  """
-  if (req.is_json):
-    req_data = req.get_json()
-    data = req_data["data"]
-    save_dir = req_data["saveDir"]
-
-    for filename in data.keys():
-      with open(os.path.join(save_dir, filename), "w") as glm_file:
-        glm.dump(data[filename], glm_file)
-        glm_file.close()
-
-  return "", 204
-
-@app.route("/create-nx-graph", methods=["POST"])
-def create_nx_graph():
-   """
-   This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
-   then most likely there is a true value where this end point needs to return a dict of community IDs
-   """
-   graph_data = req.get_json()
-
-   if isinstance(graph_data, dict):
-      create_graph(graph_data)
-      return "", 204
-   elif isinstance(graph_data, list):
-      #index 0 contains the data and index 1 contains a bool value whether to set the community IDs as well
-      community_ids = create_graph(data=graph_data[0], set_communities=graph_data[1])
-      return community_ids
-   return None
-
-
-@app.route("/get-stats", methods=["GET"])
-def get_stats():
-   """
-   This endpoint gathers some summary statistics using networkx and the already existing GRAPH object.
-   """
-   summary_stats = {
-      "#Nodes": NX_GRAPH.number_of_nodes(),
-      "#Edges": NX_GRAPH.number_of_edges(),
-      "#ConnectedComponets": nx.number_connected_components(NX_GRAPH),
-      "modularity": get_modularity(),
-   }
-
-   return summary_stats
-
-@app.route("/cimg-to-GS", methods=["POST"])
+@app.route("/api/upload/cim", methods=["POST"])
 def cim_to_glimpse():
-  cim_filepath = req.get_json()
-  glimpse_structure_data = cim2GS(cim_filepath[0])
+   
+      # Validate presence of 'files' in form-data
+   if "files" not in req.files:
+      return {"error": "No 'files' part in the form data."}, 400
 
-  return glimpse_structure_data
+   files = req.files.getlist("files")
+   if not files:
+      return {"error": "No files uploaded."}, 400
 
-@app.route("/export-cim", methods=["POST"])
-def export_cim():
+   tmpdir = tempfile.mkdtemp(prefix="cim_upload_")
+   paths = []
+
+   try:
+      for f in files:
+         if not f or f.filename == "":
+            continue
+         filename = secure_filename(f.filename)
+         dest_path = os.path.join(tmpdir, filename)
+         f.save(dest_path)
+         paths.append(dest_path)
+
+      if not paths:
+         return {"error": "No valid files received."}, 400
+
+      # Your existing conversion logic
+      print(f"Converting CIM file from {paths[0]} to GLIMPSE structure...")
+      glimpse_structure_data = cim_to_glimpse_structure(paths[0])
+      return glimpse_structure_data
+
+   except Exception as e:
+      _log.error(f"Error in upload_json: {str(e)}")
+      return {"error": f"Server error: {str(e)}"}, 500
+   finally:
+      # Clean up temp files/dir
+      shutil.rmtree(tmpdir, ignore_errors=True)
+
+@app.route("/api/export/export-cim", methods=["POST"])
+def export_cim_file():
   cim_data = req.get_json()
 
   export_dir = cim_data["savepath"]
@@ -591,10 +1813,10 @@ def export_cim():
   data = cim_data["objs"]
   og_filepath = cim_data["filename"]
 
-  exportCIM(export_dir, og_filepath, data)
+  export_cim(export_dir, og_filepath, data)
   return "", 204
 
-@app.route("/export-cim-coordinates", methods=["POST"])
+@app.route("/api/export/export-cim-coordinates", methods=["POST"])
 def export_cim_():
    """
    This endpoint exports the new coordinates of the nodes to the CIM file
@@ -608,49 +1830,51 @@ def export_cim_():
    except Exception as e:
       print(f"Error exporting CIM coordinates: {e}")
       return {"error": str(e)}, 500
-   return "", 204
-
-@app.route("/update-cim-attrs", methods=["POST"])
-def update_object_attributes():
-   req_data = req.get_json()
-   print(req_data)
-   cim_obj = CIM_NETWORK.get_object(UUID(req_data["mRID"].upper()))
-
-   for field in fields(cim_obj):
-      if field.metadata["type"] == "Attribute" and field.name in req_data["attributes"] and req_data["attributes"][field.name] != "None":
-         setattr(cim_obj, field.name, req_data["attributes"][field.name])
-
-   return "", 204
-
-#------------------------------ End Server Routes ------------------------------#
-
-#------------------------------ WebSocket Events ------------------------------#
+   return "", 201
+# ================================================================================================
+# WEBSOCKET EVENTS (from your original server.py)
+# ================================================================================================
 
 @socketio.on("glimpse")
 def glimpse(data):
-   socketio.emit("update-data", data)
+    """Handle glimpse events and broadcast updates"""
+    socketio.emit("update-data", data)
 
 @socketio.on("addNode")
 def add_node(new_node_data):
-   socketio.emit("add-node", new_node_data)
+    """Handle node addition events"""
+    socketio.emit("add-node", new_node_data)
 
 @socketio.on("addEdge")
 def add_edge(new_edge_data):
-   socketio.emit("add-edge", new_edge_data)
+    """Handle edge addition events"""
+    socketio.emit("add-edge", new_edge_data)
 
 @socketio.on("deleteNode")
 def delete_node(node_id):
-   socketio.emit("delete-node", node_id)
+    """Handle node deletion events"""
+    socketio.emit("delete-node", node_id)
 
 @socketio.on("deleteEdge")
 def delete_edge(edge_id):
-   socketio.emit("delete-edge", edge_id)
+    """Handle edge deletion events"""
+    socketio.emit("delete-edge", edge_id)
 
-#------------------------------ End WebSocket Events ------------------------------#
+# ================================================================================================
+# HEALTH CHECK AND BASIC ENDPOINTS
+# ================================================================================================
 
-#-------------------------- Start WebSocket Server --------------------------#
+@app.route("/")
+def hello():
+    """Basic API information endpoint"""
+    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "1.0.0"}
+
+# ================================================================================================
+# MAIN APPLICATION ENTRY POINT
+# ================================================================================================
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=False, log_output=True)
-
-#-------------------------- End Start WebSocket Server --------------------------#
+    # Start the Flask-SocketIO server
+    port = int(os.environ.get('FLASK_PORT', 5051))
+    _log.info(f"Starting GLIMPSE CIM-Graph server on port {port}")
+    socketio.run(app, host='127.0.0.1', port=port, debug=False, log_output=True)

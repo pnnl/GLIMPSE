@@ -22,7 +22,7 @@ export function drawRoundRect(ctx, x, y, width, height, radius) {
  * Custom hover renderer
  */
 export function drawHover(context, data, settings) {
-   const size = settings.labelSize;
+   const size = settings.labelSize + 5;
    const font = settings.labelFont;
    const weight = settings.labelWeight;
    const objectTypeLabelSize = size - 2;
@@ -57,7 +57,7 @@ export function drawHover(context, data, settings) {
    const x = Math.round(data.x);
    const y = Math.round(data.y);
    const w = Math.round(textWidth + size / 2 + data.size + 3);
-   const hIDLabel = Math.round(size / 2 + 4);
+   const hIDLabel = Math.round(size);
    const hObjectTypeLabel = objectTypeLabel ? Math.round(objectTypeLabelSize / 2 + 9) : 0;
    const lineHeight = Math.round(objectTypeLabelSize + 4);
    const hAttributesLabel =

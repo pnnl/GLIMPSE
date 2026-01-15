@@ -12,15 +12,15 @@ import { EdgeRectangleProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
-import graphHelper from "../graphHelper/GraphHelper";
-import GraphEvents from "./GraphEvents";
-import EdgeCurveProgram from "@sigma/edge-curve";
 import { drawLabel, drawHover } from "../utils/canvas-utils";
 import { bindWebGLLayer, createContoursProgram } from "@sigma/layer-webgl";
 import { useLocation } from "react-router";
 import { useLoadGraph } from "@react-sigma/core";
 import { useSigma } from "@react-sigma/core";
 import { useSigmaContext } from "../contexts/useSigmaContext";
+import graphHelper from "../graphHelper/GraphHelper";
+import GraphEvents from "./GraphEvents";
+import EdgeCurveProgram from "@sigma/edge-curve";
 
 const Graph = () => {
    const location = useLocation();
@@ -35,6 +35,8 @@ const Graph = () => {
 
       graphHelper.setGraphData(location.state.fileData);
       loadGraph(graphHelper.graph);
+      // Keep graphHelper.graph synchronized with sigma's internal graph instance
+      graphHelper.graph = sigma.getGraph();
       graphHelper.sigmaInstance = sigma;
 
       // Expose sigma to context for access from anywhere in the app
@@ -42,6 +44,7 @@ const Graph = () => {
 
       // Notify the app that a graph was loaded so the header can show search
       try {
+         console.log(`Dispatching 'graph-loaded' event with order:`, graphHelper.graph.order);
          window.dispatchEvent(
             new CustomEvent("graph-loaded", { detail: { order: graphHelper.graph.order } })
          );
@@ -165,8 +168,9 @@ const GraphRenderer = () => {
       if (
          graphHelper.getHighlightedEdgeTypes().length === 0 &&
          graphHelper.getHighlightedGroups().length === 0
-      )
+      ) {
          return attrs;
+      }
 
       if (!graphHelper.isHighlighted(attrs.group)) {
          return {
@@ -185,7 +189,6 @@ const GraphRenderer = () => {
 
    return (
       <SigmaContainer
-         style={{ maxWidth: "70%" }}
          graph={MultiUndirectedGraph}
          settings={{
             allowInvalidContainer: true,
@@ -199,10 +202,12 @@ const GraphRenderer = () => {
             labelGridCellSize: 60,
             labelRenderedSizeThreshold: 6,
             hideEdgesOnMove: true,
+            hideLabelsOnMove: true,
             labelFont: "Lato, sans-serif",
             zIndex: true,
             nodeReducer: customNodeReducer,
             edgeReducer: customEdgeReducer,
+            enableEdgeEvents: true,
             nodeProgramClasses: {
                nodeImg: BorderImageNodeProgram,
                node: NodeBorderProgram,
@@ -224,14 +229,14 @@ const GraphRenderer = () => {
                      adjustSizes: false,
                      barnesHutOptimize:
                         graphHelper.graph.order && graphHelper.graph.order < 200 ? false : true,
-                     barnesHutTheta: 0.5,
-                     edgeWeightInfluence: 1,
-                     gravity: 0.05,
+                     barnesHutTheta: 0.6,
+                     edgeWeightInfluence: 2.5,
+                     gravity: 0.09,
                      linLogMode: false,
                      outboundAttractionDistribution: true,
                      scalingRatio:
                         graphHelper.graph.order && graphHelper.graph.order < 200 ? 8 : 15,
-                     slowDown: 8.2,
+                     slowDown: 10,
                      strongGravityMode: false,
                   },
                }}

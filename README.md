@@ -1,14 +1,15 @@
-# GLIMPSE v0.6.1 ✨
+# GLIMPSE v1.0.0 ✨
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
+GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, Sigma.js, and Python.
 
 ## UI
 
 ![UI](https://github.com/user-attachments/assets/12896785-d76a-470c-b80f-f91870b537f1)
 
-**NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
+> [!NOTE]
+> If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
 
 ## Installers (Windows, MacOS, Linux)
 
@@ -18,8 +19,8 @@ Check out the [releases](https://github.com/pnnl/GLIMPSE/releases) for installer
 
 ### Download Node and Nim
 
-- [Node.js](https://nodejs.org/en)
-- [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
+-  [Node.js](https://nodejs.org/en)
+-  [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
 
 In a directory of your choice clone the repository :
 
@@ -35,44 +36,53 @@ npm install
 
 ## Create a python environment for local server
 
-### Creating environment with python venv or Anaconda
+Creating environment with python venv or Anaconda
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
-- venv
+**UV**
 
 ```bash
-python -m venv glimpse-server
+uv add -r requirements.txt --prerelease=allow
 ```
 
-- conda
+**venv**
 
 ```bash
-conda create -n glimpse-server
+python -m venv .venv
+```
+
+**Conda**
+
+```bash
+conda create -n .venv
 ```
 
 Once the python venv environment is created activate it using one of the following command for your system in the table below:
 
-| Platform | Shell      | Command to activate virtual environment       |
-| :------: | :--------- | :-------------------------------------------- |
-|  POSIX   | bash/zsh   | `$ source glimpse-server/bin/activate`        |
-|    -     | fish       | `$ source glimpse-server/bin/activate.fish`   |
-|    -     | csh/tcsh   | `$ source glimpse-server/bin/activate.csh`    |
-|    -     | PowerShell | `$ glimpse-server/bin/Activate.ps1`           |
-| Windows  | cmd.exe    | `C:\> glimpse-server\Scripts\activate.bat`    |
-|    -     | PowerShell | `PS C:\> glimpse-server\Scripts\Activate.ps1` |
+| Platform | Shell      | Command to activate virtual environment |
+| :------: | :--------- | :-------------------------------------- |
+|  POSIX   | bash/zsh   | `$ source .venv/bin/activate`           |
+|    -     | fish       | `$ source .venv/bin/activate.fish`      |
+|    -     | csh/tcsh   | `$ source .venv/bin/activate.csh`       |
+|    -     | PowerShell | `$ .\.venv\Scripts\activate.ps1`        |
+| Windows  | cmd.exe    | `C:\> .venv\Scripts\activate.bat`       |
+|    -     | PowerShell | `PS C:\> .\.venv\Scripts\activate.ps1`  |
 
 If using conda simply activate the environment
 
 ```bash
-conda activate glimpse-server
+conda activate .venv
 ```
 
-You will know if the environment activation worked if there is a `(glimpse-server)` indicator at the start of your command line.
+You will know if the environment activation worked if there is a `(.venv)` indicator at the start of your command line.
 
 Next install the server's requirements:
+
+> [!NOTE]
+> If you use `uv` you may skip this part
 
 ```bash
 pip install -r requirements.txt
@@ -88,8 +98,19 @@ git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
 
 Then in `GLIMPSE/local-server/CIM-Builder/` install as a python library to environment.
 
+> [!NOTE]
+> We install the CIM-Builder package with not dependencies because it will require and older version of cim-graph
+
+**pip**
+
 ```bash
-python -m pip install .
+python -m pip install . --no-deps
+```
+
+**uv**
+
+```bash
+uv pip install . --no-deps
 ```
 
 ### Additional Instructions for MacOS with Apple Silicon
@@ -132,12 +153,12 @@ npm run start
 ### GLIMPSE supports two different JSON file formats for custom graph visualizations.
 
 1. GLIMPSE's data structure based off the [glm2json](https://github.com/NREL/glm) parser output used by GLIMPSE.
-   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
-   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
-   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
-   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
+   -  [example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
+   -  [example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
+   -  [example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
+   -  [example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
 1. NetworkX's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
-   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
+   -  [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
 
 ### GLIMPSE glm (GridLAB-D Model) file support
 

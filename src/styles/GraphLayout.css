@@ -1,4 +1,7 @@
 .graph-layout {
    width: 100%;
-   height: calc(100% - 0.5rem);
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   overflow: hidden;
 }

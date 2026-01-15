@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useLoadGraph } from "@react-sigma/core";
 import { MultiGraph } from "graphology";
 import graphHelper from "../graphHelper/GraphHelper";
@@ -41,7 +41,6 @@ const LegendRenderer = () => {
 
    return (
       <SigmaContainer
-         style={{ maxWidth: "30%" }}
          settings={{
             allowInvalidContainer: true,
             renderEdgeLabels: true,

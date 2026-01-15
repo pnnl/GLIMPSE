@@ -91,7 +91,7 @@
          "color": "rgba(200, 200, 200, 0.4)"
       },
       "c_node": {
-         "size": 2.5,
+         "size": 4,
          "color": "#ab0e00",
          "borderColor": "#a82e25"
       },

@@ -3,11 +3,10 @@ import louvain from "graphology-communities-louvain";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import theme from "../themes/PowerGrid.theme.json";
-import { Sigma } from "sigma";
 
 class GraphHelper {
    // private
-   #greatest = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
+   #boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
    #theme = null;
    #highlightedGroups = [];
    #highlightedEdgeTypes = [];
@@ -144,7 +143,7 @@ class GraphHelper {
 
          this.sigmaInstance.getCamera().animate({ x: x, y: y, ratio: 0.05 }, { duration: 1000 });
       } else if (obj.type === "edge") {
-         this.graph.setEdgeAttribute(obj.id, "highlighted", true);
+         this.graph.setEdgeAttribute(obj.id, "label", obj.id);
          const { attributes } = this.graph.getEdgeAttributes(obj.id);
          const fromNode = this.sigmaInstance.getNodeDisplayData(attributes.from);
          const toNode = this.sigmaInstance.getNodeDisplayData(attributes.to);
@@ -342,7 +341,7 @@ class GraphHelper {
    };
 
    resetGreatestCoords = () => {
-      this.#greatest = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+      this.#boundsCoords = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
    };
 
    rotateCCW = () => {
@@ -401,14 +400,14 @@ class GraphHelper {
                      ...theme.groups[objectType],
                   };
 
-                  if (node.x !== undefined && node.x > this.#greatest.maxX)
-                     this.#greatest.maxX = node.x;
-                  if (node.x !== undefined && node.x < this.#greatest.minX)
-                     this.#greatest.minX = node.x;
-                  if (node.y !== undefined && node.y > this.#greatest.maxY)
-                     this.#greatest.maxY = node.y;
-                  if (node.y !== undefined && node.y < this.#greatest.minY)
-                     this.#greatest.maxY = node.y;
+                  if (node.x !== undefined && node.x > this.#boundsCoords.maxX)
+                     this.#boundsCoords.maxX = node.x;
+                  if (node.x !== undefined && node.x < this.#boundsCoords.minX)
+                     this.#boundsCoords.minX = node.x;
+                  if (node.y !== undefined && node.y > this.#boundsCoords.maxY)
+                     this.#boundsCoords.maxY = node.y;
+                  if (node.y !== undefined && node.y < this.#boundsCoords.minY)
+                     this.#boundsCoords.maxY = node.y;
 
                   node.attributesLabel = this.getTitle(attributes);
 
@@ -422,7 +421,7 @@ class GraphHelper {
                }
 
                const node = {
-                  label: "name" in attributes ? attributes.name : nodeID,
+                  label: attributes.name ?? nodeID,
                   elementType: "node",
                   attributes: attributes,
                   group: objectType,
@@ -431,13 +430,38 @@ class GraphHelper {
                   ...theme.groups[objectType],
                };
 
-               node.attributesLabel = this.getTitle(attributes);
+               node["attributesLabel"] = this.getTitle(attributes);
 
                if (objectType in this.objectTypeCount.nodes)
                   this.objectTypeCount.nodes[objectType]++;
                else this.objectTypeCount.nodes[objectType] = 1;
 
                // Assign random initial positions for nodes without coordinates
+               this.graph.addNode(nodeID, node);
+            } else if ("elementType" in obj && obj.elementType === "node") {
+               if (!(objectType in theme.groups)) {
+                  theme.groups[objectType] = {
+                     size: 4,
+                     color: iwanthue(1)[0],
+                  };
+               }
+
+               const node = {
+                  id: nodeID,
+                  label: attributes.name ?? nodeID,
+                  elementType: obj.elementType,
+                  attributes: attributes,
+                  group: objectType,
+               };
+
+               if (!this.nodeTypes.includes(objectType)) this.nodeTypes.push(objectType);
+
+               if (objectType in this.objectTypeCount.nodes)
+                  this.objectTypeCount.nodes[objectType]++;
+               else this.objectTypeCount.nodes[objectType] = 1;
+
+               node["attributesLabel"] = this.getTitle(attributes);
+
                this.graph.addNode(nodeID, node);
             }
          }
@@ -461,7 +485,6 @@ class GraphHelper {
                else this.objectTypeCount.edges["parentChild"] = 1;
 
                this.graph.addEdgeWithKey(edgeID, parent, nodeID, {
-                  label: edgeID,
                   elementType: "edge",
                   group: "parentChild",
                   type: "line",
@@ -481,7 +504,6 @@ class GraphHelper {
                else this.objectTypeCount.edges[objectType] = 1;
 
                this.graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
-                  label: edgeID,
                   elementType: "edge",
                   group: objectType,
                   type: "line",
@@ -495,10 +517,10 @@ class GraphHelper {
             } else if ("elementType" in obj && obj.elementType === "edge") {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = `${edgeFrom}-${edgeTo}`;
+               const edgeID = attributes.id ?? `${edgeFrom}-${edgeTo}`;
 
-               //if (!(objectType in theme.edgeOptions))
-               //   theme.edgeOptions[objectType] = { color: this.getRandomColor(), width: 2 };
+               if (!(objectType in theme.edgeOptions))
+                  theme.edgeOptions[objectType] = { color: this.getRandomColor(), width: 2 };
 
                if (objectType in this.objectTypeCount.edges)
                   this.objectTypeCount.edges[objectType]++;
@@ -507,7 +529,6 @@ class GraphHelper {
                if (!this.edgeTypes.includes(objectType)) this.edgeTypes.push(objectType);
 
                this.graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
-                  label: edgeID,
                   elementType: "edge",
                   group: objectType,
                   type: "line",
@@ -517,13 +538,6 @@ class GraphHelper {
                });
             }
          }
-      }
-
-      if (!("inactive" in theme.groups)) {
-         theme.groups.inactive = {
-            color: "rgba(200, 200, 200, 0.4)",
-            shape: "dot",
-         };
       }
 
       if (this.#hasFixedNodes) {
@@ -541,10 +555,10 @@ class GraphHelper {
                   this.graph.setNodeAttribute(node, "fixed", false);
                } else {
                   // if no neighbors, place randomly within greatest coords
-                  const rangeX = this.#greatest.maxX - this.#greatest.minX;
-                  const rangeY = this.#greatest.maxY - this.#greatest.minY;
-                  const randX = this.#greatest.minX + Math.random() * rangeX;
-                  const randY = this.#greatest.minY + Math.random() * rangeY;
+                  const rangeX = this.#boundsCoords.maxX - this.#boundsCoords.minX;
+                  const rangeY = this.#boundsCoords.maxY - this.#boundsCoords.minY;
+                  const randX = this.#boundsCoords.minX + Math.random() * rangeX;
+                  const randY = this.#boundsCoords.minY + Math.random() * rangeY;
                   this.graph.setNodeAttribute(node, "x", randX);
                   this.graph.setNodeAttribute(node, "y", randY);
                   this.graph.setNodeAttribute(node, "fixed", false);
