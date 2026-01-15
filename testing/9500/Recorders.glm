@@ -1,0 +1,9 @@
+object voltdump {
+  filename ieee9500unbal_volt.csv;
+  mode POLAR;
+};
+object currdump {
+  filename ieee9500unbal_curr.csv;
+  mode POLAR;
+};
+

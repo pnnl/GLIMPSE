@@ -1,14 +1,15 @@
-# GLIMPSE v0.6.0 ✨
+# GLIMPSE v0.7.0-alpha ✨
 
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
+GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, Sigma.js, and Python.
 
 ## UI
 
 ![UI](https://github.com/user-attachments/assets/12896785-d76a-470c-b80f-f91870b537f1)
 
-**NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
+> [!NOTE]
+> If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
 
 ## Installers (Windows, MacOS, Linux)
 
@@ -18,10 +19,11 @@ Check out the [releases](https://github.com/pnnl/GLIMPSE/releases) for installer
 
 ### Download Node and Nim
 
-- [Node.js](https://nodejs.org/en)
-- [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
+1. [Node.js](https://nodejs.org/en)
+2. [Nim](https://nim-lang.org/install.html)
+   - Only if planning to export glm files modified with GLIMPSE or building the glm parser on Apple silicon
 
-In a directory of your choice clone the repository :
+In a directory of your choice clone the repository
 
 ```bash
 git clone http://github.com/pnnl/GLIMPSE
@@ -33,49 +35,87 @@ Then in `GLIMPSE/`:
 npm install
 ```
 
-## Create a python environment for local server
+### Create a python environment for local server
 
-### Creating environment with python venv or Anaconda
+Creating environment with python venv or Anaconda
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
-- venv
+#### UV
 
 ```bash
-python -m venv glimpse-server
+uv add -r requirements.txt --prerelease=allow
 ```
 
-- conda
+#### VENV
 
 ```bash
-conda create -n glimpse-server
+python -m venv .venv
 ```
+
+#### Conda
+
+```bash
+conda create -n env
+```
+
+### Activating Python Environment
 
 Once the python venv environment is created activate it using one of the following command for your system in the table below:
-
-| Platform | Shell      | Command to activate virtual environment       |
-| :------: | :--------- | :-------------------------------------------- |
-|  POSIX   | bash/zsh   | `$ source glimpse-server/bin/activate`        |
-|    -     | fish       | `$ source glimpse-server/bin/activate.fish`   |
-|    -     | csh/tcsh   | `$ source glimpse-server/bin/activate.csh`    |
-|    -     | PowerShell | `$ glimpse-server/bin/Activate.ps1`           |
-| Windows  | cmd.exe    | `C:\> glimpse-server\Scripts\activate.bat`    |
-|    -     | PowerShell | `PS C:\> glimpse-server\Scripts\Activate.ps1` |
 
 If using conda simply activate the environment
 
 ```bash
-conda activate glimpse-server
+conda activate env
 ```
 
-You will know if the environment activation worked if there is a `(glimpse-server)` indicator at the start of your command line.
+| Platform | Shell      | Command to activate virtual environment |
+| :------: | :--------- | :-------------------------------------- |
+|  POSIX   | bash/zsh   | `$ source .venv/bin/activate`           |
+|    -     | fish       | `$ source .venv/bin/activate.fish`      |
+|    -     | csh/tcsh   | `$ source .venv/bin/activate.csh`       |
+|    -     | PowerShell | `$ .\.venv\Scripts\activate.ps1`        |
+| Windows  | cmd.exe    | `C:\> .venv\Scripts\activate.bat`       |
+|    -     | PowerShell | `PS C:\> .\.venv\Scripts\activate.ps1`  |
 
-Next install the server's requirements:
+> [!NOTE]
+> You will know if the environment activation worked if there is a `(.venv)` indicator at the start of your command line.
+
+### Install Requirements
+
+> [!NOTE]
+> If you used `uv` to create your environment you may skip this part
 
 ```bash
 pip install -r requirements.txt
+```
+
+### Additional Dependencies
+
+install glm parser
+
+> [!WARNING]
+> If on Apple silicon (M chips) you will need to build the glm package using nim.
+> [build glm](#additional-instructions-for-macos-with-apple-silicon)
+
+#### PIP
+
+```bash
+pip install glm
+```
+
+#### UV
+
+```bash
+uv add glm
+```
+
+or
+
+```bash
+uv pip install glm
 ```
 
 Install CIM-Builder to environment. CIM-Builder is used to export modified CIM/XML files with GLIMPSE interface.
@@ -88,8 +128,19 @@ git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
 
 Then in `GLIMPSE/local-server/CIM-Builder/` install as a python library to environment.
 
+> [!NOTE]
+> We install the CIM-Builder package with not dependencies because it will require and older version of cim-graph
+
+#### PIP
+
 ```bash
-python -m pip install .
+python -m pip install . --no-deps
+```
+
+#### UV
+
+```bash
+uv pip install . --no-deps
 ```
 
 ### Additional Instructions for MacOS with Apple Silicon
@@ -100,7 +151,7 @@ In `GLIMPSE/local-server/` clone the glm parser repository.
 git clone https://github.com/NREL/glm.git
 ```
 
-Then in `GLIMPSE/local-server/glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
+Then in `GLIMPSE/local-server/glm/` you will then build the glm parser. For this you need to make sure that [nim](https://nim-lang.org/) is installed and added to your computers `PATH`.
 
 ```bash
 nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
@@ -112,11 +163,25 @@ Next run the following command to create the glm python library wheel
 python setup.py bdist_wheel
 ```
 
-Once that is done, in `GLIMPSE/local-server/glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
+or
+
+```bash
+python3 setup.py bdist_wheel
+```
+
+Once that is done, in `GLIMPSE/local-server/glm/dist/` there is a `.whl` archive that you are able to install using pip to your python environment
+
+#### PIP
 
 ```bash
 # .whl file name will vary based on system
-pip install dist/*.whl
+pip install dist/<whl-filename>.whl
+```
+
+#### UV
+
+```bash
+uv pip install dist/<whl-filename>.whl
 ```
 
 ## Start GLIMPSE
@@ -124,7 +189,7 @@ pip install dist/*.whl
 In `GLIMPSE/` start the application with the following command:
 
 ```bash
-npm run start
+npm run dev 
 ```
 
 ## Supported Input Files

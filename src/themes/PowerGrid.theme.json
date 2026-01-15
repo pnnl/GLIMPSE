@@ -1,0 +1,154 @@
+{
+   "groups": {
+      "load": {
+         "size": 4,
+         "color": "#20a4f3",
+         "type": "nodeImg",
+         "borderColor": "#20a4f3",
+         "image": "/imgs/Load.svg"
+      },
+      "triplex_load": {
+         "size": 4,
+         "color": "#ffea00",
+         "type": "nodeImg",
+         "borderColor": "#ffea00",
+         "image": "/imgs/Load.svg"
+      },
+      "capacitor": {
+         "size": 4,
+         "color": "#023047",
+         "type": "nodeImg",
+         "borderColor": "#023047",
+         "image": "/imgs/Capacitor.svg"
+      },
+      "triplex_node": {
+         "size": 2.5,
+         "color": "#219EBC",
+         "borderColor": "#1A788F"
+      },
+      "substation": {
+         "size": 4,
+         "color": "#FCA311",
+         "type": "nodeImg",
+         "borderColor": "#FCA311",
+         "image": "/imgs/substation.jpg"
+      },
+      "triplex_meter": {
+         "size": 4,
+         "color": "#072AC8",
+         "borderColor": "#072AC8",
+         "type": "nodeImg",
+         "image": "/imgs/meter.jpg"
+      },
+      "node": {
+         "size": 2.5,
+         "color": "#219EBC",
+         "borderColor": "#1A788F"
+      },
+      "meter": {
+         "size": 4,
+         "color": "#d90429",
+         "type": "nodeImg",
+         "borderColor": "#d90429",
+         "image": "/imgs/meter.jpg"
+      },
+      "inverter_dyn": {
+         "size": 4,
+         "color": "#ffb703",
+         "borderColor": "#ffb703",
+         "type": "nodeImg",
+         "image": "/imgs/Inverter.svg"
+      },
+      "inverter": {
+         "size": 4,
+         "color": "#ffb703",
+         "borderColor": "#ffb703",
+         "image": "/imgs/Inverter.svg",
+         "type": "nodeImg"
+      },
+      "diesel_dg": {
+         "size": 4,
+         "color": "#fb8500",
+         "borderColor": "#cc6e04",
+         "type": "nodeImg",
+         "image": "/imgs/generator.png"
+      },
+      "communication_node": {
+         "size": 4,
+         "color": "#c1121f",
+         "borderColor": "#990f1a",
+         "type": "nodeImg",
+         "image": "/imgs/comm.jpg"
+      },
+      "microgrid": {
+         "size": 4,
+         "color": "#6b9080",
+         "borderColor": "#4e69d",
+         "type": "nodeImg",
+         "image": "/imgs/microgrid.svg"
+      },
+      "inactive": {
+         "color": "rgba(200, 200, 200, 0.4)"
+      },
+      "c_node": {
+         "size": 4,
+         "color": "#ab0e00",
+         "borderColor": "#a82e25"
+      },
+      "terminal": {
+         "size": 2,
+         "color": "#f09609",
+         "borderColor": "#a36605"
+      }
+   },
+   "edgeOptions": {
+      "overhead_line": {
+         "width": 2,
+         "color": "#000000"
+      },
+      "switch": {
+         "width": 2,
+         "color": "#3a0ca3"
+      },
+      "series_reactor": {
+         "width": 2,
+         "color": "#3c1642"
+      },
+      "triplex_line": {
+         "width": 2,
+         "color": "#c86bfa"
+      },
+      "underground_line": {
+         "width": 2,
+         "color": "orange"
+      },
+      "regulator": {
+         "width": 2,
+         "color": "#ff447d"
+      },
+      "transformer": {
+         "width": 2,
+         "color": "#00FF00"
+      },
+      "parentChild": {
+         "width": 2,
+         "color": "lightgrey"
+      },
+      "mapping": {
+         "width": 1,
+         "color": "lightgrey"
+      },
+      "communication": {
+         "width": 2,
+         "color": "lightgrey"
+      },
+      "microgrid_connection": {
+         "width": 1,
+         "color": "cyan"
+      },
+      "line": {
+         "width": 1,
+         "color": "lightgrey"
+      }
+   }
+}
