@@ -10,14 +10,14 @@ const NODE_ITEMS = [
 ];
 const EDGE_ITEMS = [
    { key: "edit-attributes", label: "Edit Attributes" },
-   { key: "hide-edge", label: "Hide Edge" },
-   { key: "animate-edge", label: "Animate Edge" },
+   { key: "hide-edge", label: "Hide Edge", disabled: true },
+   { key: "animate-edge", label: "Animate Edge", disabled: true },
    { type: "divider" },
    { key: "delete-edge", label: "Delete Edge" },
 ];
 const GRAPH_ITEMS = [
-   { key: "new-node", label: "Add New Node" },
-   { key: "new-edge", label: "Add New Edge" },
+   { key: "new-node", label: "Add New Node", disabled: true },
+   { key: "new-edge", label: "Add New Edge", disabled: true },
    { type: "divider" },
    { key: "save-image", label: "Save image as..." },
 ];

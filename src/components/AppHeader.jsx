@@ -27,7 +27,7 @@ const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
             { key: "feeder-model-theme", label: "Feeder Model Theme" },
             { key: "custom-theme", label: "Custom" },
             { type: "divider" },
-            { key: "export-theme", label: "Export Theme" },
+            { key: "export-theme", label: "Export Theme", disabled: true },
          ],
       },
    ];

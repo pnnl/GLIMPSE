@@ -9,6 +9,9 @@ lerna-debug.log*
 
 node_modules
 __pycache__
+package-lock.json
+glm
+*.lock
 *.pyc
 dist
 dist-ssr

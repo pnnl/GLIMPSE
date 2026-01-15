@@ -24,8 +24,8 @@ from cimbuilder.object_builder import new_two_terminal_object
 from cimgraph.models import FeederModel
 import cimgraph.utils as cim_utils
 from cimgraph.databases import XMLFile
-# import cimgraph.data_profile.cimhub_2023 as cim
-import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
+import cimgraph.data_profile.cimhub_2023 as cim
+# import cimgraph.data_profile.cim18gmdm.canonical as cim # must match env var
 from cimbuilder.object_builder import new_energy_consumer, new_synchronous_generator, new_two_terminal_object
 
 # Configure logging
@@ -1798,7 +1798,7 @@ def cim_to_glimpse():
       return glimpse_structure_data
 
    except Exception as e:
-      _log.error(f"Error in upload_json: {str(e)}")
+      _log.error(f"Error in cim to glimpse structure parser: {str(e)}")
       return {"error": f"Server error: {str(e)}"}, 500
    finally:
       # Clean up temp files/dir

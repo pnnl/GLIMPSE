@@ -2,8 +2,8 @@ import ReactDOM from "react-dom";
 import { Menu } from "antd";
 
 const ITEMS = [
-   { key: "hide-all", label: "Hide All" },
-   { key: "edit-theme", label: "Edit Theme" },
+   { key: "hide-all", label: "Hide All", disabled: true },
+   { key: "edit-theme", label: "Edit Theme", disabled: true },
 ];
 
 const LegendContextMenu = ({ context, close }) => {
@@ -25,7 +25,7 @@ const LegendContextMenu = ({ context, close }) => {
    return ReactDOM.createPortal(
       <Menu
          style={{
-            width: "7rem",
+            width: "8rem",
             position: "absolute",
             left: context.x,
             top: context.y,
