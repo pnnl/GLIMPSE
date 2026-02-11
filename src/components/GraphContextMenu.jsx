@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import { Menu } from "antd";
 import { downloadAsImage } from "@sigma/export-image";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 
 const NODE_ITEMS = [
    { key: "edit-attributes", label: "Edit Attributes" },
@@ -96,7 +96,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal }) => {
          onClick={handleMenuClick}
          items={ITEMS[context.contextItems]}
       />,
-      document.getElementById("portal")
+      document.getElementById("portal"),
    );
 };
 

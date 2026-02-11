@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useRegisterEvents } from "@react-sigma/core";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 import LegendContextMenu from "./LegendContextMenu";
 
 const LegendGraphEvents = () => {

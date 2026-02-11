@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import React, { useState, useEffect } from "react";
 import { Modal, Form, Input, Button, Space, Divider } from "antd";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 
 const EditAttributesModal = ({ close, context }) => {
    const [form] = Form.useForm();
@@ -35,7 +35,7 @@ const EditAttributesModal = ({ close, context }) => {
             graphHelper.graph.setNodeAttribute(
                object.id,
                "attributesLabel",
-               graphHelper.getTitle(values)
+               graphHelper.getTitle(values),
             );
          } else if (object.type === "edge") {
             graphHelper.graph.setEdgeAttribute(object.id, "attributes", values);
@@ -103,7 +103,7 @@ const EditAttributesModal = ({ close, context }) => {
             )}
          </Form>
       </Modal>,
-      document.getElementById("portal")
+      document.getElementById("portal"),
    );
 };
 

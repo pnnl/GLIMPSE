@@ -1,5 +1,5 @@
 import "@react-sigma/core/lib/style.css";
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import {
    SigmaContainer,
    ControlsContainer,
@@ -13,111 +13,10 @@ import { createNodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
 import { drawLabel, drawHover } from "../utils/canvas-utils";
-import { bindWebGLLayer, createContoursProgram } from "@sigma/layer-webgl";
-import { useLocation } from "react-router";
-import { useLoadGraph } from "@react-sigma/core";
-import { useSigma } from "@react-sigma/core";
-import { useSigmaContext } from "../contexts/useSigmaContext";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
-
-const Graph = () => {
-   const location = useLocation();
-   const loadGraph = useLoadGraph();
-   const sigma = useSigma();
-   const { setSigma, registerWebGLLayer, cleanupAllWebGLLayers } = useSigmaContext();
-
-   // Separate effects for different purposes
-   // Effect 1: Load graph data (runs when location changes)
-   useEffect(() => {
-      if (!location.state?.fileData) return;
-
-      graphHelper.setGraphData(location.state.fileData);
-      loadGraph(graphHelper.graph);
-      // Keep graphHelper.graph synchronized with sigma's internal graph instance
-      graphHelper.graph = sigma.getGraph();
-      graphHelper.sigmaInstance = sigma;
-
-      // Expose sigma to context for access from anywhere in the app
-      setSigma(sigma);
-
-      // Notify the app that a graph was loaded so the header can show search
-      try {
-         console.log(`Dispatching 'graph-loaded' event with order:`, graphHelper.graph.order);
-         window.dispatchEvent(
-            new CustomEvent("graph-loaded", { detail: { order: graphHelper.graph.order } })
-         );
-      } catch {
-         // ignore if CustomEvent not supported (very old browsers)
-         void 0;
-      }
-
-      return () => {
-         graphHelper.graph.clear();
-         graphHelper.reset();
-         graphHelper.sigmaInstance = null;
-         setSigma(null);
-      };
-   }, [location, sigma, loadGraph, setSigma]);
-
-   // Effect 2: Setup WebGL layers (runs after graph is ready, only once)
-   useEffect(() => {
-      if (!sigma) return;
-
-      console.log(`[WebGL] Graph loaded. Communities:`, graphHelper.communitiesArray.length);
-      console.log(`[WebGL] Communities array:`, graphHelper.communitiesArray);
-      console.log(`[WebGL] Color pallet:`, graphHelper.communityColorPallet);
-
-      if (graphHelper.communitiesArray.length === 0) {
-         console.log(`[WebGL] No communities to render`);
-         return;
-      }
-
-      // Increase max listeners to avoid warning
-      sigma.setMaxListeners(graphHelper.communitiesArray.length + 10);
-
-      graphHelper.communitiesArray.forEach((community) => {
-         try {
-            const nodesInCommunity = graphHelper.graph.filterNodes((nodeID, attrs) => {
-               return attrs.community === community;
-            });
-
-            // bindWebGLLayer returns a cleanup function
-            const cleanup = bindWebGLLayer(
-               `community-${community}`,
-               sigma,
-               createContoursProgram(nodesInCommunity, {
-                  radius: 50,
-                  border: {
-                     color: graphHelper.communityColorPallet[community],
-                     thickness: 8,
-                  },
-                  levels: [
-                     {
-                        color: "#00000000",
-                        threshold: 0.5,
-                     },
-                  ],
-               })
-            );
-
-            // Register the cleanup function with context for later cleanup
-            registerWebGLLayer(`community-${community}`, cleanup);
-            console.log(`[WebGL] Successfully created contour layer for community ${community}`);
-         } catch (error) {
-            console.error(`[WebGL] Failed to create layer for community ${community}:`, error);
-         }
-      });
-
-      return () => {
-         console.log(`[WebGL] Cleaning up all layers`);
-         cleanupAllWebGLLayers();
-      };
-   }, [sigma, registerWebGLLayer, cleanupAllWebGLLayers]);
-
-   return null;
-};
+import Graph from "./Graph";
 
 const GraphRenderer = () => {
    const BorderImageNodeProgram = useMemo(() => {

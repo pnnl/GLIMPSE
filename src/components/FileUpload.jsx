@@ -2,7 +2,8 @@ import React, { useRef, useState } from "react";
 import "../styles/FileUpload.css";
 import { Card, Progress } from "antd";
 import axios from "axios";
-import { useNavigate } from "react-router";
+import { useGraph } from "../contexts/GraphContext";
+// import { useNavigate } from "react-router";
 const { Meta } = Card;
 
 const cardStyles = {
@@ -10,6 +11,7 @@ const cardStyles = {
    border: "1px dashed #333",
    height: "12rem",
    width: "20rem",
+   margin: "2rem 0",
    borderRadius: "25px",
    justifyContent: "center",
    alignItems: "center",
@@ -31,13 +33,14 @@ const validateFiles = (paths) => {
       return "api/upload/json";
    } else {
       alert(
-         "Upload glm files with the Power Grid theme or any JSON file with the custom theme selected"
+         "Upload glm files with the Power Grid theme or any JSON file with the custom theme selected",
       );
    }
 };
 
-const FileUpload = () => {
-   const navigate = useNavigate();
+const FileUpload = ({ closeModal }) => {
+   // const navigate = useNavigate();
+   const { setGraphData } = useGraph();
    const fileInputRef = useRef(null);
    const [dragActive, setDragActive] = useState(false);
    const [uploading, setUploading] = useState(false);
@@ -66,16 +69,22 @@ const FileUpload = () => {
             },
          });
 
+         console.log(res.data);
          if ("error" in res.data) throw new Error(res.data.error);
 
-         // Navigate to graph view with the response data
-         navigate("/graph", { state: { fileData: res.data } });
+         // Set graph data which triggers clear and render
+         setGraphData(res.data);
+
+         // Close modal after data is set
+         closeModal();
       } catch (err) {
          alert("An internal issue with the upload occurred...\n" + err);
+         setUploading(false);
+         setProgress(0);
       } finally {
          setUploading(false);
-         // reset progress after a short delay
-         setTimeout(() => setProgress(0), 800);
+         // reset progress after modal closes
+         setTimeout(() => setProgress(0), 500);
       }
    };
 

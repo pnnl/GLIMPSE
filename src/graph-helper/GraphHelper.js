@@ -12,7 +12,6 @@ class GraphHelper {
    #highlightedEdgeTypes = [];
    #hasFixedNodes = false;
 
-   // constants
    #ROTATE_ANGLE = Math.PI / 12; // 15 degrees in radians
 
    // public
@@ -58,7 +57,7 @@ class GraphHelper {
    highlightEdgeTypes = (edgeType) => {
       if (this.#highlightedEdgeTypes.includes(edgeType)) {
          this.#highlightedEdgeTypes = this.#highlightedEdgeTypes.filter(
-            (hEdgeType) => hEdgeType !== edgeType
+            (hEdgeType) => hEdgeType !== edgeType,
          );
       } else {
          this.#highlightedEdgeTypes.push(edgeType);
@@ -107,6 +106,26 @@ class GraphHelper {
       this.highlightedEdgeIDs.length = 0;
       this.highlightedObjects.length = 0;
       this.focusIndex = -1;
+   };
+
+   clearGraphData = () => {
+      // Clear all graph data comprehensively
+      try {
+         this.graph.clear();
+         this.legendGraph.clear();
+      } catch (e) {
+         console.error("Error clearing graphs:", e);
+      }
+      this.sigmaInstance = null;
+      this.#hasFixedNodes = false;
+      this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
+      this.resetObjectTypeCounts();
+      this.reset();
+      // Clear communities data
+      this.communitiesArray = [];
+      this.communityColorPallet = {};
+      this.layout = null;
+      console.log("Graph data cleared successfully");
    };
 
    getNext = () => {
@@ -161,7 +180,7 @@ class GraphHelper {
                y: midPoint.y,
                ration: 0.05,
             },
-            { duration: 1000 }
+            { duration: 1000 },
          );
       }
 
@@ -340,10 +359,6 @@ class GraphHelper {
       };
    };
 
-   resetGreatestCoords = () => {
-      this.#boundsCoords = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-   };
-
    rotateCCW = () => {
       this.graph.forEachNode((node, attrs) => {
          const newX =
@@ -369,9 +384,6 @@ class GraphHelper {
    };
 
    setGraphData = (fileData) => {
-      this.resetObjectTypeCounts();
-      this.resetGreatestCoords();
-      this.graph.clear();
       const keys = ["id", "objectType", "name"];
       const files = Object.keys(fileData).map((file) => fileData[file]);
 
@@ -584,7 +596,7 @@ class GraphHelper {
             this.communitiesArray = Array.from(communitiesSet);
             this.communityColorPallet = iwanthue(communitiesSet.size).reduce(
                (acc, color, i) => ({ ...acc, [this.communitiesArray[i]]: color }),
-               {}
+               {},
             );
 
             this.graph.forEachNode((nodeID, attrs) => {
@@ -592,7 +604,7 @@ class GraphHelper {
                   this.graph.setNodeAttribute(
                      nodeID,
                      "color",
-                     this.communityColorPallet[attrs.attributes.feeder]
+                     this.communityColorPallet[attrs.attributes.feeder],
                   );
                }
             });

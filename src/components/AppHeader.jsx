@@ -1,17 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button, Flex, Dropdown, Modal, Select } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { ExclamationCircleFilled } from "@ant-design/icons";
-import { useNavigate, useLocation } from "react-router";
+// import { useNavigate, useLocation } from "react-router";
 import "../styles/AppHeader.css";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 
 const { confirm } = Modal;
 
-const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
+const AppHeader = ({ onAboutClick, openModelLoader }) => {
+   const [graphLoaded, setGraphLoaded] = useState(false);
    const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
-   const navigate = useNavigate();
-   const location = useLocation();
+   // const navigate = useNavigate();
+   // const location = useLocation();
 
    const menuItems = [
       { key: "export-model", label: "Export Model", disabled: true },
@@ -31,11 +32,44 @@ const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
          ],
       },
    ];
+   // Listen for graph load/clear events emitted by the Graph component
+   useEffect(() => {
+      const handleGraphLoaded = () => setGraphLoaded(true);
+      const handleGraphCleared = () => setGraphLoaded(false);
+
+      window.addEventListener("graph-loaded", handleGraphLoaded);
+      window.addEventListener("graph-cleared", handleGraphCleared);
+
+      return () => {
+         window.removeEventListener("graph-loaded", handleGraphLoaded);
+         window.removeEventListener("graph-cleared", handleGraphCleared);
+      };
+   }, []);
+
+   // Make sure search is hidden when navigating to Home
+   // useEffect(() => {
+   //    if (location.pathname === "/") setGraphLoaded(false);
+   // }, [location]);
+
+   const searchOptions = useMemo(() => {
+      if (!graphLoaded) return [];
+
+      const edgeOptions = graphHelper.graph.mapEdges((id, attributes) => ({
+         label: attributes.name ?? id,
+         value: JSON.stringify({ id: id, type: "edge" }),
+      }));
+      const nodeOptions = graphHelper.graph.mapNodes((id, attributes) => ({
+         label: attributes.name ?? id,
+         value: JSON.stringify({ id: id, type: "node" }),
+      }));
+
+      return [...nodeOptions, ...edgeOptions];
+   }, [graphLoaded]);
 
    const showConfirm = () => {
-      if (location.pathname === "/") {
-         return;
-      }
+      // if (location.pathname === "/") {
+      //    return;
+      // }
 
       confirm({
          title: "Do you wish to upload a new model?",
@@ -44,7 +78,7 @@ const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
          okType: "danger",
          okText: "Yes, upload new model",
          onOk: () => {
-            navigate("/");
+            //navigate("/");
          },
       });
    };
@@ -61,7 +95,6 @@ const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
          case "graph-metrics":
          case "object-studio":
          case "export-theme":
-            break;
       }
    };
 
@@ -92,11 +125,11 @@ const AppHeader = ({ graphLoaded, searchOptions, onAboutClick }) => {
             <Button
                color="#333333"
                style={{ textTransform: "uppercase" }}
-               onClick={() => showConfirm()}
+               onClick={() => openModelLoader.current(true)}
                size="middle"
                type="primary"
             >
-               Home
+               Load New
             </Button>
             <Button
                color="#333333"
