@@ -1,20 +1,16 @@
 import { createContext, useContext, useState, useCallback } from "react";
-import graphHelper from "../graph-helper/GraphHelper";
 
 const GraphContext = createContext();
 
 export const GraphProvider = ({ children }) => {
    const [graphUpdateTrigger, setGraphUpdateTrigger] = useState(0);
 
-   const setGraphData = useCallback((fileData) => {
-      graphHelper.clearGraphData();
-      graphHelper.setGraphData(fileData);
-      // Trigger a re-render of components that depend on graph data
+   const newGraphUpdate = useCallback(() => {
       setGraphUpdateTrigger((prev) => prev + 1);
    }, []);
 
    return (
-      <GraphContext.Provider value={{ graphUpdateTrigger, setGraphData }}>
+      <GraphContext.Provider value={{ graphUpdateTrigger, newGraphUpdate }}>
          {children}
       </GraphContext.Provider>
    );

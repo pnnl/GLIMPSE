@@ -3,6 +3,7 @@ import "../styles/FileUpload.css";
 import { Card, Progress } from "antd";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
+import graphHelper from "../graph-helper/GraphHelper";
 // import { useNavigate } from "react-router";
 const { Meta } = Card;
 
@@ -40,7 +41,7 @@ const validateFiles = (paths) => {
 
 const FileUpload = ({ closeModal }) => {
    // const navigate = useNavigate();
-   const { setGraphData } = useGraph();
+   const { newGraphUpdate } = useGraph();
    const fileInputRef = useRef(null);
    const [dragActive, setDragActive] = useState(false);
    const [uploading, setUploading] = useState(false);
@@ -73,12 +74,19 @@ const FileUpload = ({ closeModal }) => {
          if ("error" in res.data) throw new Error(res.data.error);
 
          // Set graph data which triggers clear and render
-         setGraphData(res.data);
+         if (graphHelper.graph.order > 0) {
+            graphHelper.clearGraphData();
+            graphHelper.setGraphData(res.data);
+            newGraphUpdate();
+         } else {
+            graphHelper.setGraphData(res.data);
+            newGraphUpdate();
+         }
 
          // Close modal after data is set
          closeModal();
       } catch (err) {
-         alert("An internal issue with the upload occurred...\n" + err);
+         console.error(err);
          setUploading(false);
          setProgress(0);
       } finally {

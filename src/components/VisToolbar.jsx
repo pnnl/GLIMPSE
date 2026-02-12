@@ -45,8 +45,6 @@ const VisToolbar = ({ onToggleLegend }) => {
    };
 
    const handleReset = () => {
-      if (graphHelper.highlightedObjects.length === 0) return;
-
       if (graphHelper.getCurrentHighlightedObject()) {
          unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
       }

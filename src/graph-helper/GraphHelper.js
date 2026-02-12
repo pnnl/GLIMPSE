@@ -54,6 +54,32 @@ class GraphHelper {
       return color;
    };
 
+   hideGroup = (type, group) => {
+      if (type === "node") {
+         this.graph.updateEachNodeAttributes((node, attrs) => {
+            if (attrs.group === group) {
+               return {
+                  ...attrs,
+                  hidden: true,
+               };
+            }
+
+            return attrs;
+         });
+      } else if (type === "edge") {
+         this.graph.updateEachEdgeAttributes((edge, attrs) => {
+            if (attrs.group === group) {
+               return {
+                  ...attrs,
+                  hidden: true,
+               };
+            }
+
+            return attrs;
+         });
+      }
+   };
+
    highlightEdgeTypes = (edgeType) => {
       if (this.#highlightedEdgeTypes.includes(edgeType)) {
          this.#highlightedEdgeTypes = this.#highlightedEdgeTypes.filter(
@@ -106,26 +132,34 @@ class GraphHelper {
       this.highlightedEdgeIDs.length = 0;
       this.highlightedObjects.length = 0;
       this.focusIndex = -1;
+
+      // show any hidden edges and nodes
+      this.graph.updateEachEdgeAttributes((e, attrs) => ({ ...attrs, hidden: false }));
+      this.graph.updateEachNodeAttributes((n, attrs) => ({ ...attrs, hidden: false }));
    };
 
    clearGraphData = () => {
+      this.resetObjectTypeCounts();
+
+      // Clear highlighted arrays and state BEFORE updating node attributes
+      this.#highlightedEdgeTypes.length = 0;
+      this.#highlightedGroups.length = 0;
+      this.highlightedNodeIDs.length = 0;
+      this.highlightedEdgeIDs.length = 0;
+      this.highlightedObjects.length = 0;
+      this.focusIndex = -1;
+
       // Clear all graph data comprehensively
-      try {
-         this.graph.clear();
-         this.legendGraph.clear();
-      } catch (e) {
-         console.error("Error clearing graphs:", e);
-      }
+      this.graph.clear();
+      this.legendGraph.clear();
+
       this.sigmaInstance = null;
       this.#hasFixedNodes = false;
       this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-      this.resetObjectTypeCounts();
-      this.reset();
       // Clear communities data
       this.communitiesArray = [];
       this.communityColorPallet = {};
       this.layout = null;
-      console.log("Graph data cleared successfully");
    };
 
    getNext = () => {
@@ -178,9 +212,9 @@ class GraphHelper {
             {
                x: midPoint.x,
                y: midPoint.y,
-               ration: 0.05,
+               ratio: 0.05,
             },
-            { duration: 1000 },
+            { duration: 500 },
          );
       }
 
@@ -384,6 +418,11 @@ class GraphHelper {
    };
 
    setGraphData = (fileData) => {
+      const newGraph = new MultiUndirectedGraph({
+         allowSelfLoops: true,
+         type: "undirected",
+      });
+
       const keys = ["id", "objectType", "name"];
       const files = Object.keys(fileData).map((file) => fileData[file]);
 
@@ -427,7 +466,7 @@ class GraphHelper {
                      this.objectTypeCount.nodes[objectType]++;
                   else this.objectTypeCount.nodes[objectType] = 1;
 
-                  this.graph.addNode(nodeID, node);
+                  newGraph.addNode(nodeID, node);
                   this.#hasFixedNodes = true;
                   continue;
                }
@@ -449,7 +488,7 @@ class GraphHelper {
                else this.objectTypeCount.nodes[objectType] = 1;
 
                // Assign random initial positions for nodes without coordinates
-               this.graph.addNode(nodeID, node);
+               newGraph.addNode(nodeID, node);
             } else if ("elementType" in obj && obj.elementType === "node") {
                if (!(objectType in theme.groups)) {
                   theme.groups[objectType] = {
@@ -474,7 +513,7 @@ class GraphHelper {
 
                node["attributesLabel"] = this.getTitle(attributes);
 
-               this.graph.addNode(nodeID, node);
+               newGraph.addNode(nodeID, node);
             }
          }
       }
@@ -496,7 +535,7 @@ class GraphHelper {
                   this.objectTypeCount.edges["parentChild"]++;
                else this.objectTypeCount.edges["parentChild"] = 1;
 
-               this.graph.addEdgeWithKey(edgeID, parent, nodeID, {
+               newGraph.addEdgeWithKey(edgeID, parent, nodeID, {
                   elementType: "edge",
                   group: "parentChild",
                   type: "line",
@@ -515,7 +554,7 @@ class GraphHelper {
                   this.objectTypeCount.edges[objectType]++;
                else this.objectTypeCount.edges[objectType] = 1;
 
-               this.graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
+               newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
                   elementType: "edge",
                   group: objectType,
                   type: "line",
@@ -540,7 +579,7 @@ class GraphHelper {
 
                if (!this.edgeTypes.includes(objectType)) this.edgeTypes.push(objectType);
 
-               this.graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
+               newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
                   elementType: "edge",
                   group: objectType,
                   type: "line",
@@ -554,35 +593,35 @@ class GraphHelper {
 
       if (this.#hasFixedNodes) {
          // place unfixed nodes near their neighbor
-         this.graph.forEachNode((node, attrs) => {
+         newGraph.forEachNode((node, attrs) => {
             if (!attrs.fixed) {
-               const neighbors = this.graph.neighbors(node);
+               const neighbors = newGraph.neighbors(node);
                if (neighbors.length > 0) {
                   const neighbor = neighbors[0];
-                  const neighborAttrs = this.graph.getNodeAttributes(neighbor);
+                  const neighborAttrs = newGraph.getNodeAttributes(neighbor);
                   const offsetX = Math.random() * 250 - 200;
                   const offsetY = Math.random() * 250 - 200;
-                  this.graph.setNodeAttribute(node, "x", neighborAttrs.x + offsetX);
-                  this.graph.setNodeAttribute(node, "y", neighborAttrs.y + offsetY);
-                  this.graph.setNodeAttribute(node, "fixed", false);
+                  newGraph.setNodeAttribute(node, "x", neighborAttrs.x + offsetX);
+                  newGraph.setNodeAttribute(node, "y", neighborAttrs.y + offsetY);
+                  newGraph.setNodeAttribute(node, "fixed", false);
                } else {
                   // if no neighbors, place randomly within greatest coords
                   const rangeX = this.#boundsCoords.maxX - this.#boundsCoords.minX;
                   const rangeY = this.#boundsCoords.maxY - this.#boundsCoords.minY;
                   const randX = this.#boundsCoords.minX + Math.random() * rangeX;
                   const randY = this.#boundsCoords.minY + Math.random() * rangeY;
-                  this.graph.setNodeAttribute(node, "x", randX);
-                  this.graph.setNodeAttribute(node, "y", randY);
-                  this.graph.setNodeAttribute(node, "fixed", false);
+                  newGraph.setNodeAttribute(node, "x", randX);
+                  newGraph.setNodeAttribute(node, "y", randY);
+                  newGraph.setNodeAttribute(node, "fixed", false);
                }
             }
          });
 
-         if (this.graph.order > 1500) {
+         if (newGraph.order > 1500) {
             // Color all nodes that belong to a certain feeder
             const communitiesSet = new Set();
 
-            this.graph.forEachNode((_nodeID, attrs) => {
+            newGraph.forEachNode((_nodeID, attrs) => {
                if (attrs.community) {
                   communitiesSet.add(attrs.attributes.feeder);
                }
@@ -599,9 +638,9 @@ class GraphHelper {
                {},
             );
 
-            this.graph.forEachNode((nodeID, attrs) => {
+            newGraph.forEachNode((nodeID, attrs) => {
                if ("feeder" in attrs.attributes) {
-                  this.graph.setNodeAttribute(
+                  newGraph.setNodeAttribute(
                      nodeID,
                      "color",
                      this.communityColorPallet[attrs.attributes.feeder],
@@ -611,16 +650,17 @@ class GraphHelper {
          }
       } else {
          // apply circlepack layout for initial node positions
-         if (this.graph.order > 1000) {
-            louvain.assign(this.graph, { nodeCommunityAttribute: "CID", resolution: 0.7 });
-            circlepack.assign(this.graph, { hierarchyAttributes: ["CID"] });
+         if (newGraph.order > 1000) {
+            louvain.assign(newGraph, { nodeCommunityAttribute: "CID", resolution: 0.7 });
+            circlepack.assign(newGraph, { hierarchyAttributes: ["CID"] });
          } else {
-            circlepack.assign(this.graph);
+            circlepack.assign(newGraph);
          }
       }
 
       // create the legend graph object
       this.setLegendData();
+      this.graph = newGraph;
    };
 }
 

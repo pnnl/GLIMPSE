@@ -12,33 +12,20 @@ const Graph = () => {
    const sigma = useSigma();
    const { graphUpdateTrigger } = useGraph();
 
-   // Separate effects for different purposes
-   // Effect 1: Load graph data (runs when location changes)
    useEffect(() => {
-      if (graphHelper.graph.order === 0) return;
+      loadGraph(graphHelper.graph);
+      console.log("graph loaded with order:", graphHelper.graph.order);
+      // Store reference to sigma instance for interaction
+      graphHelper.sigmaInstance = sigma;
+      graphHelper.graph = sigma.getGraph();
 
-      try {
-         loadGraph(graphHelper.graph);
-         console.log("graph loaded with order:", graphHelper.graph.order);
-         // Store reference to sigma instance for interaction
-         graphHelper.sigmaInstance = sigma;
-
-         // Notify the app that a graph was loaded so the header can show search
-         console.log(`Dispatching 'graph-loaded' event with order:`, graphHelper.graph.order);
-         window.dispatchEvent(
-            new CustomEvent("graph-loaded", { detail: { order: graphHelper.graph.order } }),
-         );
-      } catch (error) {
-         console.error("Error loading graph:", error);
-      }
-
-      return () => {
-         // Don't clear the graph here as it will be cleared by clearGraphData()
-         graphHelper.sigmaInstance = null;
-      };
+      // Notify the app that a graph was loaded so the header can show search
+      console.log(`Dispatching 'graph-loaded' event with order:`, graphHelper.graph.order);
+      window.dispatchEvent(
+         new CustomEvent("graph-loaded", { detail: { order: graphHelper.graph.order } }),
+      );
    }, [sigma, loadGraph, graphUpdateTrigger]);
 
-   // Effect 2: Setup WebGL layers (runs after graph is ready, only once)
    useEffect(() => {
       if (!sigma) return;
       const cleanupFunctions = [];

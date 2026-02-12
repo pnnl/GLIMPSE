@@ -36,6 +36,8 @@ const GraphRenderer = () => {
    }, []);
 
    const customNodeReducer = (_n, attrs) => {
+      if (graphHelper.graph.order === 0) return;
+
       if (
          graphHelper.getHighlightedGroups().length === 0 &&
          graphHelper.getHighlightedEdgeTypes().length === 0
