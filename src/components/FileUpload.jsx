@@ -53,7 +53,6 @@ const FileUpload = ({ closeModal }) => {
       const formData = new FormData();
       const UPLOAD_URL = validateFiles(filenames);
 
-      // append files; backend should accept `files` or adjust name accordingly
       Array.from(fileList).forEach((file) => {
          formData.append("files", file);
       });
@@ -65,33 +64,24 @@ const FileUpload = ({ closeModal }) => {
          const res = await axios.post(`http://127.0.0.1:5051/${UPLOAD_URL}`, formData, {
             onUploadProgress: (progressEvent) => {
                if (!progressEvent.total) return;
-               const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-               setProgress(percent);
+               setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
             },
          });
 
-         console.log(res.data);
          if ("error" in res.data) throw new Error(res.data.error);
 
-         // Set graph data which triggers clear and render
-         if (graphHelper.graph.order > 0) {
-            graphHelper.clearGraphData();
-            graphHelper.setGraphData(res.data);
-            newGraphUpdate();
-         } else {
-            graphHelper.setGraphData(res.data);
-            newGraphUpdate();
-         }
+         graphHelper.clearGraphData();
+         graphHelper.setGraphData(res.data);
 
-         // Close modal after data is set
+         newGraphUpdate();
+
+         window.dispatchEvent(new CustomEvent("graph-loaded"));
+
          closeModal();
       } catch (err) {
          console.error(err);
-         setUploading(false);
-         setProgress(0);
       } finally {
          setUploading(false);
-         // reset progress after modal closes
          setTimeout(() => setProgress(0), 500);
       }
    };

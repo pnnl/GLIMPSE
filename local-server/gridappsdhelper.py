@@ -5,10 +5,6 @@ from gridappsd import GridAPPSD
 os.environ["GRIDAPPSD_USER"] = "system"
 os.environ["GRIDAPPSD_PASSWORD"] = "manager"
 
-USERNAME = os.getenv("GRIDAPPSD_USER")
-PASSWORD = os.getenv("GRIDAPPSD_PASSWORD")
-
-_log = logging.getLogger(__name__)
 
 class GridAPPSDHelper:
    TOPICS = {
@@ -25,21 +21,15 @@ class GridAPPSDHelper:
    def _connect(self):
       """Initialize connection to GridAPPS-D"""
       try:
-         self.gapps = GridAPPSD(
-            username=USERNAME,
-            password=PASSWORD,
-         )
+         self.gapps = GridAPPSD()
 
-         _log.info("Successfully connected to GridAPPS-D")
          return True
       except Exception as e:
-         _log.error(f"Failed to connect to GridAPPS-D: {str(e)}")
          self.gapps = None
          return False
    
    def _reconnect(self):
       """Attempt to reconnect to GridAPPS-D"""
-      _log.info("Attempting to reconnect to GridAPPS-D...")
       if self.gapps:
          try:
             self.gapps.disconnect()
@@ -56,7 +46,6 @@ class GridAPPSDHelper:
          # Test connection with a simple query
          return self.gapps.connected
       except Exception as e:
-         _log.warning(f"Connection check failed: {str(e)}")
          return False
    
    def get_models(self):
@@ -68,7 +57,6 @@ class GridAPPSDHelper:
          response = self.gapps.query_model_info()
          return response["data"]
       except Exception as e:
-         _log.error(f"Error retrieving models: {str(e)}")
          raise
    
    def disconnect(self):
@@ -76,12 +64,7 @@ class GridAPPSDHelper:
       if self.gapps:
          try:
             self.gapps.disconnect()
-            _log.info("Disconnected from GridAPPS-D")
          except Exception as e:
-            _log.error(f"Error during disconnect: {str(e)}")
+            print(e)
          finally:
-               self.gapps = None
-   
-   def get_model(self, uuid):
-      model = self.gapps.query_model(model_id=uuid)
-      return model
+            self.gapps = None

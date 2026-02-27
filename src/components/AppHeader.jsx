@@ -45,22 +45,23 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
          window.removeEventListener("graph-loaded", handleGraphLoaded);
          window.removeEventListener("graph-cleared", handleGraphCleared);
       };
-   }, [graphUpdateTrigger]);
+   }, []);
 
    const searchOptions = useMemo(() => {
-      if (graphHelper.graph.order === 0) return [];
+      console.log("ran");
+      if (!graphLoaded) return [];
 
-      const edgeOptions = graphHelper.graph.mapEdges((id, attributes) => ({
-         label: attributes.name ?? id,
+      const edgeOptions = graphHelper.graph.mapEdges((id, attrs) => ({
+         label: attrs.attributes.name ?? id,
          value: JSON.stringify({ id: id, type: "edge" }),
       }));
-      const nodeOptions = graphHelper.graph.mapNodes((id, attributes) => ({
-         label: attributes.name ?? id,
+      const nodeOptions = graphHelper.graph.mapNodes((id, attrs) => ({
+         label: attrs.attributes.name ?? id,
          value: JSON.stringify({ id: id, type: "node" }),
       }));
 
       return [...nodeOptions, ...edgeOptions];
-   }, []);
+   }, [graphLoaded, graphUpdateTrigger]);
 
    const handleMenuClick = ({ key }) => {
       switch (key) {

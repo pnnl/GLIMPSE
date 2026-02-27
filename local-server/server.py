@@ -1,9 +1,9 @@
 import os
 import json
-import logging
 import tempfile
+import traceback
 
-from flask import Flask, request as req, jsonify, send_file
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
@@ -19,10 +19,6 @@ glm_helper = GLMHelper()
 json_helper = JSONHelper()
 gridappsd_helper = GridAPPSDHelper()
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-_log = logging.getLogger(__name__)
-
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
@@ -33,6 +29,11 @@ cors_origins = [
    "http://127.0.0.1:5173",
    "http://127.0.0.1:4173",
    "http://127.0.0.1:3000",
+   "http://localhost:61613",
+   "http://127.0.0.1:61613",
+   "http://127.0.0.1:8889",
+   "http://localhost:8889",
+   "http://localhost:8889/bigdata/namespace/kb/sparql"
 ]
 
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
@@ -46,7 +47,7 @@ CORS(
    allow_headers=allowed_headers,
    supports_credentials=True
 )
-socketio = SocketIO(app, async_mode="gevent")
+socketio = SocketIO(app, async_mode="threading")
 
 # ================================================================================================
 # CIM OBJECT MANAGEMENT ENDPOINTS
@@ -63,8 +64,9 @@ def get_object(uuid):
       return res, 200
 
    except Exception as e:
-      _log.error(f"Error getting object {uuid}: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+      tb = traceback.format_exc()
+      print(tb)
+      return jsonify({'error': str(e), 'traceback': tb}), 500
 
 @app.route('/api/objects/<uuid>', methods=['DELETE'])
 def delete_object(uuid):
@@ -80,8 +82,9 @@ def delete_object(uuid):
          return jsonify({'error': f'Failed to delete object {uuid}'}), 400
 
    except Exception as e:
-      _log.error(f"Error deleting object {uuid}: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+      tb = traceback.format_exc()
+      print(tb)
+      return jsonify({'error': str(e), 'traceback': tb}), 500
 
 @app.route('/api/objects/<uuid>/mermaid', methods=['GET'])
 def get_object_mermaid(uuid):
@@ -89,8 +92,9 @@ def get_object_mermaid(uuid):
       res = cim_helper.get_mermaid(uuid)
       return res, 200
    except Exception as e:
-      _log.error(f"Error getting mermaid for object {uuid}: {str(e)}")
-      return jsonify({'error': str(e)}), 500
+      tb = traceback.format_exc()
+      print(tb)
+      return jsonify({'error': str(e), 'traceback': tb}), 500
 
 # ================================================================================================
 # JSON CONVERSION 
@@ -103,10 +107,10 @@ def upload_json():
       validates them against the schema, and returns the transformed data.
       """
       # Validate presence of 'files' in form-data
-      if "files" not in req.files:
+      if "files" not in request.files:
          return {"error": "No 'files' part in the form data."}, 400
    
-      files = req.files.getlist("files")
+      files = request.files.getlist("files")
       if not files:
          return {"error": "No files uploaded."}, 400
    
@@ -137,11 +141,14 @@ def upload_json():
             validated_data = json_helper.validate_json_data(json_dict)
             return json.dumps(validated_data)
          except ValueError as e:
-            return {"error": str(e)}, 400
+            tb = traceback.format_exc()
+            print(tb)
+            return {"error": str(e), "traceback": tb}, 400
    
       except Exception as e:
-         _log.error(f"Error in upload_json: {str(e)}")
-         return {"error": f"Server error: {str(e)}"}, 500
+         tb = traceback.format_exc()
+         print(tb)
+         return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
       finally:
          # Clean up temp files/dir
          shutil.rmtree(tmpdir, ignore_errors=True)
@@ -157,10 +164,10 @@ def upload_glm_to_json():
    saves them to a temp directory, collects their paths, and converts to JSON.
    """
    # Validate presence of 'files' in form-data
-   if "files" not in req.files:
+   if "files" not in request.files:
       return {"error": "No 'files' part in the form data."}, 400
 
-   files = req.files.getlist("files")
+   files = request.files.getlist("files")
    if not files:
       return {"error": "No files uploaded."}, 400
 
@@ -182,8 +189,11 @@ def upload_glm_to_json():
          return {"error": "No valid files received."}, 400
 
       glm_dict = glm_helper.parse_glm(paths) # expects list of paths
-      return json.dumps(glm_dict) 
-
+      return json.dumps(glm_dict)
+   except Exception as e:
+      tb = traceback.format_exc()
+      print(tb)
+      return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
    finally:
       # Clean up temp files/dir
       shutil.rmtree(tmpdir, ignore_errors=True)
@@ -191,16 +201,17 @@ def upload_glm_to_json():
 @app.route("/api/parse/json-to-glm", methods=["POST"])
 def json_to_glm():
    try: 
-      if req.is_json:
-         req_data = req.get_json()
+      if request.is_json:
+         req_data = request.get_json()
          glm_helper.json_to_glm(req_data) 
          
          return "", 204
       else:
          return {"error": "Request must be JSON"}, 400
    except Exception as e:
-      _log.error(f"Error in json to glm parser: {str(e)}")
-      return {"error": f"Server error: {str(e)}"}, 500
+      tb = traceback.format_exc()
+      print(tb)
+      return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
 
 # ================================================================================================
 # CIM OBJECT UPDATE ENDPOINT 
@@ -208,12 +219,11 @@ def json_to_glm():
 
 @app.route("/api/upload/cim", methods=["POST"])
 def cim_to_glimpse():
-   
-      # Validate presence of 'files' in form-data
-   if "files" not in req.files:
+   # Validate presence of 'files' in form-data
+   if "files" not in request.files:
       return {"error": "No 'files' part in the form data."}, 400
 
-   files = req.files.getlist("files")
+   files = request.files.getlist("files")
    if not files:
       return {"error": "No files uploaded."}, 400
 
@@ -232,21 +242,20 @@ def cim_to_glimpse():
       if not paths:
          return {"error": "No valid files received."}, 400
 
-      # Your existing conversion logic
-      print(f"Converting CIM file from {paths[0]} to GLIMPSE structure...")
-      glimpse_structure_data = cim_helper.cim_to_glimpse_structure(paths[0])
+      glimpse_structure_data = cim_helper.cim_to_gjs(filepaths=paths)
       return glimpse_structure_data
 
    except Exception as e:
-      _log.error(f"Error in cim to glimpse structure parser: {str(e)}")
-      return {"error": f"Server error: {str(e)}"}, 500
+      tb = traceback.format_exc()
+      print(tb)
+      return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
    finally:
-      # Clean up temp files/dir
+      # Cleanup
       shutil.rmtree(tmpdir, ignore_errors=True)
 
 @app.route("/api/export/export-cim", methods=["POST"])
 def export_cim_file():
-  cim_data = req.get_json()
+  cim_data = request.get_json()
 
   export_dir = cim_data["savepath"]
   print(export_dir)
@@ -261,7 +270,7 @@ def export_cim_():
    """
    This endpoint exports the new coordinates of the nodes to the CIM file
    """
-   cim_data = req.get_json()
+   cim_data = request.get_json()
    new_coords_obj = cim_data["data"]
    output_path = cim_data["filepath"]
 
@@ -275,26 +284,32 @@ def export_cim_():
 # ================================================================================================
 # GridAPPS-D INTERACTION ENDPOINTS 
 # ================================================================================================
-@app.route("/api/gridappsd/models/<uuid>", methods=["GET"])
-def get_model(uuid: str):
-   obj = gridappsd_helper.get_model(uuid)
+@app.route("/api/gridappsd/models", methods=["POST"])
+def get_models():
+   req_data = request.get_json() 
 
-   return json.dumps(obj), 200
+   print(f"\nModel IDs Received:\n{req_data}\n")
 
+   try:
+      gjs = cim_helper.cim_to_gjs(model_IDs=req_data) 
+      return gjs, 200
+   except Exception as e:
+      tb = traceback.format_exc()
+      print(tb)
+      return json.dumps({"error": str(e), "traceback": tb}), 500
 
-@app.route("/api/gridappsd/models", methods=["GET"])
+@app.route("/api/gridappsd/model-info", methods=["GET"])
 def get_gridappsd_models():
    try:
-
       if not gridappsd_helper.is_connected():
          return json.dumps({'error': 'Not connected to GridAPPS-D'}), 500
 
       models = gridappsd_helper.get_models()
       return json.dumps(models), 200
-
    except Exception as e:
-      _log.error(f"Error getting GridAPPS-D models: {str(e)}")
-      return json.dumps({'error': str(e)}), 500
+      tb = traceback.format_exc()
+      print(tb)
+      return json.dumps({'error': str(e), 'traceback': tb}), 500
 
 @app.route("/api/gridappsd/status", methods=["GET"])
 def get_gridappsd_status():
@@ -308,10 +323,12 @@ def get_gridappsd_status():
       }), 200
       
    except Exception as e:
-      _log.error(f"Error getting GridAPPS-D connection status: {str(e)}")
+      tb = traceback.format_exc()
+      print(tb)
       return json.dumps({
          'connected': False,
-         'error': str(e)
+         'error': str(e),
+         'traceback': tb
       }), 200  # Return 200 so React app can handle the response
 
 # ================================================================================================
@@ -354,5 +371,4 @@ def hello():
 if __name__ == "__main__":
    # Start the Flask-SocketIO server
    port = int(os.environ.get('FLASK_PORT', 5051))
-   _log.info(f"Starting GLIMPSE CIM-Graph server on port {port}")
    socketio.run(app, host='127.0.0.1', port=port, debug=True, log_output=True)

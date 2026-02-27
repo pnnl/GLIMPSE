@@ -1,9 +1,7 @@
 import { useRef } from "react";
-// import { Routes, Route } from "react-router";
 import "../styles/App.css";
 import { Layout } from "antd";
 import { Content } from "antd/es/layout/layout";
-// import FileUpload from "../components/FileUpload";
 import AboutModal from "../components/AboutModal";
 import GraphLayout from "../content/GraphLayout";
 import AppHeader from "../components/AppHeader";

@@ -141,7 +141,7 @@ class GraphHelper {
    clearGraphData = () => {
       this.resetObjectTypeCounts();
 
-      // Clear highlighted arrays and state BEFORE updating node attributes
+      // Clear highlighted arrays and state
       this.#highlightedEdgeTypes.length = 0;
       this.#highlightedGroups.length = 0;
       this.highlightedNodeIDs.length = 0;
@@ -149,14 +149,15 @@ class GraphHelper {
       this.highlightedObjects.length = 0;
       this.focusIndex = -1;
 
-      // Clear all graph data comprehensively
-      this.graph.clear();
+      this.graph = new MultiUndirectedGraph({
+         allowSelfLoops: true,
+         type: "undirected",
+      });
       this.legendGraph.clear();
 
       this.sigmaInstance = null;
       this.#hasFixedNodes = false;
       this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-      // Clear communities data
       this.communitiesArray = [];
       this.communityColorPallet = {};
       this.layout = null;
@@ -446,8 +447,8 @@ class GraphHelper {
                      group: objectType,
                      fixed: true,
                      community: attributes.feeder ?? undefined,
-                     x: attributes.x.length > 0 ? parseFloat(attributes.x) : undefined,
-                     y: attributes.y.length > 0 ? parseFloat(attributes.y) : undefined,
+                     x: parseFloat(attributes.x),
+                     y: parseFloat(attributes.y),
                      ...theme.groups[objectType],
                   };
 
@@ -458,7 +459,7 @@ class GraphHelper {
                   if (node.y !== undefined && node.y > this.#boundsCoords.maxY)
                      this.#boundsCoords.maxY = node.y;
                   if (node.y !== undefined && node.y < this.#boundsCoords.minY)
-                     this.#boundsCoords.maxY = node.y;
+                     this.#boundsCoords.minY = node.y;
 
                   node.attributesLabel = this.getTitle(attributes);
 
@@ -548,7 +549,7 @@ class GraphHelper {
             } else if (this.edgeTypes.includes(objectType)) {
                const edgeFrom = attributes.from;
                const edgeTo = attributes.to;
-               const edgeID = "name" in attributes ? attributes.name : attributes.id;
+               const edgeID = attributes.id ?? attributes.name;
 
                if (objectType in this.objectTypeCount.edges)
                   this.objectTypeCount.edges[objectType]++;
@@ -592,28 +593,45 @@ class GraphHelper {
       }
 
       if (this.#hasFixedNodes) {
-         // place unfixed nodes near their neighbor
+         // Ensure bounds have a minimum spread so nodes don't stack
+         const MIN_SPREAD = 500;
+         const rangeX = Math.max(this.#boundsCoords.maxX - this.#boundsCoords.minX, MIN_SPREAD);
+         const rangeY = Math.max(this.#boundsCoords.maxY - this.#boundsCoords.minY, MIN_SPREAD);
+         const centerX = (this.#boundsCoords.maxX + this.#boundsCoords.minX) / 2;
+         const centerY = (this.#boundsCoords.maxY + this.#boundsCoords.minY) / 2;
+
          newGraph.forEachNode((node, attrs) => {
             if (!attrs.fixed) {
+               console.log(`Placing unfixed node: ${node}...`);
                const neighbors = newGraph.neighbors(node);
-               if (neighbors.length > 0) {
-                  const neighbor = neighbors[0];
-                  const neighborAttrs = newGraph.getNodeAttributes(neighbor);
-                  const offsetX = Math.random() * 250 - 200;
-                  const offsetY = Math.random() * 250 - 200;
+
+               // Try to find a neighbor that already has valid coordinates
+               const anchorNeighbor = neighbors.find((n) => {
+                  const nAttrs = newGraph.getNodeAttributes(n);
+                  return (
+                     nAttrs.x !== undefined &&
+                     nAttrs.y !== undefined &&
+                     !isNaN(nAttrs.x) &&
+                     !isNaN(nAttrs.y)
+                  );
+               });
+
+               if (anchorNeighbor) {
+                  const neighborAttrs = newGraph.getNodeAttributes(anchorNeighbor);
+                  // Symmetric offset: range [-125, 125]
+                  const offsetX = Math.random() * 250 - 125;
+                  const offsetY = Math.random() * 250 - 125;
                   newGraph.setNodeAttribute(node, "x", neighborAttrs.x + offsetX);
                   newGraph.setNodeAttribute(node, "y", neighborAttrs.y + offsetY);
-                  newGraph.setNodeAttribute(node, "fixed", false);
                } else {
-                  // if no neighbors, place randomly within greatest coords
-                  const rangeX = this.#boundsCoords.maxX - this.#boundsCoords.minX;
-                  const rangeY = this.#boundsCoords.maxY - this.#boundsCoords.minY;
-                  const randX = this.#boundsCoords.minX + Math.random() * rangeX;
-                  const randY = this.#boundsCoords.minY + Math.random() * rangeY;
+                  // No valid neighbor → place randomly within bounds
+                  const randX = centerX + (Math.random() - 0.5) * rangeX;
+                  const randY = centerY + (Math.random() - 0.5) * rangeY;
                   newGraph.setNodeAttribute(node, "x", randX);
                   newGraph.setNodeAttribute(node, "y", randY);
-                  newGraph.setNodeAttribute(node, "fixed", false);
                }
+
+               newGraph.setNodeAttribute(node, "fixed", false);
             }
          });
 

@@ -4,17 +4,18 @@ import { Modal, Tabs, Button, Divider } from "antd";
 import axios from "axios";
 import FileUpload from "./FileUpload";
 import GridAPPSDModelForm from "./GridAPPSDModelForm";
+import graphHelper from "../graph-helper/GraphHelper";
 import { useGraph } from "../contexts/GraphContext";
 
 const LoadModelModal = ({ onMount }) => {
    const [open, setOpen] = useState(true);
    const [loading, setLoading] = useState(false);
-   const [selectedGridappsdModel, setSelectedGridappsdModel] = useState(null);
-   const { setGraph } = useGraph();
+   const [selectedGridappsdModels, setSelectedGridappsdModels] = useState(null);
+   const { newGraphUpdate } = useGraph();
 
    const handleModelSelect = (obj) => {
       console.log(obj);
-      setSelectedGridappsdModel(obj);
+      setSelectedGridappsdModels(obj);
    };
 
    const ITEMS = [
@@ -40,11 +41,37 @@ const LoadModelModal = ({ onMount }) => {
 
    const handleLoad = async () => {
       setLoading(true);
-      const { modelId } = selectedGridappsdModel;
+
       try {
-         const resPromise = axios.get(`http://127.0.0.1:5051/api/gridappsd/models/${modelId}`);
+         const resPromise = axios.post(
+            `http://127.0.0.1:5051/api/gridappsd/models`,
+            selectedGridappsdModels,
+            {
+               headers: { "Content-Type": "application/json" },
+            },
+         );
          const response = await resPromise;
+
          console.log(response.data);
+         if ("error" in response.data) throw new Error(response.data.error);
+
+         // Set graph data which triggers clear and render
+         if (graphHelper.graph.order > 0) {
+            graphHelper.clearGraphData();
+
+            window.dispatchEvent(new CustomEvent("graph-cleared"));
+
+            graphHelper.setGraphData(response.data);
+            newGraphUpdate();
+         } else {
+            graphHelper.setGraphData(response.data);
+            newGraphUpdate();
+         }
+
+         window.dispatchEvent(new CustomEvent("graph-loaded"));
+
+         // Close modal after data is set
+         setOpen(false);
       } catch (e) {
          console.log(e);
       } finally {
@@ -61,7 +88,7 @@ const LoadModelModal = ({ onMount }) => {
    return createPortal(
       <Modal
          centered
-         footer={selectedGridappsdModel ? modalFooter : []}
+         footer={selectedGridappsdModels ? modalFooter : []}
          width={750}
          title="Load a Model"
          onCancel={close}

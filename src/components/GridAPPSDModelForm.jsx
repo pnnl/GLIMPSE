@@ -19,7 +19,10 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
          console.log(res.status);
          console.log(res.data);
 
-         if ("connected" in res.data) {
+         if ("connected" in res.data && !res.data.connected) {
+            alert(res.data.message);
+            setLoading(false);
+         } else if ("connected" in res.data && res.data.connected) {
             setConnected(res.data.connected);
          }
       } catch (e) {
@@ -31,7 +34,7 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
    useEffect(() => {
       const getModelInfo = async () => {
          try {
-            const modelInfoRequest = axios.get("http://127.0.0.1:5051/api/gridappsd/models");
+            const modelInfoRequest = axios.get("http://127.0.0.1:5051/api/gridappsd/model-info");
             const res = await modelInfoRequest;
 
             if (res.data.error || res.status === 500) {
@@ -79,12 +82,13 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
                </Form.Item>
                <Form.Item label={"Model"}>
                   <Select
-                     onChange={(value) => onModelSelect(JSON.parse(value))}
+                     mode="multiple"
+                     onChange={(modelIds) => onModelSelect(modelIds)}
                      disabled={regionName === null}
                      options={modelInfo
                         .filter((model) => model.regionName === regionName)
                         .map((model) => ({
-                           value: JSON.stringify(model),
+                           value: model.modelId,
                            label: model.modelName,
                         }))}
                   />
