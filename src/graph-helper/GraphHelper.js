@@ -467,6 +467,8 @@ class GraphHelper {
                      this.objectTypeCount.nodes[objectType]++;
                   else this.objectTypeCount.nodes[objectType] = 1;
 
+                  console.log(`Adding Node: ${nodeID}`);
+                  console.log(node);
                   newGraph.addNode(nodeID, node);
                   this.#hasFixedNodes = true;
                   continue;
@@ -489,6 +491,8 @@ class GraphHelper {
                else this.objectTypeCount.nodes[objectType] = 1;
 
                // Assign random initial positions for nodes without coordinates
+               console.log(`Adding Node: ${nodeID}`);
+               console.log(node);
                newGraph.addNode(nodeID, node);
             } else if ("elementType" in obj && obj.elementType === "node") {
                if (!(objectType in theme.groups)) {
@@ -514,6 +518,8 @@ class GraphHelper {
 
                node["attributesLabel"] = this.getTitle(attributes);
 
+               console.log(`Adding Node: ${nodeID}`);
+               console.log(node);
                newGraph.addNode(nodeID, node);
             }
          }
@@ -602,7 +608,6 @@ class GraphHelper {
 
          newGraph.forEachNode((node, attrs) => {
             if (!attrs.fixed) {
-               console.log(`Placing unfixed node: ${node}...`);
                const neighbors = newGraph.neighbors(node);
 
                // Try to find a neighbor that already has valid coordinates
@@ -618,9 +623,11 @@ class GraphHelper {
 
                if (anchorNeighbor) {
                   const neighborAttrs = newGraph.getNodeAttributes(anchorNeighbor);
-                  // Symmetric offset: range [-125, 125]
-                  const offsetX = Math.random() * 250 - 125;
-                  const offsetY = Math.random() * 250 - 125;
+                  // Offset proportional to coordinate space (5% of the range)
+                  const maxOffsetX = rangeX * 0.05;
+                  const maxOffsetY = rangeY * 0.05;
+                  const offsetX = (Math.random() - 0.5) * 2 * maxOffsetX;
+                  const offsetY = (Math.random() - 0.5) * 2 * maxOffsetY;
                   newGraph.setNodeAttribute(node, "x", neighborAttrs.x + offsetX);
                   newGraph.setNodeAttribute(node, "y", neighborAttrs.y + offsetY);
                } else {
@@ -647,6 +654,7 @@ class GraphHelper {
 
             if (!communitiesSet.size) {
                this.setLegendData();
+               this.graph = newGraph;
                return;
             }
 

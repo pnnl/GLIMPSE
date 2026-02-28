@@ -2,7 +2,6 @@ import os
 import json
 import traceback
 
-from functools import reduce
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,7 +13,7 @@ from cimbuilder.object_builder import new_synchronous_generator
 from cimbuilder.object_builder import new_two_terminal_object
 
 # CIM-graph imports
-from cimgraph.databases.gridappsd import GridappsdConnection
+# from cimgraph.databases.gridappsd import GridappsdConnection
 from cimgraph.databases.blazegraph import BlazegraphConnection
 from cimgraph.models import FeederModel
 import cimgraph.utils as cim_utils
@@ -127,29 +126,25 @@ class CIMHelper:
       elif filepath is not None:
          # For regular CIM file reading without multi-feeder support
          cim_file = XMLFile(filepath)
-         self._FEEDERS[filepath] = FeederModel(container=cim.Feeder(), connection=cim_file)
-         feeder_id = filepath
+         filename = os.path.basename(filepath)
+         self._FEEDERS[filename] = FeederModel(container=cim.Feeder(), connection=cim_file)
+         feeder_id = filename 
 
       phantom_node_count: int = 0
       objects: list = []
 
       for node in self._FEEDERS[feeder_id].graph[cim.ConnectivityNode].values():
-         
-         print("\n" + "=" * 60)
-         print(f"Node {node.name} coordinates:")
-         coordinates = self.find_shared_coordinates(node)
-         # print(coordinates)
-         print("=" * 60)
-
          new_node = {
             "objectType": "c_node",
             "elementType": "node",
             "attributes": {
                "id": node.mRID,
                "name": node.name if node.name else "",
-               "feeder_id": feeder_id
+               "feeder_id": feeder_id,
+               # "feeder": node.ConnectivityNodeContainer.name if node.ConnectivityNodeContainer else feeder_id,
             }
          }
+         coordinates = self.find_shared_coordinates(node)
 
          # if "dso_9500" in node.ConnectivityNodeContainer.name:
          #    c_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
@@ -159,113 +154,113 @@ class CIMHelper:
             new_node["attributes"]["y"] = coordinates["y"]
 
          # Create load, generator, and capacitor nodes connected to this connectivity node
-         for terminal in node.Terminals:
-            equipment = terminal.ConductingEquipment
-            eq_class_type = equipment.__class__.__name__
+         # for terminal in node.Terminals:
+         #    equipment = terminal.ConductingEquipment
+         #    eq_class_type = equipment.__class__.__name__
 
-            if eq_class_type in LOAD_TYPES:
-               new_load = {
-                  "objectType": "load",
-                  "elementType": "node",
-                  "attributes": {
-                     "id": terminal.mRID,
-                     "name": terminal.name,
-                     "sequenceNumber": terminal.sequenceNumber,
-                     "eq_class_type": eq_class_type,
-                     "feeder_id": feeder_id
-                  }
-               }
-               self._add_attributes(terminal, new_load)
+         #    if eq_class_type in LOAD_TYPES:
+         #       new_load = {
+         #          "objectType": "load",
+         #          "elementType": "node",
+         #          "attributes": {
+         #             "id": terminal.mRID,
+         #             "name": terminal.name,
+         #             "sequenceNumber": terminal.sequenceNumber,
+         #             "eq_class_type": eq_class_type,
+         #             "feeder_id": feeder_id
+         #          }
+         #       }
+         #       self._add_attributes(terminal, new_load)
 
-               objects.append(new_load)
-               objects.append({
-                  "objectType": "line",
-                  "elementType": "edge",
-                  "attributes": {
-                     "id": f"{node.mRID}_{terminal.mRID}",
-                     "from": node.mRID,
-                     "to": terminal.mRID, 
-                     "feeder_id": feeder_id
-                  }
-               })
+         #       objects.append(new_load)
+         #       objects.append({
+         #          "objectType": "line",
+         #          "elementType": "edge",
+         #          "attributes": {
+         #             "id": f"{node.mRID}_{terminal.mRID}",
+         #             "from": node.mRID,
+         #             "to": terminal.mRID, 
+         #             "feeder_id": feeder_id
+         #          }
+         #       })
 
-            if eq_class_type in GEN_TYPES:
-               new_gen = {
-                  "objectType": "diesel_dg",
-                  "elementType": "node",
-                  "attributes": {
-                     "id": terminal.mRID,
-                     "name": terminal.name,
-                     "sequenceNumber": terminal.sequenceNumber,
-                     "eq_class_type": eq_class_type,
-                     "feeder_id": feeder_id
-                  }
-               }
-               self._add_attributes(terminal, new_gen)
+         #    if eq_class_type in GEN_TYPES:
+         #       new_gen = {
+         #          "objectType": "diesel_dg",
+         #          "elementType": "node",
+         #          "attributes": {
+         #             "id": terminal.mRID,
+         #             "name": terminal.name,
+         #             "sequenceNumber": terminal.sequenceNumber,
+         #             "eq_class_type": eq_class_type,
+         #             "feeder_id": feeder_id
+         #          }
+         #       }
+         #       self._add_attributes(terminal, new_gen)
 
-               objects.append(new_gen)
-               objects.append({
-                  "objectType": "line",
-                  "elementType": "edge",
-                  "attributes": {
-                     "id": f"{node.mRID}_{terminal.mRID}",
-                     "from": node.mRID,
-                     "to": terminal.mRID,
-                     "feeder_id": feeder_id
-                  }
-               })
+         #       objects.append(new_gen)
+         #       objects.append({
+         #          "objectType": "line",
+         #          "elementType": "edge",
+         #          "attributes": {
+         #             "id": f"{node.mRID}_{terminal.mRID}",
+         #             "from": node.mRID,
+         #             "to": terminal.mRID,
+         #             "feeder_id": feeder_id
+         #          }
+         #       })
 
-            if eq_class_type in CAP_TYPES:
-               new_cap = {
-                  "objectType": "capacitor",
-                  "elementType": "node",
-                  "attributes": {
-                     "id": terminal.mRID,
-                     "name": terminal.name,
-                     "sequenceNumber": terminal.sequenceNumber,
-                     "eq_class_type": eq_class_type,
-                     "feeder_id": feeder_id
-                  }
-               }
-               self._add_attributes(terminal, new_cap)
+         #    if eq_class_type in CAP_TYPES:
+         #       new_cap = {
+         #          "objectType": "capacitor",
+         #          "elementType": "node",
+         #          "attributes": {
+         #             "id": terminal.mRID,
+         #             "name": terminal.name,
+         #             "sequenceNumber": terminal.sequenceNumber,
+         #             "eq_class_type": eq_class_type,
+         #             "feeder_id": feeder_id
+         #          }
+         #       }
+         #       self._add_attributes(terminal, new_cap)
 
-               objects.append(new_cap)
-               objects.append({
-                  "objectType": "line",
-                  "elementType": "edge",
-                  "attributes": {
-                     "id": f"{node.mRID}_{terminal.mRID}",
-                     "from": node.mRID,
-                     "to": terminal.mRID,
-                     "feeder_id": feeder_id
-                  }
-               })
+         #       objects.append(new_cap)
+         #       objects.append({
+         #          "objectType": "line",
+         #          "elementType": "edge",
+         #          "attributes": {
+         #             "id": f"{node.mRID}_{terminal.mRID}",
+         #             "from": node.mRID,
+         #             "to": terminal.mRID,
+         #             "feeder_id": feeder_id
+         #          }
+         #       })
 
-            if eq_class_type in INV_TYPES:
-               new_inv = {
-                  "objectType": "inverter_dyn",
-                  "elementType": "node",
-                  "attributes": {
-                     "id": terminal.mRID,
-                     "name": terminal.name,
-                     "sequenceNumber": terminal.sequenceNumber,
-                     "eq_class_type": eq_class_type,
-                     "feeder_id": feeder_id
-                  }
-               }
-               self._add_attributes(terminal, new_inv)
+         #    if eq_class_type in INV_TYPES:
+         #       new_inv = {
+         #          "objectType": "inverter_dyn",
+         #          "elementType": "node",
+         #          "attributes": {
+         #             "id": terminal.mRID,
+         #             "name": terminal.name,
+         #             "sequenceNumber": terminal.sequenceNumber,
+         #             "eq_class_type": eq_class_type,
+         #             "feeder_id": feeder_id
+         #          }
+         #       }
+         #       self._add_attributes(terminal, new_inv)
 
-               objects.append(new_inv)
-               objects.append({
-                  "objectType": "line",
-                  "elementType": "edge",
-                  "attributes": {
-                     "id": f"{node.mRID}_{terminal.mRID}",
-                     "from": node.mRID,
-                     "to": terminal.mRID,
-                     "feeder_id": feeder_id
-                  }
-               })
+         #       objects.append(new_inv)
+         #       objects.append({
+         #          "objectType": "line",
+         #          "elementType": "edge",
+         #          "attributes": {
+         #             "id": f"{node.mRID}_{terminal.mRID}",
+         #             "from": node.mRID,
+         #             "to": terminal.mRID,
+         #             "feeder_id": feeder_id
+         #          }
+         #       })
 
          self._add_attributes(node, new_node)
          objects.append(new_node)
@@ -288,14 +283,13 @@ class CIMHelper:
          objects.append(new_l)
 
       for line in self._FEEDERS[feeder_id].graph[cim.TransformerTank].values():
-         print(line.TransformerTankEnds)
          new_edge = {
             "objectType": "transformer",
             "elementType": "edge",
             "attributes": {
                "id": line.mRID,
-               "from": line.TransformerTankEnds[0].TransformerTankEnd.Terminal.ConnectivityNode.mRID,
-               "to": line.TransformerTankEnds[1].TransformerTankEnd.Terminal.ConnectivityNode.mRID,
+               "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
+               "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
                "class_type": line.__class__.__name__,
                "feeder_id": feeder_id
             }
@@ -404,30 +398,30 @@ class CIMHelper:
                self._add_attributes(line, new_edge)
                objects.append(new_edge)
       
-      for battery in self._FEEDERS[feeder_id].graph[cim.BatteryUnit].values():
-         new_battery = {
-            "objectType": "battery",
-            "elementType": "node",
-            "attributes": {
-               "id": battery.mRID,
-               "name": battery.name,
-               "class_type": battery.__class__.__name__,
-               "feeder_id": feeder_id
-            }
-         }
-         self._add_attributes(battery, new_battery)
-         objects.append(new_battery)
+      # for battery in self._FEEDERS[feeder_id].graph[cim.BatteryUnit].values():
+      #    new_battery = {
+      #       "objectType": "battery",
+      #       "elementType": "node",
+      #       "attributes": {
+      #          "id": battery.mRID,
+      #          "name": battery.name,
+      #          "class_type": battery.__class__.__name__,
+      #          "feeder_id": feeder_id
+      #       }
+      #    }
+      #    self._add_attributes(battery, new_battery)
+      #    objects.append(new_battery)
          
-         new_line = {
-            "objectType": "line",
-            "elementType": "edge",
-            "attributes": {
-               "id": f"{battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID}-{battery.mRID}",
-               "from": battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID,
-               "to": battery.mRID,
-            }
-         }
-         objects.append(new_line)
+      #    new_line = {
+      #       "objectType": "line",
+      #       "elementType": "edge",
+      #       "attributes": {
+      #          "id": f"{battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID}-{battery.mRID}",
+      #          "from": battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID,
+      #          "to": battery.mRID,
+      #       }
+      #    }
+      #    objects.append(new_line)
 
       return objects
    
@@ -515,7 +509,6 @@ class CIMHelper:
          return None
 
       if len(coords) <= 2:
-         print(coords)
          return max(coords)
 
       counts = {}
