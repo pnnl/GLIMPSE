@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useRegisterEvents, useSigma } from "@react-sigma/core";
-import GraphContextMenu from "./GraphContextMenu";
-import EditAttributesModal from "./EditAttributesModal";
-import graphHelper from "../graph-helper/GraphHelper";
+import GraphContextMenu from "../menus/GraphContextMenu";
+import EditAttributesModal from "../modals/EditAttributesModal";
+import graphHelper from "../../graph-helper/GraphHelper";
 
 const GraphEvents = () => {
    const [context, setContext] = useState({ open: false, x: 0, y: 0 });

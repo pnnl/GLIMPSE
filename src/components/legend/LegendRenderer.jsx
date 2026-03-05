@@ -1,15 +1,15 @@
 import { useEffect, useMemo } from "react";
 import { useLoadGraph } from "@react-sigma/core";
 import { MultiGraph } from "graphology";
-import graphHelper from "../graph-helper/GraphHelper";
+import graphHelper from "../../graph-helper/GraphHelper";
 import LegendGraphEvents from "./LegendGraphEvents";
 import { SigmaContainer } from "@react-sigma/core";
 import { EdgeRectangleProgram } from "sigma/rendering";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
-import { drawLabel, drawShadow } from "../utils/canvas-utils";
-import { useGraph } from "../contexts/GraphContext";
+import { drawLabel, drawShadow } from "../../utils/canvas-utils";
+import { useGraph } from "../../contexts/GraphContext";
 
 const LegendGraph = () => {
    const loadLegendGraph = useLoadGraph();

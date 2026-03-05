@@ -33,6 +33,7 @@
       "graphology-communities-louvain": "^2.0.2",
       "graphology-layout-force": "^0.2.4",
       "graphology-layout-forceatlas2": "^0.10.1",
+      "graphology-metrics": "^2.4.0",
       "iwanthue": "^2.0.0",
       "react": "^19.1.1",
       "react-dom": "^19.1.1",

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button, Flex, Dropdown, Select } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
+import MetricsModal from "../components/modals/MetricsModal";
 import "../styles/AppHeader.css";
 import graphHelper from "../graph-helper/GraphHelper";
 
@@ -9,12 +10,13 @@ import { useGraph } from "../contexts/GraphContext";
 const AppHeader = ({ onAboutClick, openModelLoader }) => {
    const [graphLoaded, setGraphLoaded] = useState(false);
    const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
+   const [showMetrics, setShowMetrics] = useState(false);
    const { graphUpdateTrigger } = useGraph;
 
    const menuItems = [
       { key: "export-model", label: "Export Model", disabled: true },
       { type: "divider" },
-      { key: "graph-metrics", label: "Metrics", disabled: true },
+      { key: "graph-metrics", label: "Metrics", disabled: false },
       { type: "divider" },
       { key: "object-studio", label: "Object Studio", disabled: true },
       { type: "divider" },
@@ -48,7 +50,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
    }, []);
 
    const searchOptions = useMemo(() => {
-      console.log("ran");
       if (!graphLoaded) return [];
 
       const edgeOptions = graphHelper.graph.mapEdges((id, attrs) => ({
@@ -73,55 +74,60 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             break;
          case "export-model":
          case "graph-metrics":
+            setShowMetrics(true);
+            break;
          case "object-studio":
          case "export-theme":
       }
    };
 
    return (
-      <div className="app-header">
-         <Dropdown
-            trigger={["click"]}
-            menu={{
-               selectedKeys: [selectedTheme],
-               items: menuItems,
-               onClick: handleMenuClick,
-            }}
-         >
-            <Button size="large" type="text" icon={<GiHamburgerMenu size="1.5rem" />} />
-         </Dropdown>
-         <img className="nav-logo" src="./GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
-         {graphLoaded && (
-            <Select
-               style={{ width: "30rem", marginLeft: "auto" }}
-               size="middle"
-               showSearch
-               options={searchOptions}
-               placeholder="Search by ID"
-               onSelect={(val) => graphHelper.focus(JSON.parse(val))}
-            />
-         )}
-         <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
-            <Button
-               color="#333333"
-               style={{ textTransform: "uppercase" }}
-               onClick={() => openModelLoader.current(true)}
-               size="middle"
-               type="primary"
+      <>
+         <div className="app-header">
+            <Dropdown
+               trigger={["click"]}
+               menu={{
+                  selectedKeys: [selectedTheme],
+                  items: menuItems,
+                  onClick: handleMenuClick,
+               }}
             >
-               Load New
-            </Button>
-            <Button
-               color="#333333"
-               type="primary"
-               size="middle"
-               style={{ textTransform: "uppercase" }}
-               onClick={() => onAboutClick.current(true)}
-            >
-               About
-            </Button>
-         </Flex>
-      </div>
+               <Button size="large" type="text" icon={<GiHamburgerMenu size="1.5rem" />} />
+            </Dropdown>
+            <img className="nav-logo" src="./GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
+            {graphLoaded && (
+               <Select
+                  style={{ width: "30rem", marginLeft: "auto" }}
+                  size="middle"
+                  showSearch
+                  options={searchOptions}
+                  placeholder="Search by ID"
+                  onSelect={(val) => graphHelper.focus(JSON.parse(val))}
+               />
+            )}
+            <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
+               <Button
+                  color="#333333"
+                  style={{ textTransform: "uppercase" }}
+                  onClick={() => openModelLoader.current(true)}
+                  size="middle"
+                  type="primary"
+               >
+                  Load New
+               </Button>
+               <Button
+                  color="#333333"
+                  type="primary"
+                  size="middle"
+                  style={{ textTransform: "uppercase" }}
+                  onClick={() => onAboutClick.current(true)}
+               >
+                  About
+               </Button>
+            </Flex>
+         </div>
+         <MetricsModal open={showMetrics} close={() => setShowMetrics(false)} />
+      </>
    );
 };
 

@@ -2,10 +2,10 @@ import { createPortal } from "react-dom";
 import { useState, useEffect } from "react";
 import { Modal, Tabs, Button, Divider } from "antd";
 import axios from "axios";
-import FileUpload from "./FileUpload";
-import GridAPPSDModelForm from "./GridAPPSDModelForm";
-import graphHelper from "../graph-helper/GraphHelper";
-import { useGraph } from "../contexts/GraphContext";
+import FileUpload from "../FileUpload";
+import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
+import graphHelper from "../../graph-helper/GraphHelper";
+import { useGraph } from "../../contexts/GraphContext";
 
 const LoadModelModal = ({ onMount }) => {
    const [open, setOpen] = useState(true);

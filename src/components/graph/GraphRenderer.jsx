@@ -13,11 +13,11 @@ import { EdgeRectangleProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
-import { drawLabel, drawHover } from "../utils/canvas-utils";
-import graphHelper from "../graph-helper/GraphHelper";
+import { drawLabel, drawHover } from "../../utils/canvas-utils";
+import graphHelper from "../../graph-helper/GraphHelper";
 import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
-import { useGraph } from "../contexts/GraphContext";
+import { useGraph } from "../../contexts/GraphContext";
 import Graph from "./Graph";
 
 const GraphRenderer = () => {

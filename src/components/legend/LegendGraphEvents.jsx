@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useRegisterEvents } from "@react-sigma/core";
-import graphHelper from "../graph-helper/GraphHelper";
-import LegendContextMenu from "./LegendContextMenu";
+import graphHelper from "../../graph-helper/GraphHelper";
+import LegendContextMenu from "../menus/LegendContextMenu";
 
 const LegendGraphEvents = () => {
    const [context, setContext] = React.useState({ open: false, x: 0, y: 0 });

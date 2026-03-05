@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import { Menu } from "antd";
 import { downloadAsImage } from "@sigma/export-image";
-import graphHelper from "../graph-helper/GraphHelper";
+import graphHelper from "../../graph-helper/GraphHelper";
 
 const NODE_ITEMS = [
    { key: "edit-attributes", label: "Edit Attributes" },

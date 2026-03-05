@@ -1,7 +1,7 @@
 import ReactDOM from "react-dom";
 import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, Space, Divider } from "antd";
-import graphHelper from "../graph-helper/GraphHelper";
+import { Modal, Form, Input, Button, Divider } from "antd";
+import graphHelper from "../../graph-helper/GraphHelper";
 
 const EditAttributesModal = ({ close, context }) => {
    const [form] = Form.useForm();

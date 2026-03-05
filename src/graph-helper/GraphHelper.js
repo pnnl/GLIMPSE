@@ -467,8 +467,6 @@ class GraphHelper {
                      this.objectTypeCount.nodes[objectType]++;
                   else this.objectTypeCount.nodes[objectType] = 1;
 
-                  console.log(`Adding Node: ${nodeID}`);
-                  console.log(node);
                   newGraph.addNode(nodeID, node);
                   this.#hasFixedNodes = true;
                   continue;
@@ -490,9 +488,6 @@ class GraphHelper {
                   this.objectTypeCount.nodes[objectType]++;
                else this.objectTypeCount.nodes[objectType] = 1;
 
-               // Assign random initial positions for nodes without coordinates
-               console.log(`Adding Node: ${nodeID}`);
-               console.log(node);
                newGraph.addNode(nodeID, node);
             } else if ("elementType" in obj && obj.elementType === "node") {
                if (!(objectType in theme.groups)) {
