@@ -1,7 +1,9 @@
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { Menu } from "antd";
 import { downloadAsImage } from "@sigma/export-image";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../../graph-helper/GraphHelper";
+import NewObjectModal from "../modals/NewObjectModal";
 
 const NODE_ITEMS = [
    { key: "edit-attributes", label: "Edit Attributes" },
@@ -16,7 +18,7 @@ const EDGE_ITEMS = [
    { key: "delete-edge", label: "Delete Edge" },
 ];
 const GRAPH_ITEMS = [
-   { key: "new-node", label: "Add New Node", disabled: true },
+   { key: "new-node", label: "Add New Node", disabled: false },
    { key: "new-edge", label: "Add New Edge", disabled: true },
    { type: "divider" },
    { key: "save-image", label: "Save image as..." },
@@ -28,7 +30,7 @@ const ITEMS = {
    graphItems: GRAPH_ITEMS,
 };
 
-const GraphContextMenu = ({ context, close, openAttributesModal }) => {
+const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModal }) => {
    if (!context.open) return null;
 
    const deleteNode = (nodeID) => {
@@ -70,6 +72,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal }) => {
          case "animate-edge":
             break;
          case "new-node":
+            openNewNodeModal();
             break;
          case "new-edge":
             break;
@@ -96,7 +99,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal }) => {
          onClick={handleMenuClick}
          items={ITEMS[context.contextItems]}
       />,
-      document.getElementById("portal")
+      document.getElementById("portal"),
    );
 };
 

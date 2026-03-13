@@ -2,23 +2,31 @@ import ReactDOM from "react-dom";
 import { Menu } from "antd";
 
 const ITEMS = [
-   { key: "hide-all", label: "Hide All", disabled: true },
+   { key: "hide-all", label: "Hide All", disabled: false },
    { key: "edit-theme", label: "Edit Theme", disabled: true },
 ];
 
-const LegendContextMenu = ({ context, close }) => {
+const LegendContextMenu = ({
+   context,
+   close,
+   onHideAll: hideAll,
+   onEditTheme: showThemeEditor,
+}) => {
    if (!context.open) return null;
 
+   // type is edge or node
+   // group is the object type for that type
    const handleMenuClick = ({ key }) => {
       console.log(`Clicked on menu item: ${key}`);
       switch (key) {
          case "hide-all":
-            console.log(`type: ${context.type}, group: ${context.group}`);
+            hideAll(context.type, context.group);
             break;
          case "edit-theme":
-            console.log(`type: ${context.type}, group: ${context.group}`);
+            showThemeEditor(context.type, context.group);
             break;
       }
+
       close();
    };
 
@@ -36,7 +44,7 @@ const LegendContextMenu = ({ context, close }) => {
          onClick={handleMenuClick}
          items={ITEMS}
       />,
-      document.getElementById("portal")
+      document.getElementById("portal"),
    );
 };
 

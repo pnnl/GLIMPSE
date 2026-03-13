@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useRegisterEvents } from "@react-sigma/core";
-import graphHelper from "../graphHelper/GraphHelper";
-import LegendContextMenu from "./LegendContextMenu";
+import graphHelper from "../../graph-helper/GraphHelper";
+import LegendContextMenu from "../menus/LegendContextMenu";
 
 const LegendGraphEvents = () => {
    const [context, setContext] = React.useState({ open: false, x: 0, y: 0 });
@@ -57,7 +57,23 @@ const LegendGraphEvents = () => {
       setContext({ open: false, x: 0, y: 0 });
    };
 
-   return <LegendContextMenu context={context} close={handleClose} />;
+   const handleHideAll = (type, group) => {
+      graphHelper.hideGroup(type, group);
+      graphHelper.sigmaInstance.refresh();
+   };
+
+   const handleEditTheme = (type, group) => {
+      console.log(type, group);
+   };
+
+   return (
+      <LegendContextMenu
+         onHideAll={handleHideAll}
+         onEditTheme={handleEditTheme}
+         context={context}
+         close={handleClose}
+      />
+   );
 };
 
 export default LegendGraphEvents;

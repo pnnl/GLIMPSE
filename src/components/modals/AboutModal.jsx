@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "antd";
 import ReactDom from "react-dom";
-import "../styles/About.css";
+import "../../styles/About.css";
 
 const AboutModal = ({ onMount }) => {
    const [open, setOpen] = useState(false);
@@ -65,7 +65,7 @@ const AboutModal = ({ onMount }) => {
             </pre>
          </div>
       </Modal>,
-      document.getElementById("portal")
+      document.getElementById("portal"),
    );
 };
 

@@ -1,10 +1,10 @@
-import { Flex } from "antd";
 import { useRef } from "react";
-import VisToolbar from "../components/VisToolbar";
-import GraphRenderer from "../components/GraphRenderer";
-import LegendRenderer from "../components/LegendRenderer";
+import { Flex } from "antd";
 import "../styles/GraphLayout.css";
-import graphHelper from "../graphHelper/GraphHelper";
+import VisToolbar from "../components/VisToolbar";
+import GraphRenderer from "../components/graph/GraphRenderer";
+import LegendRenderer from "../components/legend/LegendRenderer";
+import graphHelper from "../graph-helper/GraphHelper";
 
 const GraphLayout = () => {
    const graphRef = useRef(null);

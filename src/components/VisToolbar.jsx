@@ -1,6 +1,6 @@
 import "../styles/VisToolbar.css";
 import { Button, Divider, Space, Tooltip } from "antd";
-import graphHelper from "../graphHelper/GraphHelper";
+import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
 import { IoAddCircle } from "react-icons/io5";
 import { MdOutlineHideSource } from "react-icons/md";
@@ -45,8 +45,6 @@ const VisToolbar = ({ onToggleLegend }) => {
    };
 
    const handleReset = () => {
-      if (graphHelper.highlightedObjects.length === 0) return;
-
       if (graphHelper.getCurrentHighlightedObject()) {
          unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
       }
