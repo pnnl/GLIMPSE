@@ -3,6 +3,7 @@ import { useRegisterEvents, useSigma } from "@react-sigma/core";
 import GraphContextMenu from "../menus/GraphContextMenu";
 import EditAttributesModal from "../modals/EditAttributesModal";
 import graphHelper from "../../graph-helper/GraphHelper";
+import NewObjectModal from "../modals/NewObjectModal";
 
 const GraphEvents = () => {
    const [context, setContext] = useState({ open: false, x: 0, y: 0 });
@@ -11,6 +12,7 @@ const GraphEvents = () => {
       object: null,
    });
    const [draggedNode, setDraggedNode] = useState(null);
+   const [openNewNodeForm, setOpenNewNodeForm] = useState(false);
    const sigma = useSigma();
    const registerEvents = useRegisterEvents();
    // Refs used for throttling position updates with requestAnimationFrame
@@ -199,8 +201,10 @@ const GraphEvents = () => {
             context={context}
             close={handleClose}
             openAttributesModal={openAttributesModal}
+            openNewNodeModal={() => setOpenNewNodeForm(true)}
          />
          <EditAttributesModal context={attributesEditorContext} close={closeAttributesEditor} />
+         <NewObjectModal open={openNewNodeForm} close={() => setOpenNewNodeForm(false)} />
       </>
    );
 };
