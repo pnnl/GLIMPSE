@@ -117,22 +117,29 @@ const FileUpload = ({ closeModal }) => {
             setUploading(true);
             setProgress(0);
 
-            const res = await axios.post(`http://127.0.0.1:5051/${endPoint}`, formData, {
-                onUploadProgress: (progressEvent) => {
-                    if (!progressEvent.total) return;
-                    setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+            const { data: response } = await axios.post(
+                `http://127.0.0.1:5051/${endPoint}`,
+                formData,
+                {
+                    onUploadProgress: (progressEvent) => {
+                        if (!progressEvent.total) return;
+                        setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+                    },
                 },
-            });
+            );
 
-            if ("error" in res.data) throw new Error(res.data.error);
-            if (graphHelper.graph.order > 0) graphHelper.clearGraphData();
-            graphHelper.setThemeObject(res.data.themeData);
-            graphHelper.setGraphData(res.data.data);
+            if ("error" in response) throw new Error(response.error);
 
-            newGraphUpdate();
+            if (graphHelper.graph.order > 0) {
+                graphHelper.clearGraphData();
+                window.dispatchEvent(new CustomEvent("graph-cleared"));
+            }
+
+            graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setGraphData(response.data ?? response);
 
             window.dispatchEvent(new CustomEvent("graph-loaded"));
-
+            newGraphUpdate();
             closeModal();
         } catch (err) {
             console.error(err);

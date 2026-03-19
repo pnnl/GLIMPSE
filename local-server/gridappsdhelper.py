@@ -74,6 +74,7 @@ class GridAPPSDHelper:
             response = self.gapps.get_response(
                 self.START_SIMULATION, sim_config, timeout=30
             )
+            self.sim_id = response.get("simulation_id")
             return response
         except Exception as e:
             print(e)
@@ -102,8 +103,17 @@ class GridAPPSDHelper:
         if not self.is_connected():
             raise Exception("Not connected to GridAPPS-D")
         try:
-            topic = self.CONTROL_SIMULATION + f".{sim_id}"
-            response = self.gapps.send(topic, {"command": "stop"})
-            return response
+            topic = self.CONTROL_SIMULATION + f".{self.sim_id}"
+            self.gapps.send(topic, {"command": "stop"})
+            self.sim_id = None
+        except Exception as e:
+            print(e)
+
+    def subscribe_to_simulation_output(self, callback):
+        if not self.is_connected():
+            raise Exception("Not connected to GridAPPS-D")
+        try:
+            topic = self.SIMULATION_OUTPUT + f".{self.sim_id}"
+            self.gapps.subscribe(topic, callback=callback)
         except Exception as e:
             print(e)

@@ -477,6 +477,7 @@ class GraphHelper {
         });
 
         const keys = ["id", "objectType", "name"];
+        console.log(fileData);
         const files = Object.keys(fileData).map((file) => fileData[file]);
 
         // get nodes

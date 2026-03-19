@@ -26,25 +26,25 @@ cim_helper = CIMHelper()
 
 # Initialize GridAPPS-D helper with error handling
 gridappsd_helper = None
-# try:
-#     gridappsd_helper = GridAPPSDHelper()
-# except Exception as e:
-#     print(f"Warning: Failed to initialize GridAPPS-D helper: {e}")
-#     print(
-#         "GridAPPS-D features will be unavailable. Other server features will continue to work."
-#     )
+try:
+    gridappsd_helper = GridAPPSDHelper()
+except Exception as e:
+    print(f"Warning: Failed to initialize GridAPPS-D helper: {e}")
+    print(
+        "GridAPPS-D features will be unavailable. Other server features will continue to work."
+    )
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
 cors_origins = [
     "http://localhost:5173",
-    "http://localhost:3000",
     "http://localhost:4173",
+    "http://localhost:3000",
+    "http://localhost:61613",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:4173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:61613",
-    "http://localhost:61613",
 ]
 
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
@@ -58,7 +58,12 @@ CORS(
     allow_headers=allowed_headers,
     supports_credentials=True,
 )
-socketio = SocketIO(app, async_mode="threading")
+socketio = SocketIO(
+    app,
+    async_mode="threading",
+    cors_allowed_origins=cors_origins,
+    allow_upgrades=True
+)
 
 # ================================================================================================
 # CIM OBJECT MANAGEMENT ENDPOINTS
@@ -444,12 +449,19 @@ def delete_edge(edge_id):
 # ================================================================================================
 # GRIDAPPS-D REAL-TIME WEBSOCKET EVENTS
 # ================================================================================================
+
+
+def emit_sim_output(header, message):
+    socketio.emit("sim-output", {"header": header, "message": message})
+
+
 @socketio.on("start-simulation")
 def start_sim(sim_config):
     if gridappsd_helper is None:
         return {"error": "GridAPPS-D helper not initialized"}
 
     res = gridappsd_helper.start_simulation(sim_config)
+    gridappsd_helper.subscribe_to_simulation_output(emit_sim_output)
     return res
 
 
@@ -498,4 +510,10 @@ def hello():
 if __name__ == "__main__":
     # Start the Flask-SocketIO server
     port = int(os.environ.get("FLASK_PORT", 5051))
-    socketio.run(app, host="127.0.0.1", port=port, debug=True, log_output=True)
+    socketio.run(
+        app,
+        host="127.0.0.1",
+        port=port,
+        debug=True,
+        log_output=True,
+    )
