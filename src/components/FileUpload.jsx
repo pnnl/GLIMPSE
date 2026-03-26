@@ -93,25 +93,18 @@ const FileUpload = ({ closeModal }) => {
     const uploadFiles = async (fileList) => {
         console.log("Initial fileList.length:", fileList.length);
         if (!fileList || fileList.length === 0) return;
-
         // Convert to array immediately to avoid FileList issues
         const filesArray = Array.from(fileList);
-        console.log("After Array.from() length:", filesArray.length);
 
         const filenames = filesArray.map((file) => file.name);
         console.log("Filenames:", filenames);
 
         const endPoint = await validateFiles(filenames);
-        console.log("Endpoint:", endPoint);
 
         const formData = new FormData();
         filesArray.forEach((file) => {
-            console.log("Appending file:", file.name);
             formData.append("files", file);
         });
-
-        // Verify formData was populated
-        console.log("FormData entries:", Array.from(formData.entries()));
 
         try {
             setUploading(true);
@@ -150,9 +143,7 @@ const FileUpload = ({ closeModal }) => {
     };
 
     const handleFileUpload = (e) => {
-        const files = e.target.files;
-        console.log("Selected files:", files);
-        uploadFiles(files);
+        uploadFiles(e.target.files);
         // reset input so same file can be selected again if needed
         e.target.value = null;
     };
@@ -173,8 +164,7 @@ const FileUpload = ({ closeModal }) => {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-        const files = e.dataTransfer.files;
-        uploadFiles(files);
+        uploadFiles(e.dataFiles.files);
     };
 
     return (

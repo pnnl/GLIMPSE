@@ -149,14 +149,16 @@ class CIMHelper:
                 "attributes": {
                     "id": node.mRID,
                     "name": node.name if node.name else "",
-                    "feeder_id": feeder_id,
-                    # "feeder": node.ConnectivityNodeContainer.name if node.ConnectivityNodeContainer else feeder_id,
+                    # "feeder": feeder_id,
                 },
             }
             coordinates = self.find_shared_coordinates(node)
 
-            # if "dso_9500" in node.ConnectivityNodeContainer.name:
-            #    c_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
+            if (
+                node.ConnectivityNodeContainer
+                and "dso_9500" in node.ConnectivityNodeContainer.name
+            ):
+                new_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
 
             if coordinates["x"] and coordinates["y"]:
                 new_node["attributes"]["x"] = coordinates["x"]
@@ -285,7 +287,7 @@ class CIMHelper:
                     "to": line.Terminals[1].ConnectivityNode.mRID,
                     "class_type": line.__class__.__name__,
                     "length": line.length,
-                    "feeder_id": feeder_id,
+                    # "feeder_id": feeder_id,
                 },
             }
 
@@ -301,7 +303,7 @@ class CIMHelper:
                     "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
                     "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
                     "class_type": line.__class__.__name__,
-                    "feeder_id": feeder_id,
+                    # "feeder_id": feeder_id,
                 },
             }
 
@@ -416,7 +418,7 @@ class CIMHelper:
                             "from": line.Terminals[0].ConnectivityNode.mRID,
                             "to": line.Terminals[1].ConnectivityNode.mRID,
                             "class_type": line.__class__.__name__,
-                            "feeder_id": feeder_id,
+                            # "feeder_id": feeder_id,
                         },
                     }
 
@@ -601,6 +603,9 @@ class CIMHelper:
         ]
 
         for field in fields(cim_obj):
+            if field.name == "identifier":
+                continue
+
             if (
                 field.metadata["type"] == "Attribute"
             ):  # association, aggregateof, and ofaggregate

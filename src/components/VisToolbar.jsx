@@ -1,13 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/VisToolbar.css";
 import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
-import { IoPlay, IoAddCircle } from "react-icons/io5";
+import { IoPlay, IoAddCircle, IoStop, IoPause } from "react-icons/io5";
 import { MdOutlineHideSource } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 
 const VisToolbar = ({ onToggleLegend }) => {
+    const [changingSimState, setChangingSimState] = useState(false);
+    const [simulationState, setSimulationState] = useState("idle"); // idle | running | paused | stopped
+
+    useEffect(() => {
+        const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
+            setSimulationState(simState);
+        });
+
+        return () => {
+            unsubSimState();
+        };
+    });
+
     const rotateCCW = () => {
         graphHelper.rotateCCW();
         graphHelper.sigmaInstance.refresh();
@@ -55,6 +68,20 @@ const VisToolbar = ({ onToggleLegend }) => {
         graphHelper.sigmaInstance.refresh();
     };
 
+    const handleStartSimulation = () => {
+        socketClientHelper.startSimulation(graphHelper.selectedGridappsdModels);
+    };
+
+    const handleStopSimulation = async () => {
+        setChangingSimState(true);
+        await socketClientHelper.stopSimulation();
+        setChangingSimState(false);
+    };
+
+    const handlePauseSimulation = () => {
+        socketClientHelper.pauseSimulation();
+    };
+
     return (
         <div className="vis-toolbar">
             <Space
@@ -62,16 +89,43 @@ const VisToolbar = ({ onToggleLegend }) => {
                 style={{ marginRight: "auto" }}
                 separator={<Divider orientation="vertical" />}
             >
-                <Tooltip title="Start Simulation" placement="bottomLeft">
+                <Tooltip title={"Start Simulation"} placement="bottomLeft">
                     <Button
-                        disabled
+                        loading={changingSimState}
                         style={{ width: "4rem" }}
                         size="large"
                         type="default"
-                        icon={<IoPlay size={24} />}
-                        onClick={() => socketClientHelper.startSimulation()}
+                        icon={<IoPlay />}
+                        onClick={handleStartSimulation}
                     />
                 </Tooltip>
+                <Space.Compact block>
+                    <Tooltip title={"Start Simulation"}>
+                        {simulationState === "idle" ||
+                            (simulationState === "stopped" && (
+                                <Button
+                                    size="large"
+                                    onClick={handleStartSimulation}
+                                    icon={<IoPlay />}
+                                />
+                            ))}
+                        {simulationState === "running" && (
+                            <Button
+                                size="large"
+                                icon={<IoPause />}
+                                onClick={handlePauseSimulation}
+                            />
+                        )}
+                    </Tooltip>
+                    <Tooltip title="Stop Simulation">
+                        <Button
+                            disabled={!(simulationState === "running")}
+                            size="large"
+                            onClick={handleStopSimulation}
+                            icon={<IoStop />}
+                        />
+                    </Tooltip>
+                </Space.Compact>
                 <Tooltip title="Add Overlay" placement="bottomLeft">
                     <Button
                         disabled

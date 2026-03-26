@@ -3,11 +3,12 @@ import louvain from "graphology-communities-louvain";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
+import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
 
 class GraphHelper {
     // private
     #boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-    #theme = null;
+    #theme = {};
     #highlightedGroups = [];
     #highlightedEdgeTypes = [];
     #hasFixedNodes = false;
@@ -20,12 +21,12 @@ class GraphHelper {
     highlightedEdgeIDs = []; // contains the IDs of highlighted edges
     highlightedObjects = [];
     focusIndex = -1;
-    nodeTypes = null;
-    edgeTypes = null;
+    nodeTypes = [];
+    edgeTypes = [];
     communitiesArray = [];
     communityColorPallet = {};
-    layout = null;
     themeName = "feeder-model-theme";
+    selectedGridappsdModels = [];
 
     constructor() {
         this.legendGraph = new MultiGraph();
@@ -80,10 +81,6 @@ class GraphHelper {
         };
 
         console.log(this.#theme);
-    };
-
-    getThemeObject = () => {
-        return this.#theme;
     };
 
     /**
@@ -207,7 +204,6 @@ class GraphHelper {
         this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
         this.communitiesArray = [];
         this.communityColorPallet = {};
-        this.layout = null;
     };
 
     getNext = () => {
@@ -410,7 +406,7 @@ class GraphHelper {
                     id: type,
                     from: nodeIDFrom,
                     to: nodeIDTo,
-                    type: "line",
+                    type: "straight",
                     title: "Double Click to Highlight !",
                     label: `${type} [${this.objectTypeCount.edges[type]}]`,
                     forceLabel: true,
@@ -422,7 +418,7 @@ class GraphHelper {
                     id: type,
                     from: nodeIDFrom,
                     to: nodeIDTo,
-                    type: "line",
+                    type: "straight",
                     forceLabel: true,
                     label: `${type} [${this.objectTypeCount.edges[type]}]`,
                     title: "Double Click to Highlight !",
@@ -468,7 +464,47 @@ class GraphHelper {
         });
     };
 
-    addNode = {};
+    _getCurvature(index, maxIndex) {
+        if (maxIndex <= 0) throw new Error("Invalid maxIndex");
+        if (index < 0) return -this._getCurvature(-index, maxIndex);
+
+        const amplitude = 3.5;
+        const maxCurvature =
+            amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
+
+        return (maxCurvature * index) / maxIndex;
+    }
+
+    assignParallelEdgeCurvatures = (graph) => {
+        // Step 1: let the library detect which edges are parallel
+        indexParallelEdgesIndex(graph, {
+            edgeIndexAttribute: "parallelIndex",
+            edgeMinIndexAttribute: "parallelMinIndex",
+            edgeMaxIndexAttribute: "parallelMaxIndex",
+        });
+
+        // Step 2: assign type + curvature based on the indexed values
+        graph.forEachEdge((edge, { parallelIndex, parallelMinIndex, parallelMaxIndex }) => {
+            if (typeof parallelMinIndex === "number") {
+                // ── Undirected parallel group ──
+                // The edge at index 0 gets to stay straight (the "primary" edge).
+                // All others are curved so they fan out on either side.
+                graph.mergeEdgeAttributes(edge, {
+                    type: parallelIndex ? "curved" : "straight",
+                    curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
+                });
+            } else if (typeof parallelIndex === "number") {
+                // ── Directed parallel group (shouldn't happen in our undirected
+                //    graph, but included for completeness) ──
+                graph.mergeEdgeAttributes(edge, {
+                    type: "curved",
+                    curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
+                });
+            } else {
+                graph.setEdgeAttribute(edge, "type", "straight");
+            }
+        });
+    };
 
     setGraphData = (fileData) => {
         const newGraph = new MultiUndirectedGraph({
@@ -476,7 +512,6 @@ class GraphHelper {
             type: "undirected",
         });
 
-        const keys = ["id", "objectType", "name"];
         console.log(fileData);
         const files = Object.keys(fileData).map((file) => fileData[file]);
 
@@ -485,16 +520,14 @@ class GraphHelper {
             for (let obj of file.objects) {
                 const attributes = obj.attributes;
                 // get the key that is at the top of the object which can be "name" or "objectType"
-                const nameForObjType = keys.find((key) => key in obj);
-                const objectType = obj[nameForObjType];
+                const objectType = obj.objectType ?? obj.name;
                 // get the key that is used for the objects id which can be "id" or "name"
-                const nameForObjID = keys.find((key) => key in attributes);
-                const nodeID = attributes[nameForObjID];
+                const nodeID = attributes.id ?? attributes.name;
 
                 if (this.nodeTypes.length > 0 && this.nodeTypes.includes(objectType)) {
                     if ("x" in attributes && "y" in attributes) {
                         const node = {
-                            label: "name" in attributes ? attributes.name : nodeID,
+                            label: attributes.name ?? nodeID,
                             elementType: "node",
                             attributes: attributes,
                             group: objectType,
@@ -572,14 +605,13 @@ class GraphHelper {
 
         // get edges
         for (const file of files) {
-            for (let obj of file.objects) {
+            for (const obj of file.objects) {
                 const attributes = obj.attributes;
-                const nameForObjType = keys.find((key) => Object.keys(obj).includes(key));
-                const objectType = obj[nameForObjType];
-                const nameForObjID = keys.find((key) => Object.keys(attributes).includes(key));
+                const objectType = obj.objectType ?? obj.name;
 
+                // Special case where we check for nodes that have a parent attribute and create an edge between them
                 if (this.nodeTypes.includes(objectType) && "parent" in attributes) {
-                    const nodeID = attributes[nameForObjID];
+                    const nodeID = attributes.id ?? attributes.name;
                     const parent = attributes.parent;
                     const edgeID = `${parent}-${nodeID}`;
 
@@ -590,14 +622,16 @@ class GraphHelper {
                     newGraph.addEdgeWithKey(edgeID, parent, nodeID, {
                         elementType: "edge",
                         group: "parentChild",
-                        type: "line",
+                        type: "straight",
                         size: this.#theme.edgeOptions.parentChild.width,
                         length: "length" in attributes ? parseFloat(attributes.length) : null,
                         attributes: { to: parent, from: nodeID, id: edgeID },
                     });
 
                     continue;
-                } else if (this.edgeTypes.includes(objectType)) {
+                }
+
+                if (this.edgeTypes.includes(objectType)) {
                     const edgeFrom = attributes.from;
                     const edgeTo = attributes.to;
                     const edgeID = attributes.id ?? attributes.name;
@@ -606,15 +640,23 @@ class GraphHelper {
                         this.objectTypeCount.edges[objectType]++;
                     else this.objectTypeCount.edges[objectType] = 1;
 
-                    newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
+                    const newEdge = {
                         elementType: "edge",
                         group: objectType,
-                        type: "line",
+                        type: "straight",
+                        dotColor: "#ff0000",
+                        dotSize: 6,
+                        dotSpeed: 0.25,
+                        dotPhase: Math.random(),
+                        flowDirection: 1, // -1 for opposite flow
+                        dotCount: 1,
                         color: this.#theme.edgeOptions[objectType].color,
                         size: this.#theme.edgeOptions[objectType].width,
-                        length: "length" in attributes ? parseFloat(attributes.length) : null,
+                        length: attributes.length,
                         attributes: attributes,
-                    });
+                    };
+
+                    newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, newEdge);
 
                     continue;
                 } else if ("elementType" in obj && obj.elementType === "edge") {
@@ -637,8 +679,8 @@ class GraphHelper {
                     newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
                         elementType: "edge",
                         group: objectType,
-                        type: "line",
-                        length: "length" in attributes ? parseFloat(attributes.length) : null,
+                        type: "straight",
+                        length: attributes.length ?? null,
                         size: this.#theme.edgeOptions[objectType].width,
                         attributes: attributes,
                     });
@@ -731,6 +773,8 @@ class GraphHelper {
                 circlepack.assign(newGraph);
             }
         }
+
+        this.assignParallelEdgeCurvatures(newGraph);
 
         // create the legend graph object
         this.setLegendData();

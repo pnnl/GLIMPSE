@@ -15,6 +15,8 @@ const LoadModelModal = ({ onMount }) => {
 
     const handleModelSelect = (selectedModels) => {
         const models = selectedModels.map((m) => JSON.parse(m));
+        console.log(models);
+        graphHelper.selectedGridappsdModels = models;
         setSelectedGridappsdModels(models);
     };
 

@@ -17,22 +17,14 @@ from jsonhelper import JSONHelper
 from gridappsdhelper import GridAPPSDHelper
 
 # ================================================================================================
-# HELPER FUNCTIONS
+# HELPERS
 # ================================================================================================
 
 json_helper = JSONHelper()
 glm_helper = GLMHelper()
 cim_helper = CIMHelper()
+gridappsd_helper = GridAPPSDHelper()
 
-# Initialize GridAPPS-D helper with error handling
-gridappsd_helper = None
-try:
-    gridappsd_helper = GridAPPSDHelper()
-except Exception as e:
-    print(f"Warning: Failed to initialize GridAPPS-D helper: {e}")
-    print(
-        "GridAPPS-D features will be unavailable. Other server features will continue to work."
-    )
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
@@ -59,10 +51,7 @@ CORS(
     supports_credentials=True,
 )
 socketio = SocketIO(
-    app,
-    async_mode="threading",
-    cors_allowed_origins=cors_origins,
-    allow_upgrades=True
+    app, async_mode="threading", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
 # ================================================================================================
@@ -194,15 +183,11 @@ def upload_json():
 
 
 @app.route("/api/upload/glm", methods=["POST"])
-def upload_glm_to_json():
+def glm_upload():
     """
     This endpoint receives one or more .glm files via multipart/form-data,
     saves them to a temp directory, collects their paths, and converts to JSON.
     """
-    # Validate presence of 'files' in form-data
-    if "files" not in request.files:
-        return {"error": "No 'files' part in the form data."}, 400
-
     files = request.files.getlist("files")
     if not files:
         return {"error": "No files uploaded."}, 400
@@ -226,7 +211,7 @@ def upload_glm_to_json():
 
         print("\n" + "=" * 30)
         print(f"Received files: {paths}")
-        print("\n" + "=" * 30)
+        print("=" * 30)
 
         theme_filename = json_helper.get_theme_filename(paths)
         themeData = None
@@ -234,18 +219,33 @@ def upload_glm_to_json():
             themeData = json_helper.validate_json_theme(theme_filename)
 
         filtered_paths = [p for p in paths if p != theme_filename]
+
+        print(f"[SERVER] Processing {len(filtered_paths)} GLM files...")
         glm_dict = glm_helper.parse_glm(filtered_paths)  # expects list of paths
-        return json.dumps({"data": glm_dict, "themeData": themeData})
+        print(f"[SERVER] GLM parsing completed successfully")
+
+        # Serialize response data BEFORE cleanup to ensure no dangling references
+        response = json.dumps({"data": glm_dict, "themeData": themeData})
+        return response
+    except RuntimeError as re:
+        # Handle module reset failures
+        print(f"[SERVER] CRITICAL: {str(re)}")
+        return {"error": f"GLM module error (may need backend restart): {str(re)}"}, 500
+    except ValueError as ve:
+        # Handle validation errors (e.g., file too large)
+        print(f"[SERVER] Validation error: {str(ve)}")
+        return {"error": str(ve)}, 400
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
         return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
     finally:
-        # Force garbage collection and cleanup temp files/dir
-        gc.collect()
-        time.sleep(0.1)
         try:
+            print("[SERVER] Running cleanup and garbage collection...")
+            gc.collect()  # Force garbage collection
+            time.sleep(0.5)  # Allow extra time for file handles to release
             shutil.rmtree(tmpdir, ignore_errors=True)
+            print("[SERVER] Cleanup completed")
         except Exception as cleanup_error:
             print(f"Warning: Failed to clean up temp directory: {cleanup_error}")
 
@@ -450,46 +450,55 @@ def delete_edge(edge_id):
 # GRIDAPPS-D REAL-TIME WEBSOCKET EVENTS
 # ================================================================================================
 
-
-def emit_sim_output(header, message):
-    socketio.emit("sim-output", {"header": header, "message": message})
+# ─── SocketIO Event Handlers ──────────────────────────────────────
 
 
 @socketio.on("start-simulation")
-def start_sim(sim_config):
-    if gridappsd_helper is None:
-        return {"error": "GridAPPS-D helper not initialized"}
+def handle_start_simulation(config):
+    try:
+        result = gridappsd_helper.start_simulation(config)
 
-    res = gridappsd_helper.start_simulation(sim_config)
-    gridappsd_helper.subscribe_to_simulation_output(emit_sim_output)
-    return res
+        # Subscribe to output and relay to the client via WebSocket
+        def on_sim_output(headers, message):
+            socketio.emit("sim-output", message)
 
+        def on_sim_log(headers, message):
+            socketio.emit("sim-log", message)
 
-@socketio.on("stop-simulation")
-def stop_sim(sim_id):
-    if gridappsd_helper is None:
-        return {"error": "GridAPPS-D helper not initialized"}
+        gridappsd_helper.subscribe_to_simulation_output(on_sim_output)
+        gridappsd_helper.subscribe_to_simulation_log(on_sim_log)
 
-    gridappsd_helper.stop_simulation(sim_id)
-    return "", 204
+        print("=" * 20 + "result" + "=" * 20)
+        print(result)
+        print("=" * 46)
+        return result
+
+    except Exception as e:
+        return {"error": {"message": str(e)}}
 
 
 @socketio.on("pause-simulation")
-def pause_sim(sim_id):
-    if gridappsd_helper is None:
-        return {"error": "GridAPPS-D helper not initialized"}
-
-    res = gridappsd_helper.pause_simulation(sim_id)
-    return res
+def handle_pause_simulation(sim_id):
+    try:
+        return gridappsd_helper.pause_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @socketio.on("resume-simulation")
-def resume_sim(sim_id):
-    if gridappsd_helper is None:
-        return {"error": "GridAPPS-D helper not initialized"}
+def handle_resume_simulation(sim_id):
+    try:
+        return gridappsd_helper.resume_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
 
-    res = gridappsd_helper.resume_simulation(sim_id)
-    return res
+
+@socketio.on("stop-simulation")
+def handle_stop_simulation(sim_id):
+    try:
+        return gridappsd_helper.stop_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
 
 
 # ================================================================================================
@@ -515,5 +524,5 @@ if __name__ == "__main__":
         host="127.0.0.1",
         port=port,
         debug=True,
-        log_output=True,
+        log_output=False,
     )
