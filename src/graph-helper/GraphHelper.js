@@ -180,6 +180,11 @@ class GraphHelper {
         // show any hidden edges and nodes
         this.graph.updateEachEdgeAttributes((e, attrs) => ({ ...attrs, hidden: false }));
         this.graph.updateEachNodeAttributes((n, attrs) => ({ ...attrs, hidden: false }));
+
+        this.graph.updateEachEdgeAttributes((e, attrs) => ({
+            ...attrs,
+            type: attrs.type === "animated" ? "straight" : attrs.type,
+        }));
     };
 
     clearGraphData = () => {
@@ -493,17 +498,30 @@ class GraphHelper {
                     type: parallelIndex ? "curved" : "straight",
                     curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
                 });
-            } else if (typeof parallelIndex === "number") {
+
+                return;
+            }
+
+            if (typeof parallelIndex === "number") {
                 // ── Directed parallel group (shouldn't happen in our undirected
                 //    graph, but included for completeness) ──
                 graph.mergeEdgeAttributes(edge, {
                     type: "curved",
                     curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
                 });
-            } else {
-                graph.setEdgeAttribute(edge, "type", "straight");
             }
         });
+    };
+
+    #isOpenSwitch = (switchAttributes) => {
+        // check for "open" attribute
+        if ("open" in switchAttributes || "status" in switchAttributes) {
+            if (switchAttributes.status === "OPEN" || switchAttributes.open === "True") {
+                return true;
+            }
+        }
+
+        return false;
     };
 
     setGraphData = (fileData) => {
@@ -635,6 +653,8 @@ class GraphHelper {
                     const edgeFrom = attributes.from;
                     const edgeTo = attributes.to;
                     const edgeID = attributes.id ?? attributes.name;
+                    let edgeSize = this.#theme.edgeOptions[objectType].width;
+                    let edgeColor = this.#theme.edgeOptions[objectType].color;
 
                     if (objectType in this.objectTypeCount.edges)
                         this.objectTypeCount.edges[objectType]++;
@@ -650,11 +670,18 @@ class GraphHelper {
                         dotPhase: Math.random(),
                         flowDirection: 1, // -1 for opposite flow
                         dotCount: 1,
-                        color: this.#theme.edgeOptions[objectType].color,
-                        size: this.#theme.edgeOptions[objectType].width,
-                        length: attributes.length,
+                        color: edgeColor,
+                        size: edgeSize,
+                        length: attributes.length ?? null,
                         attributes: attributes,
                     };
+
+                    // color witch edges red if they are open
+                    if (objectType === "switch") {
+                        newEdge.switchColor = "#ff0000";
+                        newEdge.type = "switch";
+                        newEdge.switchSize = 8;
+                    }
 
                     newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, newEdge);
 
@@ -663,6 +690,8 @@ class GraphHelper {
                     const edgeFrom = attributes.from;
                     const edgeTo = attributes.to;
                     const edgeID = attributes.id ?? `${edgeFrom}-${edgeTo}`;
+
+                    console.log("Processing edge:", edgeID, "of type:", objectType);
 
                     if (!(objectType in this.#theme.edgeOptions))
                         this.#theme.edgeOptions[objectType] = {
@@ -714,16 +743,16 @@ class GraphHelper {
                     if (anchorNeighbor) {
                         const neighborAttrs = newGraph.getNodeAttributes(anchorNeighbor);
                         // Offset proportional to coordinate space (5% of the range)
-                        const maxOffsetX = rangeX * 0.05;
-                        const maxOffsetY = rangeY * 0.05;
-                        const offsetX = (Math.random() - 0.5) * 2 * maxOffsetX;
-                        const offsetY = (Math.random() - 0.5) * 2 * maxOffsetY;
-                        newGraph.setNodeAttribute(node, "x", neighborAttrs.x + offsetX);
-                        newGraph.setNodeAttribute(node, "y", neighborAttrs.y + offsetY);
+                        // const maxOffsetX = rangeX * 0.05;
+                        // const maxOffsetY = rangeY * 0.05;
+                        // const offsetX = (Math.random() - 0.05) * 2 * maxOffsetX;
+                        // const offsetY = (Math.random() - 0.05) * 2 * maxOffsetY;
+                        newGraph.setNodeAttribute(node, "x", neighborAttrs.x);
+                        newGraph.setNodeAttribute(node, "y", neighborAttrs.y);
                     } else {
                         // No valid neighbor → place randomly within bounds
-                        const randX = centerX + (Math.random() - 0.5) * rangeX;
-                        const randY = centerY + (Math.random() - 0.5) * rangeY;
+                        const randX = centerX + (Math.random() - 0.05) * rangeX;
+                        const randY = centerY + (Math.random() - 0.05) * rangeY;
                         newGraph.setNodeAttribute(node, "x", randX);
                         newGraph.setNodeAttribute(node, "y", randY);
                     }

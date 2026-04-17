@@ -31,7 +31,7 @@ class SocketClientHelper {
     gridappsdConfiguration = {
         power_system_configs: [],
         simulation_config: {
-            start_time: 1758234830,
+            start_time: 1774673298,
             duration: "120",
             timestep_frequency: "1000",
             timestep_increment: "1000",
@@ -45,7 +45,7 @@ class SocketClientHelper {
 
     // State
     simulationID = null;
-    simulationState = "idle"; // idle | running | paused | stopped | error
+    simulationState = "inactive"; // inactive | idle | running | paused | stopped | error
 
     // Event Listeners
     #listeners = {
@@ -99,13 +99,21 @@ class SocketClientHelper {
         });
 
         this.socket.on("sim-log", (log) => {
-            console.log(log);
+            // console.log(log);
+            if (log.processStatus === "COMPLETE") {
+                this.#emit("sim-state-change", "stopped");
+            }
             this.#emit("sim-log", log);
         });
 
         this.socket.on("sim-state-change", (state) => {
             this.simulationState = state;
             this.#emit("sim-state-change", state);
+        });
+
+        this.socket.on("switch-state-update", (data) => {
+            console.log(data.switches);
+            // graphHelper.openSwitch()
         });
 
         // Graph mutation events
@@ -172,7 +180,7 @@ class SocketClientHelper {
     disconnect = () => {
         this.socket.disconnect();
         this.simulationID = null;
-        this.simulationState = "idle";
+        this.simulationState = "inactive";
     };
 
     // Simulation Control
@@ -271,7 +279,10 @@ class SocketClientHelper {
         });
     };
 
-    // Status
+    setSimulationState = (state) => {
+        this.simulationState = state;
+        this.#emit("sim-state-change", state);
+    };
 
     getStatus = () => ({
         socketConnected: this.isConnected(),

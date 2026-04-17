@@ -177,7 +177,8 @@ const GraphEvents = () => {
                 });
             },
             enterEdge: (e) => {
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", e.edge);
+                const attrs = graphHelper.graph.getEdgeAttributes(e.edge);
+                graphHelper.graph.setEdgeAttribute(e.edge, "label", attrs.name ?? e.edge);
             },
             leaveEdge: (e) => {
                 graphHelper.graph.setEdgeAttribute(e.edge, "label", "");

@@ -25,6 +25,10 @@ glm_helper = GLMHelper()
 cim_helper = CIMHelper()
 gridappsd_helper = GridAPPSDHelper()
 
+# Measurement map: measurement MRID -> equipment info (populated when a model is loaded)
+# Used to translate simulation output into equipment-level state updates
+active_measurement_map: dict = {}
+
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
@@ -51,7 +55,7 @@ CORS(
     supports_credentials=True,
 )
 socketio = SocketIO(
-    app, async_mode="threading", cors_allowed_origins=cors_origins, allow_upgrades=True
+    app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
 # ================================================================================================
@@ -297,6 +301,13 @@ def cim_to_glimpse():
             return {"error": "No valid files received."}, 400
 
         glimpse_structure_data = cim_helper.cim_to_gjs(filepaths=paths)
+
+        # Store measurement maps for simulation output processing
+        global active_measurement_map
+        for model_key, model_data in glimpse_structure_data.items():
+            if isinstance(model_data, dict) and "measurement_map" in model_data:
+                active_measurement_map.update(model_data["measurement_map"])
+
         return glimpse_structure_data
 
     except Exception as e:
@@ -352,6 +363,13 @@ def get_models():
             return json.dumps({"error": "GridAPPS-D helper not initialized"}), 503
 
         gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
+
+        # Store measurement maps for simulation output processing
+        global active_measurement_map
+        for model_key, model_data in gjs.items():
+            if isinstance(model_data, dict) and "measurement_map" in model_data:
+                active_measurement_map.update(model_data["measurement_map"])
+
         return gjs, 200
     except Exception as e:
         tb = traceback.format_exc()
@@ -379,27 +397,16 @@ def get_gridappsd_models():
 @app.route("/api/gridappsd/status", methods=["GET"])
 def get_gridappsd_status():
     try:
-        if gridappsd_helper is None:
-            return (
-                json.dumps(
-                    {
-                        "connected": False,
-                        "message": "GridAPPS-D helper not initialized - backend not running",
-                    }
-                ),
-                200,
-            )
 
-        status = gridappsd_helper.is_connected()
-        print(status)
+        connected = gridappsd_helper.try_connect()
 
         return (
             json.dumps(
                 {
-                    "connected": status,
+                    "connected": connected,
                     "message": (
                         "Connected to GridAPPS-D"
-                        if status
+                        if connected
                         else "Not connected to GridAPPS-D"
                     ),
                 }
@@ -455,12 +462,55 @@ def delete_edge(edge_id):
 
 @socketio.on("start-simulation")
 def handle_start_simulation(config):
+    global active_measurement_map
     try:
         result = gridappsd_helper.start_simulation(config)
 
         # Subscribe to output and relay to the client via WebSocket
         def on_sim_output(headers, message):
             socketio.emit("sim-output", message)
+
+            # Process measurements through the map to emit equipment-level updates
+            if active_measurement_map and isinstance(message, dict):
+                msg = message.get("message", message)
+                measurements = msg.get("measurements", {})
+                timestamp = msg.get("timestamp")
+                switch_updates = []
+
+                for meas_mrid, meas_data in measurements.items():
+                    mapping = active_measurement_map.get(meas_mrid)
+                    if not mapping:
+                        continue
+
+                    eq_type = mapping.get("conducting_equipment_type", "")
+                    meas_type = mapping.get("measurement_type", "")
+
+                    # Switch state: Discrete "Pos" measurements carry value 0=open, 1=closed
+                    if meas_type == "Pos" and "value" in meas_data:
+                        switch_updates.append(
+                            {
+                                "equipment_mrid": mapping.get(
+                                    "conducting_equipment_mrid", ""
+                                ),
+                                "equipment_name": mapping.get(
+                                    "conducting_equipment_name", ""
+                                ),
+                                "equipment_type": eq_type,
+                                "measurement_mrid": meas_mrid,
+                                "phases": mapping.get("phases", ""),
+                                "value": meas_data["value"],
+                                "open": meas_data["value"] == 0,
+                            }
+                        )
+
+                if switch_updates:
+                    socketio.emit(
+                        "switch-state-update",
+                        {
+                            "timestamp": timestamp,
+                            "switches": switch_updates,
+                        },
+                    )
 
         def on_sim_log(headers, message):
             socketio.emit("sim-log", message)

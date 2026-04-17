@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill="#000000" width="256px" height="256px" viewBox="0 0 36 36" version="1.1" preserveAspectRatio="xMidYMid meet">
+<g stroke-width="0"/>
+<g stroke-linecap="round" stroke-linejoin="round"/>
+<g>
+  <title>regulator-line</title>
+  <!-- Left horizontal line -->
+  <path d="M8.5,19H3a1,1,0,0,1,0-2H8.5a1,1,0,0,1,0,2Z" />
+  <!-- Right horizontal line -->
+  <path d="M33,19H27.5a1,1,0,0,1,0-2H33a1,1,0,0,1,0,2Z" />
+  <!-- Left circle -->
+  <circle cx="14" cy="18" r="5.5" fill="none" stroke="#000000" stroke-width="2" />
+  <!-- Right circle -->
+  <circle cx="22" cy="18" r="5.5" fill="none" stroke="#000000" stroke-width="2" />
+  <!-- Diagonal arrow line through right circle -->
+  <line x1="18" y1="10" x2="25.5" y2="25" stroke="#000000" stroke-width="2" />
+  <!-- Arrowhead connected to line end -->
+  <polygon points="26.5,27 27.3,24.2 23.7,25.8" fill="#000000" />
+  <rect x="0" y="0" width="36" height="36" fill-opacity="0"/>
+</g>
+</svg>

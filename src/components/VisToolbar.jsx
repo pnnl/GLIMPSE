@@ -8,8 +8,7 @@ import { MdOutlineHideSource } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 
 const VisToolbar = ({ onToggleLegend }) => {
-    const [changingSimState, setChangingSimState] = useState(false);
-    const [simulationState, setSimulationState] = useState("idle"); // idle | running | paused | stopped
+    const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
 
     useEffect(() => {
         const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
@@ -73,9 +72,7 @@ const VisToolbar = ({ onToggleLegend }) => {
     };
 
     const handleStopSimulation = async () => {
-        setChangingSimState(true);
         await socketClientHelper.stopSimulation();
-        setChangingSimState(false);
     };
 
     const handlePauseSimulation = () => {
@@ -89,52 +86,36 @@ const VisToolbar = ({ onToggleLegend }) => {
                 style={{ marginRight: "auto" }}
                 separator={<Divider orientation="vertical" />}
             >
-                <Tooltip title={"Start Simulation"} placement="bottomLeft">
-                    <Button
-                        loading={changingSimState}
-                        style={{ width: "4rem" }}
-                        size="large"
-                        type="default"
-                        icon={<IoPlay />}
-                        onClick={handleStartSimulation}
-                    />
-                </Tooltip>
-                <Space.Compact block>
-                    <Tooltip title={"Start Simulation"}>
-                        {simulationState === "idle" ||
-                            (simulationState === "stopped" && (
+                {simulationState !== "inactive" && (
+                    <Space.Compact block>
+                        {(simulationState === "idle" || simulationState === "stopped") && (
+                            <Tooltip title={"Start Simulation"} placement="bottom">
                                 <Button
                                     size="large"
                                     onClick={handleStartSimulation}
                                     icon={<IoPlay />}
                                 />
-                            ))}
-                        {simulationState === "running" && (
-                            <Button
-                                size="large"
-                                icon={<IoPause />}
-                                onClick={handlePauseSimulation}
-                            />
+                            </Tooltip>
                         )}
-                    </Tooltip>
-                    <Tooltip title="Stop Simulation">
-                        <Button
-                            disabled={!(simulationState === "running")}
-                            size="large"
-                            onClick={handleStopSimulation}
-                            icon={<IoStop />}
-                        />
-                    </Tooltip>
-                </Space.Compact>
-                <Tooltip title="Add Overlay" placement="bottomLeft">
-                    <Button
-                        disabled
-                        style={{ width: "4rem" }}
-                        size="large"
-                        type="default"
-                        icon={<IoAddCircle size={24} />}
-                    />
-                </Tooltip>
+                        {simulationState === "running" && (
+                            <Tooltip title={"Pause Simulation"} placement="bottom">
+                                <Button
+                                    size="large"
+                                    icon={<IoPause />}
+                                    onClick={handlePauseSimulation}
+                                />
+                            </Tooltip>
+                        )}
+                        <Tooltip title="Stop Simulation">
+                            <Button
+                                disabled={!(simulationState === "running")}
+                                size="large"
+                                onClick={handleStopSimulation}
+                                icon={<IoStop />}
+                            />
+                        </Tooltip>
+                    </Space.Compact>
+                )}
                 <Tooltip title="Hide/Show Legend" placement="bottomLeft">
                     <Button
                         style={{ width: "4rem" }}

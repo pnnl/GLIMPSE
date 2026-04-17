@@ -106,7 +106,7 @@ class GridAPPSDHelper:
             logger.warning(f"Reconnection failed: {e}")
             self.gapps = None
             self._available = False
-            return Falsee
+            return False
 
     def _ensure_connected(self):
         """

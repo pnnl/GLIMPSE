@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Form, Button, Select, Spin } from "antd";
 import axios from "axios";
+import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 
 const GridAPPSDModelForm = ({ onModelSelect }) => {
     const [regionNames, setRegionNames] = useState(null);
@@ -54,6 +55,8 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
 
                 setRegionNames(Array.from(regionNamesSet));
                 setModelInfo(res.data.models);
+                // Update simulation state to idle since model info is available
+                socketClientHelper.setSimulationState("idle");
             } catch (e) {
                 console.error(e);
             } finally {

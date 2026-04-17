@@ -9,7 +9,7 @@ import {
 import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 import { MultiUndirectedGraph } from "graphology";
 import forceAtlas2 from "graphology-layout-forceatlas2";
-import { createNodeImageProgram } from "@sigma/node-image";
+import { createNodeImageProgram, NodePictogramProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -21,9 +21,11 @@ import {
     EdgeRectangleProgram,
     createNodeCompoundProgram,
     createEdgeCompoundProgram,
+    EdgeArrowHeadProgram,
 } from "sigma/rendering";
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
+import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
 
 const GraphRenderer = () => {
     const [layoutSettings, setLayoutSettings] = useState({});
@@ -44,11 +46,21 @@ const GraphRenderer = () => {
     }, []);
 
     const AnimatedStraightEdgeProgram = useMemo(() => {
-        return createEdgeCompoundProgram([EdgeRectangleProgram, AnimatedDotProgram]);
+        return createEdgeCompoundProgram([
+            EdgeRectangleProgram,
+            EdgeArrowHeadProgram,
+            AnimatedDotProgram,
+        ]);
+    }, []);
+
+    const SwitchEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
     }, []);
 
     const sigmaSettings = useMemo(
         () => ({
+            minCameraRatio: 0.08,
+            maxCameraRatio: 3,
             renderEdgeLabels: true,
             itemSizesReference: "screen",
             defaultDrawNodeLabel: drawLabel,
@@ -63,13 +75,14 @@ const GraphRenderer = () => {
             zIndex: true,
             enableEdgeEvents: true,
             nodeProgramClasses: {
-                nodeImg: BorderImageNodeProgram,
+                nodeImg: NodePictogramProgram,
                 node: NodeBorderProgram,
             },
             edgeProgramClasses: {
                 straight: EdgeRectangleProgram,
                 curved: EdgeCurveProgram,
                 animated: AnimatedStraightEdgeProgram,
+                switch: SwitchEdgeProgram,
             },
         }),
         [],
@@ -109,7 +122,20 @@ const GraphRenderer = () => {
         }
 
         if (!graphHelper.isHighlighted(attrs.group)) {
-            return { ...attrs, color: "rgba(145, 145, 145, 0.7)", label: "", size: 1 };
+            const inactiveColor = "rgba(145, 145, 145, 0.7)";
+
+            if (attrs.type === "switch") {
+                return {
+                    ...attrs,
+                    color: inactiveColor,
+                    label: "",
+                    size: 1,
+                    switchColor: inactiveColor,
+                    switchSize: 2,
+                };
+            }
+
+            return { ...attrs, color: inactiveColor, label: "", size: 1 };
         }
 
         return { ...attrs, size: attrs.size * 1.5 };
