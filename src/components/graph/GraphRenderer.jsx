@@ -9,7 +9,7 @@ import {
 import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 import { MultiUndirectedGraph } from "graphology";
 import forceAtlas2 from "graphology-layout-forceatlas2";
-import { createNodeImageProgram, NodePictogramProgram } from "@sigma/node-image";
+import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -22,10 +22,12 @@ import {
     createNodeCompoundProgram,
     createEdgeCompoundProgram,
     EdgeArrowHeadProgram,
+    NodeCircleProgram,
 } from "sigma/rendering";
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
 import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
+import { getFA2Settings } from "../../utils/fa2-presets";
 
 const GraphRenderer = () => {
     const [layoutSettings, setLayoutSettings] = useState({});
@@ -35,13 +37,15 @@ const GraphRenderer = () => {
         const NodeBorderCustomProgram = createNodeBorderProgram({
             borders: [
                 {
-                    size: { attribute: "borderSize", defaultValue: 2 },
+                    size: { attribute: "borderSize", defaultValue: 6 },
                     color: { attribute: "borderColor" },
                 },
                 { size: { fill: true }, color: { attribute: "color" } },
             ],
         });
+
         const NodePictogramCustomProgram = createNodeImageProgram();
+
         return createNodeCompoundProgram([NodeBorderCustomProgram, NodePictogramCustomProgram]);
     }, []);
 
@@ -59,7 +63,7 @@ const GraphRenderer = () => {
 
     const sigmaSettings = useMemo(
         () => ({
-            minCameraRatio: 0.08,
+            minCameraRatio: 0.02,
             maxCameraRatio: 3,
             renderEdgeLabels: true,
             itemSizesReference: "screen",
@@ -69,7 +73,7 @@ const GraphRenderer = () => {
             labelDensity: 0.5,
             labelSize: 11,
             labelGridCellSize: 60,
-            labelRenderedSizeThreshold: 6,
+            labelRenderedSizeThreshold: 14,
             hideEdgesOnMove: false,
             hideLabelsOnMove: true,
             zIndex: true,
@@ -143,7 +147,7 @@ const GraphRenderer = () => {
 
     useEffect(() => {
         if (graphHelper.graph.order > 0) {
-            setLayoutSettings(forceAtlas2.inferSettings(graphHelper.graph));
+            setLayoutSettings(getFA2Settings(graphHelper.graph));
         }
     }, [graphUpdateTrigger]);
 

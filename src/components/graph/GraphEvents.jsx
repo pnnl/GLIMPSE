@@ -168,7 +168,12 @@ const GraphEvents = () => {
             },
             enterNode: (e) => {
                 graphHelper.graph.edges(e.node).forEach((edgeId) => {
-                    graphHelper.graph.setEdgeAttribute(edgeId, "label", edgeId);
+                    const attrs = graphHelper.graph.getEdgeAttributes(edgeId);
+                    graphHelper.graph.setEdgeAttribute(
+                        edgeId,
+                        "label",
+                        attrs.attributes.name ?? edgeId,
+                    );
                 });
             },
             leaveNode: (e) => {
@@ -178,7 +183,11 @@ const GraphEvents = () => {
             },
             enterEdge: (e) => {
                 const attrs = graphHelper.graph.getEdgeAttributes(e.edge);
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", attrs.name ?? e.edge);
+                graphHelper.graph.setEdgeAttribute(
+                    e.edge,
+                    "label",
+                    attrs.attributes.name ?? e.edge,
+                );
             },
             leaveEdge: (e) => {
                 graphHelper.graph.setEdgeAttribute(e.edge, "label", "");

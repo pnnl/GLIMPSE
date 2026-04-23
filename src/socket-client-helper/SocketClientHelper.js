@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import graphHelper from "../graph-helper/GraphHelper";
 
 class SocketClientHelper {
     //  Default Configs
@@ -112,8 +113,7 @@ class SocketClientHelper {
         });
 
         this.socket.on("switch-state-update", (data) => {
-            console.log(data.switches);
-            // graphHelper.openSwitch()
+            graphHelper.updateSwitches(data);
         });
 
         // Graph mutation events

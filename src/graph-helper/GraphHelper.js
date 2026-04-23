@@ -469,9 +469,9 @@ class GraphHelper {
         });
     };
 
-    _getCurvature(index, maxIndex) {
+    #getCurvature(index, maxIndex) {
         if (maxIndex <= 0) throw new Error("Invalid maxIndex");
-        if (index < 0) return -this._getCurvature(-index, maxIndex);
+        if (index < 0) return -this.#getCurvature(-index, maxIndex);
 
         const amplitude = 3.5;
         const maxCurvature =
@@ -496,7 +496,7 @@ class GraphHelper {
                 // All others are curved so they fan out on either side.
                 graph.mergeEdgeAttributes(edge, {
                     type: parallelIndex ? "curved" : "straight",
-                    curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
+                    curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
                 });
 
                 return;
@@ -507,21 +507,35 @@ class GraphHelper {
                 //    graph, but included for completeness) ──
                 graph.mergeEdgeAttributes(edge, {
                     type: "curved",
-                    curvature: this._getCurvature(parallelIndex, parallelMaxIndex),
+                    curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
                 });
             }
         });
     };
 
-    #isOpenSwitch = (switchAttributes) => {
-        // check for "open" attribute
-        if ("open" in switchAttributes || "status" in switchAttributes) {
-            if (switchAttributes.status === "OPEN" || switchAttributes.open === "True") {
-                return true;
-            }
-        }
+    updateSwitches = (simOutput) => {
+        const { timestamp, switches } = simOutput;
 
-        return false;
+        switches.forEach((sw) => {
+            console.log(sw);
+            const { equipment_mrid: switchID, open, value } = sw;
+
+            console.log(`Switch ${switchID} is open: ${open}`);
+
+            if (!this.graph.hasEdge(switchID)) {
+                console.warn(`Switch with ID ${switchID} not found in the graph.`);
+                return;
+            }
+
+            this.graph.updateEdgeAttributes(switchID, (attrs) => {
+                console.log(`Updating Switch ${attrs.attributes.name}`);
+                return {
+                    ...attrs,
+                    status: value === 0 ? "OPEN" : "CLOSED",
+                    switchColor: value === 0 ? "#4aff4a" : "#ff0000",
+                };
+            });
+        });
     };
 
     setGraphData = (fileData) => {

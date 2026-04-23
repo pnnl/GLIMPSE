@@ -10,7 +10,7 @@
   
   <!-- PV Panel body (rectangle) -->
   <rect x="76" y="50" width="160" height="110" 
-        fill="white" stroke="black" stroke-width="3"/>
+        fill="none" stroke="black" stroke-width="3"/>
   
   <!-- Cell grid (2 rows × 4 columns) -->
   <line x1="76" y1="105" x2="236" y2="105" stroke="black" stroke-width="2"/>

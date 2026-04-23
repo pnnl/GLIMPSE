@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <!-- Bus connection point (top) -->
-  <circle cx="128" cy="30" r="6" fill="black"/>
+  <circle cx="128" cy="30" r="9" fill="black"/>
   
   <!-- Vertical connection line from bus to load -->
   <line x1="128" y1="30" x2="128" y2="110" 
-        stroke="black" stroke-width="3"/>
+        stroke="black" stroke-width="9"/>
   
   <!-- Load arrow (filled triangle pointing down = power consumed) -->
   <polygon points="128,220 40,110 216,110" 

@@ -5,7 +5,7 @@
   
   <!-- Primary winding (left circle) -->
   <circle cx="104" cy="128" r="38" 
-          fill="white" stroke="black" stroke-width="3"/>
+          fill="none" stroke="black" stroke-width="3"/>
   
   <!-- Secondary winding (right circle, overlapping) -->
   <circle cx="158" cy="128" r="38" 

@@ -40,6 +40,34 @@ class CIMHelper:
     def __init__(self) -> None:
         pass
 
+    def classify_line(self, line: object) -> str:
+        UNDERGROUND_INFO = (
+            getattr(cim, "ConcentricNeutralCableInfo", None),
+            getattr(cim, "TapeShieldCableInfo", None),
+            getattr(cim, "CableInfo", None),
+        )
+        UNDERGROUND_INFO = tuple(c for c in UNDERGROUND_INFO if c is not None)
+        # Gather WireInfo objects from every phase of this segment
+        infos = []
+        for phs in line.ACLineSegmentPhases or []:
+            if phs.WireInfo is not None:
+                infos.append(phs.WireInfo)
+
+        # Fallback: check Assets/AssetInfo if phases aren't populated
+        if not infos:
+            for asset in getattr(line, "Assets", None) or []:
+                if getattr(asset, "AssetInfo", None) is not None:
+                    infos.append(asset.AssetInfo)
+
+        if not infos:
+            return "overhead_line"  # or "unknown" — pick a default
+
+        if any(isinstance(i, UNDERGROUND_INFO) for i in infos):
+            return "underground_line"
+        if any(isinstance(i, cim.OverheadWireInfo) for i in infos):
+            return "overhead_line"
+        return "line"
+
     def _get_cim_feeder(self, model_id: str):
         database = BlazegraphConnection()
         # database = GridappsdConnection()
@@ -86,20 +114,6 @@ class CIMHelper:
         self._FEEDERS: dict[str, FeederModel] = {}
         feeder_id = None
 
-        TYPES = {
-            "RotatingMachine": "diesel_dg",
-            "SynchronousMachine": "diesel_dg",
-            "AsynchronousMachine": "diesel_dg",
-            "EnergySource": "diesel_dg",
-            "ShuntCompensator": "capacitor",
-            "LinearShuntCompensator": "capacitor",
-            "SeriesCompensator": "capacitor",
-            "PowerElectronicsConnection": "inverter_dyn",
-            "EnergyConsumer": "load",
-            "ConformLoad": "load",
-            "NonConformLoad": "load",
-        }
-
         if model_id is not None:
             executor = ThreadPoolExecutor(max_workers=1)
             future = executor.submit(self._get_cim_feeder, model_id=model_id)
@@ -112,6 +126,11 @@ class CIMHelper:
 
                 # cim_utils.get_all_line_data(self._FEEDERS[feeder_id])
                 self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
+                self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
+                self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegmentPhase)
+                self._FEEDERS[feeder_id].get_all_edges(cim.OverheadWireInfo)
+                self._FEEDERS[feeder_id].get_all_edges(cim.ConcentricNeutralCableInfo)
+                self._FEEDERS[feeder_id].get_all_edges(cim.TapeShieldCableInfo)
 
                 # cim_utils.get_all_transformer_data(self._FEEDERS[feeder_id])
                 self._FEEDERS[feeder_id].get_all_edges(cim.TransformerTank)
@@ -168,6 +187,20 @@ class CIMHelper:
 
         phantom_node_count: int = 0
         objects: list = []
+
+        TYPES = {
+            "RotatingMachine": "diesel_dg",
+            "SynchronousMachine": "diesel_dg",
+            "AsynchronousMachine": "diesel_dg",
+            "EnergySource": "diesel_dg",
+            "ShuntCompensator": "capacitor",
+            "LinearShuntCompensator": "capacitor",
+            "SeriesCompensator": "capacitor",
+            "PowerElectronicsConnection": "inverter_dyn",
+            "EnergyConsumer": "load",
+            "ConformLoad": "load",
+            "NonConformLoad": "load",
+        }
 
         for node in self._FEEDERS[feeder_id].graph[cim.ConnectivityNode].values():
             new_node = {
@@ -228,9 +261,8 @@ class CIMHelper:
             objects.append(new_node)
 
         for line in self._FEEDERS[feeder_id].graph[cim.ACLineSegment].values():
-            # conceptrive or insolated
-            new_l = {
-                "objectType": "overhead_line",
+            new_line = {
+                "objectType": self.classify_line(line),
                 "elementType": "edge",
                 "attributes": {
                     "id": line.mRID,
@@ -242,8 +274,8 @@ class CIMHelper:
                 },
             }
 
-            self._add_attributes(line, new_l)
-            objects.append(new_l)
+            self._add_attributes(line, new_line)
+            objects.append(new_line)
 
         for line in self._FEEDERS[feeder_id].graph[cim.TransformerTank].values():
             new_edge = {
@@ -392,8 +424,8 @@ class CIMHelper:
                             "from": switch_obj.Terminals[0].ConnectivityNode.mRID,
                             "to": switch_obj.Terminals[1].ConnectivityNode.mRID,
                             "class_type": switch_obj.__class__.__name__,
-                            "normalOpen": normal_open,
-                            "open": switch_status,
+                            "normalStatus": "OPEN" if normal_open else "CLOSED",
+                            "status": "OPEN" if switch_status else "CLOSED",
                             "ratedCurrent": rated_current,
                             "measurement_mrids": measurement_mrids,
                         },

@@ -460,6 +460,29 @@ def delete_edge(edge_id):
 # ─── SocketIO Event Handlers ──────────────────────────────────────
 
 
+def is_switch_pos_measurement(meas_type: str, eq_type: str, meas_data: dict) -> bool:
+    SWITCH_EQUIPMENT_TYPES = frozenset(
+        {
+            "Breaker",
+            "Fuse",
+            "Switch",
+            "Sectionaliser",
+            "LoadBreakSwitch",
+            "Disconnector",
+            "Recloser",
+        }
+    )
+
+    """Return True only for Pos measurements that belong to a switching device."""
+    if meas_type != "Pos":
+        return False
+    if "value" not in meas_data:
+        return False
+    if eq_type not in SWITCH_EQUIPMENT_TYPES:
+        return False
+    return True
+
+
 @socketio.on("start-simulation")
 def handle_start_simulation(config):
     global active_measurement_map
@@ -486,7 +509,7 @@ def handle_start_simulation(config):
                     meas_type = mapping.get("measurement_type", "")
 
                     # Switch state: Discrete "Pos" measurements carry value 0=open, 1=closed
-                    if meas_type == "Pos" and "value" in meas_data:
+                    if is_switch_pos_measurement(meas_type, eq_type, meas_data):
                         switch_updates.append(
                             {
                                 "equipment_mrid": mapping.get(
@@ -573,6 +596,6 @@ if __name__ == "__main__":
         app,
         host="127.0.0.1",
         port=port,
-        debug=True,
-        log_output=False,
+        debug=False,
+        log_output=True,
     )

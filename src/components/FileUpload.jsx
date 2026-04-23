@@ -163,8 +163,9 @@ const FileUpload = ({ closeModal }) => {
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        uploadFiles(e.dataTransfer.files);
+        e.target.value = null;
         setDragActive(false);
-        uploadFiles(e.dataFiles.files);
     };
 
     return (
