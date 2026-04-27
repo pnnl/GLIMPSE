@@ -8,9 +8,8 @@ from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
 from dataclasses import fields, is_dataclass
 
-from cimbuilder.object_builder import new_energy_consumer
-from cimbuilder.object_builder import new_synchronous_generator
-from cimbuilder.object_builder import new_two_terminal_object
+from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
+from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
 
 # CIM-graph imports
 # from cimgraph.databases.gridappsd import GridappsdConnection
@@ -19,8 +18,6 @@ from cimgraph.models import FeederModel
 import cimgraph.utils as cim_utils
 from cimgraph.databases import XMLFile
 import cimgraph.data_profile.cimhub_2023 as cim
-from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
-from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
 
 # Environment setup
 os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"

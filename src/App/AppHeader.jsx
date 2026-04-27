@@ -11,7 +11,8 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
-    const { graphUpdateTrigger } = useGraph;
+    const [searchValue, setSearchValue] = useState(undefined);
+    const { graphUpdateTrigger } = useGraph();
 
     const menuItems = [
         { key: "export-model", label: "Export Model", disabled: true },
@@ -36,9 +37,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     useEffect(() => {
         const handleGraphLoaded = () => {
             setGraphLoaded(true);
+            setSearchValue(undefined);
         };
 
-        const handleGraphCleared = () => setGraphLoaded(false);
+        const handleGraphCleared = () => {
+            setGraphLoaded(false);
+            setSearchValue(undefined);
+        };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
         window.addEventListener("graph-cleared", handleGraphCleared);
@@ -48,7 +53,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
         };
-    }, []);
+    }, [selectedTheme]);
 
     const searchOptions = useMemo(() => {
         if (!graphLoaded) return [];
@@ -103,9 +108,17 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         style={{ width: "30rem", marginLeft: "auto" }}
                         size="middle"
                         showSearch
+                        value={searchValue}
                         options={searchOptions}
-                        placeholder="Search by ID"
-                        onSelect={(val) => graphHelper.focus(JSON.parse(val))}
+                        placeholder="Search by ID or Name"
+                        onSelect={(val) => {
+                            graphHelper.focus(JSON.parse(val));
+                            setSearchValue(undefined);
+                        }}
+                        onChange={(val) => setSearchValue(val)}
+                        filterOption={(input, option) =>
+                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                        }
                     />
                 )}
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
@@ -116,7 +129,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         size="middle"
                         type="primary"
                     >
-                        Load New
+                        Load
                     </Button>
                     <Button
                         color="#333333"

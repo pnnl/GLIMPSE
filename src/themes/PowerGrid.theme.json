@@ -105,52 +105,52 @@
     },
     "edgeOptions": {
         "overhead_line": {
-            "width": 2,
+            "size": 2,
             "color": "#000000"
         },
         "underground_line": {
-            "width": 2,
+            "size": 2,
             "color": "#555555"
         },
         "triplex_line": {
-            "width": 2,
+            "size": 2,
             "color": "#999999"
         },
         "switch": {
-            "width": 2,
+            "size": 2,
             "color": "#0072B2"
         },
         "series_reactor": {
-            "width": 2,
+            "size": 2,
             "color": "#CC79A7"
         },
         "regulator": {
-            "width": 2,
+            "size": 2,
             "color": "#D55E00"
         },
         "transformer": {
-            "width": 2,
+            "size": 2,
             "color": "#009E73"
         },
         "parentChild": {
-            "width": 2,
+            "size": 2,
             "color": "#BBBBBB"
         },
         "mapping": {
-            "width": 1,
+            "size": 1,
             "color": "#DDDDDD"
         },
         "communication": {
-            "width": 2,
+            "size": 2,
             "color": "#CC79A7",
             "dashArray": "4,2"
         },
         "microgrid_connection": {
-            "width": 1,
+            "size": 1,
             "color": "#009E73"
         },
         "line": {
-            "width": 1,
+            "size": 1,
             "color": "#AAAAAA"
         }
     }

@@ -12,14 +12,14 @@ const NODE_ITEMS = [
 ];
 const EDGE_ITEMS = [
     { key: "edit-attributes", label: "Edit Attributes" },
-    { key: "hide-edge", label: "Hide Edge", disabled: true },
+    { key: "hide-edge", label: "Hide Edge", disabled: false },
     { key: "animate-edge", label: "Toggle Animation", disabled: false },
     { type: "divider" },
     { key: "delete-edge", label: "Delete Edge" },
 ];
 const GRAPH_ITEMS = [
     { key: "new-node", label: "Add New Node", disabled: false },
-    { key: "new-edge", label: "Add New Edge", disabled: true },
+    { key: "new-edge", label: "Add New Edge", disabled: false },
     { type: "divider" },
     { key: "save-image", label: "Save image as..." },
 ];
@@ -30,7 +30,13 @@ const ITEMS = {
     graphItems: GRAPH_ITEMS,
 };
 
-const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModal }) => {
+const GraphContextMenu = ({
+    context,
+    close,
+    openAttributesModal,
+    openNewNodeModal,
+    openNewEdgeModal,
+}) => {
     const menuRef = useRef(null);
     const [position, setPosition] = useState({ x: context.x, y: context.y });
 
@@ -68,7 +74,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModa
     const handleImageSave = () => {
         downloadAsImage(graphHelper.sigmaInstance, {
             backgroundColor: "#FFFFFF",
-            fileName: "GLIMPSE_network_snapshot",
+            fileName: "GLIMPSE-snapshot",
             format: "png",
             layers: ["edges", "nodes", "labels"],
         });
@@ -88,6 +94,11 @@ const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModa
         graphHelper.sigmaInstance.refresh();
     };
 
+    const hideEdge = (edgeID) => {
+        graphHelper.graph.setEdgeAttribute(edgeID, "hidden", true);
+        graphHelper.sigmaInstance.refresh();
+    };
+
     const handleMenuClick = ({ key }) => {
         console.log(`Clicked on menu item: ${key}`);
 
@@ -96,6 +107,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModa
                 openAttributesModal();
                 break;
             case "hide-edge":
+                hideEdge(context.edge);
                 break;
             case "delete-node":
                 deleteNode(context.node);
@@ -110,6 +122,7 @@ const GraphContextMenu = ({ context, close, openAttributesModal, openNewNodeModa
                 openNewNodeModal();
                 break;
             case "new-edge":
+                openNewEdgeModal();
                 break;
             case "save-image":
                 handleImageSave();

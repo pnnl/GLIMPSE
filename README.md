@@ -6,8 +6,6 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 
 ## UI
 
-![UI](https://github.com/user-attachments/assets/12896785-d76a-470c-b80f-f91870b537f1)
-
 > [!NOTE]
 > If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
 
@@ -86,13 +84,13 @@ conda activate env
 ### Install Requirements
 
 > [!NOTE]
-> If you used `uv` to create your environment you may skip this part
+> If you used `uv` to create your environment you may skip the following section
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Additional Dependencies
+### Additional Required Dependencies
 
 install glm parser
 
@@ -206,9 +204,9 @@ npm run dev
 
 ### GLIMPSE glm (GridLAB-D Model) file support
 
-1. To get started upload all the `.glm` files in the `GLIMPSE/glimpse/data/123-bus-model/` folder
-2. Feel free to also upload the 3000, 8500, and 9500 model `.glm` files to experience GLIMPSE's scalability through community detection and node clustering.
-3. To re-upload files after visualization, click on the `HOME` button at the top right of the app.
+1. To get started upload all the `.glm` files in the `GLIMPSE/glimpse/testing/123/` folder
+2. Feel free to also upload the 3000, 8500, and 9500 model `.glm` files to experience GLIMPSE's GPU accelerated rendering using [sigma.js](https://www.sigmajs.org/)
+3. To re-upload files after visualization, click on the `LOAD` button at the top right of the application.
 
 ### CIM (.XML) File Support
 

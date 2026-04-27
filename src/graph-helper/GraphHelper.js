@@ -538,13 +538,88 @@ class GraphHelper {
         });
     };
 
+    newNodeWithEdge = (newNodeData) => {
+        const { nodeType, nodeID, connectTo, edgeType } = newNodeData;
+
+        if (this.graph.hasNode(nodeID)) {
+            console.warn(`Node with ID ${nodeID} already exists.`);
+            return;
+        }
+
+        const midPoint = {
+            x: (this.#boundsCoords.maxX + this.#boundsCoords.minX) / 2,
+            y: (this.#boundsCoords.maxY + this.#boundsCoords.minY) / 2,
+        };
+
+        const newNode = {
+            label: nodeID,
+            elementType: "node",
+            group: nodeType,
+            x: midPoint.x,
+            y: midPoint.y,
+            fixed: false,
+            attributes: { id: nodeID, name: nodeID },
+            ...this.#theme.groups[nodeType],
+        };
+
+        const newEdge = {
+            elementType: "edge",
+            group: edgeType,
+            type: "straight",
+            dotColor: "#ff0000",
+            dotSize: 6,
+            dotSpeed: 0.25,
+            dotPhase: Math.random(),
+            flowDirection: 1, // -1 for opposite flow
+            dotCount: 1,
+            attributes: { from: nodeID, to: connectTo, id: `${nodeID}-${connectTo}` },
+            ...this.#theme.edgeOptions[edgeType],
+        };
+
+        // color witch edges red if they are open
+        if (edgeType === "switch") {
+            newEdge.switchColor = "#ff0000";
+            newEdge.type = "switch";
+            newEdge.switchSize = 8;
+        }
+
+        this.graph.addNode(nodeID, newNode);
+        this.graph.addEdgeWithKey(`${nodeID}-${connectTo}`, nodeID, connectTo, newEdge);
+    };
+
+    newEdge = (newEdgeData) => {
+        const { edgeType, edgeID, fromNode, toNode } = newEdgeData;
+
+        const newEdge = {
+            elementType: "edge",
+            group: edgeType,
+            type: "straight",
+            dotColor: "#ff0000",
+            dotSize: 6,
+            dotSpeed: 0.25,
+            dotPhase: Math.random(),
+            flowDirection: 1, // -1 for opposite flow
+            dotCount: 1,
+            attributes: { from: fromNode, to: toNode, id: `${fromNode}-${toNode}` },
+            ...this.#theme.edgeOptions[edgeType],
+        };
+
+        // color witch edges red if they are open
+        if (edgeType === "switch") {
+            newEdge.switchColor = "#ff0000";
+            newEdge.type = "switch";
+            newEdge.switchSize = 8;
+        }
+
+        this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
+    };
+
     setGraphData = (fileData) => {
         const newGraph = new MultiUndirectedGraph({
             allowSelfLoops: true,
             type: "undirected",
         });
 
-        console.log(fileData);
         const files = Object.keys(fileData).map((file) => fileData[file]);
 
         // get nodes
@@ -667,8 +742,6 @@ class GraphHelper {
                     const edgeFrom = attributes.from;
                     const edgeTo = attributes.to;
                     const edgeID = attributes.id ?? attributes.name;
-                    let edgeSize = this.#theme.edgeOptions[objectType].width;
-                    let edgeColor = this.#theme.edgeOptions[objectType].color;
 
                     if (objectType in this.objectTypeCount.edges)
                         this.objectTypeCount.edges[objectType]++;
@@ -684,10 +757,9 @@ class GraphHelper {
                         dotPhase: Math.random(),
                         flowDirection: 1, // -1 for opposite flow
                         dotCount: 1,
-                        color: edgeColor,
-                        size: edgeSize,
                         length: attributes.length ?? null,
                         attributes: attributes,
+                        ...this.#theme.edgeOptions[objectType],
                     };
 
                     // color witch edges red if they are open
@@ -724,7 +796,7 @@ class GraphHelper {
                         group: objectType,
                         type: "straight",
                         length: attributes.length ?? null,
-                        size: this.#theme.edgeOptions[objectType].width,
+                        size: this.#theme.edgeOptions[objectType].size,
                         attributes: attributes,
                     });
                 }
