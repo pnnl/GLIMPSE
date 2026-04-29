@@ -1,102 +1,108 @@
 import { useEffect, useState } from "react";
 import { Form, Button, Select, Spin } from "antd";
 import axios from "axios";
+import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 
 const GridAPPSDModelForm = ({ onModelSelect }) => {
-   const [regionNames, setRegionNames] = useState(null);
-   const [regionName, setRegionName] = useState(null);
-   const [modelInfo, setModelInfo] = useState(false);
-   const [connected, setConnected] = useState(false);
-   const [loading, setLoading] = useState(false);
+    const [regionNames, setRegionNames] = useState(null);
+    const [regionName, setRegionName] = useState(null);
+    const [modelInfo, setModelInfo] = useState(false);
+    const [connected, setConnected] = useState(false);
+    const [loading, setLoading] = useState(false);
 
-   const connectToGridAPPSD = async () => {
-      setLoading(true);
+    const connectToGridAPPSD = async () => {
+        setLoading(true);
 
-      try {
-         console.log("Attempting to connect to GridAPPSD...");
-         const res = await axios.get("http://127.0.0.1:5051/api/gridappsd/status");
+        try {
+            console.log("Attempting to connect to GridAPPSD...");
+            const res = await axios.get("http://127.0.0.1:5051/api/gridappsd/status");
 
-         console.log(res.status);
-         console.log(res.data);
+            console.log(res.status);
+            console.log(res.data);
 
-         if ("connected" in res.data && !res.data.connected) {
-            alert(res.data.message);
-            setLoading(false);
-         } else if ("connected" in res.data && res.data.connected) {
-            setConnected(res.data.connected);
-         }
-      } catch (e) {
-         console.error("Error connecting to GridAPPSD:", e.message);
-         console.error("Full error:", e);
-      }
-   };
-
-   useEffect(() => {
-      const getModelInfo = async () => {
-         try {
-            const modelInfoRequest = axios.get("http://127.0.0.1:5051/api/gridappsd/model-info");
-            const res = await modelInfoRequest;
-
-            if (res.data.error || res.status === 500) {
-               console.log(res.data.error);
-               setConnected(false);
-               return;
+            if ("connected" in res.data && !res.data.connected) {
+                alert(res.data.message);
+                setLoading(false);
+            } else if ("connected" in res.data && res.data.connected) {
+                setConnected(res.data.connected);
             }
+        } catch (e) {
+            console.error("Error connecting to GridAPPSD:", e.message);
+            console.error("Full error:", e);
+        }
+    };
 
-            // models is an array
-            const models = res.data.models;
-            const regionNamesSet = new Set();
+    useEffect(() => {
+        const getModelInfo = async () => {
+            try {
+                const modelInfoRequest = axios.get(
+                    "http://127.0.0.1:5051/api/gridappsd/model-info",
+                );
+                const res = await modelInfoRequest;
 
-            // get set of region names
-            models.forEach((model) => regionNamesSet.add(model.regionName));
+                if (res.data.error || res.status === 500) {
+                    console.log(res.data.error);
+                    setConnected(false);
+                    return;
+                }
 
-            setRegionNames(Array.from(regionNamesSet));
-            setModelInfo(res.data.models);
-         } catch (e) {
-            console.error(e);
-         } finally {
-            setLoading(false);
-         }
-      };
+                // models is an array
+                const models = res.data.models;
+                const regionNamesSet = new Set();
 
-      if (connected) {
-         getModelInfo();
-      }
-   }, [connected]);
+                // get set of region names
+                models.forEach((model) => regionNamesSet.add(model.regionName));
 
-   return (
-      <Form>
-         {!connected && (
-            <Form.Item>
-               <Button onClick={connectToGridAPPSD}>Connect</Button>
-            </Form.Item>
-         )}
-         {loading && <Spin />}
-         {connected && modelInfo && (
-            <>
-               <Form.Item label={"Geographical Region Name"}>
-                  <Select
-                     onChange={(value) => setRegionName(value)}
-                     options={regionNames.map((n) => ({ value: n, label: n }))}
-                  />
-               </Form.Item>
-               <Form.Item label={"Model"}>
-                  <Select
-                     mode="multiple"
-                     onChange={(modelIds) => onModelSelect(modelIds)}
-                     disabled={regionName === null}
-                     options={modelInfo
-                        .filter((model) => model.regionName === regionName)
-                        .map((model) => ({
-                           value: model.modelId,
-                           label: model.modelName,
-                        }))}
-                  />
-               </Form.Item>
-            </>
-         )}
-      </Form>
-   );
+                setRegionNames(Array.from(regionNamesSet));
+                setModelInfo(res.data.models);
+                // Update simulation state to idle since model info is available
+                socketClientHelper.setSimulationState("idle");
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (connected) {
+            getModelInfo();
+        }
+    }, [connected]);
+
+    return (
+        <Form>
+            {!connected && (
+                <Form.Item>
+                    <Button onClick={connectToGridAPPSD}>Connect</Button>
+                </Form.Item>
+            )}
+            {loading && <Spin />}
+            {connected && modelInfo && (
+                <>
+                    <Form.Item label={"Geographical Region Name"}>
+                        <Select
+                            onChange={(value) => setRegionName(value)}
+                            options={regionNames.map((n) => ({ value: n, label: n }))}
+                        />
+                    </Form.Item>
+                    <Form.Item label={"Model"}>
+                        <Select
+                            mode="multiple"
+                            onChange={(models) => onModelSelect(models)}
+                            disabled={regionName === null}
+                            options={modelInfo
+                                .filter((model) => model.regionName === regionName)
+                                .map((model) => ({
+                                    // value: model.modelId,
+                                    value: JSON.stringify(model),
+                                    label: model.modelName,
+                                }))}
+                        />
+                    </Form.Item>
+                </>
+            )}
+        </Form>
+    );
 };
 
 export default GridAPPSDModelForm;

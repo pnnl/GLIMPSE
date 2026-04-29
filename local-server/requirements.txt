@@ -7,6 +7,7 @@ networkx
 requests
 wheel
 setuptools
-cim-graph==0.4.3a4
+cim-graph==0.4.3a10
+gridappsd-python==2026.2.1
 pyinstaller
 jsonschema

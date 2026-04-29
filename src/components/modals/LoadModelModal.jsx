@@ -8,96 +8,93 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 
 const LoadModelModal = ({ onMount }) => {
-   const [open, setOpen] = useState(true);
-   const [loading, setLoading] = useState(false);
-   const [selectedGridappsdModels, setSelectedGridappsdModels] = useState(null);
-   const { newGraphUpdate } = useGraph();
+    const [open, setOpen] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [selectedGridappsdModels, setSelectedGridappsdModels] = useState(null);
+    const { newGraphUpdate } = useGraph();
 
-   const handleModelSelect = (obj) => {
-      console.log(obj);
-      setSelectedGridappsdModels(obj);
-   };
+    const handleModelSelect = (selectedModels) => {
+        const models = selectedModels.map((m) => JSON.parse(m));
+        console.log(models);
+        graphHelper.selectedGridappsdModels = models;
+        setSelectedGridappsdModels(models);
+    };
 
-   const ITEMS = [
-      {
-         label: "File Upload",
-         key: "file-upload",
-         children: <FileUpload closeModal={() => setOpen(false)} />,
-      },
-      {
-         label: "Load w/ GridAPPS-D",
-         key: "load-gridappsd",
-         children: <GridAPPSDModelForm onModelSelect={handleModelSelect} />,
-      },
-   ];
+    const ITEMS = [
+        {
+            label: "File Upload",
+            key: "file-upload",
+            children: <FileUpload closeModal={() => setOpen(false)} />,
+        },
+        {
+            label: "Load w/ GridAPPS-D",
+            key: "load-gridappsd",
+            children: <GridAPPSDModelForm onModelSelect={handleModelSelect} />,
+        },
+    ];
 
-   useEffect(() => {
-      if (onMount) {
-         onMount(setOpen);
-      }
-   }, [onMount]);
+    useEffect(() => {
+        if (onMount) {
+            onMount(setOpen);
+        }
+    }, [onMount]);
 
-   const close = () => setOpen(false);
+    const close = () => setOpen(false);
 
-   const handleLoad = async () => {
-      setLoading(true);
+    const handleLoad = async () => {
+        setLoading(true);
 
-      try {
-         const resPromise = axios.post(
-            `http://127.0.0.1:5051/api/gridappsd/models`,
-            selectedGridappsdModels,
-            {
-               headers: { "Content-Type": "application/json" },
-            },
-         );
-         const response = await resPromise;
+        try {
+            const resPromise = axios.post(
+                `http://127.0.0.1:5051/api/gridappsd/models`,
+                selectedGridappsdModels.map((m) => m.modelId),
+                {
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+            const { data: response } = await resPromise;
 
-         console.log(response.data);
-         if ("error" in response.data) throw new Error(response.data.error);
+            if ("error" in response) throw new Error(response.error);
 
-         // Set graph data which triggers clear and render
-         if (graphHelper.graph.order > 0) {
-            graphHelper.clearGraphData();
+            // Set graph data which triggers clear and render
+            if (graphHelper.graph.order > 0) {
+                graphHelper.clearGraphData();
+                window.dispatchEvent(new CustomEvent("graph-cleared"));
+            }
 
-            window.dispatchEvent(new CustomEvent("graph-cleared"));
-
-            graphHelper.setGraphData(response.data);
+            // Close modal after data is set
+            console.log(response);
+            graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setGraphData(response.data ?? response);
             newGraphUpdate();
-         } else {
-            graphHelper.setGraphData(response.data);
-            newGraphUpdate();
-         }
+            window.dispatchEvent(new CustomEvent("graph-loaded"));
+            setOpen(false);
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-         window.dispatchEvent(new CustomEvent("graph-loaded"));
+    const modalFooter = [
+        <Button key={"load-btn"} loading={loading} onClick={handleLoad}>
+            Load
+        </Button>,
+    ];
 
-         // Close modal after data is set
-         setOpen(false);
-      } catch (e) {
-         console.log(e);
-      } finally {
-         setLoading(false);
-      }
-   };
-
-   const modalFooter = [
-      <Button key={"load-btn"} loading={loading} onClick={handleLoad}>
-         Load
-      </Button>,
-   ];
-
-   return createPortal(
-      <Modal
-         centered
-         footer={selectedGridappsdModels ? modalFooter : []}
-         width={750}
-         title="Load a Model"
-         onCancel={close}
-         open={open}
-      >
-         <Tabs type="card" items={ITEMS} />
-      </Modal>,
-      document.getElementById("portal"),
-   );
+    return createPortal(
+        <Modal
+            centered
+            footer={selectedGridappsdModels ? modalFooter : []}
+            width={750}
+            title="Load a Model"
+            onCancel={close}
+            open={open}
+        >
+            <Tabs type="card" items={ITEMS} />
+        </Modal>,
+        document.getElementById("portal"),
+    );
 };
 
 export default LoadModelModal;

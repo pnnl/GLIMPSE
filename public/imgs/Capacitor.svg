@@ -1,33 +1,23 @@
-<svg
-  style="background-color: white;"
-  stroke="black"
-  stroke-linecap="round"
-  stroke-linejoin="round"
-  stroke-width="1.8"
-  fill="none"
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 48 48" width="64" height="64"
->
-  <path
-    d="
-         M 17 5
-         h 14
-         v 25
-         h -14
-         z
-         M 17 33
-         h 14
-         v 3
-         h -14
-         z
-         M 20 36
-         v 8
-         m 8 0
-         v -8
-         M 19 31
-         v 1
-         m 10 0
-         v -1
-         "
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Top connection point (bus) -->
+  <circle cx="128" cy="40" r="9" fill="black"/>
+  
+  <!-- Top connection line -->
+  <line x1="128" y1="40" x2="128" y2="112" 
+        stroke="black" stroke-width="12"/>
+  
+  <!-- Top plate -->
+  <line x1="68" y1="112" x2="188" y2="112" 
+        stroke="black" stroke-width="15"/>
+  
+  <!-- Bottom plate -->
+  <line x1="68" y1="134" x2="188" y2="134" 
+        stroke="black" stroke-width="15"/>
+  
+  <!-- Bottom connection line -->
+  <line x1="128" y1="134" x2="128" y2="206" 
+        stroke="black" stroke-width="12"/>
+  
+  <!-- Bottom terminal -->
+  <circle cx="128" cy="206" r="9" fill="black"/>
 </svg>

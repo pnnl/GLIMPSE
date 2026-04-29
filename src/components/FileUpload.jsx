@@ -93,46 +93,46 @@ const FileUpload = ({ closeModal }) => {
     const uploadFiles = async (fileList) => {
         console.log("Initial fileList.length:", fileList.length);
         if (!fileList || fileList.length === 0) return;
-
         // Convert to array immediately to avoid FileList issues
         const filesArray = Array.from(fileList);
-        console.log("After Array.from() length:", filesArray.length);
 
         const filenames = filesArray.map((file) => file.name);
         console.log("Filenames:", filenames);
 
         const endPoint = await validateFiles(filenames);
-        console.log("Endpoint:", endPoint);
 
         const formData = new FormData();
         filesArray.forEach((file) => {
-            console.log("Appending file:", file.name);
             formData.append("files", file);
         });
-
-        // Verify formData was populated
-        console.log("FormData entries:", Array.from(formData.entries()));
 
         try {
             setUploading(true);
             setProgress(0);
 
-            const res = await axios.post(`http://127.0.0.1:5051/${endPoint}`, formData, {
-                onUploadProgress: (progressEvent) => {
-                    if (!progressEvent.total) return;
-                    setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+            const { data: response } = await axios.post(
+                `http://127.0.0.1:5051/${endPoint}`,
+                formData,
+                {
+                    onUploadProgress: (progressEvent) => {
+                        if (!progressEvent.total) return;
+                        setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+                    },
                 },
-            });
+            );
 
-            if ("error" in res.data) throw new Error(res.data.error);
-            if (graphHelper.graph.order > 0) graphHelper.clearGraphData();
-            graphHelper.setThemeObject(res.data.themeData);
-            graphHelper.setGraphData(res.data.data);
+            if ("error" in response) throw new Error(response.error);
 
-            newGraphUpdate();
+            if (graphHelper.graph.order > 0) {
+                graphHelper.clearGraphData();
+                window.dispatchEvent(new CustomEvent("graph-cleared"));
+            }
+
+            graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setGraphData(response.data ?? response);
 
             window.dispatchEvent(new CustomEvent("graph-loaded"));
-
+            newGraphUpdate();
             closeModal();
         } catch (err) {
             console.error(err);
@@ -143,9 +143,7 @@ const FileUpload = ({ closeModal }) => {
     };
 
     const handleFileUpload = (e) => {
-        const files = e.target.files;
-        console.log("Selected files:", files);
-        uploadFiles(files);
+        uploadFiles(e.target.files);
         // reset input so same file can be selected again if needed
         e.target.value = null;
     };
@@ -165,9 +163,9 @@ const FileUpload = ({ closeModal }) => {
     const handleDrop = (e) => {
         e.preventDefault();
         e.stopPropagation();
+        uploadFiles(e.dataTransfer.files);
+        e.target.value = null;
         setDragActive(false);
-        const files = e.dataTransfer.files;
-        uploadFiles(files);
     };
 
     return (
