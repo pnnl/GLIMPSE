@@ -128,6 +128,8 @@ const FileUpload = ({ closeModal }) => {
                 window.dispatchEvent(new CustomEvent("graph-cleared"));
             }
 
+            graphHelper.isCIM = endPoint === "api/upload/cim";
+
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
 

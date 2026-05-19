@@ -2,7 +2,6 @@ import os
 import json
 import traceback
 
-from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 
 from uuid import UUID
@@ -13,11 +12,17 @@ from cimbuilder.object_builder import new_synchronous_generator, new_two_termina
 
 # CIM-graph imports
 # from cimgraph.databases.gridappsd import GridappsdConnection
-from cimgraph.databases.blazegraph import BlazegraphConnection
-from cimgraph.models import FeederModel
+from cimgraph.databases.blazegraph.blazegraph import BlazegraphConnection
+from cimgraph.models.feeder_model import FeederModel
 import cimgraph.utils as cim_utils
-from cimgraph.databases import XMLFile
+from cimgraph.databases.fileparsers.xml_parser import XMLFile
 import cimgraph.data_profile.cimhub_2023 as cim
+
+#   Web UI:        http://localhost:8080/
+#   Blazegraph:    http://localhost:8889/bigdata/
+#   STOMP:         tcp://localhost:61613
+#   WebSocket:     ws://localhost:61614
+#   OpenWire:      tcp://localhost:61616
 
 # Environment setup
 os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
@@ -35,7 +40,7 @@ os.environ["CIMG_USE_UNITS"] = "False"
 # Current CIM network model - this holds the main graph data
 class CIMHelper:
     def __init__(self) -> None:
-        pass
+        self.active_measurement_map: dict = {}
 
     def classify_line(self, line: object) -> str:
         UNDERGROUND_INFO = (
@@ -73,24 +78,23 @@ class CIMHelper:
         return feeder_model
 
     # gjs: GLIMPSE JSON Structure
-    def cim_to_gjs(
-        self, model_IDs: list[str] | None = None, filepaths: list[str] | None = None
-    ):
+    def cim_to_gjs( self, model_IDs: list[str] | None = None, filepaths: list[str] | None = None):
+        self.active_measurement_map = {}  # Reset measurement map for new model(s)
         if model_IDs is not None:
-            gjs = {id: {"objects": [], "measurement_map": {}} for id in model_IDs}
+            gjs = {id: {"objects": []} for id in model_IDs}
 
             for id in model_IDs:
                 result = self._parse_model(model_id=id)
                 if isinstance(result, dict) and "error" in result:
                     gjs[id]["objects"] = result
                 else:
-                    gjs[id]["objects"], gjs[id]["measurement_map"] = result
+                    gjs[id]["objects"] = result
 
             return gjs
 
         if filepaths is not None:
             gjs = {
-                os.path.basename(path): {"objects": [], "measurement_map": {}}
+                os.path.basename(path): {"objects": []}
                 for path in filepaths
             }
 
@@ -100,7 +104,7 @@ class CIMHelper:
                 if isinstance(result, dict) and "error" in result:
                     gjs[filename]["objects"] = result
                 else:
-                    gjs[filename]["objects"], gjs[filename]["measurement_map"] = result
+                    gjs[filename]["objects"] = result
 
             return gjs
 
@@ -108,67 +112,69 @@ class CIMHelper:
         """
         Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
         """
-        self._FEEDERS: dict[str, FeederModel] = {}
-        feeder_id = None
+        self.FEEDERS: dict[str, FeederModel] = {}
+        feeder_id: str | None = None
 
         if model_id is not None:
             executor = ThreadPoolExecutor(max_workers=1)
             future = executor.submit(self._get_cim_feeder, model_id=model_id)
             try:
-                self._FEEDERS[model_id] = future.result(timeout=60)
                 feeder_id = model_id
+                self.FEEDERS[feeder_id] = future.result(timeout=60)
                 # cim_utils.get_all_bus_data(self._FEEDERS[feeder_id])
-                self._FEEDERS[feeder_id].get_all_edges(cim.ConnectivityNode)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Terminal)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ConnectivityNode)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Terminal)
 
                 # cim_utils.get_all_line_data(self._FEEDERS[feeder_id])
-                self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
-                self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
-                self._FEEDERS[feeder_id].get_all_edges(cim.ACLineSegmentPhase)
-                self._FEEDERS[feeder_id].get_all_edges(cim.OverheadWireInfo)
-                self._FEEDERS[feeder_id].get_all_edges(cim.ConcentricNeutralCableInfo)
-                self._FEEDERS[feeder_id].get_all_edges(cim.TapeShieldCableInfo)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegmentPhase)
+                self.FEEDERS[feeder_id].get_all_edges(cim.OverheadWireInfo)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ConcentricNeutralCableInfo)
+                self.FEEDERS[feeder_id].get_all_edges(cim.TapeShieldCableInfo)
 
                 # cim_utils.get_all_transformer_data(self._FEEDERS[feeder_id])
-                self._FEEDERS[feeder_id].get_all_edges(cim.TransformerTank)
-                self._FEEDERS[feeder_id].get_all_edges(cim.PowerTransformer)
-                self._FEEDERS[feeder_id].get_all_edges(cim.TransformerTankEnd)
-                self._FEEDERS[feeder_id].get_all_edges(cim.PowerTransformerEnd)
+                self.FEEDERS[feeder_id].get_all_edges(cim.PowerTransformer)
+                self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTank)
+                self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTankEnd)
+                self.FEEDERS[feeder_id].get_all_edges(cim.PowerTransformerEnd)
+                self.FEEDERS[feeder_id].get_all_edges(cim.SubSchedulingArea)
+                self.FEEDERS[feeder_id].get_all_edges(cim.RatioTapChanger)
 
                 # cim_utils.get_all_load_data(self._FEEDERS[feeder_id])
-                self._FEEDERS[feeder_id].get_all_edges(cim.EnergyConsumer)
-                self._FEEDERS[feeder_id].get_all_edges(cim.ConformLoad)
-                self._FEEDERS[feeder_id].get_all_edges(cim.NonConformLoad)
+                self.FEEDERS[feeder_id].get_all_edges(cim.EnergyConsumer)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ConformLoad)
+                self.FEEDERS[feeder_id].get_all_edges(cim.NonConformLoad)
 
-                self._FEEDERS[feeder_id].get_all_edges(cim.RotatingMachine)
-                self._FEEDERS[feeder_id].get_all_edges(cim.SynchronousMachine)
-                self._FEEDERS[feeder_id].get_all_edges(cim.AsynchronousMachine)
-                self._FEEDERS[feeder_id].get_all_edges(cim.EnergySource)
+                self.FEEDERS[feeder_id].get_all_edges(cim.RotatingMachine)
+                self.FEEDERS[feeder_id].get_all_edges(cim.SynchronousMachine)
+                self.FEEDERS[feeder_id].get_all_edges(cim.AsynchronousMachine)
+                self.FEEDERS[feeder_id].get_all_edges(cim.EnergySource)
 
-                self._FEEDERS[feeder_id].get_all_edges(cim.ShuntCompensator)
-                self._FEEDERS[feeder_id].get_all_edges(cim.LinearShuntCompensator)
-                self._FEEDERS[feeder_id].get_all_edges(cim.SeriesCompensator)
+                self.FEEDERS[feeder_id].get_all_edges(cim.ShuntCompensator)
+                self.FEEDERS[feeder_id].get_all_edges(cim.LinearShuntCompensator)
+                self.FEEDERS[feeder_id].get_all_edges(cim.SeriesCompensator)
 
                 # cim_utils.get_all_inverter_data(self._FEEDERS[feeder_id])
-                self._FEEDERS[feeder_id].get_all_edges(cim.PowerElectronicsConnection)
-                self._FEEDERS[feeder_id].get_all_edges(cim.BatteryUnit)
+                self.FEEDERS[feeder_id].get_all_edges(cim.PowerElectronicsConnection)
+                self.FEEDERS[feeder_id].get_all_edges(cim.BatteryUnit)
 
                 # Switch types
-                self._FEEDERS[feeder_id].get_all_edges(cim.Breaker)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Fuse)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Switch)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Sectionaliser)
-                self._FEEDERS[feeder_id].get_all_edges(cim.LoadBreakSwitch)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Disconnector)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Recloser)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Breaker)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Fuse)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Switch)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Sectionaliser)
+                self.FEEDERS[feeder_id].get_all_edges(cim.LoadBreakSwitch)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Disconnector)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Recloser)
 
                 # Measurements (needed to map simulation output to equipment)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Analog)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Discrete)
-                self._FEEDERS[feeder_id].get_all_edges(cim.Measurement)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Analog)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Discrete)
+                self.FEEDERS[feeder_id].get_all_edges(cim.Measurement)
 
                 # cim_utils.get_all_limit_data(self._FEEDERS[feeder_id])
-                cim_utils.get_all_location_data(self._FEEDERS[feeder_id])
+                cim_utils.get_all_location_data(self.FEEDERS[feeder_id])
             except Exception as e:
                 tb = traceback.format_exc()
                 print(tb)
@@ -177,12 +183,11 @@ class CIMHelper:
             # For regular CIM file reading without multi-feeder support
             cim_file = XMLFile(filepath)
             filename = os.path.basename(filepath)
-            self._FEEDERS[filename] = FeederModel(
+            self.FEEDERS[filename] = FeederModel(
                 container=cim.Feeder(), connection=cim_file
             )
             feeder_id = filename
 
-        phantom_node_count: int = 0
         objects: list = []
 
         TYPES = {
@@ -199,45 +204,64 @@ class CIMHelper:
             "NonConformLoad": "load",
         }
 
-        for node in self._FEEDERS[feeder_id].graph[cim.ConnectivityNode].values():
+        # 1. Distribution area
+        #   - Feeder Areas
+        #        - Switch
+        #           - SecondaryArea
+        
+        # feeder_areas = self.FEEDERS[feeder_id].graph.get(cim.FeederArea, {})
+        # switch_areas = []
+        # secondary_areas = []
+        # for feeder_area in feeder_areas.values():
+        #     switch_areas.extend(feeder_area.SwitchAreas)
+            
+        #     for sw_area in switch_areas:
+        #        secondary_areas.extend(sw_area.SecondaryAreas)
+        
+        for node in self.FEEDERS[feeder_id].graph[cim.ConnectivityNode].values():
             new_node = {
                 "objectType": "connectivity_node",
                 "elementType": "node",
                 "attributes": {
                     "id": node.mRID,
                     "name": node.name if node.name else "",
-                    # "feeder": feeder_id,
+                    "feeder_id": feeder_id,
                 },
             }
             coordinates = self.find_shared_coordinates(node)
 
-            if (
-                node.ConnectivityNodeContainer and node.ConnectivityNodeContainer.name
-            ) and "dso_9500" in node.ConnectivityNodeContainer.name:
-                new_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
+            # if (
+            #     node.ConnectivityNodeContainer and node.ConnectivityNodeContainer.name
+            # ) and "dso_9500" in node.ConnectivityNodeContainer.name:
+            #     new_node["attributes"]["feeder"] = node.ConnectivityNodeContainer.name
 
             if coordinates["x"] and coordinates["y"]:
                 new_node["attributes"]["x"] = coordinates["x"]
                 new_node["attributes"]["y"] = coordinates["y"]
 
             for terminal in node.Terminals:
+                # equipment is the actual cim object ex: ShuntCompensator
                 equipment = terminal.ConductingEquipment
                 if equipment is not None:
-                    eq_class_type = equipment.__class__.__name__
+                    class_type = equipment.__class__.__name__
 
-                    if eq_class_type in TYPES:
+
+                    if class_type in TYPES:
                         new_obj = {
-                            "objectType": TYPES[eq_class_type],
+                            "objectType": TYPES[class_type],
                             "elementType": "node",
                             "attributes": {
-                                "id": terminal.mRID,
-                                "name": terminal.name if terminal.name else "",
-                                "sequenceNumber": terminal.sequenceNumber,
-                                "eq_class_type": eq_class_type,
-                                # "feeder_id": feeder_id
+                                "id": equipment.mRID,
+                                "name": equipment.name if equipment.name else "",
+                                "class_type": class_type,
+                                "feeder_id": feeder_id,
                             },
                         }
-                        self._add_attributes(terminal, new_obj)
+
+                        # Get distribution area info if available
+
+                        self._add_distribution_area_info(equipment, new_obj)
+                        self._add_attributes(equipment, new_obj)
                         objects.append(new_obj)
 
                         # Connect the equipment node to the connectivity node with an edge
@@ -248,8 +272,8 @@ class CIMHelper:
                                 "attributes": {
                                     "id": f"{node.mRID}_{terminal.mRID}",
                                     "from": node.mRID,
-                                    "to": terminal.mRID,
-                                    # "feeder_id": feeder_id
+                                    "to": equipment.mRID,
+                                    "feeder_id": feeder_id,
                                 },
                             }
                         )
@@ -257,8 +281,8 @@ class CIMHelper:
             self._add_attributes(node, new_node)
             objects.append(new_node)
 
-        for line in self._FEEDERS[feeder_id].graph[cim.ACLineSegment].values():
-            new_line = {
+        for line in self.FEEDERS[feeder_id].graph[cim.ACLineSegment].values():
+            new_edge = {
                 "objectType": self.classify_line(line),
                 "elementType": "edge",
                 "attributes": {
@@ -267,115 +291,71 @@ class CIMHelper:
                     "to": line.Terminals[1].ConnectivityNode.mRID,
                     "class_type": line.__class__.__name__,
                     "length": line.length,
-                    # "feeder_id": feeder_id,
+                    "feeder_id": feeder_id,
                 },
             }
 
-            self._add_attributes(line, new_line)
-            objects.append(new_line)
+            self._add_distribution_area_info(line, new_edge)
+            self._add_attributes(line, new_edge)
 
-        for line in self._FEEDERS[feeder_id].graph[cim.TransformerTank].values():
+            objects.append(new_edge)
+
+        for p_transformer in self.FEEDERS[feeder_id].graph.get(cim.PowerTransformer, {}).values():
+            is_regulator = False
             new_edge = {
                 "objectType": "transformer",
                 "elementType": "edge",
                 "attributes": {
-                    "id": line.mRID,
-                    "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
-                    "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
-                    "class_type": line.__class__.__name__,
-                    # "feeder_id": feeder_id,
+                    "id": p_transformer.mRID,
+                    "class_type": p_transformer.__class__.__name__,
+                    "feeder_id": feeder_id,
+                    "mRID": p_transformer.mRID,
+                    "name": p_transformer.name if p_transformer.name is not None else "",
                 },
             }
 
-            self._add_attributes(line, new_edge)
+            self._add_distribution_area_info(p_transformer, new_edge)
+
+            for terminal in p_transformer.Terminals:
+                if terminal.sequenceNumber == 1:
+                    new_edge["attributes"]["from"] = terminal.ConnectivityNode.mRID
+                elif terminal.sequenceNumber == 2:
+                    new_edge["attributes"]["to"] = terminal.ConnectivityNode.mRID
+
+            for transformer_end in p_transformer.PowerTransformerEnd:  # windings of a transformer
+                if transformer_end.RatioTapChanger is not None:
+                    is_regulator = True
+                    for phase in ["AN", "BN", "CN", "A", "B", "C"]:
+                        new_edge["attributes"][phase] = {
+                            "step": transformer_end.RatioTapChanger.step,
+                            "tap": transformer_end.RatioTapChanger.mRID,
+                        }
+                        
+                    new_edge["attributes"]["class_type"] = "regulator"
+                    break
+
+            if not is_regulator:
+
+                for transformer_tank in p_transformer.TransformerTanks:
+                    for tank_end in transformer_tank.TransformerTankEnds:
+                        ratio_tap_changer_phase = tank_end.orderedPhases
+                        if ratio_tap_changer_phase in [
+                            cim.OrderedPhaseCodeKind.AN,
+                            cim.OrderedPhaseCodeKind.BN,
+                            cim.OrderedPhaseCodeKind.CN,
+                            cim.OrderedPhaseCodeKind.A,
+                            cim.OrderedPhaseCodeKind.B,
+                            cim.OrderedPhaseCodeKind.C,
+                        ]:
+                            if tank_end.RatioTapChanger is not None:
+                                is_regulator = True
+                                new_edge["attributes"]["class_type"] = "regulator"
+                                new_edge["attributes"][ratio_tap_changer_phase.value] = {
+                                    "step": tank_end.RatioTapChanger.step,
+                                    "tap": tank_end.RatioTapChanger.mRID,
+                                }
+
             objects.append(new_edge)
-
-        for line in self._FEEDERS[feeder_id].graph[cim.PowerTransformer].values():
-            if line.PowerTransformerEnd:
-                if len(line.PowerTransformerEnd) > 2:
-                    """
-                    T1 <- * -> T2
-                          |
-                          V
-                          T3
-
-                    * : phantom node
-                    """
-                    phantom_node_id = f"phantom_node_id_{phantom_node_count}"
-
-                    objects.append(
-                        {
-                            "objectType": "phantom_node",
-                            "elementType": "node",
-                            "attributes": {"id": phantom_node_id, "v": "1kV"},
-                        }
-                    )
-
-                    edge_ID = f"{line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID}_{phantom_node_id}"
-                    objects.append(
-                        {
-                            "objectType": "transformer",
-                            "elementType": "edge",
-                            "attributes": {
-                                "id": edge_ID,
-                                "from": line.PowerTransformerEnd[
-                                    0
-                                ].Terminal.ConnectivityNode.mRID,
-                                "to": phantom_node_id,
-                            },
-                        }
-                    )
-
-                    edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID}"
-                    objects.append(
-                        {
-                            "objectType": "transformer",
-                            "elementType": "edge",
-                            "attributes": {
-                                "id": edge_ID,
-                                "from": phantom_node_id,
-                                "to": line.PowerTransformerEnd[
-                                    1
-                                ].Terminal.ConnectivityNode.mRID,
-                            },
-                        }
-                    )
-
-                    edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[2].Terminal.ConnectivityNode.mRID}"
-                    objects.append(
-                        {
-                            "objectType": "transformer",
-                            "elementType": "edge",
-                            "attributes": {
-                                "id": edge_ID,
-                                "from": phantom_node_id,
-                                "to": line.PowerTransformerEnd[
-                                    2
-                                ].Terminal.ConnectivityNode.mRID,
-                            },
-                        }
-                    )
-
-                    phantom_node_count += 1
-                else:
-                    new_edge = {
-                        "objectType": "transformer",
-                        "elementType": "edge",
-                        "attributes": {
-                            "id": line.mRID,
-                            "from": line.PowerTransformerEnd[
-                                0
-                            ].Terminal.ConnectivityNode.mRID,
-                            "to": line.PowerTransformerEnd[
-                                1
-                            ].Terminal.ConnectivityNode.mRID,
-                            "class_type": line.__class__.__name__,
-                            "feeder_id": feeder_id,
-                        },
-                    }
-
-                    self._add_attributes(line, new_edge)
-                    objects.append(new_edge)
 
         cim_switch_types = [
             cim.Breaker,
@@ -388,8 +368,8 @@ class CIMHelper:
         ]
 
         for cim_type in cim_switch_types:
-            if cim_type in self._FEEDERS[feeder_id].graph:
-                for switch_obj in self._FEEDERS[feeder_id].graph[cim_type].values():
+            if cim_type in self.FEEDERS[feeder_id].graph:
+                for switch_obj in self.FEEDERS[feeder_id].graph[cim_type].values():
                     # Collect measurement MRIDs associated with this switch
                     measurement_mrids = []
                     if hasattr(switch_obj, "Measurements") and switch_obj.Measurements:
@@ -422,9 +402,10 @@ class CIMHelper:
                             "to": switch_obj.Terminals[1].ConnectivityNode.mRID,
                             "class_type": switch_obj.__class__.__name__,
                             "normalStatus": "OPEN" if normal_open else "CLOSED",
-                            "status": "OPEN" if switch_status else "CLOSED",
+                            "open": switch_status,
                             "ratedCurrent": rated_current,
                             "measurement_mrids": measurement_mrids,
+                            "feeder_id": feeder_id,
                         },
                     }
 
@@ -436,39 +417,55 @@ class CIMHelper:
                             switch_obj.breakingCapacity
                         )
 
+                    self._add_distribution_area_info(switch_obj, new_edge)
                     self._add_attributes(switch_obj, new_edge)
+
                     objects.append(new_edge)
 
-        # for battery in self._FEEDERS[feeder_id].graph[cim.BatteryUnit].values():
-        #    new_battery = {
-        #       "objectType": "battery",
-        #       "elementType": "node",
-        #       "attributes": {
-        #          "id": battery.mRID,
-        #          "name": battery.name,
-        #          "class_type": battery.__class__.__name__,
-        #          "feeder_id": feeder_id
-        #       }
-        #    }
-        #    self._add_attributes(battery, new_battery)
-        #    objects.append(new_battery)
+        for battery in self.FEEDERS[feeder_id].graph[cim.BatteryUnit].values():
+            new_battery = {
+                "objectType": "battery",
+                "elementType": "node",
+                "attributes": {
+                    "id": battery.mRID,
+                    "name": battery.name,
+                    "class_type": battery.__class__.__name__,
+                    "feeder_id": feeder_id,
+                },
+            }
 
-        #    new_line = {
-        #       "objectType": "line",
-        #       "elementType": "edge",
-        #       "attributes": {
-        #          "id": f"{battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID}-{battery.mRID}",
-        #          "from": battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID,
-        #          "to": battery.mRID,
-        #       }
-        #    }
-        #    objects.append(new_line)
+            self._add_distribution_area_info(battery, new_battery)
+            self._add_attributes(battery, new_battery)
+            objects.append(new_battery)
+
+            from_id = battery.PowerElectronicsConnection.Terminals[
+                0
+            ].ConnectivityNode.mRID
+            to_id = battery.mRID
+
+            new_edge = {
+                "objectType": "line",
+                "elementType": "edge",
+                "attributes": {
+                    "id": f"{from_id}-{to_id}",
+                    "from": from_id,
+                    "to": to_id,
+                },
+            }
+            objects.append(new_edge)
 
         # Build measurement map: measurement MRID -> equipment info
         # This is used to map simulation output measurements to CIM objects
-        measurement_map = self._build_measurement_map(feeder_id)
+        self._build_measurement_map(feeder_id)
 
-        return objects, measurement_map
+        return objects
+
+    def _add_distribution_area_info(self, cim_obj, new_obj):
+        dist_area = getattr(cim_obj, "SubSchedulingArea", None)
+        if dist_area is not None:
+            new_obj["attributes"]["dist_area_type"] = dist_area.__class__.__name__
+            new_obj["attributes"]["dist_area_name"] = dist_area.name
+            new_obj["attributes"]["dist_area_id"] = dist_area.mRID
 
     def _build_measurement_map(self, feeder_id: str) -> dict:
         """
@@ -482,13 +479,11 @@ class CIMHelper:
         carry the open/closed state (value 0=open, 1=closed).
         For lines/transformers, Analog measurements carry magnitude/angle.
         """
-        measurement_map = {}
-
-        measurement_types = [cim.Analog, cim.Discrete, cim.Measurement]
+        measurement_types = [cim.Analog, cim.Discrete]
         for meas_type in measurement_types:
-            if meas_type not in self._FEEDERS[feeder_id].graph:
+            if meas_type not in self.FEEDERS[feeder_id].graph:
                 continue
-            for meas in self._FEEDERS[feeder_id].graph[meas_type].values():
+            for meas in self.FEEDERS[feeder_id].graph[meas_type].values():
                 meas_mrid = str(meas.mRID) if meas.mRID else None
                 if not meas_mrid:
                     continue
@@ -496,12 +491,13 @@ class CIMHelper:
                 entry = {
                     "measurement_mrid": meas_mrid,
                     "name": meas.name if meas.name else "",
-                    "measurement_type": (
-                        meas.measurementType if meas.measurementType else ""
-                    ),
+                    "measurement_type": meas.measurementType if meas.measurementType else "",
                     "phases": str(meas.phases) if meas.phases else "",
-                    "cim_class": meas.__class__.__name__,
+                    "measurement_class": meas.__class__.__name__,
                 }
+
+                if meas.PowerSystemResource is None:
+                    print("No PowerSystemResource")
 
                 # Link to conducting equipment via Terminal
                 if meas.Terminal and meas.Terminal.ConductingEquipment:
@@ -511,15 +507,12 @@ class CIMHelper:
                     entry["conducting_equipment_type"] = eq.__class__.__name__
                 elif meas.PowerSystemResource:
                     psr = meas.PowerSystemResource
-                    entry["conducting_equipment_mrid"] = (
-                        str(psr.mRID) if psr.mRID else ""
-                    )
+                    entry["conducting_equipment_mrid"] = str(psr.mRID) if psr.mRID else ""
                     entry["conducting_equipment_name"] = psr.name if psr.name else ""
                     entry["conducting_equipment_type"] = psr.__class__.__name__
 
-                measurement_map[meas_mrid] = entry
+                self.active_measurement_map[meas_mrid] = entry
 
-        return measurement_map
 
     def _object_to_detail(self, obj):
         if not obj:
@@ -555,12 +548,12 @@ class CIMHelper:
         return detail
 
     def get_cim_object(self, feeder_id: str, uuid: str):
-        if not self._FEEDERS[feeder_id]:
+        if not self.FEEDERS[feeder_id]:
             return {"error": "No active model available"}  # 400
 
         # Use GraphModel's get_object method if available
-        if hasattr(self._FEEDERS[feeder_id], "get_object"):
-            obj = self._FEEDERS[feeder_id].get_object(uuid)
+        if hasattr(self.FEEDERS[feeder_id], "get_object"):
+            obj = self.FEEDERS[feeder_id].get_object(uuid)
             if obj:
                 detail = self._object_to_detail(obj)
                 return {"uuid": uuid, "object": detail}
@@ -568,7 +561,7 @@ class CIMHelper:
                 return {"error": f"Object {uuid} not found"}  # 404
         else:
             # Manual search through all objects
-            for _, instances in self._FEEDERS[feeder_id].graph.items():
+            for _, instances in self.FEEDERS[feeder_id].graph.items():
                 for obj in instances.values():
                     obj_id = str(getattr(obj, "identifier", getattr(obj, "mRID", "")))
                     if obj_id == uuid:
@@ -606,18 +599,18 @@ class CIMHelper:
         self, feeder_id: str, new_coords_obj: list, output_path: str
     ) -> None:
         for obj in new_coords_obj:
-            c_node = self._FEEDERS[feeder_id].graph[cim.ConnectivityNode][
+            c_node = self.FEEDERS[feeder_id].graph[cim.ConnectivityNode][
                 UUID(obj["mRID"].upper())
             ]
             self.new_bus_location(
-                network=self._FEEDERS[feeder_id],
+                network=self.FEEDERS[feeder_id],
                 node=c_node,
                 xPosition=obj["x"],
                 yPosition=obj["y"],
             )
 
-        cim_utils.get_all_data(self._FEEDERS[feeder_id])
-        cim_utils.write_xml(self._FEEDERS[feeder_id], output_path)
+        cim_utils.get_all_data(self.FEEDERS[feeder_id])
+        cim_utils.write_xml(self.FEEDERS[feeder_id], output_path)
 
     def get_multi_coordinate(self, coords: list):
         if len(coords) == 0:
@@ -669,6 +662,8 @@ class CIMHelper:
             "BaseVoltage",
             "VoltageLevel",
             "TransformerTankInfo",
+            "LoadResponse",
+            "RegulatingControl"
         ]
 
         for field in fields(cim_obj):
@@ -691,11 +686,11 @@ class CIMHelper:
         self, feeder_id: str, dir2save: str, filename: str, data: list
     ) -> None:
         if len(data) == 0:
-            cim_utils.get_all_data(self._FEEDERS[feeder_id])
-            cim_utils.write_xml(self._FEEDERS[feeder_id], dir2save + "\\cim_output.xml")
+            cim_utils.get_all_data(self.FEEDERS[feeder_id])
+            cim_utils.write_xml(self.FEEDERS[feeder_id], dir2save + "\\cim_output.xml")
             return
 
-        feeder = self._FEEDERS[feeder_id].container
+        feeder = self.FEEDERS[feeder_id].container
 
         # [0] = new nerminal with type
         # [1] = new connectivity node
@@ -703,7 +698,7 @@ class CIMHelper:
 
         for nodeObj in data:
             # 1. get existing connectivity node
-            existing_c_node = self._FEEDERS[feeder_id].graph[cim.ConnectivityNode][
+            existing_c_node = self.FEEDERS[feeder_id].graph[cim.ConnectivityNode][
                 UUID(nodeObj[2]["mRID"].upper())
             ]
 
@@ -711,11 +706,11 @@ class CIMHelper:
             new_c_node = cim.ConnectivityNode(
                 mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"]
             )
-            self._FEEDERS[feeder_id].add_to_graph(new_c_node)
+            self.FEEDERS[feeder_id].add_to_graph(new_c_node)
 
             # 3. connect both connectivity nodes with new_two_terminal_obj function
             new_two_terminal_object(
-                network=self._FEEDERS[feeder_id],
+                network=self.FEEDERS[feeder_id],
                 container=feeder,
                 class_type=cim.ACLineSegment,
                 name=existing_c_node.mRID.split("-")[0],
@@ -726,14 +721,14 @@ class CIMHelper:
             # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
             if nodeObj[0]["type"] == "diesel_dg":
                 new_synchronous_generator(
-                    network=self._FEEDERS[feeder_id],
+                    network=self.FEEDERS[feeder_id],
                     container=feeder,
                     name=nodeObj[0]["name"],
                     node=new_c_node,
                 )
             elif nodeObj[0]["type"] == "load":
                 new_energy_consumer(
-                    network=self._FEEDERS[feeder_id],
+                    network=self.FEEDERS[feeder_id],
                     container=feeder,
                     name=nodeObj[0]["name"],
                     node=new_c_node,
@@ -748,12 +743,12 @@ class CIMHelper:
         out_dir = os.path.join(
             dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"
         )
-        cim_utils.get_all_data(self._FEEDERS[feeder_id])
-        cim_utils.write_xml(self._FEEDERS[feeder_id], out_dir)
+        cim_utils.get_all_data(self.FEEDERS[feeder_id])
+        cim_utils.write_xml(self.FEEDERS[feeder_id], out_dir)
 
     def get_mermaid(self, feeder_id: str, uuid: str) -> str:
         # Try to use cimgraph.utils method
-        obj = self._FEEDERS[feeder_id].get_object(uuid)
+        obj = self.FEEDERS[feeder_id].get_object(uuid)
 
         try:
             mermaid_diagram = cim_utils.get_mermaid(obj)
@@ -764,7 +759,7 @@ class CIMHelper:
             return json.dumps({"uuid": uuid, "mermaid": mermaid})
 
     def delete_cim_object(self, feeder_id: str, uuid: str) -> bool:
-        if not self._FEEDERS[feeder_id]:
+        if not self.FEEDERS[feeder_id]:
             return False
 
         # Get the object first
@@ -772,11 +767,11 @@ class CIMHelper:
         obj_class = None
         obj_key = None
 
-        if hasattr(self._FEEDERS[feeder_id], "get_object"):
-            obj = self._FEEDERS[feeder_id].get_object(uuid)
+        if hasattr(self.FEEDERS[feeder_id], "get_object"):
+            obj = self.FEEDERS[feeder_id].get_object(uuid)
         else:
             # Manual search
-            for cim_class, instances in self._FEEDERS[feeder_id].graph.items():
+            for cim_class, instances in self.FEEDERS[feeder_id].graph.items():
                 for key, instance in instances.items():
                     obj_id = str(
                         getattr(instance, "identifier", getattr(instance, "mRID", ""))
@@ -793,11 +788,11 @@ class CIMHelper:
             return False
 
         # Delete the object
-        if hasattr(self._FEEDERS[feeder_id], "delete"):
-            self._FEEDERS[feeder_id].delete(obj)
+        if hasattr(self.FEEDERS[feeder_id], "delete"):
+            self.FEEDERS[feeder_id].delete(obj)
             return True
         elif obj_class and obj_key:
-            del self._FEEDERS[feeder_id].graph[obj_class][obj_key]
+            del self.FEEDERS[feeder_id].graph[obj_class][obj_key]
             return True
 
         return False

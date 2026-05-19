@@ -23,10 +23,12 @@ class GraphHelper {
     focusIndex = -1;
     nodeTypes = [];
     edgeTypes = [];
+    isCIM = false;
     communitiesArray = [];
     communityColorPallet = {};
     themeName = "feeder-model-theme";
     selectedGridappsdModels = [];
+    glmFileData = {};
 
     constructor() {
         this.legendGraph = new MultiGraph();
@@ -49,10 +51,7 @@ class GraphHelper {
                 this.nodeTypes = Object.keys(this.#theme.groups);
                 this.edgeTypes = Object.keys(this.#theme.edgeOptions);
                 this.objectTypeCount = {
-                    nodes: Object.keys(this.#theme.groups).reduce(
-                        (o, key) => ({ ...o, [key]: 0 }),
-                        {},
-                    ),
+                    nodes: Object.keys(this.#theme.groups).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
                     edges: Object.keys(this.#theme.edgeOptions).reduce(
                         (o, key) => ({ ...o, [key]: 0 }),
                         {},
@@ -74,10 +73,7 @@ class GraphHelper {
         this.edgeTypes = Object.keys(this.#theme.edgeOptions);
         this.objectTypeCount = {
             nodes: Object.keys(this.#theme.groups).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
-            edges: Object.keys(this.#theme.edgeOptions).reduce(
-                (o, key) => ({ ...o, [key]: 0 }),
-                {},
-            ),
+            edges: Object.keys(this.#theme.edgeOptions).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
         };
 
         console.log(this.#theme);
@@ -141,9 +137,7 @@ class GraphHelper {
     // Toggle highlight state of a group
     highlightGroup = (groupName) => {
         if (this.#highlightedGroups.includes(groupName)) {
-            this.#highlightedGroups = this.#highlightedGroups.filter(
-                (hGroup) => hGroup !== groupName,
-            );
+            this.#highlightedGroups = this.#highlightedGroups.filter((hGroup) => hGroup !== groupName);
         } else {
             this.#highlightedGroups.push(groupName);
         }
@@ -164,8 +158,7 @@ class GraphHelper {
 
     isHighlighted = (groupName) => {
         return (
-            this.#highlightedGroups.includes(groupName) ||
-            this.#highlightedEdgeTypes.includes(groupName)
+            this.#highlightedGroups.includes(groupName) || this.#highlightedEdgeTypes.includes(groupName)
         );
     };
 
@@ -178,8 +171,14 @@ class GraphHelper {
         this.focusIndex = -1;
 
         // show any hidden edges and nodes
-        this.graph.updateEachEdgeAttributes((e, attrs) => ({ ...attrs, hidden: false }));
-        this.graph.updateEachNodeAttributes((n, attrs) => ({ ...attrs, hidden: false }));
+        this.graph.updateEachEdgeAttributes((e, attrs) => ({
+            ...attrs,
+            hidden: false,
+        }));
+        this.graph.updateEachNodeAttributes((n, attrs) => ({
+            ...attrs,
+            hidden: false,
+        }));
 
         this.graph.updateEachEdgeAttributes((e, attrs) => ({
             ...attrs,
@@ -189,6 +188,7 @@ class GraphHelper {
 
     clearGraphData = () => {
         this.resetObjectTypeCounts();
+        this.isCIM = false;
 
         // Clear highlighted arrays and state
         this.#highlightedEdgeTypes.length = 0;
@@ -438,19 +438,14 @@ class GraphHelper {
     resetObjectTypeCounts = () => {
         this.objectTypeCount = {
             nodes: Object.keys(this.#theme.groups).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
-            edges: Object.keys(this.#theme.edgeOptions).reduce(
-                (o, key) => ({ ...o, [key]: 0 }),
-                {},
-            ),
+            edges: Object.keys(this.#theme.edgeOptions).reduce((o, key) => ({ ...o, [key]: 0 }), {}),
         };
     };
 
     rotateCCW = () => {
         this.graph.forEachNode((node, attrs) => {
-            const newX =
-                attrs.x * Math.cos(this.#ROTATE_ANGLE) - attrs.y * Math.sin(this.#ROTATE_ANGLE);
-            const newY =
-                attrs.x * Math.sin(this.#ROTATE_ANGLE) + attrs.y * Math.cos(this.#ROTATE_ANGLE);
+            const newX = attrs.x * Math.cos(this.#ROTATE_ANGLE) - attrs.y * Math.sin(this.#ROTATE_ANGLE);
+            const newY = attrs.x * Math.sin(this.#ROTATE_ANGLE) + attrs.y * Math.cos(this.#ROTATE_ANGLE);
 
             this.graph.setNodeAttribute(node, "x", newX);
             this.graph.setNodeAttribute(node, "y", newY);
@@ -474,8 +469,7 @@ class GraphHelper {
         if (index < 0) return -this.#getCurvature(-index, maxIndex);
 
         const amplitude = 3.5;
-        const maxCurvature =
-            amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
+        const maxCurvature = amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
 
         return (maxCurvature * index) / maxIndex;
     }
@@ -517,10 +511,7 @@ class GraphHelper {
         const { timestamp, switches } = simOutput;
 
         switches.forEach((sw) => {
-            console.log(sw);
             const { equipment_mrid: switchID, open, value } = sw;
-
-            console.log(`Switch ${switchID} is open: ${open}`);
 
             if (!this.graph.hasEdge(switchID)) {
                 console.warn(`Switch with ID ${switchID} not found in the graph.`);
@@ -528,12 +519,46 @@ class GraphHelper {
             }
 
             this.graph.updateEdgeAttributes(switchID, (attrs) => {
-                console.log(`Updating Switch ${attrs.attributes.name}`);
-                return {
+                const newEdge = {
                     ...attrs,
-                    status: value === 0 ? "OPEN" : "CLOSED",
                     switchColor: value === 0 ? "#4aff4a" : "#ff0000",
+                    attributes: {
+                        ...attrs.attributes,
+                        status: value === 0 ? "OPEN" : "CLOSED",
+                    },
                 };
+
+                return newEdge;
+            });
+        });
+    };
+
+    updateCapacitors = (simOutput) => {
+        const { timestamp, capacitors } = simOutput;
+
+        capacitors.forEach((cap) => {
+            const { equipment_mrid: capID, value } = cap;
+
+            if (!this.graph.hasNode(capID)) {
+                console.warn(`Capacitor with ID ${capID} not found in the graph.`);
+                return;
+            }
+
+            this.graph.updateNodeAttributes(capID, (attrs) => {
+                console.log(
+                    `Updating capacitor ${attrs.attributes.name} with value ${value} at timestamp ${timestamp}`,
+                );
+
+                const newNode = {
+                    ...attrs,
+                    attributes: {
+                        ...attrs.attributes,
+                        sections: value,
+                    },
+                };
+
+                newNode["attributesLabel"] = this.getTitle(newNode.attributes);
+                return newNode;
             });
         });
     };
@@ -614,7 +639,34 @@ class GraphHelper {
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
     };
 
+    export = () => {
+        const edgeIDs = this.graph.edges();
+        const nodeIDs = this.graph.nodes();
+
+        // Update glmFileData with current graph state
+        Object.keys(this.glmFileData).forEach((file) => {
+            this.glmFileData[file].objects.forEach((obj) => {
+                if ("attributes" in obj && nodeIDs.includes(obj.attributes.name)) {
+                    const sigmaNode = this.graph.getNodeAttributes(obj.attributes.name);
+                    obj.attributes = sigmaNode.attributes;
+                }
+
+                if ("attributes" in obj && edgeIDs.includes(obj.attributes.name)) {
+                    const sigmaEdge = this.graph.getEdgeAttributes(obj.attributes.name);
+                    obj.attributes = sigmaEdge.attributes;
+                }
+            });
+        });
+
+        return this.glmFileData;
+    };
+
     setGraphData = (fileData) => {
+        // save glm file data for exporting changes
+        if (!this.isCIM) {
+            this.glmFileData = fileData;
+        }
+
         const newGraph = new MultiUndirectedGraph({
             allowSelfLoops: true,
             type: "undirected",
@@ -639,7 +691,7 @@ class GraphHelper {
                             attributes: attributes,
                             group: objectType,
                             fixed: true,
-                            community: attributes.feeder ?? undefined,
+                            community: attributes.dist_area_id ?? undefined,
                             x: parseFloat(attributes.x),
                             y: parseFloat(attributes.y),
                             ...this.#theme.groups[objectType],
@@ -670,7 +722,7 @@ class GraphHelper {
                         elementType: "node",
                         attributes: attributes,
                         group: objectType,
-                        community: attributes.feeder ?? undefined,
+                        community: attributes.dist_area_id ?? undefined,
                         fixed: false,
                         ...this.#theme.groups[objectType],
                     };
@@ -681,7 +733,13 @@ class GraphHelper {
                         this.objectTypeCount.nodes[objectType]++;
                     else this.objectTypeCount.nodes[objectType] = 1;
 
-                    newGraph.addNode(nodeID, node);
+                    try {
+                        newGraph.addNode(nodeID, node);
+                    } catch (err) {
+                        console.log(err);
+                        console.log(nodeID);
+                        console.log(node);
+                    }
                 } else if ("elementType" in obj && obj.elementType === "node") {
                     if (!(objectType in this.#theme.groups)) {
                         this.#theme.groups[objectType] = {
@@ -847,15 +905,17 @@ class GraphHelper {
                 }
             });
 
-            if (newGraph.order > 1500) {
+            if (newGraph.order > 1_000_000) {
                 // Color all nodes that belong to a certain feeder
                 const communitiesSet = new Set();
 
                 newGraph.forEachNode((_nodeID, attrs) => {
                     if (attrs.community) {
-                        communitiesSet.add(attrs.attributes.feeder);
+                        communitiesSet.add(attrs.attributes.dist_area_id);
                     }
                 });
+
+                console.log(communitiesSet);
 
                 if (!communitiesSet.size) {
                     this.setLegendData();
@@ -870,11 +930,11 @@ class GraphHelper {
                 );
 
                 newGraph.forEachNode((nodeID, attrs) => {
-                    if ("feeder" in attrs.attributes) {
+                    if ("dist_area_id" in attrs.attributes) {
                         newGraph.setNodeAttribute(
                             nodeID,
                             "color",
-                            this.communityColorPallet[attrs.attributes.feeder],
+                            this.communityColorPallet[attrs.attributes.dist_area_id],
                         );
                     }
                 });
@@ -882,7 +942,10 @@ class GraphHelper {
         } else {
             // apply circlepack layout for initial node positions
             if (newGraph.order > 1000) {
-                louvain.assign(newGraph, { nodeCommunityAttribute: "CID", resolution: 0.7 });
+                louvain.assign(newGraph, {
+                    nodeCommunityAttribute: "CID",
+                    resolution: 0.7,
+                });
                 circlepack.assign(newGraph, { hierarchyAttributes: ["CID"] });
             } else {
                 circlepack.assign(newGraph);

@@ -5,6 +5,7 @@ import EditAttributesModal from "../modals/EditAttributesModal";
 import graphHelper from "../../graph-helper/GraphHelper";
 import NewObjectModal from "../modals/NewObjectModal";
 import NewEdgeModal from "../modals/NewEdgeModal";
+import UpdateDeviceModal from "../modals/UpdateDeviceModal";
 
 const GraphEvents = () => {
     const [context, setContext] = useState({ open: false, x: 0, y: 0 });
@@ -15,6 +16,11 @@ const GraphEvents = () => {
     const [draggedNode, setDraggedNode] = useState(null);
     const [openNewNodeForm, setOpenNewNodeForm] = useState(false);
     const [openNewEdgeForm, setOpenNewEdgeForm] = useState(false);
+    const [updateDeviceContext, setUpdateDeviceContext] = useState({
+        open: false,
+        object: null,
+        deviceType: null,
+    });
     const sigma = useSigma();
     const registerEvents = useRegisterEvents();
     // Refs used for throttling position updates with requestAnimationFrame
@@ -56,7 +62,6 @@ const GraphEvents = () => {
                 // Mark node as highlighted and fixed so ForceAtlas2 won't override
                 // the manual position updates while the user is dragging it.
                 graphHelper.graph.setNodeAttribute(e.node, "highlighted", true);
-                if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
             },
             upNode: handleUp,
             upStage: handleUp,
@@ -89,8 +94,6 @@ const GraphEvents = () => {
 
                 // Prevent sigma to move camera:
                 e.preventSigmaDefault();
-                e.original.preventDefault();
-                e.original.stopPropagation();
             },
             // On mouse up, we reset the autoscale and the dragging mode
             mouseup: () => {
@@ -116,12 +119,40 @@ const GraphEvents = () => {
             },
             // Disable the autoscale at the first down interaction
             mousedown: () => {
-                if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+                // if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
                 // Close context menu on any click
                 setContext({ open: false, x: 0, y: 0 });
             },
-            doubleClickEdge: ({ edge }) => {
-                console.log(edge);
+            doubleClickEdge: (payload) => {
+                payload.preventSigmaDefault();
+                payload.event.original.preventDefault();
+                payload.event.original.stopPropagation();
+
+                const edgeAttributes = graphHelper.graph.getEdgeAttributes(payload.edge);
+                console.log(edgeAttributes);
+
+                // Check if this edge type can have its status updated
+                const statusEditableTypes = ["switch", "regulator"];
+                if (!statusEditableTypes.includes(edgeAttributes.group)) {
+                    return;
+                }
+
+                // Open the update device modal for switches/regulators
+                setUpdateDeviceContext({ open: true, object: payload.edge, deviceType: "switch" });
+            },
+            doubleClickNode: (e) => {
+                // Prevent default zoom behavior on double-click
+                e.preventSigmaDefault();
+
+                const nodeAttributes = graphHelper.graph.getNodeAttributes(e.node);
+                // Check if this is a capacitor node
+                if (nodeAttributes.group === "capacitor") {
+                    setUpdateDeviceContext({ open: true, object: e.node, deviceType: "capacitor" });
+                }
+            },
+            doubleClickStage: (e) => {
+                // Prevent default zoom behavior on double-click
+                e.preventSigmaDefault();
             },
             rightClickEdge: (payload) => {
                 console.log(graphHelper.graph.getEdgeAttributes(payload.edge));
@@ -171,11 +202,7 @@ const GraphEvents = () => {
             enterNode: (e) => {
                 graphHelper.graph.edges(e.node).forEach((edgeId) => {
                     const attrs = graphHelper.graph.getEdgeAttributes(edgeId);
-                    graphHelper.graph.setEdgeAttribute(
-                        edgeId,
-                        "label",
-                        attrs.attributes.name ?? edgeId,
-                    );
+                    graphHelper.graph.setEdgeAttribute(edgeId, "label", attrs.attributes.name ?? edgeId);
                 });
             },
             leaveNode: (e) => {
@@ -185,11 +212,7 @@ const GraphEvents = () => {
             },
             enterEdge: (e) => {
                 const attrs = graphHelper.graph.getEdgeAttributes(e.edge);
-                graphHelper.graph.setEdgeAttribute(
-                    e.edge,
-                    "label",
-                    attrs.attributes.name ?? e.edge,
-                );
+                graphHelper.graph.setEdgeAttribute(e.edge, "label", attrs.attributes.name ?? e.edge);
             },
             leaveEdge: (e) => {
                 graphHelper.graph.setEdgeAttribute(e.edge, "label", "");
@@ -203,6 +226,10 @@ const GraphEvents = () => {
 
     const closeAttributesEditor = () => {
         setAttributesEditorContext({ open: false, object: null });
+    };
+
+    const closeUpdateDeviceModal = () => {
+        setUpdateDeviceContext({ open: false, object: null, deviceType: null });
     };
 
     const openAttributesModal = () => {
@@ -219,6 +246,12 @@ const GraphEvents = () => {
                 openNewEdgeModal={() => setOpenNewEdgeForm(true)}
             />
             <EditAttributesModal context={attributesEditorContext} close={closeAttributesEditor} />
+            <UpdateDeviceModal
+                open={updateDeviceContext.open}
+                object={updateDeviceContext.object}
+                deviceType={updateDeviceContext.deviceType}
+                close={closeUpdateDeviceModal}
+            />
             <NewObjectModal open={openNewNodeForm} close={() => setOpenNewNodeForm(false)} />
             <NewEdgeModal open={openNewEdgeForm} close={() => setOpenNewEdgeForm(false)} />
         </>

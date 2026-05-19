@@ -35,13 +35,15 @@
       "graphology-layout-forceatlas2": "^0.10.1",
       "graphology-metrics": "^2.4.0",
       "iwanthue": "^2.0.0",
+      "mermaid": "^11.14.0",
       "react": "^19.1.1",
       "react-dom": "^19.1.1",
       "react-icons": "^5.5.0",
       "react-router": "^7.9.3",
       "sigma": "^3.0.2",
       "socket.io": "^4.8.3",
-      "socket.io-client": "^4.8.3"
+      "socket.io-client": "^4.8.3",
+      "uuid": "^14.0.0"
    },
    "devDependencies": {
       "@types/react": "^19.1.16",

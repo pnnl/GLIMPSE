@@ -4,6 +4,7 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
 import "../styles/AppHeader.css";
 import graphHelper from "../graph-helper/GraphHelper";
+import axios from "axios";
 
 import { useGraph } from "../contexts/GraphContext";
 
@@ -12,14 +13,14 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
     const [searchValue, setSearchValue] = useState(undefined);
-    const { graphUpdateTrigger } = useGraph();
+    const { graphUpdateTrigger, view, setView } = useGraph();
 
     const menuItems = [
-        { key: "export-model", label: "Export Model", disabled: true },
+        { key: "export-model", label: "Export Model", disabled: false },
         { type: "divider" },
         { key: "graph-metrics", label: "Metrics", disabled: false },
         { type: "divider" },
-        { key: "object-studio", label: "Object Studio", disabled: true },
+        { key: "object-studio", label: "Object Studio", disabled: false },
         { type: "divider" },
         {
             key: "themes",
@@ -70,6 +71,44 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         return [...nodeOptions, ...edgeOptions];
     }, [graphLoaded, graphUpdateTrigger]);
 
+    const handleExport = async () => {
+        // Get updated graph data from GraphHelper
+        const exportData = graphHelper.export();
+
+        if (!exportData || Object.keys(exportData).length === 0) {
+            console.warn("No data to export.");
+            return;
+        }
+
+        try {
+            const response = await axios.post(
+                "http://127.0.0.1:5051/api/export/glm",
+                { data: exportData },
+                {
+                    responseType: "blob", // Important: tells axios to expect binary data
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
+
+            // Create a download link and trigger it
+            const blob = new Blob([response.data], { type: "application/zip" });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "exported_model.zip");
+            document.body.appendChild(link);
+            link.click();
+
+            // Cleanup
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Export failed:", error);
+        }
+    };
+
     const handleMenuClick = ({ key }) => {
         switch (key) {
             case "feeder-model-theme":
@@ -81,10 +120,14 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 graphHelper.themeName = key;
                 break;
             case "export-model":
+                handleExport();
+                break;
             case "graph-metrics":
                 setShowMetrics(true);
                 break;
             case "object-studio":
+                setView(view === "object-studio" ? "graph" : "object-studio");
+                break;
             case "export-theme":
         }
     };

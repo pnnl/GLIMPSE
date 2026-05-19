@@ -13,10 +13,10 @@ export function getFA2Settings(graph) {
             outboundAttractionDistribution: false,
 
             // Forces
-            scalingRatio: 10, // repulsion strength (↑ = more spread)
-            gravity: 0.5, // weak, mimics centralGravity 0.01
+            scalingRatio: 25, // repulsion strength (↑ = more spread) — increased to prevent overlap
+            gravity: 0.3, // reduced to allow more natural spreading
             strongGravityMode: false, // distance-dependent, gentler unravel
-            slowDown: 6, // ≈ damping; higher = less jitter
+            slowDown: 8, // ≈ damping; higher = less jitter
             barnesHutTheta: 0.5,
         };
     }
@@ -27,14 +27,14 @@ export function getFA2Settings(graph) {
             barnesHutOptimize: true, // O(n·log n) — required at this size
             barnesHutTheta: 0.8, // a touch faster; 0.5 is more accurate
             linLogMode: true, // produces tighter, cleaner clusters
-            adjustSizes: false, // turn off during unraveling, enable later
+            adjustSizes: true, // keep enabled to prevent node overlap
             edgeWeightInfluence: 1,
             outboundAttractionDistribution: false, // helps dense hubs spread nicely
 
-            scalingRatio: 2, // lower; linLog already spreads things
-            gravity: 0.5,
+            scalingRatio: 8, // increased to improve node separation
+            gravity: 0.2, // reduced to allow more natural spacing
             strongGravityMode: false,
-            slowDown: 2, // big graphs need more damping to settle
+            slowDown: 4, // big graphs need more damping to settle
         };
     }
 
@@ -47,9 +47,9 @@ export function getFA2Settings(graph) {
         edgeWeightInfluence: 1,
         outboundAttractionDistribution: false,
 
-        scalingRatio: 5,
-        gravity: 0.8,
+        scalingRatio: 15, // increased to spread nodes and prevent overlap
+        gravity: 0.4, // reduced to allow more spreading
         strongGravityMode: false,
-        slowDown: 8,
+        slowDown: 10, // increased damping for stability
     };
 }
