@@ -1,0 +1,101 @@
+.object-studio {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 3rem);
+    overflow: hidden;
+}
+
+.object-studio-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.object-studio-body {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ─── Main Tabs: left-aligned & evenly spaced ─── */
+
+.object-studio-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.object-studio-tabs > .ant-tabs-nav {
+    margin: 0;
+    padding: 0 1rem;
+}
+
+.object-studio-tabs > .ant-tabs-nav .ant-tabs-nav-list {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 2rem;
+}
+
+.object-studio-tabs > .ant-tabs-nav .ant-tabs-tab {
+    margin: 0;
+    padding: 0.75rem 0;
+}
+
+/* Content fills remaining height */
+.object-studio-tabs > .ant-tabs-content-holder {
+    flex: 1;
+    overflow: hidden;
+}
+
+.object-studio-tabs .ant-tabs-content {
+    height: 100%;
+}
+
+.object-studio-tabs .ant-tabs-tabpane {
+    height: 100%;
+    overflow: hidden;
+}
+
+.object-studio-tab-content {
+    height: 100%;
+    overflow: auto;
+}
+
+/* ─── Nested tabs (Attributes / Associations / Diagram) ─── */
+
+.object-studio-tab-content .ant-tabs > .ant-tabs-nav {
+    margin: 0;
+    padding: 0 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.object-studio-tab-content .ant-tabs > .ant-tabs-nav .ant-tabs-nav-list {
+    justify-content: flex-start;
+    gap: 1.5rem;
+}
+
+.object-studio-tab-content .ant-tabs > .ant-tabs-nav .ant-tabs-tab {
+    margin: 0;
+    padding: 0.6rem 0;
+}
+
+.object-studio-tab-content .ant-tabs > .ant-tabs-content-holder {
+    overflow: auto;
+    max-height: calc(100vh - 12rem);
+}
+
+/* ─── Alternating row colors ─── */
+
+.object-table-row-even {
+    background-color: #ffffff;
+}
+
+.object-table-row-odd {
+    background-color: #fafafa;
+}
+
+.object-table-row-even:hover > td,
+.object-table-row-odd:hover > td {
+    background-color: #e6f4ff !important;
+}

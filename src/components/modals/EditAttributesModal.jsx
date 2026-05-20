@@ -134,7 +134,7 @@ const EditAttributesModal = ({ close, context }) => {
                 </Button>,
             ]}
         >
-            <Spin spinning={loading} tip="Saving...">
+            <Spin spinning={loading} description="Saving...">
                 {isEmptyAttributes ? (
                     <Empty description="No attributes to edit" style={{ marginTop: "32px" }} />
                 ) : (

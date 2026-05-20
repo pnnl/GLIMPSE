@@ -5,6 +5,7 @@ import traceback
 import gc
 import time
 
+
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
@@ -24,10 +25,6 @@ json_helper = JSONHelper()
 glm_helper = GLMHelper()
 cim_helper = CIMHelper()
 gridappsd_helper = GridAPPSDHelper()
-
-# Measurement map: measurement MRID -> equipment info (populated when a model is loaded)
-# Used to translate simulation output into equipment-level state updates
-active_measurement_map: dict = {}
 
 # ================================================================================================
 # FLASK APP SETUP
@@ -63,11 +60,20 @@ socketio = SocketIO(
 # ================================================================================================
 
 
-@app.route("/api/objects/<uuid>", methods=["GET"])
-def get_object(uuid):
+@app.route("/api/cim/objects", methods=["POST"])
+def get_object():
     try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-        res = cim_helper.get_cim_object(uuid)
+        data = request.get_json()
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
+
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        res = cim_helper.get_cim_object(feeder_id, mRID)
 
         if "error" in res:
             return res, 404
@@ -79,20 +85,35 @@ def get_object(uuid):
         return jsonify({"error": str(e), "traceback": tb}), 500
 
 
-@app.route("/api/objects/<uuid>", methods=["DELETE"])
-def delete_object(uuid):
+@app.route("/api/cim/objects", methods=["DELETE"])
+def delete_object():
     try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-        if cim_helper.delete_cim_object(uuid):
+        data = request.get_json()
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
+
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        if cim_helper.delete_cim_object(feeder_id, mRID):
             return jsonify(
                 {
                     "success": True,
-                    "uuid": uuid,
+                    "feeder_id": feeder_id,
+                    "mRID": mRID,
                     "message": "Object deleted successfully",
                 }
             )
         else:
-            return jsonify({"error": f"Failed to delete object {uuid}"}), 400
+            return (
+                jsonify(
+                    {"error": f"Failed to delete object {mRID} in feeder {feeder_id}"}
+                ),
+                400,
+            )
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -100,11 +121,23 @@ def delete_object(uuid):
         return jsonify({"error": str(e), "traceback": tb}), 500
 
 
-@app.route("/api/objects/<uuid>/mermaid", methods=["GET"])
-def get_object_mermaid(uuid):
+@app.route("/api/cim/objects/mermaid", methods=["POST"])
+def get_object_mermaid():
     try:
-        res = cim_helper.get_mermaid(uuid)
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+
+        data = request.get_json()
+        print(data)
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
+
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        res = cim_helper.get_mermaid(feeder_id, mRID)
         return res, 200
+
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
@@ -253,22 +286,39 @@ def glm_upload():
         except Exception as cleanup_error:
             print(f"Warning: Failed to clean up temp directory: {cleanup_error}")
 
+@app.route("/api/export/glm", methods=["POST"])
+def export_glm():
+    """
+    Receives JSON graph data, converts to GLM files,
+    and returns them as a zip archive for download.
+    """
+    json_data = request.get_json()
 
-@app.route("/api/parse/json-to-glm", methods=["POST"])
-def json_to_glm():
+    if not json_data or "data" not in json_data:
+        return {"error": "No data provided."}, 400
+
+    data = json_data["data"]
+    tmpdir = tempfile.mkdtemp(prefix="glm_export_")
+
     try:
-        if request.is_json:
-            req_data = request.get_json()
-            glm_helper.json_to_glm(req_data)
 
-            return "", 204
-        else:
-            return {"error": "Request must be JSON"}, 400
+        zip_buffer = glm_helper.json_to_glm(data, tmpdir)
+
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="exported_model.zip"
+        )
+
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+        return {"error": f"Export failed: {str(e)}", "traceback": tb}, 500
 
+    finally:
+        # Clean up temp directory
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 # ================================================================================================
 # CIM OBJECT UPDATE ENDPOINT
@@ -301,12 +351,6 @@ def cim_to_glimpse():
             return {"error": "No valid files received."}, 400
 
         glimpse_structure_data = cim_helper.cim_to_gjs(filepaths=paths)
-
-        # Store measurement maps for simulation output processing
-        global active_measurement_map
-        for model_key, model_data in glimpse_structure_data.items():
-            if isinstance(model_data, dict) and "measurement_map" in model_data:
-                active_measurement_map.update(model_data["measurement_map"])
 
         return glimpse_structure_data
 
@@ -363,12 +407,6 @@ def get_models():
             return json.dumps({"error": "GridAPPS-D helper not initialized"}), 503
 
         gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
-
-        # Store measurement maps for simulation output processing
-        global active_measurement_map
-        for model_key, model_data in gjs.items():
-            if isinstance(model_data, dict) and "measurement_map" in model_data:
-                active_measurement_map.update(model_data["measurement_map"])
 
         return gjs, 200
     except Exception as e:
@@ -460,56 +498,47 @@ def delete_edge(edge_id):
 # ─── SocketIO Event Handlers ──────────────────────────────────────
 
 
-def is_switch_pos_measurement(meas_type: str, eq_type: str, meas_data: dict) -> bool:
-    SWITCH_EQUIPMENT_TYPES = frozenset(
-        {
-            "Breaker",
-            "Fuse",
-            "Switch",
-            "Sectionaliser",
-            "LoadBreakSwitch",
-            "Disconnector",
-            "Recloser",
-        }
-    )
-
-    """Return True only for Pos measurements that belong to a switching device."""
-    if meas_type != "Pos":
-        return False
-    if "value" not in meas_data:
-        return False
-    if eq_type not in SWITCH_EQUIPMENT_TYPES:
-        return False
-    return True
-
-
 @socketio.on("start-simulation")
 def handle_start_simulation(config):
-    global active_measurement_map
     try:
         result = gridappsd_helper.start_simulation(config)
 
         # Subscribe to output and relay to the client via WebSocket
         def on_sim_output(headers, message):
+
+            TYPES = {
+                "LinearShuntCompensator": "capacitor",
+                "Breaker": "switch",
+                "Fuse": "switch",
+                "Switch": "switch",
+                "Sectionaliser": "switch",
+                "LoadBreakSwitch": "switch",
+                "Disconnector": "switch",
+                "Recloser": "switch",
+            }
+
             socketio.emit("sim-output", message)
 
             # Process measurements through the map to emit equipment-level updates
-            if active_measurement_map and isinstance(message, dict):
+            active_measurement_map = cim_helper.active_measurement_map
+            if active_measurement_map:
                 msg = message.get("message", message)
                 measurements = msg.get("measurements", {})
                 timestamp = msg.get("timestamp")
-                switch_updates = []
 
-                for meas_mrid, meas_data in measurements.items():
-                    mapping = active_measurement_map.get(meas_mrid)
+                switch_updates = []
+                capacitor_updates = []
+
+                for measurment_mRID, measurment_data in measurements.items():
+                    mapping = active_measurement_map.get(measurment_mRID)
                     if not mapping:
                         continue
 
-                    eq_type = mapping.get("conducting_equipment_type", "")
+                    equipment_type = mapping.get("conducting_equipment_type", "")
                     meas_type = mapping.get("measurement_type", "")
 
                     # Switch state: Discrete "Pos" measurements carry value 0=open, 1=closed
-                    if is_switch_pos_measurement(meas_type, eq_type, meas_data):
+                    if (equipment_type in TYPES and TYPES[equipment_type] == "switch") and meas_type == "Pos":
                         switch_updates.append(
                             {
                                 "equipment_mrid": mapping.get(
@@ -518,20 +547,45 @@ def handle_start_simulation(config):
                                 "equipment_name": mapping.get(
                                     "conducting_equipment_name", ""
                                 ),
-                                "equipment_type": eq_type,
-                                "measurement_mrid": meas_mrid,
+                                "equipment_type": equipment_type,
+                                "measurement_mrid": measurment_mRID,
                                 "phases": mapping.get("phases", ""),
-                                "value": meas_data["value"],
-                                "open": meas_data["value"] == 0,
+                                "value": measurment_data["value"],
+                                "open": measurment_data["value"] == 0,
                             }
                         )
-
+                    
+                    if (equipment_type in TYPES and TYPES[equipment_type] == "capacitor") and meas_type == "Pos":
+                        capacitor_updates.append(
+                            {
+                                "equipment_mrid": mapping.get(
+                                    "conducting_equipment_mrid", ""
+                                ),
+                                "equipment_name": mapping.get(
+                                    "conducting_equipment_name", ""
+                                ),
+                                "equipment_type": equipment_type,
+                                "measurement_mrid": measurment_mRID,
+                                "phases": mapping.get("phases", ""),
+                                "value": measurment_data["value"],
+                            }
+                        )
+                
                 if switch_updates:
                     socketio.emit(
                         "switch-state-update",
                         {
                             "timestamp": timestamp,
                             "switches": switch_updates,
+                        },
+                    )
+                
+                if capacitor_updates:
+                    socketio.emit(
+                        "capacitor-state-update",
+                        {
+                            "timestamp": timestamp,
+                            "capacitors": capacitor_updates,
                         },
                     )
 
@@ -542,12 +596,24 @@ def handle_start_simulation(config):
         gridappsd_helper.subscribe_to_simulation_log(on_sim_log)
 
         print("=" * 20 + "result" + "=" * 20)
-        print(result)
+        print(json.dumps(result, indent=2))
         print("=" * 46)
         return result
 
     except Exception as e:
         return {"error": {"message": str(e)}}
+
+
+@socketio.on("sim-input")
+def handle_sim_input(input):
+    try:
+        print("=" * 10 + "Received sim input" + "=" * 10)
+        print(json.dumps(input, indent=2))
+        print("=" * 34)
+        gridappsd_helper.send_simulation_input(input)
+        return "", 204
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @socketio.on("pause-simulation")

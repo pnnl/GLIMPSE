@@ -64,6 +64,7 @@ const LoadModelModal = ({ onMount }) => {
 
             // Close modal after data is set
             console.log(response);
+            graphHelper.isCIM = true;
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
             newGraphUpdate();

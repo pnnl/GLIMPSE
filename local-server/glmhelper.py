@@ -3,7 +3,8 @@ import os
 import gc
 import time
 import sys
-import importlib
+import zipfile
+import io
 
 
 class GLMHelper:
@@ -86,16 +87,22 @@ class GLMHelper:
 
         return glm_dicts
 
-    def json_to_glm(self, json_str: dict):
-        data = json_str["data"]
-        save_dir = json_str["saveDir"]
+    def json_to_glm(self, data, tmpdir):
+        # Convert JSON to GLM files in the temp directory
+        for filename in data.keys():
+            # Ensure the filename ends with .glm
+            glm_filename = filename if filename.endswith(".glm") else filename.replace(".json", ".glm")
+            filepath = os.path.join(tmpdir, glm_filename)
+            with open(filepath, "w") as glm_file:
+                glm.dump(data[filename], glm_file)
 
-        try:
-            for filename in data.keys():
-                with open(os.path.join(save_dir, filename), "w") as glm_file:
-                    glm.dump(data[filename], glm_file)
-                    glm_file.close()
-        finally:
-            # Clean up references after write
-            gc.collect()
-            time.sleep(0.1)
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for filename in os.listdir(tmpdir):
+                filepath = os.path.join(tmpdir, filename)
+                zip_file.write(filepath, arcname=filename)
+
+        zip_buffer.seek(0)
+
+        return zip_buffer

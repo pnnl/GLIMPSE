@@ -85,7 +85,15 @@ const GraphContextMenu = ({
      * @param {string} edgeID
      */
     const animateEdge = (edgeID) => {
-        if (graphHelper.graph.getEdgeAttribute(edgeID, "type") === "animated") {
+        const currentEdgeType = graphHelper.graph.getEdgeAttribute(edgeID, "type");
+        const edgeGroup = graphHelper.graph.getEdgeAttribute(edgeID, "group");
+
+        if (currentEdgeType === "animated") {
+            if (edgeGroup === "switch") {
+                graphHelper.graph.setEdgeAttribute(edgeID, "type", "switch");
+                return;
+            }
+
             graphHelper.graph.setEdgeAttribute(edgeID, "type", "straight");
             return;
         }

@@ -3,7 +3,8 @@ import logging
 import socket
 from enum import Enum
 from typing import Optional, Callable
-from gridappsd import GridAPPSD
+from gridappsd import GridAPPSD, topics
+import json
 
 os.environ["GRIDAPPSD_USER"] = "system"
 os.environ["GRIDAPPSD_PASSWORD"] = "manager"
@@ -28,26 +29,11 @@ class GridAPPSDError(Exception):
 class GridAPPSDHelper:
 
     def __init__(self):
-        # ── Topic constants ───────────────────────────────────────────
-        self.START_SIMULATION = "/queue/goss.gridappsd.process.request.simulation"
-        self.SIMULATION_STATUS_LOG = "/topic/goss.gridappsd.simulation.log"
-        self.SIMULATION_OUTPUT = "/topic/goss.gridappsd.simulation.output"
-        self.CONTROL_SIMULATION = "/topic/goss.gridappsd.simulation.input"
-
         # ── State ─────────────────────────────────────────────────────
-        self.gapps: Optional[GridAPPSD] = None
-        self.sim_id: Optional[str] = None
+        self.gapps: GridAPPSD | None = None
+        self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
-        self._output_callbacks: list[Callable] = []
 
-        # ── Availability flag ─────────────────────────────────────────
-        # This is the key change: we track whether GridAPPS-D was ever
-        # reachable.  If the initial connection fails we set this to
-        # False and NEVER automatically retry — the server keeps
-        # running and all non-GridAPPS-D features still work.
-        #
-        # To manually retry later (e.g. from a UI button), call
-        # `try_connect()` which flips this back to True on success.
         self._available: bool = False
 
         # ── One-shot initial connection attempt ───────────────────────
@@ -161,7 +147,6 @@ class GridAPPSDHelper:
                 self.gapps = None
                 self.sim_id = None
                 self.sim_state = SimulationState.IDLE
-                self._output_callbacks.clear()
 
     # ─── Model Queries ────────────────────────────────────────────────
 
@@ -182,7 +167,7 @@ class GridAPPSDHelper:
         self._ensure_connected()
         try:
             response = self.gapps.get_response(
-                self.START_SIMULATION, sim_config, timeout=30
+                topics.REQUEST_SIMULATION, sim_config, timeout=30
             )
 
             if response is None:
@@ -217,7 +202,7 @@ class GridAPPSDHelper:
                 "No simulation ID available. Start a simulation first."
             )
 
-        topic = f"{self.CONTROL_SIMULATION}.{target_id}"
+        topic = topics.simulation_input_topic(target_id)
 
         try:
             response = self.gapps.get_response(topic, {"command": command}, timeout=30)
@@ -225,21 +210,21 @@ class GridAPPSDHelper:
         except Exception as e:
             raise GridAPPSDError(f"Failed to send '{command}' command: {e}") from e
 
-    def pause_simulation(self, sim_id: str = None) -> dict:
+    def pause_simulation(self, sim_id: str | None = None) -> dict:
         """Pause the current or specified simulation."""
         result = self._send_sim_command("pause", sim_id)
         self.sim_state = SimulationState.PAUSED
         logger.info(f"Simulation paused: {sim_id or self.sim_id}")
         return {"state": self.sim_state.value, **result}
 
-    def resume_simulation(self, sim_id: str = None) -> dict:
+    def resume_simulation(self, sim_id: str | None = None) -> dict:
         """Resume the current or specified simulation."""
         result = self._send_sim_command("resume", sim_id)
         self.sim_state = SimulationState.RUNNING
         logger.info(f"Simulation resumed: {sim_id or self.sim_id}")
         return {"state": self.sim_state.value, **result}
 
-    def stop_simulation(self, sim_id: str = None) -> dict:
+    def stop_simulation(self, sim_id: str | None = None) -> dict:
         """Stop the current or specified simulation."""
         self._ensure_connected()
         target_id = sim_id or self.sim_id
@@ -247,7 +232,7 @@ class GridAPPSDHelper:
         if not target_id:
             raise GridAPPSDError("No simulation ID available.")
 
-        topic = f"{self.CONTROL_SIMULATION}.{target_id}"
+        topic = topics.simulation_input_topic(target_id)
 
         try:
             self.gapps.send(topic, {"command": "stop"})
@@ -257,12 +242,32 @@ class GridAPPSDHelper:
             # Cleanup if stopping the tracked simulation
             if target_id == self.sim_id:
                 self.sim_id = None
-                self._output_callbacks.clear()
 
             return {"state": self.sim_state.value}
         except Exception as e:
             self.sim_state = SimulationState.ERROR
             raise GridAPPSDError(f"Failed to stop simulation: {e}") from e
+
+    def send_simulation_input(self, input_data: dict, sim_id: str = None) -> dict:
+        """Send input data to the simulation."""
+        self._ensure_connected()
+        target_id = sim_id or self.sim_id
+
+        if not target_id:
+            raise GridAPPSDError(
+                "No simulation ID available. Start a simulation first."
+            )
+
+        topic = topics.simulation_input_topic(target_id)
+
+        try:
+            print("=" * 10 + topic + "=" * 10)
+            print("=" * 10 + "input object" + "=" * 10)
+            print(input_data)
+            self.gapps.send(topic, input_data)
+            logger.info(f"Sent input to simulation {target_id}: {input_data}")
+        except Exception as e:
+            raise GridAPPSDError(f"Failed to send input: {e}") from e
 
     # ─── Simulation Output Subscription ───────────────────────────────
 
@@ -280,12 +285,11 @@ class GridAPPSDHelper:
             )
 
         # Correct topic format (no trailing wildcard)
-        topic = f"{self.SIMULATION_OUTPUT}.{target_id}"
+        topic = topics.simulation_output_topic(target_id)
         logger.info(f"Subscribing to simulation output on: {topic}")
 
         try:
             self.gapps.subscribe(topic, callback=callback)
-            self._output_callbacks.append(callback)
         except Exception as e:
             raise GridAPPSDError(
                 f"Failed to subscribe to simulation output: {e}"
@@ -299,7 +303,7 @@ class GridAPPSDHelper:
         if not target_id:
             raise GridAPPSDError("No simulation ID available.")
 
-        topic = f"{self.SIMULATION_STATUS_LOG}.{target_id}"
+        topic = topics.simulation_log_topic(target_id)
         logger.info(f"Subscribing to simulation log on: {topic}")
 
         try:
@@ -315,5 +319,4 @@ class GridAPPSDHelper:
             "connected": self.is_connected(),
             "simulation_id": self.sim_id,
             "simulation_state": self.sim_state.value,
-            "active_output_subscriptions": len(self._output_callbacks),
         }

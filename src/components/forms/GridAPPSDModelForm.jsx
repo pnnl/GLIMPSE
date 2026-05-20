@@ -21,7 +21,7 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
             console.log(res.data);
 
             if ("connected" in res.data && !res.data.connected) {
-                alert(res.data.message);
+                console.warn(res.data.message);
                 setLoading(false);
             } else if ("connected" in res.data && res.data.connected) {
                 setConnected(res.data.connected);
@@ -68,6 +68,15 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
             getModelInfo();
         }
     }, [connected]);
+
+    useEffect(() => {
+        const unSub = socketClientHelper.on("error", (err) => {
+            console.warn(err.message);
+            setLoading(false);
+        });
+
+        return () => unSub();
+    });
 
     return (
         <Form>

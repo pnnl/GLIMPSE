@@ -44,6 +44,31 @@ class SocketClientHelper {
         test_config: { events: [], appId: "" },
     };
 
+    inputMessage = {
+        command: "update",
+        input: {
+            simulation_id: "",
+            message: {
+                timestamp: "", // time of message being sent in seconds
+                difference_mrid: "", // can be a random UUID
+                reverse_differences: [
+                    {
+                        object: "",
+                        attribute: "", // switch.open
+                        value: "",
+                    },
+                ],
+                forward_differences: [
+                    {
+                        object: "",
+                        attribute: "",
+                        value: "",
+                    },
+                ],
+            },
+        },
+    };
+
     // State
     simulationID = null;
     simulationState = "inactive"; // inactive | idle | running | paused | stopped | error
@@ -68,7 +93,7 @@ class SocketClientHelper {
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            timeout: 10000,
+            timeout: 15000,
         });
 
         this.#setupSocketListeners();
@@ -95,7 +120,7 @@ class SocketClientHelper {
 
         // Simulation events
         this.socket.on("sim-output", (output) => {
-            console.log(output);
+            // console.log(output);
             this.#emit("sim-output", output);
         });
 
@@ -114,6 +139,10 @@ class SocketClientHelper {
 
         this.socket.on("switch-state-update", (data) => {
             graphHelper.updateSwitches(data);
+        });
+
+        this.socket.on("capacitor-state-update", (data) => {
+            graphHelper.updateCapacitors(data);
         });
 
         // Graph mutation events

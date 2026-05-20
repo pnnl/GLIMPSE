@@ -1,14 +1,8 @@
 import "@react-sigma/core/lib/style.css";
 import { useEffect, useMemo, useState } from "react";
-import {
-    SigmaContainer,
-    ControlsContainer,
-    ZoomControl,
-    FullScreenControl,
-} from "@react-sigma/core";
+import { SigmaContainer, ControlsContainer, ZoomControl, FullScreenControl } from "@react-sigma/core";
 import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 import { MultiUndirectedGraph } from "graphology";
-import forceAtlas2 from "graphology-layout-forceatlas2";
 import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover } from "../../utils/canvas-utils";
@@ -22,7 +16,6 @@ import {
     createNodeCompoundProgram,
     createEdgeCompoundProgram,
     EdgeArrowHeadProgram,
-    NodeCircleProgram,
 } from "sigma/rendering";
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
@@ -64,7 +57,7 @@ const GraphRenderer = () => {
     const sigmaSettings = useMemo(
         () => ({
             minCameraRatio: 0.02,
-            maxCameraRatio: 3,
+            maxCameraRatio: 5,
             renderEdgeLabels: true,
             itemSizesReference: "screen",
             defaultDrawNodeLabel: drawLabel,
@@ -79,7 +72,7 @@ const GraphRenderer = () => {
             zIndex: true,
             enableEdgeEvents: true,
             nodeProgramClasses: {
-                nodeImg: NodePictogramProgram,
+                nodeImg: BorderImageNodeProgram,
                 node: NodeBorderProgram,
             },
             edgeProgramClasses: {
