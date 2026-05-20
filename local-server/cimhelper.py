@@ -7,8 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 from uuid import UUID
 from dataclasses import fields, is_dataclass
 
-from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
-from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
+# from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
+# from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
 
 # CIM-graph imports
 # from cimgraph.databases.gridappsd import GridappsdConnection

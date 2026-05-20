@@ -788,6 +788,7 @@ class GraphHelper {
                         elementType: "edge",
                         group: "parentChild",
                         type: "straight",
+                        weight: 1.0,
                         size: this.#theme.edgeOptions.parentChild.width,
                         length: "length" in attributes ? parseFloat(attributes.length) : null,
                         attributes: { to: parent, from: nodeID, id: edgeID },
@@ -815,7 +816,7 @@ class GraphHelper {
                         dotPhase: Math.random(),
                         flowDirection: 1, // -1 for opposite flow
                         dotCount: 1,
-                        length: attributes.length ?? null,
+                        weight: 0.3,
                         attributes: attributes,
                         ...this.#theme.edgeOptions[objectType],
                     };
@@ -856,6 +857,7 @@ class GraphHelper {
                         length: attributes.length ?? null,
                         size: this.#theme.edgeOptions[objectType].size,
                         attributes: attributes,
+                        weight: 0.3,
                     });
                 }
             }
@@ -944,9 +946,9 @@ class GraphHelper {
             if (newGraph.order > 1000) {
                 louvain.assign(newGraph, {
                     nodeCommunityAttribute: "CID",
-                    resolution: 0.7,
+                    resolution: 0.5,
                 });
-                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"] });
+                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 4, center: 2 });
             } else {
                 circlepack.assign(newGraph);
             }

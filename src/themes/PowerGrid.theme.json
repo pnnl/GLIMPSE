@@ -5,21 +5,21 @@
             "color": "#E69F00",
             "type": "nodeImg",
             "borderColor": "#A67000",
-            "image": "/imgs/load.svg"
+            "image": "/imgs/Load.svg"
         },
         "triplex_load": {
             "size": 5,
             "color": "#F0C060",
             "type": "nodeImg",
             "borderColor": "#A67000",
-            "image": "/imgs/load.svg"
+            "image": "/imgs/Load.svg"
         },
         "capacitor": {
             "size": 5,
             "color": "#56B4E9",
             "type": "nodeImg",
             "borderColor": "#1F6F9C",
-            "image": "/imgs/capacitor.svg"
+            "image": "/imgs/Capacitor.svg"
         },
         "triplex_node": {
             "size": 2.5,
@@ -57,12 +57,12 @@
             "color": "#F0E442",
             "borderColor": "#A89E00",
             "type": "nodeImg",
-            "image": "/imgs/inverter.svg"
+            "image": "/imgs/Inverter.svg"
         },
         "inverter": {
             "size": 5,
             "color": "#F0E442",
-            "image": "/imgs/inverter.svg",
+            "image": "/imgs/Inverter.svg",
             "type": "nodeImg"
         },
         "battery": {
@@ -122,6 +122,10 @@
         "series_reactor": {
             "size": 2,
             "color": "#CC79A7"
+        },
+        "regulator": {
+            "size": 2,
+            "color": "#D55E00"
         },
         "transformer": {
             "size": 2,

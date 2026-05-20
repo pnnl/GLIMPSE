@@ -1,5 +1,3 @@
-## About GLIMPSE
-
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
 GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. With GLIMPSE, you can:
@@ -36,8 +34,8 @@ This section will walk you through installing dependencies and building GLIMPSE.
 
 1. **[Node.js](https://nodejs.org/en)** — Required for all users
 2. **[Nim](https://nim-lang.org/install.html)** — Only needed if:
-   - You're on Apple silicon (M chips), OR
-   - You plan to export modified GLM files
+    - You're on Apple silicon (M chips), OR
+    - You plan to export modified GLM files
 
 ### Step 1: Clone the Repository
 
@@ -45,6 +43,9 @@ In a directory of your choice, clone the repository:
 
 ```bash
 git clone http://github.com/pnnl/GLIMPSE
+```
+
+```glm
 cd GLIMPSE
 ```
 
@@ -65,16 +66,19 @@ cd GLIMPSE/local-server/
 #### Choose your package manager and create the environment:
 
 **Option A: UV (Recommended)**
+
 ```bash
 uv add -r requirements.txt --prerelease=allow
 ```
 
 **Option B: VENV**
+
 ```bash
 python -m venv .venv
 ```
 
 **Option C: Conda**
+
 ```bash
 conda create -n glimpse_env
 conda activate glimpse_env
@@ -82,15 +86,15 @@ conda activate glimpse_env
 
 #### Activate your environment:
 
-| Platform | Shell      | Command                                 |
-| :------: | :--------- | :-------------------------------------- |
-|  POSIX   | bash/zsh   | `source .venv/bin/activate`             |
-|    -     | fish       | `source .venv/bin/activate.fish`        |
-|    -     | csh/tcsh   | `source .venv/bin/activate.csh`         |
-|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`          |
-| Windows  | cmd.exe    | `.venv\Scripts\activate.bat`            |
-|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`          |
-| macOS    | bash/zsh   | `source .venv/bin/activate`             |
+| Platform | Shell      | Command                          |
+| :------: | :--------- | :------------------------------- |
+|  POSIX   | bash/zsh   | `source .venv/bin/activate`      |
+|    -     | fish       | `source .venv/bin/activate.fish` |
+|    -     | csh/tcsh   | `source .venv/bin/activate.csh`  |
+|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`   |
+| Windows  | cmd.exe    | `.venv\Scripts\activate.bat`     |
+|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`   |
+|  macOS   | bash/zsh   | `source .venv/bin/activate`      |
 
 > [!NOTE]
 > You'll know the environment is active when you see `(.venv)` at the start of your command line.
@@ -121,11 +125,13 @@ cd CIM-Builder
 ```
 
 **With PIP:**
+
 ```bash
 python -m pip install . --no-deps
 ```
 
 **With UV:**
+
 ```bash
 uv pip install . --no-deps
 ```
@@ -135,13 +141,15 @@ uv pip install . --no-deps
 #### Standard Installation (Windows, Linux, Intel/AMD Mac)
 
 **With PIP:**
+
 ```bash
 pip install glm
 ```
 
 **With UV:**
+
 ```bash
-uv add glm
+uv pip install glm
 ```
 
 #### Special Instructions for Apple Silicon (M Chips)
@@ -152,7 +160,13 @@ Clone the GLM parser:
 
 ```bash
 cd GLIMPSE/local-server/
+```
+
+```bash
 git clone https://github.com/NREL/glm.git
+```
+
+```bash
 cd glm
 ```
 
@@ -173,11 +187,13 @@ python3 setup.py bdist_wheel
 Install the wheel from `dist/` folder:
 
 **With PIP:**
+
 ```bash
 pip install dist/<whl-filename>.whl
 ```
 
 **With UV:**
+
 ```bash
 uv pip install dist/<whl-filename>.whl
 ```
@@ -199,13 +215,13 @@ The application will start in development mode. Open your browser and navigate t
 GLIMPSE supports two JSON file formats for custom graph visualizations:
 
 1. **GLIMPSE JSON Format** — Based on [glm2json](https://github.com/NREL/glm) parser output
-   - [Example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
-   - [Example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
-   - [Example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
-   - [Example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
+    - [Example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
+    - [Example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
+    - [Example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
+    - [Example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
 
 2. **NetworkX Node-Link Format** — From NetworkX's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) function
-   - [Fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
+    - [Fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
 
 ### GridLAB-D (.glm) Files
 

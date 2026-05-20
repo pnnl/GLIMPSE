@@ -5,36 +5,32 @@ export function getFA2Settings(graph) {
     // -------- SMALL GRAPHS (~250 or fewer) --------
     if (order <= 250) {
         return {
-            // Structural
-            barnesHutOptimize: false, // not needed < ~1k, exact is smoother
-            linLogMode: false, // linear → Vis.js-like "smooth"
-            adjustSizes: true, // avoid node overlap (like avoidOverlap)
+            barnesHutOptimize: false,
+            barnesHutTheta: 0.5,
+            linLogMode: false,
+            adjustSizes: true,
             edgeWeightInfluence: 1,
             outboundAttractionDistribution: false,
-
-            // Forces
-            scalingRatio: 25, // repulsion strength (↑ = more spread) — increased to prevent overlap
-            gravity: 0.3, // reduced to allow more natural spreading
-            strongGravityMode: false, // distance-dependent, gentler unravel
-            slowDown: 8, // ≈ damping; higher = less jitter
-            barnesHutTheta: 0.5,
+            scalingRatio: 40, // ↑ from 25 — more breathing room for edge icons
+            gravity: 0.15, // ↓ from 0.3 — less inward pull
+            strongGravityMode: false,
+            slowDown: 12, // ↑ from 8 — smoother settle, no jitter risk at this size
         };
     }
 
     // -------- LARGE GRAPHS (> 1000) --------
     if (order > 1000) {
         return {
-            barnesHutOptimize: true, // O(n·log n) — required at this size
-            barnesHutTheta: 0.8, // a touch faster; 0.5 is more accurate
-            linLogMode: true, // produces tighter, cleaner clusters
-            adjustSizes: true, // keep enabled to prevent node overlap
-            edgeWeightInfluence: 1,
-            outboundAttractionDistribution: false, // helps dense hubs spread nicely
-
-            scalingRatio: 8, // increased to improve node separation
-            gravity: 0.2, // reduced to allow more natural spacing
+            barnesHutOptimize: true,
+            barnesHutTheta: 0.5, // ↓ from 0.6 — more accurate
+            linLogMode: false, // ← turn OFF (was your earlier good state)
+            adjustSizes: false,
+            edgeWeightInfluence: 2.5, // ← was 2 — now uniform attraction
+            outboundAttractionDistribution: true,
+            scalingRatio: 60, // ↓ from 85 — sufficient with linLog off
+            gravity: 0.02, // ↓ from 0.05 — let chains stretch
             strongGravityMode: false,
-            slowDown: 4, // big graphs need more damping to settle
+            slowDown: 15, // ↑ from 10 — smoother settle
         };
     }
 
@@ -45,11 +41,10 @@ export function getFA2Settings(graph) {
         linLogMode: false,
         adjustSizes: true,
         edgeWeightInfluence: 1,
-        outboundAttractionDistribution: false,
-
-        scalingRatio: 15, // increased to spread nodes and prevent overlap
-        gravity: 0.4, // reduced to allow more spreading
+        outboundAttractionDistribution: true, // helps hubs open up
+        scalingRatio: 25, // ↑ from 15
+        gravity: 0.2, // ↓ from 0.4
         strongGravityMode: false,
-        slowDown: 10, // increased damping for stability
+        slowDown: 14, // ↑ from 10
     };
 }
