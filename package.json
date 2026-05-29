@@ -29,6 +29,7 @@
         "@sigma/node-image": "^3.0.0",
         "antd": "^6.1.0",
         "axios": "^1.13.2",
+        "echarts-for-react": "^3.0.6",
         "graphology": "^0.26.0",
         "graphology-communities-louvain": "^2.0.2",
         "graphology-layout-force": "^0.2.4",

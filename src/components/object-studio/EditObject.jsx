@@ -261,7 +261,7 @@ const EditObject = ({ object, onNavigate }) => {
             : []),
     ];
 
-    return <Tabs items={tabItems} />;
+    return <Tabs items={tabItems} style={{ height: "100%", display: "flex", flexDirection: "column" }} />;
 };
 
 export default EditObject;

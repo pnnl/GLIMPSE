@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useLoadGraph } from "@react-sigma/core";
+import { useLoadGraph, useSigma } from "@react-sigma/core";
 import { MultiGraph } from "graphology";
 import graphHelper from "../../graph-helper/GraphHelper";
 import LegendGraphEvents from "./LegendGraphEvents";
@@ -10,6 +10,19 @@ import { createNodeCompoundProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
 import { drawLabel, drawShadow } from "../../utils/canvas-utils";
 import { useGraph } from "../../contexts/GraphContext";
+
+const LegendDarkModeSync = () => {
+    const sigma = useSigma();
+    const { darkMode } = useGraph();
+    useEffect(() => {
+        sigma.refresh();
+    }, [darkMode, sigma]);
+    return null;
+};
+
+const LegendContainerStyles = (darkMode) => ({
+    backgroundColor: darkMode ? "#1D1D1D" : "#ffffff",
+});
 
 const LegendGraph = () => {
     const loadLegendGraph = useLoadGraph();
@@ -30,6 +43,7 @@ const LegendGraph = () => {
 };
 
 const LegendRenderer = () => {
+    const { darkMode } = useGraph();
     const BorderImageNodeProgram = useMemo(() => {
         const NodeBorderCustomProgram = createNodeBorderProgram({
             borders: [
@@ -48,6 +62,7 @@ const LegendRenderer = () => {
 
     return (
         <SigmaContainer
+            style={LegendContainerStyles(darkMode)}
             settings={{
                 allowInvalidContainer: true,
                 renderEdgeLabels: true,
@@ -72,6 +87,7 @@ const LegendRenderer = () => {
         >
             <LegendGraph />
             <LegendGraphEvents />
+            <LegendDarkModeSync />
         </SigmaContainer>
     );
 };

@@ -1,10 +1,12 @@
 import React from "react";
 import { Table, Typography } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
+import { useGraph } from "../../contexts/GraphContext";
 
 const { Link } = Typography;
 
 const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
+    const { darkMode } = useGraph();
     const handleObjectClick = (record) => {
         if (isCIM) {
             onEditObject({
@@ -12,7 +14,7 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
                 feederId: record.attributes.feeder_id,
             });
         } else {
-            onEditObject({ type: record.elementType, id: record.id });
+            onEditObject({ id: record.id });
         }
     };
 
@@ -36,6 +38,18 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
                 key: colName,
                 fixed: "left",
                 width: 120,
+                onCell: (_, index) => ({
+                    style: {
+                        backgroundColor:
+                            index % 2 === 0
+                                ? darkMode
+                                    ? "#1f1f1f"
+                                    : "#ffffff"
+                                : darkMode
+                                  ? "#2a2a2a"
+                                  : "#fafafa",
+                    },
+                }),
                 render: (_, record) => <Typography.Text strong>{record.group}</Typography.Text>,
             };
         }
@@ -82,8 +96,8 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
                 key: colName,
                 width: 120,
                 sorter: (a, b) => {
-                    const aVal = String(a.attributes.name ?? "");
-                    const bVal = String(b.attributes.name ?? "");
+                    const aVal = String(a.attributes?.name ?? "");
+                    const bVal = String(b.attributes?.name ?? "");
                     return aVal.localeCompare(bVal);
                 },
                 render: (_, record) => {
@@ -99,8 +113,8 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
             key: colName,
             ellipsis: true,
             sorter: (a, b) => {
-                const aVal = String(a.attributes[colName] ?? "");
-                const bVal = String(b.attributes[colName] ?? "");
+                const aVal = String(a.attributes?.[colName] ?? "");
+                const bVal = String(b.attributes?.[colName] ?? "");
                 return aVal.localeCompare(bVal);
             },
             render: (_, record) => {
@@ -134,7 +148,7 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
                 showSizeChanger: true,
                 showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
             }}
-            scroll={{ x: "max-content", y: "calc(100vh - 14rem)" }}
+            scroll={{ x: "max-content", y: "calc(100vh - 15.5rem)" }}
         />
     );
 };

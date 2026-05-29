@@ -18,6 +18,10 @@
     overflow: hidden;
 }
 
+.object-studio-left-pane {
+    overflow: hidden;
+}
+
 /* ─── Main Tabs: left-aligned & evenly spaced ─── */
 
 .object-studio-tabs {
@@ -59,7 +63,14 @@
 
 .object-studio-tab-content {
     height: 100%;
-    overflow: auto;
+    overflow: hidden;
+}
+
+/* Make inner Tabs (Attributes/Associations/Diagram) fill the available height */
+.object-studio-tab-content > .ant-tabs {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ─── Nested tabs (Attributes / Associations / Diagram) ─── */
@@ -81,8 +92,9 @@
 }
 
 .object-studio-tab-content .ant-tabs > .ant-tabs-content-holder {
+    flex: 1;
+    min-height: 0;
     overflow: auto;
-    max-height: calc(100vh - 12rem);
 }
 
 /* ─── Alternating row colors ─── */
@@ -97,5 +109,52 @@
 
 .object-table-row-even:hover > td,
 .object-table-row-odd:hover > td {
-    background-color: #e6f4ff !important;
+    background-color: rgba(51, 51, 51, 0.08) !important;
+}
+
+/* ─── Fixed column: explicit backgrounds prevent bleed-through on horizontal scroll ─── */
+
+.object-table-row-even td.ant-table-cell-fix-left {
+    background-color: #ffffff !important;
+}
+
+.object-table-row-odd td.ant-table-cell-fix-left {
+    background-color: #fafafa !important;
+}
+
+.object-table-row-even:hover td.ant-table-cell-fix-left,
+.object-table-row-odd:hover td.ant-table-cell-fix-left {
+    background-color: rgba(51, 51, 51, 0.08) !important;
+}
+
+/* ─── Dark mode overrides ─── */
+
+.dark-mode .object-studio-header {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.dark-mode .object-table-row-even {
+    background-color: #1f1f1f;
+}
+
+.dark-mode .object-table-row-odd {
+    background-color: #2a2a2a;
+}
+
+.dark-mode .object-table-row-even:hover > td,
+.dark-mode .object-table-row-odd:hover > td {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark-mode .object-table-row-even td.ant-table-cell-fix-left {
+    background-color: #1f1f1f !important;
+}
+
+.dark-mode .object-table-row-odd td.ant-table-cell-fix-left {
+    background-color: #2a2a2a !important;
+}
+
+.dark-mode .object-table-row-even:hover td.ant-table-cell-fix-left,
+.dark-mode .object-table-row-odd:hover td.ant-table-cell-fix-left {
+    background-color: rgba(255, 255, 255, 0.06) !important;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button, Flex, Dropdown, Select } from "antd";
+import { Button, Flex, Dropdown, Select, Switch } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
 import "../styles/AppHeader.css";
@@ -13,7 +13,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
     const [searchValue, setSearchValue] = useState(undefined);
-    const { graphUpdateTrigger, view, setView } = useGraph();
+    const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
 
     const menuItems = [
         { key: "export-model", label: "Export Model", disabled: false },
@@ -31,6 +31,23 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 { type: "divider" },
                 { key: "export-theme", label: "Export Theme", disabled: true },
             ],
+        },
+        { type: "divider" },
+        {
+            key: "dark-mode",
+            label: (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "2rem",
+                    }}
+                >
+                    <span>Dark Mode</span>
+                    <Switch size="small" checked={darkMode} />
+                </div>
+            ),
         },
     ];
 
@@ -85,7 +102,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 "http://127.0.0.1:5051/api/export/glm",
                 { data: exportData },
                 {
-                    responseType: "blob", // Important: tells axios to expect binary data
+                    responseType: "blob",
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -128,13 +145,16 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             case "object-studio":
                 setView(view === "object-studio" ? "graph" : "object-studio");
                 break;
+            case "dark-mode":
+                setDarkMode(!darkMode);
+                break;
             case "export-theme":
         }
     };
 
     return (
         <>
-            <div className="app-header">
+            <div className="app-header" style={{ backgroundColor: darkMode ? "#1f1f1f" : "#FFFFFF" }}>
                 <Dropdown
                     trigger={["click"]}
                     menu={{
@@ -166,7 +186,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 )}
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
                     <Button
-                        color="#333333"
                         style={{ textTransform: "uppercase" }}
                         onClick={() => openModelLoader.current(true)}
                         size="middle"
@@ -175,7 +194,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         Load
                     </Button>
                     <Button
-                        color="#333333"
                         type="primary"
                         size="middle"
                         style={{ textTransform: "uppercase" }}

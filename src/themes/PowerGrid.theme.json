@@ -96,9 +96,9 @@
             "color": "rgba(180, 180, 180, 0.4)"
         },
         "connectivity_node": {
-            "size": 3,
+            "size": 2.5,
             "type": "node",
-            "color": "#000000",
+            "color": "#FFA500",
             "borderColor": "#000000"
         }
     },

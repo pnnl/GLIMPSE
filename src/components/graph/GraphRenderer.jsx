@@ -5,7 +5,7 @@ import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
 import { MultiUndirectedGraph } from "graphology";
 import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
-import { drawLabel, drawHover } from "../../utils/canvas-utils";
+import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
 import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
@@ -21,16 +21,22 @@ import AnimatedDotProgram from "../../custom-programs/animated-dot-program/Anima
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
 import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
 import { getFA2Settings } from "../../utils/fa2-presets";
+import DistributionAreaSelector from "../DistributionAreaSelector";
 
 const GraphRenderer = () => {
     const [layoutSettings, setLayoutSettings] = useState({});
-    const { graphUpdateTrigger } = useGraph();
+    const { graphUpdateTrigger, darkMode } = useGraph();
+
+    useEffect(() => {
+        setCanvasDarkMode(darkMode);
+        if (graphHelper.sigmaInstance) graphHelper.sigmaInstance.refresh();
+    }, [darkMode]);
 
     const BorderImageNodeProgram = useMemo(() => {
         const NodeBorderCustomProgram = createNodeBorderProgram({
             borders: [
                 {
-                    size: { attribute: "borderSize", defaultValue: 6 },
+                    size: { attribute: "borderSize", defaultValue: 12 },
                     color: { attribute: "borderColor" },
                 },
                 { size: { fill: true }, color: { attribute: "color" } },
@@ -43,11 +49,7 @@ const GraphRenderer = () => {
     }, []);
 
     const AnimatedStraightEdgeProgram = useMemo(() => {
-        return createEdgeCompoundProgram([
-            EdgeRectangleProgram,
-            EdgeArrowHeadProgram,
-            AnimatedDotProgram,
-        ]);
+        return createEdgeCompoundProgram([EdgeRectangleProgram, AnimatedDotProgram]);
     }, []);
 
     const SwitchEdgeProgram = useMemo(() => {
@@ -115,6 +117,7 @@ const GraphRenderer = () => {
             graphHelper.getHighlightedEdgeTypes().length === 0 &&
             graphHelper.getHighlightedGroups().length === 0
         ) {
+            if (darkMode) attrs.color = "#bfc0c0";
             return attrs;
         }
 
@@ -147,6 +150,8 @@ const GraphRenderer = () => {
     return (
         <SigmaContainer
             key={graphUpdateTrigger}
+            className={darkMode ? "sigma-dark" : ""}
+            style={{ backgroundColor: darkMode ? "#1D1D1D" : "#ffffff" }}
             graph={MultiUndirectedGraph}
             settings={{
                 ...sigmaSettings,
@@ -157,6 +162,9 @@ const GraphRenderer = () => {
             <Graph />
             <GraphEvents />
             <AnimatedEdgeTicker />
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"top-left"}>
+                <DistributionAreaSelector />
+            </ControlsContainer>
             <ControlsContainer position={"bottom-left"}>
                 <ZoomControl />
                 <FullScreenControl />

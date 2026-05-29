@@ -28,9 +28,9 @@ export function getFA2Settings(graph) {
             edgeWeightInfluence: 2.5, // ← was 2 — now uniform attraction
             outboundAttractionDistribution: true,
             scalingRatio: 60, // ↓ from 85 — sufficient with linLog off
-            gravity: 0.02, // ↓ from 0.05 — let chains stretch
+            gravity: 0.05, // ↓ from 0.05 — let chains stretch
             strongGravityMode: false,
-            slowDown: 15, // ↑ from 10 — smoother settle
+            slowDown: 9.50532301884575, // ↑ from 10 — smoother settle
         };
     }
 

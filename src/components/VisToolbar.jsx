@@ -4,11 +4,13 @@ import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
 import { IoPlay, IoAddCircle, IoStop, IoPause } from "react-icons/io5";
-import { MdOutlineHideSource } from "react-icons/md";
+import { MdOutlineHideSource, MdShowChart } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
+import { useGraph } from "../contexts/GraphContext";
 
-const VisToolbar = ({ onToggleLegend }) => {
+const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel, isCIM }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
+    const { darkMode } = useGraph();
 
     useEffect(() => {
         const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
@@ -80,7 +82,7 @@ const VisToolbar = ({ onToggleLegend }) => {
     };
 
     return (
-        <div className="vis-toolbar">
+        <div className="vis-toolbar" style={{ backgroundColor: darkMode ? "#1f1f1f" : "#ffffff" }}>
             <Space
                 size={2}
                 style={{ marginRight: "auto" }}
@@ -90,11 +92,7 @@ const VisToolbar = ({ onToggleLegend }) => {
                     <Space.Compact block>
                         {(simulationState === "idle" || simulationState === "stopped") && (
                             <Tooltip title={"Start Simulation"} placement="bottom">
-                                <Button
-                                    size="large"
-                                    onClick={handleStartSimulation}
-                                    icon={<IoPlay />}
-                                />
+                                <Button size="large" onClick={handleStartSimulation} icon={<IoPlay />} />
                             </Tooltip>
                         )}
                         {simulationState === "running" && (
@@ -116,15 +114,34 @@ const VisToolbar = ({ onToggleLegend }) => {
                         </Tooltip>
                     </Space.Compact>
                 )}
-                <Tooltip title="Hide/Show Legend" placement="bottomLeft">
-                    <Button
-                        style={{ width: "4rem" }}
-                        size="large"
-                        type="default"
-                        icon={<MdOutlineHideSource />}
-                        onClick={onToggleLegend}
-                    />
-                </Tooltip>
+                <Space.Compact block>
+                    {isCIM && (
+                        <Tooltip
+                            title={activePanel === "charts" ? "Hide Charts" : "Show Charts"}
+                            placement="bottomLeft"
+                        >
+                            <Button
+                                style={{ width: "4rem" }}
+                                size="large"
+                                type={activePanel === "charts" ? "primary" : "default"}
+                                icon={<MdShowChart />}
+                                onClick={onToggleCharts}
+                            />
+                        </Tooltip>
+                    )}
+                    <Tooltip
+                        title={activePanel === "legend" ? "Hide Legend" : "Show Legend"}
+                        placement="bottomLeft"
+                    >
+                        <Button
+                            style={{ width: "4rem" }}
+                            size="large"
+                            type={activePanel === "legend" ? "primary" : "default"}
+                            icon={<MdOutlineHideSource />}
+                            onClick={onToggleLegend}
+                        />
+                    </Tooltip>
+                </Space.Compact>
             </Space>
             <Space
                 size={2}

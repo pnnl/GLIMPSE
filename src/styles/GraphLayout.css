@@ -5,3 +5,19 @@
    flex-direction: column;
    overflow: hidden;
 }
+
+/* ── Sigma control dark mode overrides ─────────────────────────────────────── */
+.sigma-dark .react-sigma-control button {
+   background-color: #1f1f1f;
+   border-color: #444444;
+   color: #ffffff;
+}
+
+.sigma-dark .react-sigma-control button:hover {
+   background-color: #333333;
+}
+
+.sigma-dark .react-sigma-control button svg {
+   fill: #ffffff;
+   stroke: #ffffff;
+}

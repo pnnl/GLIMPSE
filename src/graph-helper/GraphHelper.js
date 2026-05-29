@@ -29,6 +29,7 @@ class GraphHelper {
     themeName = "feeder-model-theme";
     selectedGridappsdModels = [];
     glmFileData = {};
+    distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
 
     constructor() {
         this.legendGraph = new MultiGraph();
@@ -173,6 +174,7 @@ class GraphHelper {
         // show any hidden edges and nodes
         this.graph.updateEachEdgeAttributes((e, attrs) => ({
             ...attrs,
+            size: this.#theme.edgeOptions[attrs.group].size,
             hidden: false,
         }));
         this.graph.updateEachNodeAttributes((n, attrs) => ({
@@ -209,6 +211,7 @@ class GraphHelper {
         this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
         this.communitiesArray = [];
         this.communityColorPallet = {};
+        this.distributionAreas = {};
     };
 
     getNext = () => {
@@ -563,6 +566,78 @@ class GraphHelper {
         });
     };
 
+    handleSimulationOutput = (output) => {
+        const { timestamp, Analog, Discrete } = output;
+
+        for (let measurement of Analog) {
+            if (
+                !this.graph.hasNode(measurement.equipment_mrid) &&
+                this.graph.hasEdge(measurement.equipment_mrid)
+            ) {
+                this.graph.updateEdgeAttributes(measurement.equipment_mrid, (edgeAttrs) => {
+                    if (!(edgeAttrs.type === "switch")) {
+                        edgeAttrs.type = "animated";
+
+                        if (-0.3 <= measurement.magnitude && measurement.magnitude <= 0.3) {
+                            edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
+                            edgeAttrs.type = "straight";
+                            return edgeAttrs;
+                        }
+
+                        const powerFlow = measurement.magnitude / measurement.normal_limit.Normal;
+                        const newSize = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
+                        edgeAttrs.size = newSize;
+
+                        if (-90 <= measurement.angle && measurement.angle <= 90) {
+                            edgeAttrs.flowDirection = 1; // forward
+                        } else if (Math.abs(180 + measurement.angle) <= 1) {
+                            // Is angle ~ -180?
+                            edgeAttrs.flowDirection = -1; // reverse
+                            console.log(`Reversing flow for: ${edgeAttrs.attributes.name}`);
+                        }
+                    }
+
+                    return edgeAttrs;
+                });
+            } else if (
+                !this.graph.hasEdge(measurement.equipment_mrid) &&
+                this.graph.hasNode(measurement.equipment_mrid)
+            ) {
+                // console.log("Analog node measurement");
+                // console.log(measurement);
+                continue;
+            }
+        }
+
+        for (let measurement of Discrete) {
+            if (
+                !this.graph.hasNode(measurement.equipment_mrid) &&
+                this.graph.hasEdge(measurement.equipment_mrid)
+            ) {
+                this.graph.updateEdgeAttributes(measurement.equipment_mrid, (edge) => {
+                    if (edge.group === "switch") {
+                        edge.switchColor = measurement.value === 0 ? "#4aff4a" : "#ff0000";
+                        edge.attributes.status = measurement.value === 0 ? "OPEN" : "CLOSED";
+                    }
+
+                    return edge;
+                });
+            } else if (
+                !this.graph.hasEdge(measurement.equipment_mrid) &&
+                this.graph.hasNode(measurement.equipment_mrid)
+            ) {
+                this.graph.updateNodeAttributes(measurement.equipment_mrid, (node) => {
+                    if (node.group === "capacitor") {
+                        node.attributes.sections = measurement.value;
+                        node["attributesLabel"] = this.getTitle(node.attributes);
+                    }
+
+                    return node;
+                });
+            }
+        }
+    };
+
     newNodeWithEdge = (newNodeData) => {
         const { nodeType, nodeID, connectTo, edgeType } = newNodeData;
 
@@ -767,6 +842,23 @@ class GraphHelper {
                 }
             }
         }
+
+        // Collect distribution area metadata from node attributes
+        this.distributionAreas = {};
+        newGraph.forEachNode((_nodeId, attrs) => {
+            const { dist_area_type, dist_area_id, dist_area_name } = attrs.attributes || {};
+            if (dist_area_type && dist_area_id) {
+                if (!this.distributionAreas[dist_area_type]) {
+                    this.distributionAreas[dist_area_type] = [];
+                }
+                if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
+                    this.distributionAreas[dist_area_type].push({
+                        name: dist_area_name || dist_area_id,
+                        id: dist_area_id,
+                    });
+                }
+            }
+        });
 
         // get edges
         for (const file of files) {

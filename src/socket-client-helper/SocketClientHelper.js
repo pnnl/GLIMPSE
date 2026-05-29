@@ -122,6 +122,7 @@ class SocketClientHelper {
         this.socket.on("sim-output", (output) => {
             // console.log(output);
             this.#emit("sim-output", output);
+            graphHelper.handleSimulationOutput(output);
         });
 
         this.socket.on("sim-log", (log) => {

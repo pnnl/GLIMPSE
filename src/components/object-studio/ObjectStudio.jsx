@@ -37,7 +37,7 @@ const resolveFeederIdFromGraph = (mRID, fallbackFeederId) => {
 };
 
 const ObjectStudio = () => {
-    const { graphUpdateTrigger, setView } = useGraph();
+    const { graphUpdateTrigger, setView, darkMode } = useGraph();
     const [activeTab, setActiveTab] = useState("edges");
     const [filterTypes, setFilterTypes] = useState(null);
 
@@ -216,18 +216,20 @@ const ObjectStudio = () => {
             children: (
                 <div className="object-studio-tab-content">
                     {objectToEdit ? (
-                        <div>
+                        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
                             {navigationHistory.length > 0 && (
                                 <Button
                                     type="link"
                                     icon={<ArrowLeftOutlined />}
                                     onClick={handleGoBack}
-                                    style={{ marginBottom: "0.5rem" }}
+                                    style={{ flexShrink: 0, alignSelf: "flex-start", marginBottom: "0.5rem" }}
                                 >
                                     Back ({navigationHistory.length})
                                 </Button>
                             )}
-                            <EditObject object={objectToEdit} onNavigate={handleNavigate} />
+                            <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+                                <EditObject object={objectToEdit} onNavigate={handleNavigate} />
+                            </div>
                         </div>
                     ) : (
                         <Typography.Text type="secondary">
@@ -240,7 +242,7 @@ const ObjectStudio = () => {
     ];
 
     return (
-        <div className="object-studio">
+        <div className={`object-studio${darkMode ? " dark-mode" : ""}`}>
             <div className="object-studio-header">
                 <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => setView("graph")}>
                     Back to Graph

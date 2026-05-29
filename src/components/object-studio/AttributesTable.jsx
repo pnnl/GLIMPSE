@@ -1,5 +1,5 @@
 import React from "react";
-import { Table, Typography, Input, Button } from "antd";
+import { Table, Typography, Input, Button, theme } from "antd";
 
 const { Link, Text } = Typography;
 
@@ -15,7 +15,7 @@ const AttributesTable = ({
     onSave,
     feederId,
 }) => {
-    console.log(attributes);
+    const { token } = theme.useToken();
     const dataSource = attributes
         ? Object.entries(attributes).map(([key, rawValue], index) => {
               let value;
@@ -96,9 +96,10 @@ const AttributesTable = ({
     ];
 
     return (
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
             <div
                 style={{
+                    flexShrink: 0,
                     backgroundColor: "#777777",
                     color: "#FFFFFF",
                     padding: "0.75rem 1rem",
@@ -109,21 +110,26 @@ const AttributesTable = ({
             >
                 {heading}
             </div>
-            <Table
-                columns={columns}
-                dataSource={dataSource}
-                pagination={false}
-                size="middle"
-                rowClassName={(_, index) =>
-                    index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd"
-                }
-            />
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+                <Table
+                    columns={columns}
+                    dataSource={dataSource}
+                    pagination={false}
+                    size="middle"
+                    rowClassName={(_, index) =>
+                        index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd"
+                    }
+                />
+            </div>
             {onSave && (
                 <div
                     style={{
+                        flexShrink: 0,
                         display: "flex",
                         justifyContent: "flex-end",
-                        padding: "1rem",
+                        padding: "0.75rem 1rem",
+                        backgroundColor: token.colorBgContainer,
+                        borderTop: `1px solid ${token.colorBorderSecondary}`,
                     }}
                 >
                     <Button type="primary" onClick={onSave}>
