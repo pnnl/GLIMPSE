@@ -5,8 +5,13 @@ from collections.abc import Callable
 from enum import Enum
 from gridappsd import GridAPPSD, topics
 
-os.environ["GRIDAPPSD_USER"] = "system"
-os.environ["GRIDAPPSD_PASSWORD"] = "manager"
+# GridAPPS-D connection settings, overridable via environment. The gridappsd
+# client reads these same vars, so the pre-flight port check below stays in sync.
+# setdefault (not assignment) lets the container / shell override credentials.
+os.environ.setdefault("GRIDAPPSD_ADDRESS", "localhost")
+os.environ.setdefault("GRIDAPPSD_PORT", "61613")
+os.environ.setdefault("GRIDAPPSD_USER", "system")
+os.environ.setdefault("GRIDAPPSD_PASSWORD", "manager")
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +46,15 @@ class GridAPPSDHelper:
     # ─── Connection Management ────────────────────────────────────────
 
     @staticmethod
-    def _is_port_open(host="localhost", port=61613, timeout=2) -> bool:
+    def _is_port_open(host=None, port=None, timeout=2) -> bool:
         """
         Quick TCP check BEFORE we hand off to the STOMP library.
         This avoids the 3x retry + traceback spam from stomp.py
-        when GridAPPS-D isn't running.
+        when GridAPPS-D isn't running. Defaults come from the same
+        GRIDAPPSD_ADDRESS / GRIDAPPSD_PORT env vars the client uses.
         """
+        host = host or os.environ.get("GRIDAPPSD_ADDRESS", "localhost")
+        port = int(port or os.environ.get("GRIDAPPSD_PORT", 61613))
         try:
             with socket.create_connection((host, port), timeout=timeout):
                 return True

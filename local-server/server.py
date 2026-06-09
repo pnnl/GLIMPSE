@@ -29,7 +29,10 @@ gridappsd_helper = GridAPPSDHelper()
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
-cors_origins = [
+# Allowed CORS origins. Override for deployment via the CORS_ORIGINS env var
+# (comma-separated list of origins, or "*" to allow any). Defaults to the local
+# dev ports.
+_default_cors_origins = [
     "http://localhost:5173",
     "http://localhost:4173",
     "http://localhost:3000",
@@ -39,6 +42,14 @@ cors_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:61613",
 ]
+
+_cors_env = os.environ.get("CORS_ORIGINS", "").strip()
+if _cors_env == "*":
+    cors_origins = "*"
+elif _cors_env:
+    cors_origins = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+else:
+    cors_origins = _default_cors_origins
 
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
 allowed_headers = ["Content-Type", "Authorization"]
@@ -634,10 +645,12 @@ def hello():
 
 if __name__ == "__main__":
     # Start the Flask-SocketIO server
-    port = int(os.environ.get("FLASK_PORT", 5051))
+    port = int(os.environ.get("FLASK_PORT", 5052))
+    # Bind to loopback for local dev; containers set FLASK_HOST=0.0.0.0
+    host = os.environ.get("FLASK_HOST", "127.0.0.1")
     socketio.run(
         app,
-        host="127.0.0.1",
+        host=host,
         port=port,
         debug=False,
         log_output=True,

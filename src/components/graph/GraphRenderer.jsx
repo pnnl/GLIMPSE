@@ -56,37 +56,6 @@ const GraphRenderer = () => {
         return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
     }, []);
 
-    const sigmaSettings = useMemo(
-        () => ({
-            minCameraRatio: 0.02,
-            maxCameraRatio: 5,
-            renderEdgeLabels: true,
-            itemSizesReference: "screen",
-            defaultDrawNodeLabel: drawLabel,
-            defaultDrawNodeHover: drawHover,
-            defaultNodeType: "node",
-            labelDensity: 0.5,
-            labelSize: 11,
-            labelGridCellSize: 60,
-            labelRenderedSizeThreshold: 14,
-            hideEdgesOnMove: false,
-            hideLabelsOnMove: true,
-            zIndex: true,
-            enableEdgeEvents: true,
-            nodeProgramClasses: {
-                nodeImg: BorderImageNodeProgram,
-                node: NodeBorderProgram,
-            },
-            edgeProgramClasses: {
-                straight: EdgeRectangleProgram,
-                curved: EdgeCurveProgram,
-                animated: AnimatedStraightEdgeProgram,
-                switch: SwitchEdgeProgram,
-            },
-        }),
-        [],
-    );
-
     const customNodeReducer = (_n, attrs) => {
         if (graphHelper.graph.order === 0) return attrs;
         if (
@@ -117,7 +86,7 @@ const GraphRenderer = () => {
             graphHelper.getHighlightedEdgeTypes().length === 0 &&
             graphHelper.getHighlightedGroups().length === 0
         ) {
-            if (darkMode) attrs.color = "#bfc0c0";
+            if (darkMode && attrs.group === "overhead_line") attrs.color = "#bfc0c0";
             return attrs;
         }
 
@@ -154,7 +123,42 @@ const GraphRenderer = () => {
             style={{ backgroundColor: darkMode ? "#1D1D1D" : "#ffffff" }}
             graph={MultiUndirectedGraph}
             settings={{
-                ...sigmaSettings,
+                allowInvalidContainer: true,
+                minCameraRatio: 0.02,
+                maxCameraRatio: null,
+                renderEdgeLabels: true,
+                itemSizesReference: "screen",
+                autoRescale: true,
+                autoCenter: true,
+                doubleClickTimeout: 300,
+                doubleClickZoomingRatio: 2.2,
+                doubleClickZoomingDuration: 200,
+                inertiaDuration: 200,
+                inertiaRatio: 3,
+                cameraPanBoundaries: null,
+                zoomDuration: 250,
+                zoomingRatio: 1.7,
+                labelDensity: 0.7,
+                labelSize: 13,
+                labelGridCellSize: 80,
+                labelRenderedSizeThreshold: 8,
+                hideEdgesOnMove: false,
+                hideLabelsOnMove: true,
+                zIndex: true,
+                enableEdgeEvents: true,
+                defaultNodeType: "node",
+                defaultDrawNodeLabel: drawLabel,
+                defaultDrawNodeHover: drawHover,
+                nodeProgramClasses: {
+                    nodeImg: BorderImageNodeProgram,
+                    node: NodeBorderProgram,
+                },
+                edgeProgramClasses: {
+                    straight: EdgeRectangleProgram,
+                    curved: EdgeCurveProgram,
+                    animated: AnimatedStraightEdgeProgram,
+                    switch: SwitchEdgeProgram,
+                },
                 nodeReducer: customNodeReducer,
                 edgeReducer: customEdgeReducer,
             }}

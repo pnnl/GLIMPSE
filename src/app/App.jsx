@@ -3,7 +3,7 @@ import "../styles/App.css";
 import { ConfigProvider, Layout, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import AboutModal from "../components/modals/AboutModal";
-import GraphLayout from "../content/GraphLayout";
+import GraphLayout from "../components/content/GraphLayout";
 import AppHeader from "./AppHeader";
 import LoadModelModal from "../components/modals/LoadModelModal";
 import { GraphProvider, useGraph } from "../contexts/GraphContext";

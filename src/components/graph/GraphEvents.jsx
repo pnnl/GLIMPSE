@@ -59,9 +59,6 @@ const GraphEvents = () => {
                 if (typeof document !== "undefined" && document.body)
                     document.body.style.cursor = "grabbing";
                 setDraggedNode(e.node);
-                // Mark node as highlighted and fixed so ForceAtlas2 won't override
-                // the manual position updates while the user is dragging it.
-                graphHelper.graph.setNodeAttribute(e.node, "highlighted", true);
             },
             upNode: handleUp,
             upStage: handleUp,
@@ -121,6 +118,10 @@ const GraphEvents = () => {
             mousedown: () => {
                 // if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
                 // Close context menu on any click
+                if (graphHelper.focusedNode) {
+                    graphHelper.graph.setNodeAttribute(graphHelper.focusedNode, "highlighted", false);
+                }
+
                 setContext({ open: false, x: 0, y: 0 });
             },
             doubleClickEdge: (payload) => {
@@ -200,6 +201,8 @@ const GraphEvents = () => {
                 });
             },
             enterNode: (e) => {
+                if (graphHelper.graph.edges(e.node).length > 10) return;
+
                 graphHelper.graph.edges(e.node).forEach((edgeId) => {
                     const attrs = graphHelper.graph.getEdgeAttributes(edgeId);
                     graphHelper.graph.setEdgeAttribute(edgeId, "label", attrs.attributes.name ?? edgeId);
@@ -211,8 +214,8 @@ const GraphEvents = () => {
                 });
             },
             enterEdge: (e) => {
-                const attrs = graphHelper.graph.getEdgeAttributes(e.edge);
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", attrs.attributes.name ?? e.edge);
+                const edge = graphHelper.graph.getEdgeAttributes(e.edge);
+                graphHelper.graph.setEdgeAttribute(e.edge, "label", edge.attributes.name ?? e.edge);
             },
             leaveEdge: (e) => {
                 graphHelper.graph.setEdgeAttribute(e.edge, "label", "");

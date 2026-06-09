@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: "5052"
+      # Comma-separated allowed browser origins (or "*"). Empty = local dev defaults.
+      CORS_ORIGINS: "${CORS_ORIGINS:-}"
+      # GridAPPS-D broker. Defaults assume it runs on the Docker host; override
+      # in a .env file or your shell for a remote broker.
+      GRIDAPPSD_ADDRESS: "${GRIDAPPSD_ADDRESS:-host.docker.internal}"
+      GRIDAPPSD_PORT: "${GRIDAPPSD_PORT:-61613}"
+      GRIDAPPSD_USER: "${GRIDAPPSD_USER:-system}"
+      GRIDAPPSD_PASSWORD: "${GRIDAPPSD_PASSWORD:-manager}"
+    ports:
+      - "5052:5052"
+    # Lets the container resolve host.docker.internal on Linux (built in on Docker Desktop).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    environment:
+      # URL the *browser* uses to reach the backend. For local use the default
+      # is fine; when deploying, set this to the backend's public URL.
+      API_URL: "${API_URL:-http://127.0.0.1:5052}"
+    ports:
+      # 5173 is already in the backend's CORS allow-list.
+      - "5173:80"
+    depends_on:
+      - backend

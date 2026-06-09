@@ -3,6 +3,7 @@
     flex-direction: column;
     height: calc(100vh - 3rem);
     overflow: hidden;
+    z-index: 999;
 }
 
 .object-studio-header {

@@ -1,8 +1,10 @@
 import { MultiUndirectedGraph, MultiGraph } from "graphology";
 import louvain from "graphology-communities-louvain";
+import forceAtlas2 from "graphology-layout-forceatlas2";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
+import { getFA2Settings } from "../utils/fa2-presets";
 import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
 
 class GraphHelper {
@@ -29,6 +31,7 @@ class GraphHelper {
     themeName = "feeder-model-theme";
     selectedGridappsdModels = [];
     glmFileData = {};
+    focusedNode = null;
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
 
     constructor() {
@@ -244,8 +247,9 @@ class GraphHelper {
 
         if (obj.type === "node") {
             this.graph.setNodeAttribute(obj.id, "highlighted", true);
-            const { x, y } = this.sigmaInstance.getNodeDisplayData(obj.id);
+            this.focusedNode = obj.id;
 
+            const { x, y } = this.sigmaInstance.getNodeDisplayData(obj.id);
             this.sigmaInstance.getCamera().animate({ x: x, y: y, ratio: 0.05 }, { duration: 1000 });
         } else if (obj.type === "edge") {
             this.graph.setEdgeAttribute(obj.id, "label", obj.id);
@@ -414,11 +418,13 @@ class GraphHelper {
                     id: type,
                     from: nodeIDFrom,
                     to: nodeIDTo,
-                    type: "straight",
+                    type: type === "switch" ? "switch" : "straight",
                     title: "Double Click to Highlight !",
                     label: `${type} [${this.objectTypeCount.edges[type]}]`,
                     forceLabel: true,
                     size: 8,
+                    switchSize: 16,
+                    switchColor: "#FF0000",
                     color: this.#theme.edgeOptions[type].color,
                 });
             } else {
@@ -475,6 +481,34 @@ class GraphHelper {
         const maxCurvature = amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
 
         return (maxCurvature * index) / maxIndex;
+    }
+
+    /**
+     * Runs a synchronous ForceAtlas2 pass on a freshly-built graph so it renders
+     * already unraveled. Iteration count scales down as the graph grows so the
+     * blocking pass stays responsive on large models.
+     * @param {MultiUndirectedGraph} graph
+     */
+    #preWarmLayout(graph) {
+        const order = graph.order;
+
+        // More nodes → fewer iterations to keep the synchronous pass snappy.
+        // ~600 iters for small graphs, tapering to a floor of ~80 for huge ones.
+        let iterations;
+        if (order <= 1_000) iterations = 300;
+        else if (order <= 5_000) iterations = 200;
+        else if (order <= 20_000) iterations = 120;
+        else iterations = 80;
+
+        try {
+            forceAtlas2.assign(graph, {
+                iterations,
+                settings: getFA2Settings(graph),
+            });
+        } catch (err) {
+            // Layout is a best-effort enhancement; never block graph loading on it.
+            console.warn("FA2 pre-warm failed, falling back to initial placement:", err);
+        }
     }
 
     assignParallelEdgeCurvatures = (graph) => {
@@ -870,7 +904,7 @@ class GraphHelper {
                 if (this.nodeTypes.includes(objectType) && "parent" in attributes) {
                     const nodeID = attributes.id ?? attributes.name;
                     const parent = attributes.parent;
-                    const edgeID = `${parent}-${nodeID}`;
+                    const edgeID = `${parent}->${nodeID}`;
 
                     if ("parentChild" in this.objectTypeCount.edges)
                         this.objectTypeCount.edges["parentChild"]++;
@@ -880,7 +914,6 @@ class GraphHelper {
                         elementType: "edge",
                         group: "parentChild",
                         type: "straight",
-                        weight: 1.0,
                         size: this.#theme.edgeOptions.parentChild.width,
                         length: "length" in attributes ? parseFloat(attributes.length) : null,
                         attributes: { to: parent, from: nodeID, id: edgeID },
@@ -908,7 +941,6 @@ class GraphHelper {
                         dotPhase: Math.random(),
                         flowDirection: 1, // -1 for opposite flow
                         dotCount: 1,
-                        weight: 0.3,
                         attributes: attributes,
                         ...this.#theme.edgeOptions[objectType],
                     };
@@ -926,7 +958,7 @@ class GraphHelper {
                 } else if ("elementType" in obj && obj.elementType === "edge") {
                     const edgeFrom = attributes.from;
                     const edgeTo = attributes.to;
-                    const edgeID = attributes.id ?? `${edgeFrom}-${edgeTo}`;
+                    const edgeID = attributes.id ?? `${edgeFrom}->${edgeTo}`;
 
                     console.log("Processing edge:", edgeID, "of type:", objectType);
 
@@ -949,7 +981,6 @@ class GraphHelper {
                         length: attributes.length ?? null,
                         size: this.#theme.edgeOptions[objectType].size,
                         attributes: attributes,
-                        weight: 0.3,
                     });
                 }
             }
@@ -998,52 +1029,21 @@ class GraphHelper {
                     newGraph.setNodeAttribute(node, "fixed", false);
                 }
             });
-
-            if (newGraph.order > 1_000_000) {
-                // Color all nodes that belong to a certain feeder
-                const communitiesSet = new Set();
-
-                newGraph.forEachNode((_nodeID, attrs) => {
-                    if (attrs.community) {
-                        communitiesSet.add(attrs.attributes.dist_area_id);
-                    }
-                });
-
-                console.log(communitiesSet);
-
-                if (!communitiesSet.size) {
-                    this.setLegendData();
-                    this.graph = newGraph;
-                    return;
-                }
-
-                this.communitiesArray = Array.from(communitiesSet);
-                this.communityColorPallet = iwanthue(communitiesSet.size).reduce(
-                    (acc, color, i) => ({ ...acc, [this.communitiesArray[i]]: color }),
-                    {},
-                );
-
-                newGraph.forEachNode((nodeID, attrs) => {
-                    if ("dist_area_id" in attrs.attributes) {
-                        newGraph.setNodeAttribute(
-                            nodeID,
-                            "color",
-                            this.communityColorPallet[attrs.attributes.dist_area_id],
-                        );
-                    }
-                });
-            }
         } else {
             // apply circlepack layout for initial node positions
-            if (newGraph.order > 1000) {
+            if (newGraph.order > 1_000) {
                 louvain.assign(newGraph, {
                     nodeCommunityAttribute: "CID",
-                    resolution: 0.5,
+                    resolution: 0.8,
                 });
-                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 4, center: 2 });
+                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 5, center: 0 });
             } else {
                 circlepack.assign(newGraph);
             }
+
+            // Pre-warm: run a synchronous FA2 pass so the graph renders already
+            // unraveled instead of requiring the user to press play and wait.
+            // this.#preWarmLayout(newGraph);
         }
 
         this.assignParallelEdgeCurvatures(newGraph);

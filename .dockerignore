@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Match at any depth (a bare name only matches the context root in .dockerignore)
+**/node_modules
+**/__pycache__
+package-lock.json
+**/glm
+**/.venv
+**/.env
+*.lock
+**/*.pyc
+**/dist
+**/dist-ssr
+**/env/
+**/CIM-Builder
+*.local
+Dockerfile
+.dockerignore
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

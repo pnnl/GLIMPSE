@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Form, Button, Select, Spin } from "antd";
 import axios from "axios";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
+import { API_BASE_URL } from "../../config";
 
 const GridAPPSDModelForm = ({ onModelSelect }) => {
     const [regionNames, setRegionNames] = useState(null);
@@ -15,7 +16,7 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
 
         try {
             console.log("Attempting to connect to GridAPPSD...");
-            const res = await axios.get("http://127.0.0.1:5051/api/gridappsd/status");
+            const res = await axios.get(`${API_BASE_URL}/api/gridappsd/status`);
 
             console.log(res.status);
             console.log(res.data);
@@ -35,9 +36,7 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
     useEffect(() => {
         const getModelInfo = async () => {
             try {
-                const modelInfoRequest = axios.get(
-                    "http://127.0.0.1:5051/api/gridappsd/model-info",
-                );
+                const modelInfoRequest = axios.get(`${API_BASE_URL}/api/gridappsd/model-info`);
                 const res = await modelInfoRequest;
 
                 if (res.data.error || res.status === 500) {

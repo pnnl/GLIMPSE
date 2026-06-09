@@ -4,7 +4,8 @@ import { MultiGraph } from "graphology";
 import graphHelper from "../../graph-helper/GraphHelper";
 import LegendGraphEvents from "./LegendGraphEvents";
 import { SigmaContainer } from "@react-sigma/core";
-import { EdgeRectangleProgram } from "sigma/rendering";
+import { EdgeRectangleProgram, createEdgeCompoundProgram } from "sigma/rendering";
+import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
@@ -60,6 +61,10 @@ const LegendRenderer = () => {
         return createNodeCompoundProgram([NodeBorderCustomProgram, NodePictogramCustomProgram]);
     }, []);
 
+    const SwitchEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
+    }, []);
+
     return (
         <SigmaContainer
             style={LegendContainerStyles(darkMode)}
@@ -81,6 +86,7 @@ const LegendRenderer = () => {
                 },
                 edgeProgramClasses: {
                     straight: EdgeRectangleProgram,
+                    switch: SwitchEdgeProgram,
                 },
             }}
             graph={MultiGraph}

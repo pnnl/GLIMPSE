@@ -1,0 +1,30 @@
+# ============================================================================
+# GLIMPSE frontend — Vite/React build served by nginx
+# ============================================================================
+
+# ---- build stage ----------------------------------------------------------
+FROM node:24-slim AS build
+
+WORKDIR /app
+
+# Install deps first for layer caching (no package-lock.json, so use install).
+COPY package.json ./
+RUN npm install
+
+# Copy only what Vite needs to build, then produce dist/
+COPY vite.config.js index.html ./
+COPY src ./src
+COPY public ./public
+RUN npm run build
+
+# ---- serve stage -----------------------------------------------------------
+FROM nginx:alpine
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# Runtime env injection (writes env.js + patches CSP from $API_URL on startup).
+COPY docker/40-glimpse-env.sh /docker-entrypoint.d/40-glimpse-env.sh
+RUN chmod +x /docker-entrypoint.d/40-glimpse-env.sh
+
+EXPOSE 80

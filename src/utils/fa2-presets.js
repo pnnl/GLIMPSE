@@ -8,43 +8,43 @@ export function getFA2Settings(graph) {
             barnesHutOptimize: false,
             barnesHutTheta: 0.5,
             linLogMode: false,
-            adjustSizes: true,
+            adjustSizes: false,
             edgeWeightInfluence: 1,
             outboundAttractionDistribution: false,
-            scalingRatio: 40, // ↑ from 25 — more breathing room for edge icons
-            gravity: 0.15, // ↓ from 0.3 — less inward pull
+            scalingRatio: 3, // ↑ from 25 — more breathing room for edge icons
+            gravity: 0.3, // ↓ from 0.3 — less inward pull
             strongGravityMode: false,
-            slowDown: 12, // ↑ from 8 — smoother settle, no jitter risk at this size
+            slowDown: 8, // ↑ from 8 — smoother settle, no jitter risk at this size
         };
     }
 
     // -------- LARGE GRAPHS (> 1000) --------
-    if (order > 1000) {
+    if (order > 1_000) {
         return {
             barnesHutOptimize: true,
-            barnesHutTheta: 0.5, // ↓ from 0.6 — more accurate
-            linLogMode: false, // ← turn OFF (was your earlier good state)
-            adjustSizes: false,
-            edgeWeightInfluence: 2.5, // ← was 2 — now uniform attraction
-            outboundAttractionDistribution: true,
-            scalingRatio: 60, // ↓ from 85 — sufficient with linLog off
-            gravity: 0.05, // ↓ from 0.05 — let chains stretch
-            strongGravityMode: false,
-            slowDown: 9.50532301884575, // ↑ from 10 — smoother settle
+            barnesHutTheta: 0.8, // ↑ faster repulsion approximation on big graphs
+            linLogMode: false,
+            adjustSizes: false, // OFF: anti-collision damps movement; rely on scalingRatio for spacing
+            edgeWeightInfluence: 1,
+            outboundAttractionDistribution: false,
+            scalingRatio: 50, // ↑ from 25 — much stronger repulsion spreads nodes farther apart
+            gravity: 0.04, // ↓ from 0.5 — minimal inward pull so the graph keeps expanding
+            strongGravityMode: false, // OFF — strong gravity was crushing the graph into a tight disc
+            slowDown: 10, // larger value keeps the bigger forces from jittering
         };
     }
 
     // -------- MEDIUM (250 < n <= 1000) --------
     return {
         barnesHutOptimize: order > 500,
-        barnesHutTheta: 0.5,
+        barnesHutTheta: 0.6,
         linLogMode: false,
-        adjustSizes: true,
+        adjustSizes: false,
         edgeWeightInfluence: 1,
-        outboundAttractionDistribution: true, // helps hubs open up
-        scalingRatio: 25, // ↑ from 15
+        outboundAttractionDistribution: false, // helps hubs open up
+        scalingRatio: 2, // ↑ from 15
         gravity: 0.2, // ↓ from 0.4
         strongGravityMode: false,
-        slowDown: 14, // ↑ from 10
+        slowDown: 10, // ↑ from 10
     };
 }

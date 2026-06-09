@@ -4,6 +4,7 @@ import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
+import { API_BASE_URL } from "../config";
 
 const { Dragger } = Upload;
 
@@ -72,7 +73,7 @@ const FileUpload = ({ closeModal }) => {
             setUploading(true);
             setProgress(0);
 
-            const { data: response } = await axios.post(`http://127.0.0.1:5051/${endPoint}`, formData, {
+            const { data: response } = await axios.post(`${API_BASE_URL}/${endPoint}`, formData, {
                 onUploadProgress: (progressEvent) => {
                     if (!progressEvent.total) return;
                     setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));

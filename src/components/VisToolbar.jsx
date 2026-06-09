@@ -8,7 +8,7 @@ import { MdOutlineHideSource, MdShowChart } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../contexts/GraphContext";
 
-const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel, isCIM }) => {
+const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
     const { darkMode } = useGraph();
 
@@ -115,7 +115,7 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel, isCIM }) => {
                     </Space.Compact>
                 )}
                 <Space.Compact block>
-                    {isCIM && (
+                    {simulationState !== "inactive" && (
                         <Tooltip
                             title={activePanel === "charts" ? "Hide Charts" : "Show Charts"}
                             placement="bottomLeft"

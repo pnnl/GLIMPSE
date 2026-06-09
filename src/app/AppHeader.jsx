@@ -7,12 +7,13 @@ import graphHelper from "../graph-helper/GraphHelper";
 import axios from "axios";
 
 import { useGraph } from "../contexts/GraphContext";
+import { API_BASE_URL } from "../config";
 
 const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
-    const [searchValue, setSearchValue] = useState(undefined);
+    const [searchValue, setSearchValue] = useState(null);
     const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
 
     const menuItems = [
@@ -55,12 +56,12 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     useEffect(() => {
         const handleGraphLoaded = () => {
             setGraphLoaded(true);
-            setSearchValue(undefined);
+            setSearchValue(null);
         };
 
         const handleGraphCleared = () => {
             setGraphLoaded(false);
-            setSearchValue(undefined);
+            setSearchValue(null);
         };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
@@ -99,7 +100,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
 
         try {
             const response = await axios.post(
-                "http://127.0.0.1:5051/api/export/glm",
+                `${API_BASE_URL}/api/export/glm`,
                 { data: exportData },
                 {
                     responseType: "blob",
@@ -176,7 +177,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         placeholder="Search by ID or Name"
                         onSelect={(val) => {
                             graphHelper.focus(JSON.parse(val));
-                            setSearchValue(undefined);
+                            setSearchValue(null);
                         }}
                         onChange={(val) => setSearchValue(val)}
                         filterOption={(input, option) =>

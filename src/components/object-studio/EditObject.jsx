@@ -5,6 +5,7 @@ import AttributesTable from "./AttributesTable";
 import MermaidDiagram from "./MermaidDiagram";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
+import { API_BASE_URL } from "../../config";
 
 const READ_ONLY_ATTRIBUTES = new Set([
     "name",
@@ -85,11 +86,11 @@ const EditObject = ({ object, onNavigate }) => {
             const fetchCIMData = async () => {
                 try {
                     const [objRes, mermaidRes] = await Promise.all([
-                        axios.post(`http://127.0.0.1:5051/api/cim/objects`, {
+                        axios.post(`${API_BASE_URL}/api/cim/objects`, {
                             feeder_id: feederId,
                             mRID: mRID,
                         }),
-                        axios.post(`http://127.0.0.1:5051/api/cim/objects/mermaid`, {
+                        axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
                             feeder_id: feederId,
                             mRID: mRID,
                         }),
@@ -165,7 +166,7 @@ const EditObject = ({ object, onNavigate }) => {
                 // Save sequentially to maintain order (or use Promise.all for speed)
                 const results = await Promise.allSettled(
                     updates.map(([key, val]) =>
-                        axios.put(`http://127.0.0.1:5051/api/cim/objects`, {
+                        axios.put(`${API_BASE_URL}/api/cim/objects`, {
                             attribute: key,
                             value: val,
                             feeder_id: feederId,
@@ -261,7 +262,9 @@ const EditObject = ({ object, onNavigate }) => {
             : []),
     ];
 
-    return <Tabs items={tabItems} style={{ height: "100%", display: "flex", flexDirection: "column" }} />;
+    return (
+        <Tabs items={tabItems} style={{ height: "100%", display: "flex", flexDirection: "column" }} />
+    );
 };
 
 export default EditObject;
