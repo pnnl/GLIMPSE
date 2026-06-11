@@ -645,69 +645,69 @@ class CIMHelper:
                 elif attribute is not None:
                     new_obj["attributes"][field.name] = str(attribute)
 
-    def export_cim(
-        self, feeder_id: str, dir2save: str, filename: str, data: list
-    ) -> None:
-        if len(data) == 0:
-            cim_utils.get_all_data(self.FEEDERS[feeder_id])
-            cim_utils.write_xml(self.FEEDERS[feeder_id], dir2save + "\\cim_output.xml")
-            return
+    # def export_cim(
+    #     self, feeder_id: str, dir2save: str, filename: str, data: list
+    # ) -> None:
+    #     if len(data) == 0:
+    #         cim_utils.get_all_data(self.FEEDERS[feeder_id])
+    #         cim_utils.write_xml(self.FEEDERS[feeder_id], dir2save + "\\cim_output.xml")
+    #         return
 
-        feeder = self.FEEDERS[feeder_id].container
+    #     feeder = self.FEEDERS[feeder_id].container
 
-        # [0] = new nerminal with type
-        # [1] = new connectivity node
-        # [2] = existing connectivity node
+    #     # [0] = new nerminal with type
+    #     # [1] = new connectivity node
+    #     # [2] = existing connectivity node
 
-        for nodeObj in data:
-            # 1. get existing connectivity node
-            existing_c_node = self.FEEDERS[feeder_id].graph[cim.ConnectivityNode][
-                UUID(nodeObj[2]["mRID"].upper())
-            ]
+    #     for nodeObj in data:
+    #         # 1. get existing connectivity node
+    #         existing_c_node = self.FEEDERS[feeder_id].graph[cim.ConnectivityNode][
+    #             UUID(nodeObj[2]["mRID"].upper())
+    #         ]
 
-            # 2. create new connectivity node
-            new_c_node = cim.ConnectivityNode(
-                mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"]
-            )
-            self.FEEDERS[feeder_id].add_to_graph(new_c_node)
+    #         # 2. create new connectivity node
+    #         new_c_node = cim.ConnectivityNode(
+    #             mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"]
+    #         )
+    #         self.FEEDERS[feeder_id].add_to_graph(new_c_node)
 
-            # 3. connect both connectivity nodes with new_two_terminal_obj function
-            new_two_terminal_object(
-                network=self.FEEDERS[feeder_id],
-                container=feeder,
-                class_type=cim.ACLineSegment,
-                name=existing_c_node.mRID.split("-")[0],
-                node1=existing_c_node,
-                node2=new_c_node,
-            )
+    #         # 3. connect both connectivity nodes with new_two_terminal_obj function
+    #         new_two_terminal_object(
+    #             network=self.FEEDERS[feeder_id],
+    #             container=feeder,
+    #             class_type=cim.ACLineSegment,
+    #             name=existing_c_node.mRID.split("-")[0],
+    #             node1=existing_c_node,
+    #             node2=new_c_node,
+    #         )
 
-            # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
-            if nodeObj[0]["type"] == "diesel_dg":
-                new_synchronous_generator(
-                    network=self.FEEDERS[feeder_id],
-                    container=feeder,
-                    name=nodeObj[0]["name"],
-                    node=new_c_node,
-                )
-            elif nodeObj[0]["type"] == "load":
-                new_energy_consumer(
-                    network=self.FEEDERS[feeder_id],
-                    container=feeder,
-                    name=nodeObj[0]["name"],
-                    node=new_c_node,
-                )
-            elif nodeObj[0]["type"] == "inverter_dyn":
-                # new power electronics connection
-                pass
-            elif nodeObj[0]["type"] == "capacitor":
-                # new one terminal object
-                pass
+    #         # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
+    #         if nodeObj[0]["type"] == "diesel_dg":
+    #             new_synchronous_generator(
+    #                 network=self.FEEDERS[feeder_id],
+    #                 container=feeder,
+    #                 name=nodeObj[0]["name"],
+    #                 node=new_c_node,
+    #             )
+    #         elif nodeObj[0]["type"] == "load":
+    #             new_energy_consumer(
+    #                 network=self.FEEDERS[feeder_id],
+    #                 container=feeder,
+    #                 name=nodeObj[0]["name"],
+    #                 node=new_c_node,
+    #             )
+    #         elif nodeObj[0]["type"] == "inverter_dyn":
+    #             # new power electronics connection
+    #             pass
+    #         elif nodeObj[0]["type"] == "capacitor":
+    #             # new one terminal object
+    #             pass
 
-        out_dir = os.path.join(
-            dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"
-        )
-        cim_utils.get_all_data(self.FEEDERS[feeder_id])
-        cim_utils.write_xml(self.FEEDERS[feeder_id], out_dir)
+    #     out_dir = os.path.join(
+    #         dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"
+    #     )
+    #     cim_utils.get_all_data(self.FEEDERS[feeder_id])
+    #     cim_utils.write_xml(self.FEEDERS[feeder_id], out_dir)
 
     def get_mermaid(self, feeder_id: str, uuid: str) -> str:
         # Try to use cimgraph.utils method

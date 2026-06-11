@@ -7,13 +7,21 @@
         "name": "Armando Mendoza Sanchez",
         "email": "mendozasanchez166@pnnl.gov"
     },
+    "main": "electron/main.js",
     "scripts": {
         "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-        "dev:backend": "cd local-server && python server.py",
+        "dev:backend": "cd local-server && python3 server.py || python server.py",
         "dev:frontend": "vite",
         "build": "vite build",
         "lint": "eslint .",
-        "start": "concurrently \"npm run dev:backend\" \"vite preview\""
+        "start": "concurrently \"npm run dev:backend\" \"vite preview\"",
+        "electron:dev": "concurrently -k \"npm run dev:backend\" \"vite --strictPort\" \"npm run electron:start\"",
+        "electron:start": "wait-on tcp:127.0.0.1:5173 && cross-env ELECTRON_START_URL=http://localhost:5173 electron .",
+        "build:server": "cd local-server && pyinstaller server.spec --noconfirm",
+        "dist": "npm run build && npm run build:server && electron-builder",
+        "dist:win": "npm run build && npm run build:server && electron-builder --win",
+        "dist:mac": "npm run build && npm run build:server && electron-builder --mac",
+        "dist:linux": "npm run build && npm run build:server && electron-builder --linux"
     },
     "dependencies": {
         "@ant-design/icons": "^6.1.0",
@@ -49,8 +57,12 @@
         "@types/react": "^19.1.16",
         "@types/react-dom": "^19.1.9",
         "@vitejs/plugin-react": "^5.0.4",
-        "concurrently": "^9.2.1",
+        "concurrently": "^10.0.3",
+        "cross-env": "^10.1.0",
+        "electron": "^42.4.0",
+        "electron-builder": "^26.15.2",
         "globals": "^16.4.0",
-        "vite": "^7.1.7"
+        "vite": "^7.1.7",
+        "wait-on": "^9.0.10"
     }
 }

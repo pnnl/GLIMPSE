@@ -17,8 +17,8 @@ RUN uv pip install --system --prerelease=allow -r requirements-server.txt \
     && uv pip install --system glm
 
 # CIM-Builder — installed without deps (it requires an older cim-graph).
-RUN git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git /tmp/CIM-Builder \
-    && uv pip install --system --no-deps /tmp/CIM-Builder
+# RUN git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git /tmp/CIM-Builder \
+#    && uv pip install --system --no-deps /tmp/CIM-Builder
 
 # ---- runtime: slim image with only the installed packages + app ------------
 FROM python:3.12-slim

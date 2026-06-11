@@ -208,6 +208,43 @@ npm run dev
 
 The application will start in development mode. Open your browser and navigate to the provided local address (typically `http://localhost:5173/`) to access GLIMPSE.
 
+## Desktop App (Electron)
+
+GLIMPSE can also run as a standalone desktop application. The Electron shell starts the bundled local server automatically on launch and shuts it down (including all child processes) when the window is closed — no terminal or browser needed.
+
+> [!NOTE]
+> These steps assume you have completed the **Build from Source** setup above (Node dependencies and the Python environment for `local-server/`). The Python environment must include `pyinstaller`, which is listed in both `local-server/requirements.txt` and `local-server/pyproject.toml`.
+
+### Develop in a Desktop Window
+
+Runs the Python backend, the Vite dev server, and Electron together (with hot reload). Closing the Electron window stops all three:
+
+```bash
+npm run electron:dev
+```
+
+### Build an Installer
+
+Installers are built **on and for the OS you are running** (electron-builder cannot cross-compile, e.g. a Windows installer must be built on Windows):
+
+```bash
+npm run dist          # build for the current OS
+npm run dist:linux    # AppImage + .deb   (run on Linux)
+npm run dist:win      # NSIS installer    (run on Windows)
+npm run dist:mac      # .dmg              (run on macOS)
+```
+
+Each `dist` command runs three steps:
+
+1. `vite build` — bundles the React frontend into `dist/`
+2. `pyinstaller server.spec` — freezes the Python backend (with its Python runtime) into `local-server/dist/server/`
+3. `electron-builder` — packages both into an installer in `release/`
+
+The finished installer is written to the `release/` directory. The installed app needs no Node or Python on the target machine — the backend is fully self-contained.
+
+> [!TIP]
+> If `pyinstaller` is not on your PATH, activate the Python environment you created for `local-server/` first (or, with UV, run `uv run pyinstaller server.spec --noconfirm` inside `local-server/`).
+
 ## Run with Docker
 
 The repository ships with a [Docker Compose](https://docs.docker.com/compose/) setup that builds and runs GLIMPSE as two containers — the React frontend (served by nginx) and the Flask + SocketIO backend — so you don't need to install Node, Python, or any of the plugins yourself.
