@@ -1,7 +1,3 @@
-# Runtime dependencies for the Flask + SocketIO server (Docker image).
-# This is requirements.txt minus pyinstaller, which is only used to build the
-# desktop installer and is not needed by the server. Keep in sync with
-# requirements.txt for the shared packages.
 Flask
 Flask-SocketIO
 flask-cors

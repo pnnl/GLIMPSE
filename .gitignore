@@ -7,19 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-__pycache__
+# Match at any depth (a bare name only matches the context root in .dockerignore)
+**/node_modules
+**/__pycache__
 package-lock.json
-glm
-.venv
-.env
+**/glm
+**/.venv
+**/.env
 *.lock
-*.pyc
-dist
-dist-ssr
-env/
-CIM-Builder/
+**/*.pyc
+**/dist
+**/dist-ssr
+**/env/
+**/CIM-Builder
 *.local
+Dockerfile
+.dockerignore
 
 # Editor directories and files
 .vscode/*
