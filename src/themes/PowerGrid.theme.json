@@ -1,0 +1,156 @@
+{
+    "groups": {
+        "load": {
+            "size": 5,
+            "color": "#E69F00",
+            "type": "nodeImg",
+            "borderColor": "#A67000",
+            "image": "/imgs/Load.svg"
+        },
+        "triplex_load": {
+            "size": 5,
+            "color": "#F0C060",
+            "type": "nodeImg",
+            "borderColor": "#A67000",
+            "image": "/imgs/Load.svg"
+        },
+        "capacitor": {
+            "size": 5,
+            "color": "#56B4E9",
+            "type": "nodeImg",
+            "borderColor": "#1F6F9C",
+            "image": "/imgs/Capacitor.svg"
+        },
+        "triplex_node": {
+            "size": 2.5,
+            "color": "#56B4E9",
+            "borderColor": "#1F6F9C"
+        },
+        "substation": {
+            "size": 5,
+            "color": "#D55E00",
+            "type": "nodeImg",
+            "borderColor": "#8C3D00",
+            "image": "/imgs/substation.svg"
+        },
+        "triplex_meter": {
+            "size": 5,
+            "color": "#0072B2",
+            "borderColor": "#004D78",
+            "type": "nodeImg",
+            "image": "/imgs/meter.svg"
+        },
+        "node": {
+            "size": 2.5,
+            "color": "#56B4E9",
+            "borderColor": "#1F6F9C"
+        },
+        "meter": {
+            "size": 5,
+            "color": "#CC79A7",
+            "type": "nodeImg",
+            "borderColor": "#8C4E75",
+            "image": "/imgs/meter.svg"
+        },
+        "inverter_dyn": {
+            "size": 5,
+            "color": "#F0E442",
+            "borderColor": "#A89E00",
+            "type": "nodeImg",
+            "image": "/imgs/Inverter.svg"
+        },
+        "inverter": {
+            "size": 5,
+            "color": "#F0E442",
+            "image": "/imgs/Inverter.svg",
+            "type": "nodeImg"
+        },
+        "battery": {
+            "size": 5,
+            "color": "#CC79A7",
+            "image": "/imgs/battery.svg",
+            "type": "nodeImg"
+        },
+        "diesel_dg": {
+            "size": 5,
+            "color": "#D55E00",
+            "borderColor": "#8C3D00",
+            "type": "nodeImg",
+            "image": "/imgs/generator-g.svg"
+        },
+        "communication_node": {
+            "size": 5,
+            "color": "#CC79A7",
+            "borderColor": "#8C4E75",
+            "type": "nodeImg",
+            "image": "/imgs/comm.jpg"
+        },
+        "microgrid": {
+            "size": 5,
+            "color": "#009E73",
+            "borderColor": "#006B4F",
+            "type": "nodeImg",
+            "image": "/imgs/microgrid.svg"
+        },
+        "inactive": {
+            "color": "rgba(180, 180, 180, 0.4)"
+        },
+        "connectivity_node": {
+            "size": 2.5,
+            "type": "node",
+            "color": "#FFA500",
+            "borderColor": "#000000"
+        }
+    },
+    "edgeOptions": {
+        "overhead_line": {
+            "size": 2,
+            "color": "#000000"
+        },
+        "underground_line": {
+            "size": 2,
+            "color": "#555555"
+        },
+        "triplex_line": {
+            "size": 2,
+            "color": "#999999"
+        },
+        "switch": {
+            "size": 2,
+            "color": "#0072B2"
+        },
+        "series_reactor": {
+            "size": 2,
+            "color": "#CC79A7"
+        },
+        "regulator": {
+            "size": 2,
+            "color": "#D55E00"
+        },
+        "transformer": {
+            "size": 2,
+            "color": "#009E73"
+        },
+        "parentChild": {
+            "size": 2,
+            "color": "#BBBBBB"
+        },
+        "mapping": {
+            "size": 1,
+            "color": "#DDDDDD"
+        },
+        "communication": {
+            "size": 2,
+            "color": "#CC79A7",
+            "dashArray": "4,2"
+        },
+        "microgrid_connection": {
+            "size": 1,
+            "color": "#009E73"
+        },
+        "line": {
+            "size": 1,
+            "color": "#AAAAAA"
+        }
+    }
+}

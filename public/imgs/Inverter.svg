@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Top connection point (DC input) -->
+  <circle cx="128" cy="20" r="9" fill="black"/>
+  <line x1="128" y1="20" x2="128" y2="50" stroke="black" stroke-width="9"/>
+  
+  <!-- Inverter body (square) -->
+  <rect x="50" y="50" width="156" height="156" 
+        fill="none" stroke="black" stroke-width="9"/>
+  
+  <!-- Diagonal divider (DC/AC separator) -->
+  <line x1="70" y1="186" x2="186" y2="70" 
+        stroke="black" stroke-width="9"/>
+  
+  <!-- DC symbol (straight line with dashed line below) — upper left -->
+  <line x1="80" y1="85" x2="120" y2="85" 
+        stroke="black" stroke-width="9"/>
+  <line x1="85" y1="98" x2="115" y2="98" 
+        stroke="black" stroke-width="9" stroke-dasharray="6,4"/>
+  
+  <!-- AC symbol (sine wave) — lower right -->
+  <path d="M 140 168 Q 150 150, 160 168 T 180 168 T 200 168" 
+        fill="none" stroke="black" stroke-width="9"/>
+  
+  <!-- Bottom connection point (AC output) -->
+  <line x1="128" y1="206" x2="128" y2="236" stroke="black" stroke-width="9"/>
+  <circle cx="128" cy="236" r="9" fill="black"/>
+</svg>

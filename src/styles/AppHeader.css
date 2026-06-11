@@ -1,0 +1,6 @@
+.app-header {
+   height: 4rem;
+   display: flex;
+   padding: 0 1rem;
+   align-items: center;
+}

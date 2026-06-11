@@ -1,0 +1,17 @@
+.sim-charts {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.sim-charts__label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 10px 0;
+    opacity: 0.6;
+    flex-shrink: 0;
+}

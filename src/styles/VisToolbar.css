@@ -1,0 +1,14 @@
+.vis-toolbar {
+   display: flex;
+   height: 4rem;
+   padding: 0 1rem;
+   justify-content: center;
+   align-items: center;
+   margin: 0.5rem;
+   border-radius: 10px;
+   flex-shrink: 0;
+
+   box-shadow:
+      0px 2px 4px rgba(0, 0, 0, 0.16),
+      0px 4px 10px rgba(0, 0, 0, 0.24);
+}

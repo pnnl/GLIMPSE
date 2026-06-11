@@ -1,0 +1,19 @@
+.nav-logo {
+   height: auto;
+   width: 12rem;
+}
+
+.nav-btn:hover {
+   color: #FFFFFF;
+}
+
+.ant-layout {
+   height: 100vh;
+   overflow: hidden;
+}
+
+.ant-layout-content {
+   flex: 1;
+   overflow: hidden;
+   padding: 0 !important;
+}

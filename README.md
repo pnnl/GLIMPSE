@@ -1,153 +1,242 @@
-# GLIMPSE v0.6.1 ✨
-
 ![NSD_2294_BRAND_HAGEN-GLIMPSE_final_color](https://github.com/user-attachments/assets/182d1235-eb30-4467-b880-aec3000e786f)
 
-GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. The tool can be used to search and highlight power grid model objects. Additionally, it also update the model attributes and export the modified model future simulations. The application is developed using React.js, Electron.js, Node.js, and Python.
+GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D power grid models. With GLIMPSE, you can:
 
-## UI
+- **Search and highlight** power grid model objects
+- **Update** model attributes
+- **Export** modified models for future simulations
+- **Leverage GPU acceleration** for rendering large power grids
 
-![UI](https://github.com/user-attachments/assets/12896785-d76a-470c-b80f-f91870b537f1)
+The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigma.js**, and **Python**.
 
-**NOTE**: If you are looking for EPA-developed energy planning tool GLIMPSE. See [epa glimpse](https://epa.gov/glimpse) for information about that project.
+> [!NOTE]
+> If you're looking for the EPA-developed energy planning tool called GLIMPSE, visit [epa.gov/glimpse](https://epa.gov/glimpse).
 
-## Installers (Windows, MacOS, Linux)
+## Installation
 
-Check out the [releases](https://github.com/pnnl/GLIMPSE/releases) for installers or build the tool with the following instructions.
+### Option 1: Pre-Built Installers (Easiest)
 
-## Build Instructions
+Pre-built installers for Windows, macOS, and Linux are available in the [releases](https://github.com/pnnl/GLIMPSE/releases). Download and run the installer for your system.
 
-### Download Node and Nim
+### Option 2: Build from Source
 
-- [Node.js](https://nodejs.org/en)
-- [Nim](https://nim-lang.org/install.html) (Only if planning to export glm files updated with GLIMPSE tool)
+#### Quick Overview
 
-In a directory of your choice clone the repository :
+This section will walk you through installing dependencies and building GLIMPSE. Here's what you'll do:
+
+1. ✅ Install Node.js (and optionally Nim)
+2. ✅ Clone the repository and install Node dependencies
+3. ✅ Create and activate a Python environment
+4. ✅ Install Python dependencies and plugins
+5. ✅ Start the development server
+
+#### Prerequisites
+
+1. **[Node.js](https://nodejs.org/en)** — Required for all users
+2. **[Nim](https://nim-lang.org/install.html)** — Only needed if:
+    - You're on Apple silicon (M chips), OR
+    - You plan to export modified GLM files
+
+### Step 1: Clone the Repository
+
+In a directory of your choice, clone the repository:
 
 ```bash
 git clone http://github.com/pnnl/GLIMPSE
 ```
 
-Then in `GLIMPSE/`:
+```glm
+cd GLIMPSE
+```
+
+### Step 2: Install Node Dependencies
 
 ```bash
 npm install
 ```
 
-## Create a python environment for local server
+### Step 3: Set Up Python Environment
 
-### Creating environment with python venv or Anaconda
+Navigate to the local server directory:
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
-- venv
+#### Choose your package manager and create the environment:
+
+**Option A: UV (Recommended)**
 
 ```bash
-python -m venv glimpse-server
+uv add -r requirements.txt --prerelease=allow
 ```
 
-- conda
+**Option B: VENV**
 
 ```bash
-conda create -n glimpse-server
+python -m venv .venv
 ```
 
-Once the python venv environment is created activate it using one of the following command for your system in the table below:
-
-| Platform | Shell      | Command to activate virtual environment       |
-| :------: | :--------- | :-------------------------------------------- |
-|  POSIX   | bash/zsh   | `$ source glimpse-server/bin/activate`        |
-|    -     | fish       | `$ source glimpse-server/bin/activate.fish`   |
-|    -     | csh/tcsh   | `$ source glimpse-server/bin/activate.csh`    |
-|    -     | PowerShell | `$ glimpse-server/bin/Activate.ps1`           |
-| Windows  | cmd.exe    | `C:\> glimpse-server\Scripts\activate.bat`    |
-|    -     | PowerShell | `PS C:\> glimpse-server\Scripts\Activate.ps1` |
-
-If using conda simply activate the environment
+**Option C: Conda**
 
 ```bash
-conda activate glimpse-server
+conda create -n glimpse_env
+conda activate glimpse_env
 ```
 
-You will know if the environment activation worked if there is a `(glimpse-server)` indicator at the start of your command line.
+#### Activate your environment:
 
-Next install the server's requirements:
+| Platform | Shell      | Command                          |
+| :------: | :--------- | :------------------------------- |
+|  POSIX   | bash/zsh   | `source .venv/bin/activate`      |
+|    -     | fish       | `source .venv/bin/activate.fish` |
+|    -     | csh/tcsh   | `source .venv/bin/activate.csh`  |
+|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`   |
+| Windows  | cmd.exe    | `.venv\Scripts\activate.bat`     |
+|    -     | PowerShell | `.\.venv\Scripts\activate.ps1`   |
+|  macOS   | bash/zsh   | `source .venv/bin/activate`      |
+
+> [!NOTE]
+> You'll know the environment is active when you see `(.venv)` at the start of your command line.
+> For conda, use `conda activate glimpse_env` instead.
+
+#### Install dependencies (skip if using UV):
+
+If you used VENV or Conda, install requirements:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Install CIM-Builder to environment. CIM-Builder is used to export modified CIM/XML files with GLIMPSE interface.
+### Step 4: Install CIM-Builder (Required)
 
-In `GLIMPSE/local-server/` clone CIM-Builder.
+CIM-Builder is needed to export modified CIM/XML files.
+
+In `GLIMPSE/local-server/`, clone CIM-Builder:
 
 ```bash
 git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
 ```
 
-Then in `GLIMPSE/local-server/CIM-Builder/` install as a python library to environment.
+Navigate to the CIM-Builder directory and install it (without dependencies, as it requires an older version of cim-graph):
 
 ```bash
-python -m pip install .
+cd CIM-Builder
 ```
 
-### Additional Instructions for MacOS with Apple Silicon
+**With PIP:**
 
-In `GLIMPSE/local-server/` clone the glm parser repository.
+```bash
+python -m pip install . --no-deps
+```
+
+**With UV:**
+
+```bash
+uv pip install . --no-deps
+```
+
+### Step 5: Install GLM Parser
+
+#### Standard Installation (Windows, Linux, Intel/AMD Mac)
+
+**With PIP:**
+
+```bash
+pip install glm
+```
+
+**With UV:**
+
+```bash
+uv pip install glm
+```
+
+#### Special Instructions for Apple Silicon (M Chips)
+
+You'll need to build the GLM parser from source using Nim.
+
+Clone the GLM parser:
+
+```bash
+cd GLIMPSE/local-server/
+```
 
 ```bash
 git clone https://github.com/NREL/glm.git
 ```
 
-Then in `GLIMPSE/local-server/glm/` you will then build the glm parser. For this you need to make sure that `nim` is installed and added to your computers `PATH`.
+```bash
+cd glm
+```
+
+Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
 
 ```bash
 nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
 ```
 
-Next run the following command to create the glm python library wheel
+Create a wheel:
 
 ```bash
 python setup.py bdist_wheel
+# or
+python3 setup.py bdist_wheel
 ```
 
-Once that is done, in `GLIMPSE/local-server/glm/dist/` there is a `.whl` archive that you are able to install using pip to the local `glimpse-server` python environment
+Install the wheel from `dist/` folder:
+
+**With PIP:**
 
 ```bash
-# .whl file name will vary based on system
-pip install dist/*.whl
+pip install dist/<whl-filename>.whl
+```
+
+**With UV:**
+
+```bash
+uv pip install dist/<whl-filename>.whl
 ```
 
 ## Start GLIMPSE
 
-In `GLIMPSE/` start the application with the following command:
+From the `GLIMPSE/` root directory, run:
 
 ```bash
-npm run start
+npm run dev
 ```
+
+The application will start in development mode. Open your browser and navigate to the provided local address (typically `http://localhost:5173/`) to access GLIMPSE.
 
 ## Supported Input Files
 
-### GLIMPSE supports two different JSON file formats for custom graph visualizations.
+### JSON Formats
 
-1. GLIMPSE's data structure based off the [glm2json](https://github.com/NREL/glm) parser output used by GLIMPSE.
-   - [example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
-   - [example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
-   - [example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
-   - [example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
-1. NetworkX's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) JSON dump function
-   - [fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
+GLIMPSE supports two JSON file formats for custom graph visualizations:
 
-### GLIMPSE glm (GridLAB-D Model) file support
+1. **GLIMPSE JSON Format** — Based on [glm2json](https://github.com/NREL/glm) parser output
+    - [Example 1](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/customModelExample.json)
+    - [Example 2](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/levelExample.json)
+    - [Example 3](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/socialExample.json)
+    - [Example 4](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/test.json)
 
-1. To get started upload all the `.glm` files in the `GLIMPSE/glimpse/data/123-bus-model/` folder
-2. Feel free to also upload the 3000, 8500, and 9500 model `.glm` files to experience GLIMPSE's scalability through community detection and node clustering.
-3. To re-upload files after visualization, click on the `HOME` button at the top right of the app.
+2. **NetworkX Node-Link Format** — From NetworkX's [node_link_data](https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.node_link_data.html#networkx.readwrite.json_graph.node_link_data) function
+    - [Fishing example](https://github.com/pnnl/GLIMPSE/blob/master/data/demo_examples/VAST24_Release0417G.json)
 
-### CIM (.XML) File Support
+### GridLAB-D (.glm) Files
 
-1. Example file found [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim).
+To get started with GridLAB-D models:
+
+1. Start with example models in `GLIMPSE/testing/123/` — upload all `.glm` files from this folder
+2. Try larger models: `3000/`, `8500/`, and `9500/` to experience GPU-accelerated rendering with [Sigma.js](https://www.sigmajs.org/)
+3. To re-upload files after visualization, click the **LOAD** button at the top right
+
+### CIM/XML Files
+
+GLIMPSE can import and export CIM (Common Information Model) files.
+
+- Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
+- Modified models can be exported as CIM/XML files through the GLIMPSE interface
 
 ## Cite as
 

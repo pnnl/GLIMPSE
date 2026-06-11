@@ -1,617 +1,657 @@
-from typing import Any, Hashable
+import os
+import json
+import tempfile
+import traceback
+import gc
+import time
 
-from flask import Flask, request as req
+
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
-import networkx as nx
-from uuid import UUID
-import glm
-import json
-import os
-
-from cimbuilder.object_builder import new_energy_consumer
-from cimbuilder.object_builder import new_synchronous_generator
-from cimbuilder.object_builder import new_two_terminal_object
-
-#cim-graph imports
-from cimgraph.models import FeederModel
-from cimgraph.databases import XMLFile
-from dataclasses import fields
-import cimgraph.utils as cim_utils
-import cimgraph.data_profile.cimhub_2023 as cim
-os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
-os.environ["CIMG_IEC61970_301"] = "8"
-
-# CIM-G Globals and constants
-NX_GRAPH = nx.MultiGraph()
-CIM_NETWORK = None
-LOAD_TYPES = ["EnergyConsumer", "ConformLoad", "NonConformLoad"]
-GEN_TYPES = ["RotatingMachine", "SynchronousMachine", "AsynchronousMachine", "EnergySource"]
-CAP_TYPES = ["ShuntCompensator", "LinearShuntCompensator"]
-INV_TYPES = ["PowerElectronicsConnection"]
-TRANS_TYPES = ["PowerTransformer"]
-SWITCH_TYPES = ["LoadBreakSwitch"]
-
-def glm_to_dict( file_paths: list ) -> dict:
-   glm_dicts = {}
-   for glm_path in file_paths:
-      glm_dicts[ os.path.basename(glm_path).split(".")[0] + ".json" ] = glm.load(glm_path)
-
-   return glm_dicts
-
-def dict2json( glm_dict: dict ) -> str:
-   glm_json = json.dumps( glm_dict, indent= 3 )
-   return glm_json
-
-def create_graph(data: dict, set_communities: bool=False) -> dict[Hashable | Any, Any] | None:
-   global NX_GRAPH
-   NX_GRAPH.clear()
-
-   community_ids = {}
-
-   for obj in data["objects"]:
-      if obj["elementType"] == "node":
-         if "id" in obj["attributes"]:
-            node_id = obj["attributes"]["id"]
-         elif "name" in obj["attributes"]:
-            node_id = obj["attributes"]["name"]
-
-         NX_GRAPH.add_node(node_id)
-      elif obj["elementType"] == "edge":
-         if "id" in obj["attributes"]:
-            edge_id = obj["attributes"]["id"]
-         elif "name" in obj["attributes"]:
-            edge_id = obj["attributes"]["name"]
-
-         NX_GRAPH.add_edge(obj["attributes"]["from"], obj["attributes"]["to"], edge_id)
-
-   if set_communities :
-      # favor smaller communities and stop at 151 communities
-      # partition = nx.algorithms.community.greedy_modularity_communities(G=NX_GRAPH, resolution=1.42)
-      partition = nx.algorithms.community.louvain_communities(G=NX_GRAPH, resolution=1.2, threshold=1.e-6, max_level=5)
-
-      # print(f"Number of communities: {len(partition)}")
-
-      for community_id, community in enumerate(partition):
-         for node in community:
-            community_ids[node] = f"CID_{community_id}"
-
-      nx.set_node_attributes(NX_GRAPH, community_ids, "glimpse_community_id")
-      return nx.get_node_attributes(G=NX_GRAPH, name="glimpse_community_id")
-   return None
-
-
-def get_modularity() -> float:
-   modularity = nx.algorithms.community.modularity(NX_GRAPH, nx.community.label_propagation_communities(NX_GRAPH))
-   return modularity
-
-def get_multi_coordinate(coords: list):
-   if len(coords) == 0:
-      return None
-
-   if len(coords) <= 2:
-      return max(coords)
-
-   counts = {}
-   for item in coords:
-      counts[item] = counts.get(item, 0) + 1
-   for item, count in counts.items():
-      if count >= 2:
-         return item
-
-def find_shared_coordinates(node) -> dict:
-   multi_location_x = []
-   multi_location_y = []
-
-   # Process all positions from all terminals
-   for terminal in node.Terminals:
-      equipment = terminal.ConductingEquipment
-      if equipment.Location is not None:
-         location = equipment.Location
-
-         for point in location.PositionPoints:
-            x = point.xPosition
-            multi_location_x.append(x)
-            y = point.yPosition
-            multi_location_y.append(y)
-
-   return {
-     "x": get_multi_coordinate(multi_location_x),
-     "y": get_multi_coordinate(multi_location_y)
-   }
-
-def add_attributes(cim_obj, new_obj):
-   for field in fields(cim_obj):
-      if field.metadata["type"] == "Attribute": # association, aggregateof, and ofaggregate
-         new_obj["attributes"][field.name] = str(getattr(cim_obj, field.name))
-
-def cim2GS(cim_filepath: str) -> str:
-   """
-   Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
-   """
-   global CIM_NETWORK
-   phantom_node_count = 0
-   cim_file = XMLFile(cim_filepath)
-   CIM_NETWORK = FeederModel(container=cim.Feeder(), connection=cim_file)
-   objects = []
-
-   for node in CIM_NETWORK.graph[cim.ConnectivityNode].values():
-      coordinates = find_shared_coordinates(node)
-
-      c_node = {
-         "objectType": "c_node",
-         "elementType": "node",
-         "attributes": {
-            "id": node.mRID,
-            "name": node.name,
-         }
-      }
-
-      if coordinates["x"] and coordinates["y"]:
-         c_node["attributes"]["x"] = coordinates["x"]
-         c_node["attributes"]["y"] = coordinates["y"]
-
-      add_attributes(node, c_node)
-      objects.append(c_node)
-
-      for terminal in node.Terminals:
-         equipment = terminal.ConductingEquipment
-         eq_class_type = equipment.__class__.__name__
-
-         if eq_class_type in LOAD_TYPES:
-            new_load = {
-               "objectType": "load",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_load)
-
-            objects.append(new_load)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
-
-         if eq_class_type in GEN_TYPES:
-            new_gen = {
-               "objectType": "diesel_dg",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_gen)
-
-            objects.append(new_gen)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
-
-         if eq_class_type in CAP_TYPES:
-            new_cap = {
-               "objectType": "capacitor",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type
-               }
-            }
-            add_attributes(terminal, new_cap)
-
-            objects.append(new_cap)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
-
-         if eq_class_type in INV_TYPES:
-            new_inv = {
-               "objectType": "inverter_dyn",
-               "elementType": "node",
-               "attributes": {
-                  "id": terminal.mRID,
-                  "name": terminal.name,
-                  "sequenceNumber": terminal.sequenceNumber,
-                  "eq_class_type": eq_class_type,
-               }
-            }
-            add_attributes(terminal, new_inv)
-
-            objects.append(new_inv)
-            objects.append({
-               "objectType": "line",
-               "elementType": "edge",
-               "attributes": {
-                  "id": f"{node.mRID}_{terminal.mRID}",
-                  "from": node.mRID,
-                  "to": terminal.mRID
-               }
-            })
-
-   CIM_NETWORK.get_all_edges(cim.ACLineSegment)
-   for line in CIM_NETWORK.graph[cim.ACLineSegment].values():
-      new_l = {
-         "objectType": "overhead_line",
-         "elementType": "edge",
-         "attributes": {
-            "id": line.mRID,
-            "from": line.Terminals[0].ConnectivityNode.mRID,
-            "to": line.Terminals[1].ConnectivityNode.mRID,
-            "class_type": line.__class__.__name__,
-            "length": line.length
-         }
-      }
-
-      add_attributes(line, new_l)
-      objects.append(new_l)
-
-   CIM_NETWORK.get_all_edges(cim.PowerTransformer)
-   CIM_NETWORK.get_all_edges(cim.PowerTransformerEnd)
-   CIM_NETWORK.get_all_edges(cim.TransformerTank)
-   CIM_NETWORK.get_all_edges(cim.TransformerTankEnd)
-
-   for line in CIM_NETWORK.graph[cim.TransformerTank].values():
-
-      new_edge = {
-         "objectType": "transformer",
-         "elementType": "edge",
-         "attributes": {
-            "id": line.mRID,
-            "from": line.TransformerTankEnds[0].Terminal.ConnectivityNode.mRID,
-            "to": line.TransformerTankEnds[1].Terminal.ConnectivityNode.mRID,
-            "class_type": line.__class__.__name__
-         }
-      }
-
-      add_attributes(line, new_edge)
-      objects.append(new_edge)
-
-   for line in CIM_NETWORK.graph[cim.PowerTransformer].values():
-      if line.PowerTransformerEnd:
-         if (len(line.PowerTransformerEnd) > 2):
-            """
-            T1 <- * -> T2
-                  |
-                  V
-                  T3
-
-            * : phantom node
-            """
-            phantom_node_id = f"phantom_node_id_{phantom_node_count}"
-
-            objects.append({
-               "objectType": "phantom_node",
-               "elementType": "node",
-               "attributes": {
-                  "id": phantom_node_id,
-                  "v": "1kV"
-               }
-            })
-
-            edge_ID = f"{line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID}_{phantom_node_id}"
-            objects.append({
-               "objectType": "transformer",
-               "elementType": "edge",
-               "attributes": {
-                  "id": edge_ID,
-                  "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
-                  "to": phantom_node_id
-               }
-            })
-
-            edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID}"
-            objects.append({
-               "objectType": "transformer",
-               "elementType": "edge",
-               "attributes": {
-                  "id": edge_ID,
-                  "from": phantom_node_id,
-                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID
-               }
-            })
-
-            edge_ID = f"{phantom_node_id}_{line.PowerTransformerEnd[2].Terminal.ConnectivityNode.mRID}"
-            objects.append({
-               "objectType": "transformer",
-               "elementType": "edge",
-               "attributes": {
-                  "id": edge_ID,
-                  "from": phantom_node_id,
-                  "to": line.PowerTransformerEnd[2].Terminal.ConnectivityNode.mRID
-               }
-            })
-
-            phantom_node_count += 1
-         else:
-            new_edge = {
-               "objectType": "transformer",
-               "elementType": "edge",
-               "attributes": {
-                  "id": line.mRID,
-                  "from": line.PowerTransformerEnd[0].Terminal.ConnectivityNode.mRID,
-                  "to": line.PowerTransformerEnd[1].Terminal.ConnectivityNode.mRID,
-                  "class_type": line.__class__.__name__
-               }
-            }
-
-            add_attributes(line, new_edge)
-            objects.append(new_edge)
-
-   cim_switch_types = [
-      cim.Breaker,
-      cim.Fuse,
-      cim.Switch,
-      cim.Sectionaliser,
-      cim.LoadBreakSwitch,
-      cim.Disconnector,
-      cim.Recloser
-   ]
-
-   for cim_type in cim_switch_types:
-      if cim_type in CIM_NETWORK.graph:
-         for line in CIM_NETWORK.graph[cim_type].values():
-            new_edge = {
-               "objectType": "switch",
-               "elementType": "edge",
-               "attributes": {
-                  "id": line.mRID,
-                  "from": line.Terminals[0].ConnectivityNode.mRID,
-                  "to": line.Terminals[1].ConnectivityNode.mRID,
-                  "class_type": line.__class__.__name__
-               }
-            }
-
-            add_attributes(line, new_edge)
-            objects.append(new_edge)
-
-   return json.dumps({cim_filepath: {"objects": objects}})
-
-def new_bus_location(network:FeederModel, node:cim.ConnectivityNode, xPosition:float, yPosition:float):
-    for terminal in node.Terminals:
-        equipment = terminal.ConductingEquipment
-        location = equipment.Location
-        if location is None:
-            location = cim.Location(name=equipment.name+'_location')
-            equipment.Location = location
-            location.PowerSystemResources.append(equipment)
-            network.add_to_graph(location)
-
-        point = cim.PositionPoint()
-        point.sequenceNumber = terminal.sequenceNumber
-        point.xPosition = xPosition
-        point.yPosition = yPosition
-        point.Location = location
-        location.PositionPoints.append(point)
-        network.add_to_graph(point)
-
-def export_cim_coords(new_coords_obj: list, output_path: str) -> None:
-   global CIM_NETWORK
-
-   for obj in new_coords_obj:
-      c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(obj["mRID"].upper())]
-      print(f"Updating coordinates for node {c_node.name} ({c_node.mRID}) to x: {obj['x']}, y: {obj['y']}")
-      new_bus_location(network=CIM_NETWORK, node=c_node, xPosition=obj["x"], yPosition=obj["y"])
-
-   cim_utils.get_all_data(CIM_NETWORK)
-   cim_utils.write_xml(CIM_NETWORK, output_path)
-
-def exportCIM(dir2save: str, filename: str, data: list) -> None:
-   global CIM_NETWORK
-
-   if len(data) == 0:
-      print("No objects to export, creating copy of the original file")
-      cim_utils.get_all_data(CIM_NETWORK)
-      cim_utils.write_xml(CIM_NETWORK, dir2save + "\\cim_output.xml")
-      return
-
-   feeder = CIM_NETWORK.container
-
-   # [0] = new nerminal with type
-   # [1] = new connectivity node
-   # [2] = existing connectivity node
-
-   for nodeObj in data:
-      # 1. get existing connectivity node
-      existing_c_node = CIM_NETWORK.graph[cim.ConnectivityNode][UUID(nodeObj[2]["mRID"].upper())]
-
-      # 2. create new connectivity node
-      new_c_node = cim.ConnectivityNode(mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"])
-      CIM_NETWORK.add_to_graph(new_c_node)
-
-      # 3. connect both connectivity nodes with new_two_terminal_obj function
-      new_two_terminal_object(network=CIM_NETWORK, container=feeder, class_type=cim.ACLineSegment, name=existing_c_node.mRID.split("-")[0], node1=existing_c_node, node2=new_c_node)
-
-      # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
-      if nodeObj[0]["type"] == "diesel_dg":
-         new_synchronous_generator(network=CIM_NETWORK, container=feeder, name=nodeObj[0]["name"], node=new_c_node)
-      elif nodeObj[0]["type"] == "load":
-         new_energy_consumer(network=CIM_NETWORK, container=feeder, name=nodeObj[0]["name"], node=new_c_node)
-      elif nodeObj[0]["type"] == "inverter_dyn":
-         # new power electronics connection
-         pass
-      elif nodeObj[0]["type"] == "capacitor":
-         # new one terminal object
-         pass
-
-   cim_utils.get_all_data(CIM_NETWORK)
-   cim_utils.write_xml(CIM_NETWORK, os.path.join(dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"))
-
-#------------------------------ Server ------------------------------#
+from werkzeug.utils import secure_filename
+import shutil
+
+from cimhelper import CIMHelper
+from glmhelper import GLMHelper
+from jsonhelper import JSONHelper
+from gridappsdhelper import GridAPPSDHelper
+
+# ================================================================================================
+# HELPERS
+# ================================================================================================
+
+json_helper = JSONHelper()
+glm_helper = GLMHelper()
+cim_helper = CIMHelper()
+gridappsd_helper = GridAPPSDHelper()
+
+# ================================================================================================
+# FLASK APP SETUP
+# ================================================================================================
+# Allowed CORS origins. Override for deployment via the CORS_ORIGINS env var
+# (comma-separated list of origins, or "*" to allow any). Defaults to the local
+# dev ports.
+_default_cors_origins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "http://localhost:3000",
+    "http://localhost:61613",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:4173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:61613",
+]
+
+_cors_env = os.environ.get("CORS_ORIGINS", "").strip()
+if _cors_env == "*":
+    cors_origins = "*"
+elif _cors_env:
+    cors_origins = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+else:
+    cors_origins = _default_cors_origins
+
+methods = ["GET", "POST", "DELETE", "OPTIONS"]
+allowed_headers = ["Content-Type", "Authorization"]
 
 app = Flask(__name__)
-# socketio = SocketIO(app)
-CORS(app, origins=["http://localhost:5173"])
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:5173"], async_mode="gevent")
+CORS(
+    app,
+    origins=cors_origins,
+    methods=methods,
+    allow_headers=allowed_headers,
+    supports_credentials=True,
+)
+socketio = SocketIO(
+    app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
+)
 
-#------------------------------ End Server ------------------------------#
-
-#------------------------------ Server Routes ------------------------------#
-
-@app.route("/")
-def hello():
-  return {"api": "GLIMPSE flask backend"}
-
-@app.route("/glm2json", methods=["POST"])
-def glm_to_json():
-  """
-  This endpoint gets the paths of the uploaded glm files to be converted to JSON
-  """
-  paths = req.get_json()
-  glm_dict = glm_to_dict(paths)
-
-  return dict2json(glm_dict)
-
-@app.route("/json2glm", methods=["POST"])
-def json_to_glm():
-  """
-  converts json GLD model representation back to GLD model (.glm)
-  """
-  if (req.is_json):
-    req_data = req.get_json()
-    data = req_data["data"]
-    save_dir = req_data["saveDir"]
-
-    for filename in data.keys():
-      with open(os.path.join(save_dir, filename), "w") as glm_file:
-        glm.dump(data[filename], glm_file)
-        glm_file.close()
-
-  return "", 204
-
-@app.route("/create-nx-graph", methods=["POST"])
-def create_nx_graph():
-   """
-   This endpoint will create a networkx GRAPH object in this server. If the graph data is a list
-   then most likely there is a true value where this end point needs to return a dict of community IDs
-   """
-   graph_data = req.get_json()
-
-   if isinstance(graph_data, dict):
-      create_graph(graph_data)
-      return "", 204
-   elif isinstance(graph_data, list):
-      #index 0 contains the data and index 1 contains a bool value whether to set the community IDs as well
-      community_ids = create_graph(data=graph_data[0], set_communities=graph_data[1])
-      return community_ids
-   return None
+# ================================================================================================
+# CIM OBJECT MANAGEMENT ENDPOINTS
+# ================================================================================================
 
 
-@app.route("/get-stats", methods=["GET"])
-def get_stats():
-   """
-   This endpoint gathers some summary statistics using networkx and the already existing GRAPH object.
-   """
-   summary_stats = {
-      "#Nodes": NX_GRAPH.number_of_nodes(),
-      "#Edges": NX_GRAPH.number_of_edges(),
-      "#ConnectedComponets": nx.number_connected_components(NX_GRAPH),
-      "modularity": get_modularity(),
-   }
+@app.route("/api/cim/objects", methods=["POST"])
+def get_object():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-   return summary_stats
+        data = request.get_json()
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
 
-@app.route("/cimg-to-GS", methods=["POST"])
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        res = cim_helper.get_cim_object(feeder_id, mRID)
+
+        if "error" in res:
+            return res, 404
+        return res, 200
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
+
+
+@app.route("/api/cim/objects", methods=["DELETE"])
+def delete_object():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+
+        data = request.get_json()
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
+
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        if cim_helper.delete_cim_object(feeder_id, mRID):
+            return jsonify(
+                {
+                    "success": True,
+                    "feeder_id": feeder_id,
+                    "mRID": mRID,
+                    "message": "Object deleted successfully",
+                }
+            )
+        else:
+            return (
+                jsonify(
+                    {"error": f"Failed to delete object {mRID} in feeder {feeder_id}"}
+                ),
+                400,
+            )
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
+
+
+@app.route("/api/cim/objects/mermaid", methods=["POST"])
+def get_object_mermaid():
+    try:
+        if not request.is_json:
+            return jsonify({"error": "Request must be JSON"}), 400
+
+        data = request.get_json()
+        print(data)
+        feeder_id = data.get("feeder_id")
+        mRID = data.get("mRID")
+
+        if not feeder_id or not mRID:
+            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
+
+        res = cim_helper.get_mermaid(feeder_id, mRID)
+        return res, 200
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
+
+
+# ================================================================================================
+# JSON CONVERSION
+# ================================================================================================
+
+
+@app.route("/api/upload/json", methods=["POST"])
+def upload_json():
+    """
+    This endpoint receives one or more JSON files via multipart/form-data,
+    validates them against the schema, and returns the transformed data.
+    """
+    # Validate presence of 'files' in form-data
+    if "files" not in request.files:
+        return {"error": "No 'files' part in the form data."}, 400
+
+    files = request.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
+
+    tmpdir = tempfile.mkdtemp(prefix="json_upload_")
+    paths = []
+
+    try:
+        # Save uploaded files
+        for f in files:
+            if not f or f.filename == "":
+                continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+
+        if not paths:
+            return {"error": "No valid files received."}, 400
+
+        # Filter out theme files from paths and store separately
+        theme_filename = json_helper.get_theme_filename(paths)
+
+        themeData = None
+        if theme_filename:
+            themeData = json_helper.validate_json_theme(theme_filename)
+
+        # Read JSON files
+        json_dict = {}
+        for path in paths:
+            if path == theme_filename:
+                continue
+            with open(path, "r") as json_file:
+                json_dict[os.path.basename(path)] = json.load(json_file)
+
+        # Validate and transform JSON data
+        try:
+            validated_data = json_helper.validate_json_data(json_dict)
+            # themeData is already None to begin with if there was no theme file in the paths
+            response_data = {"data": validated_data, "themeData": themeData}
+            return json.dumps(response_data)
+        except ValueError as e:
+            tb = traceback.format_exc()
+            print(tb)
+            return {"error": str(e), "traceback": tb}, 400
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+    finally:
+        # Clean up temp files/dir
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
+# ================================================================================================
+# GLM CONVERSION ENDPOINTS
+# ================================================================================================
+
+
+@app.route("/api/upload/glm", methods=["POST"])
+def glm_upload():
+    """
+    This endpoint receives one or more .glm files via multipart/form-data,
+    saves them to a temp directory, collects their paths, and converts to JSON.
+    """
+    files = request.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
+
+    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
+    paths = []
+
+    try:
+        for f in files:
+
+            if not f or f.filename == "":
+                continue
+
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
+
+        if not paths:
+            return {"error": "No valid files received."}, 400
+
+        print("\n" + "=" * 30)
+        print(f"Received files: {paths}")
+        print("=" * 30)
+
+        theme_filename = json_helper.get_theme_filename(paths)
+        themeData = None
+        if theme_filename:
+            themeData = json_helper.validate_json_theme(theme_filename)
+
+        filtered_paths = [p for p in paths if p != theme_filename]
+
+        print(f"[SERVER] Processing {len(filtered_paths)} GLM files...")
+        glm_dict = glm_helper.parse_glm(filtered_paths)  # expects list of paths
+        print(f"[SERVER] GLM parsing completed successfully")
+
+        # Serialize response data BEFORE cleanup to ensure no dangling references
+        response = json.dumps({"data": glm_dict, "themeData": themeData})
+        return response
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+    finally:
+        try:
+            print("[SERVER] Running cleanup and garbage collection...")
+            gc.collect()  # Force garbage collection
+            time.sleep(0.5)  # Allow extra time for file handles to release
+            shutil.rmtree(tmpdir, ignore_errors=True)
+            print("[SERVER] Cleanup completed")
+        except Exception as cleanup_error:
+            print(f"Warning: Failed to clean up temp directory: {cleanup_error}")
+
+@app.route("/api/export/glm", methods=["POST"])
+def export_glm():
+    """
+    Receives JSON graph data, converts to GLM files,
+    and returns them as a zip archive for download.
+    """
+    json_data = request.get_json()
+
+    if not json_data or "data" not in json_data:
+        return {"error": "No data provided."}, 400
+
+    data = json_data["data"]
+    tmpdir = tempfile.mkdtemp(prefix="glm_export_")
+
+    try:
+
+        zip_buffer = glm_helper.json_to_glm(data, tmpdir)
+
+        return send_file(
+            zip_buffer,
+            mimetype="application/zip",
+            as_attachment=True,
+            download_name="exported_model.zip"
+        )
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": f"Export failed: {str(e)}", "traceback": tb}, 500
+
+    finally:
+        # Clean up temp directory
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+# ================================================================================================
+# CIM OBJECT UPDATE ENDPOINT
+# ================================================================================================
+
+
+@app.route("/api/upload/cim", methods=["POST"])
 def cim_to_glimpse():
-  cim_filepath = req.get_json()
-  glimpse_structure_data = cim2GS(cim_filepath[0])
+    # Validate presence of 'files' in form-data
+    if "files" not in request.files:
+        return {"error": "No 'files' part in the form data."}, 400
 
-  return glimpse_structure_data
+    files = request.files.getlist("files")
+    if not files:
+        return {"error": "No files uploaded."}, 400
 
-@app.route("/export-cim", methods=["POST"])
-def export_cim():
-  cim_data = req.get_json()
+    tmpdir = tempfile.mkdtemp(prefix="cim_upload_")
+    paths = []
 
-  export_dir = cim_data["savepath"]
-  print(export_dir)
-  data = cim_data["objs"]
-  og_filepath = cim_data["filename"]
+    try:
+        for f in files:
+            if not f or f.filename == "":
+                continue
+            filename = secure_filename(f.filename)
+            dest_path = os.path.join(tmpdir, filename)
+            f.save(dest_path)
+            paths.append(dest_path)
 
-  exportCIM(export_dir, og_filepath, data)
-  return "", 204
+        if not paths:
+            return {"error": "No valid files received."}, 400
 
-@app.route("/export-cim-coordinates", methods=["POST"])
-def export_cim_():
-   """
-   This endpoint exports the new coordinates of the nodes to the CIM file
-   """
-   cim_data = req.get_json()
-   new_coords_obj = cim_data["data"]
-   output_path = cim_data["filepath"]
+        glimpse_structure_data = cim_helper.cim_to_gjs(filepaths=paths)
 
-   try:
-      export_cim_coords(new_coords_obj, output_path)
-   except Exception as e:
-      print(f"Error exporting CIM coordinates: {e}")
-      return {"error": str(e)}, 500
-   return "", 204
+        return glimpse_structure_data
 
-@app.route("/update-cim-attrs", methods=["POST"])
-def update_object_attributes():
-   req_data = req.get_json()
-   print(req_data)
-   cim_obj = CIM_NETWORK.get_object(UUID(req_data["mRID"].upper()))
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+    finally:
+        # Cleanup
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
-   for field in fields(cim_obj):
-      if field.metadata["type"] == "Attribute" and field.name in req_data["attributes"] and req_data["attributes"][field.name] != "None":
-         setattr(cim_obj, field.name, req_data["attributes"][field.name])
 
-   return "", 204
+@app.route("/api/export/export-cim", methods=["POST"])
+def export_cim_file():
+    try:
+        cim_data = request.get_json()
+        if not cim_data:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-#------------------------------ End Server Routes ------------------------------#
+        export_dir = cim_data["savepath"]
+        data = cim_data["objs"]
+        og_filepath = cim_data["filename"]
 
-#------------------------------ WebSocket Events ------------------------------#
+        cim_helper.export_cim(export_dir, og_filepath, data)
+        return "", 204
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {e}"}), 400
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
+
+
+@app.route("/api/export/export-cim-coordinates", methods=["POST"])
+def export_cim_coordinates():
+    cim_data = request.get_json()
+    if not cim_data:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    new_coords_obj = cim_data["data"]
+    output_path = cim_data["filepath"]
+
+    try:
+        cim_helper.export_cim_coords(new_coords_obj, output_path)
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
+    return "", 204
+
+
+# ================================================================================================
+# GridAPPS-D INTERACTION ENDPOINTS
+# ================================================================================================
+@app.route("/api/gridappsd/models", methods=["POST"])
+def get_models():
+    req_data = request.get_json()
+
+    print(f"\nModel IDs Received:\n{req_data}\n")
+
+    try:
+        gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
+
+        if gjs is None:
+            return jsonify({"error": "No data returned for the given model IDs"}), 404
+        return gjs, 200
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return json.dumps({"error": str(e), "traceback": tb}), 500
+
+
+@app.route("/api/gridappsd/model-info", methods=["GET"])
+def get_gridappsd_models():
+    try:
+        if not gridappsd_helper.is_connected():
+            return json.dumps({"error": "Not connected to GridAPPS-D"}), 503
+
+        models = gridappsd_helper.get_models()
+        return json.dumps(models), 200
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return json.dumps({"error": str(e), "traceback": tb}), 503
+
+
+@app.route("/api/gridappsd/status", methods=["GET"])
+def get_gridappsd_status():
+    try:
+
+        connected = gridappsd_helper.try_connect()
+
+        return (
+            json.dumps(
+                {
+                    "connected": connected,
+                    "message": (
+                        "Connected to GridAPPS-D"
+                        if connected
+                        else "Not connected to GridAPPS-D"
+                    ),
+                }
+            ),
+            200,
+        )
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return (
+            json.dumps({"connected": False, "error": str(e), "traceback": tb}),
+            200,
+        )  # Return 200 so React app can handle the response
+
+
+# ================================================================================================
+# GLIMPSE WEBSOCKET EVENTS
+# ================================================================================================
+
 
 @socketio.on("glimpse")
 def glimpse(data):
-   socketio.emit("update-data", data)
+    socketio.emit("update-data", data)
+
 
 @socketio.on("addNode")
 def add_node(new_node_data):
-   socketio.emit("add-node", new_node_data)
+    socketio.emit("add-node", new_node_data)
+
 
 @socketio.on("addEdge")
 def add_edge(new_edge_data):
-   socketio.emit("add-edge", new_edge_data)
+    socketio.emit("add-edge", new_edge_data)
+
 
 @socketio.on("deleteNode")
 def delete_node(node_id):
-   socketio.emit("delete-node", node_id)
+    socketio.emit("delete-node", node_id)
+
 
 @socketio.on("deleteEdge")
 def delete_edge(edge_id):
-   socketio.emit("delete-edge", edge_id)
+    socketio.emit("delete-edge", edge_id)
 
-#------------------------------ End WebSocket Events ------------------------------#
 
-#-------------------------- Start WebSocket Server --------------------------#
+# ================================================================================================
+# GRIDAPPS-D REAL-TIME WEBSOCKET EVENTS
+# ================================================================================================
+
+# ─── SocketIO Event Handlers ──────────────────────────────────────
+
+
+@socketio.on("start-simulation")
+def handle_start_simulation(config):
+    try:
+        result = gridappsd_helper.start_simulation(config)
+
+        # Subscribe to output and relay to the client via WebSocket
+        def on_sim_output(headers, message: dict):
+            sim_output = {"timestamp": "", "Analog": [], "Discrete": []}
+
+            # Process measurements through the map to emit equipment-level updates
+            active_measurement_map = cim_helper.active_measurement_map
+            if active_measurement_map:
+                msg = message.get("message", message)
+                measurements = msg.get("measurements", {})
+                sim_output["timestamp"] = msg.get("timestamp")
+
+
+                for measurment_mRID, measurment_data in measurements.items():
+
+                    if measurment_mRID in active_measurement_map["Analog"]:
+                        mapping = active_measurement_map["Analog"].get(measurment_mRID)
+
+                        if not mapping:
+                            continue
+
+                        eq_type = mapping.get("conducting_equipment_type", "")
+                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
+                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
+                        measurement_type = mapping.get("measurement_type", "")
+
+                        measurment_output = {
+                            "equipment_mrid": eq_mRID,
+                            "equipment_name": conducting_eq_name,
+                            "equipment_type": eq_type,
+                            "measurement_type": measurement_type, # Pos, PNV, VA
+                            "phases": mapping.get("phases", ""),
+                            **measurment_data
+                        }
+
+                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
+                        if normal_limit:
+                            measurment_output["normal_limit"] = normal_limit
+
+                        sim_output["Analog"].append(measurment_output)
+
+                        
+                    if measurment_mRID in active_measurement_map["Discrete"]:
+                        mapping = active_measurement_map["Discrete"].get(measurment_mRID)
+
+                        if not mapping:
+                            continue
+
+                        eq_type = mapping.get("conducting_equipment_type", "")
+                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
+                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
+                        measurement_type = mapping.get("measurement_type", "")
+
+                        measurment_output = {
+                            "equipment_mrid": eq_mRID,
+                            "equipment_name": conducting_eq_name,
+                            "equipment_type": eq_type,
+                            "measurement_type": measurement_type, # Pos, PNV, VA
+                            "phases": mapping.get("phases", ""),
+                            **measurment_data
+                        }
+
+                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
+                        if normal_limit:
+                            measurment_output["normal_limit"] = normal_limit
+
+                        sim_output["Discrete"].append(measurment_output)
+            
+            socketio.emit("sim-output", sim_output)
+
+        def on_sim_log(headers, message):
+            socketio.emit("sim-log", message)
+
+        gridappsd_helper.subscribe_to_simulation_output(on_sim_output)
+        gridappsd_helper.subscribe_to_simulation_log(on_sim_log)
+
+        print("=" * 20 + "result" + "=" * 20)
+        print(json.dumps(result, indent=2))
+        print("=" * 46)
+        return result
+
+    except Exception as e:
+        return {"error": {"message": str(e)}}
+
+
+@socketio.on("sim-input")
+def handle_sim_input(input_data):
+    try:
+        gridappsd_helper.send_simulation_input(input_data)
+        return "", 204
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@socketio.on("pause-simulation")
+def handle_pause_simulation(sim_id):
+    try:
+        return gridappsd_helper.pause_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@socketio.on("resume-simulation")
+def handle_resume_simulation(sim_id):
+    try:
+        return gridappsd_helper.resume_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@socketio.on("stop-simulation")
+def handle_stop_simulation(sim_id):
+    try:
+        return gridappsd_helper.stop_simulation(sim_id)
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ================================================================================================
+# HEALTH CHECK AND BASIC ENDPOINTS
+# ================================================================================================
+
+
+@app.route("/")
+def hello():
+    """Basic API information endpoint"""
+    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.7.0-alpha"}
+
+
+# ================================================================================================
+# MAIN APPLICATION ENTRY POINT
+# ================================================================================================
 
 if __name__ == "__main__":
-   socketio.run(app, port=5051, debug=False, log_output=True)
-
-#-------------------------- End Start WebSocket Server --------------------------#
+    # Start the Flask-SocketIO server
+    port = int(os.environ.get("FLASK_PORT", 5052))
+    # Bind to loopback for local dev; containers set FLASK_HOST=0.0.0.0
+    host = os.environ.get("FLASK_HOST", "127.0.0.1")
+    socketio.run(
+        app,
+        host=host,
+        port=port,
+        debug=False,
+        log_output=True,
+    )

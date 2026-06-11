@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Top connection point (terminal to bus) -->
+  <circle cx="128" cy="20" r="9" fill="black"/>
+  <line x1="128" y1="20" x2="128" y2="50" stroke="black" stroke-width="9"/>
+  
+  <!-- Generator body (circle) -->
+  <circle cx="128" cy="138" r="88" 
+          fill="none" stroke="black" stroke-width="9"/>
+  
+  <!-- Letter "G" -->
+  <text x="128" y="158" text-anchor="middle" 
+        font-family="Arial, sans-serif" font-size="90" 
+        font-weight="bold" fill="black">GS</text>
+  
+  <!-- Bottom connection point (optional — for neutral/ground) -->
+  <line x1="128" y1="226" x2="128" y2="250" stroke="black" stroke-width="9"/>
+</svg>

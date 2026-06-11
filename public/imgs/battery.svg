@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Top connection point (+ terminal) -->
+  <circle cx="128" cy="20" r="6" fill="black"/>
+  <line x1="128" y1="20" x2="128" y2="70" stroke="black" stroke-width="3"/>
+  
+  <!-- Plus sign -->
+  <line x1="180" y1="82" x2="200" y2="82" stroke="black" stroke-width="3"/>
+  <line x1="190" y1="72" x2="190" y2="92" stroke="black" stroke-width="3"/>
+  
+  <!-- Cell 1: long line (+) and short line (-) -->
+  <line x1="60" y1="82" x2="196" y2="82" stroke="black" stroke-width="4"/>
+  <line x1="90" y1="100" x2="166" y2="100" stroke="black" stroke-width="4"/>
+  
+  <!-- Cell 2 -->
+  <line x1="60" y1="132" x2="196" y2="132" stroke="black" stroke-width="4"/>
+  <line x1="90" y1="150" x2="166" y2="150" stroke="black" stroke-width="4"/>
+  
+  <!-- Cell 3 -->
+  <line x1="60" y1="182" x2="196" y2="182" stroke="black" stroke-width="4"/>
+  <line x1="90" y1="200" x2="166" y2="200" stroke="black" stroke-width="4"/>
+  
+  <!-- Minus sign -->
+  <line x1="180" y1="200" x2="200" y2="200" stroke="black" stroke-width="3"/>
+  
+  <!-- Bottom connection point (- terminal) -->
+  <line x1="128" y1="200" x2="128" y2="236" stroke="black" stroke-width="3"/>
+  <circle cx="128" cy="236" r="6" fill="black"/>
+</svg>

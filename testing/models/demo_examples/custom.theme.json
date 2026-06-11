@@ -1,0 +1,33 @@
+{
+    "groups": {
+        "R": {
+            "color": "#FF0000",
+            "type": "node",
+            "size": 5
+        },
+        "G": {
+            "color": "#00FF00",
+            "type": "node",
+            "size": 5
+        },
+        "B": {
+            "color": "#0000FF",
+            "type": "node",
+            "size": 5
+        }
+    },
+    "edgeOptions": {
+        "M": {
+            "color": "#FF00FF",
+            "width": 3
+        },
+        "Y": {
+            "color": "#FFFF00",
+            "width": 5
+        },
+        "C": {
+            "color": "#00FFFF",
+            "width": 1
+        }
+    }
+}
