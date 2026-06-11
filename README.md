@@ -10,13 +10,13 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigma.js**, and **Python**.
 
 > [!NOTE]
-> If you're looking for the EPA-developed energy planning tool called GLIMPSE, visit [epa.gov/glimpse](https://epa.gov/glimpse).
+> If you're looking for the EPA-developed energy planning tool called glimpse, visit [epa.gov/glimpse](https://epa.gov/glimpse).
 
 ## Installation
 
 ### Option 1: Pre-Built Installers (Easiest)
 
-Pre-built installers for Windows, macOS, and Linux are available in the [releases](https://github.com/pnnl/GLIMPSE/releases). Download and run the installer for your system.
+**comming soon**
 
 ### Option 2: Build from Source
 
@@ -207,6 +207,52 @@ npm run dev
 ```
 
 The application will start in development mode. Open your browser and navigate to the provided local address (typically `http://localhost:5173/`) to access GLIMPSE.
+
+## Run with Docker
+
+The repository ships with a [Docker Compose](https://docs.docker.com/compose/) setup that builds and runs GLIMPSE as two containers — the React frontend (served by nginx) and the Flask + SocketIO backend — so you don't need to install Node, Python, or any of the plugins yourself.
+
+> [!NOTE]
+> This section assumes you already have a working **Docker Engine** with the **Docker Compose** plugin (`docker compose version` should print a version). If not, see [Docker's install guide](https://docs.docker.com/engine/install/).
+
+### Step 1: Clone the Repository
+
+```bash
+git clone http://github.com/pnnl/GLIMPSE
+cd GLIMPSE
+```
+
+### Step 2: Build and Start the Containers
+
+From the `GLIMPSE/` root directory (where `docker-compose.yml` lives), run:
+
+```bash
+docker compose up --build
+```
+
+The first build takes a few minutes while images are created; subsequent runs are cached and start quickly. Add `-d` to run detached (in the background):
+
+```bash
+docker compose up --build -d
+```
+
+### Step 3: Open GLIMPSE
+
+Once the containers are running, open your browser and navigate to:
+
+```
+http://localhost:5173
+```
+
+The frontend serves the UI on port **5173** and the backend listens on port **5052**.
+
+### Stopping the Containers
+
+```bash
+docker compose down
+```
+
+This stops and removes the containers and network. Built images remain cached for the next start. (If you ran in the foreground, you can also press `Ctrl+C` first, then run `docker compose down` to clean up.)
 
 ## Supported Input Files
 
