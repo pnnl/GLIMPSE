@@ -1,16 +1,19 @@
 import os
 import logging
 import socket
+from collections.abc import Callable
 from enum import Enum
-from typing import Optional, Callable
 from gridappsd import GridAPPSD, topics
-import json
 
-os.environ["GRIDAPPSD_USER"] = "system"
-os.environ["GRIDAPPSD_PASSWORD"] = "manager"
+# GridAPPS-D connection settings, overridable via environment. The gridappsd
+# client reads these same vars, so the pre-flight port check below stays in sync.
+# setdefault (not assignment) lets the container / shell override credentials.
+os.environ.setdefault("GRIDAPPSD_ADDRESS", "localhost")
+os.environ.setdefault("GRIDAPPSD_PORT", "61613")
+os.environ.setdefault("GRIDAPPSD_USER", "system")
+os.environ.setdefault("GRIDAPPSD_PASSWORD", "manager")
 
 logger = logging.getLogger(__name__)
-
 
 class SimulationState(Enum):
     IDLE = "idle"
@@ -33,6 +36,7 @@ class GridAPPSDHelper:
         self.gapps: GridAPPSD | None = None
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
+        self.current_limit_map = {}
 
         self._available: bool = False
 
@@ -42,12 +46,15 @@ class GridAPPSDHelper:
     # ─── Connection Management ────────────────────────────────────────
 
     @staticmethod
-    def _is_port_open(host="localhost", port=61613, timeout=2) -> bool:
+    def _is_port_open(host=None, port=None, timeout=2) -> bool:
         """
         Quick TCP check BEFORE we hand off to the STOMP library.
         This avoids the 3x retry + traceback spam from stomp.py
-        when GridAPPS-D isn't running.
+        when GridAPPS-D isn't running. Defaults come from the same
+        GRIDAPPSD_ADDRESS / GRIDAPPSD_PORT env vars the client uses.
         """
+        host = host or os.environ.get("GRIDAPPSD_ADDRESS", "localhost")
+        port = int(port or os.environ.get("GRIDAPPSD_PORT", 61613))
         try:
             with socket.create_connection((host, port), timeout=timeout):
                 return True
@@ -55,12 +62,8 @@ class GridAPPSDHelper:
             return False
 
     def _try_initial_connect(self):
-        # ── Fast pre-check: don't even try STOMP if the port is closed ──
         if not self._is_port_open():
-            logger.warning(
-                "GridAPPS-D port 61613 is not open — skipping connection. "
-                "Features disabled."
-            )
+            logger.warning("GridAPPS-D port 61613 is not open — skipping connection. Features disabled.")
             self.gapps = None
             self._available = False
             return
@@ -95,30 +98,13 @@ class GridAPPSDHelper:
             return False
 
     def _ensure_connected(self):
-        """
-        Guard for every method that needs a live connection.
-
-        OLD behaviour:  tried to reconnect automatically → caused
-        hangs / crashes when GridAPPS-D wasn't running.
-
-        NEW behaviour:  if we're not available, raise immediately
-        with a clear message.  No retry, no blocking.
-        """
         if not self._available:
-            raise GridAPPSDError(
-                "GridAPPS-D helper is not available. "
-                "Call try_connect() or restart the server with "
-                "GridAPPS-D running."
-            )
+            raise GridAPPSDError("GridAPPS-D is not available. Call try_connect() or restart with GridAPPS-D running.")
 
         if not self.is_connected():
-            # Connection was available before but dropped mid-session.
-            # Still don't auto-retry — just report it.
             self._available = False
             self.gapps = None
-            raise GridAPPSDError(
-                "Lost connection to GridAPPS-D. " "Call try_connect() to re-establish."
-            )
+            raise GridAPPSDError("Lost connection to GridAPPS-D. Call try_connect() to re-establish.")
 
     def is_connected(self) -> bool:
         """Check if connected to GridAPPS-D"""
@@ -180,6 +166,20 @@ class GridAPPSDHelper:
 
             if not self.sim_id:
                 raise GridAPPSDError(f"No simulation ID in response: {response}")
+            
+            # get current limits for each model object
+            for ps_conf in sim_config["power_system_configs"]:
+                message = {
+                    "configurationType": 'GridLAB-D Limits',
+                    "parameters": {
+                        "simulation_id": self.sim_id,
+                        "model_id": ps_conf["Line_name"]
+                    }
+                }
+
+                res = self.gapps.get_response(topics.CONFIG, message, timeout=30)
+                for current in res["data"]["limits"]["currents"]:
+                    self.current_limit_map[current["id"]] = current
 
             self.sim_state = SimulationState.RUNNING
             logger.info(f"Simulation started: {self.sim_id}")
@@ -192,7 +192,7 @@ class GridAPPSDHelper:
             self.sim_state = SimulationState.ERROR
             raise GridAPPSDError(f"Failed to start simulation: {e}") from e
 
-    def _send_sim_command(self, command: str, sim_id: str = None) -> dict:
+    def _send_sim_command(self, command: str, sim_id: str | None = None) -> dict:
         """Send a command to the simulation (internal helper)."""
         self._ensure_connected()
         target_id = sim_id or self.sim_id
@@ -248,43 +248,32 @@ class GridAPPSDHelper:
             self.sim_state = SimulationState.ERROR
             raise GridAPPSDError(f"Failed to stop simulation: {e}") from e
 
-    def send_simulation_input(self, input_data: dict, sim_id: str = None) -> dict:
+    def send_simulation_input(self, input_data: dict, sim_id: str | None = None) -> None:
         """Send input data to the simulation."""
         self._ensure_connected()
         target_id = sim_id or self.sim_id
 
         if not target_id:
-            raise GridAPPSDError(
-                "No simulation ID available. Start a simulation first."
-            )
+            raise GridAPPSDError("No simulation ID available. Start a simulation first.")
 
         topic = topics.simulation_input_topic(target_id)
 
         try:
-            print("=" * 10 + topic + "=" * 10)
-            print("=" * 10 + "input object" + "=" * 10)
-            print(input_data)
             self.gapps.send(topic, input_data)
-            logger.info(f"Sent input to simulation {target_id}: {input_data}")
+            logger.debug(f"Sent input to simulation {target_id}: {input_data}")
         except Exception as e:
             raise GridAPPSDError(f"Failed to send input: {e}") from e
 
     # ─── Simulation Output Subscription ───────────────────────────────
 
-    def subscribe_to_simulation_output(self, callback: Callable, sim_id: str = None):
-        """
-        Subscribe to simulation output.
-        The callback receives (headers, message) from GridAPPS-D.
-        """
+    def subscribe_to_simulation_output(self, callback: Callable, sim_id: str | None = None):
+        """Subscribe to simulation output. Callback receives (headers, message)."""
         self._ensure_connected()
         target_id = sim_id or self.sim_id
 
         if not target_id:
-            raise GridAPPSDError(
-                "No simulation ID available. Start a simulation first."
-            )
+            raise GridAPPSDError("No simulation ID available. Start a simulation first.")
 
-        # Correct topic format (no trailing wildcard)
         topic = topics.simulation_output_topic(target_id)
         logger.info(f"Subscribing to simulation output on: {topic}")
 
@@ -295,7 +284,7 @@ class GridAPPSDHelper:
                 f"Failed to subscribe to simulation output: {e}"
             ) from e
 
-    def subscribe_to_simulation_log(self, callback: Callable, sim_id: str = None):
+    def subscribe_to_simulation_log(self, callback: Callable, sim_id: str | None = None):
         """Subscribe to simulation log messages."""
         self._ensure_connected()
         target_id = sim_id or self.sim_id

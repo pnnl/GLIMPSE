@@ -6,6 +6,7 @@ import FileUpload from "../FileUpload";
 import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
+import { API_BASE_URL } from "../../config";
 
 const LoadModelModal = ({ onMount }) => {
     const [open, setOpen] = useState(true);
@@ -46,7 +47,7 @@ const LoadModelModal = ({ onMount }) => {
 
         try {
             const resPromise = axios.post(
-                `http://127.0.0.1:5051/api/gridappsd/models`,
+                `${API_BASE_URL}/api/gridappsd/models`,
                 selectedGridappsdModels.map((m) => m.modelId),
                 {
                     headers: { "Content-Type": "application/json" },

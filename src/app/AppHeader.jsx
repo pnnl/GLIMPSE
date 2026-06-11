@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Button, Flex, Dropdown, Select } from "antd";
+import { Button, Flex, Dropdown, Select, Switch } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
 import "../styles/AppHeader.css";
@@ -7,13 +7,14 @@ import graphHelper from "../graph-helper/GraphHelper";
 import axios from "axios";
 
 import { useGraph } from "../contexts/GraphContext";
+import { API_BASE_URL } from "../config";
 
 const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
-    const [searchValue, setSearchValue] = useState(undefined);
-    const { graphUpdateTrigger, view, setView } = useGraph();
+    const [searchValue, setSearchValue] = useState(null);
+    const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
 
     const menuItems = [
         { key: "export-model", label: "Export Model", disabled: false },
@@ -32,18 +33,35 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 { key: "export-theme", label: "Export Theme", disabled: true },
             ],
         },
+        { type: "divider" },
+        {
+            key: "dark-mode",
+            label: (
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "2rem",
+                    }}
+                >
+                    <span>Dark Mode</span>
+                    <Switch size="small" checked={darkMode} />
+                </div>
+            ),
+        },
     ];
 
     // Listen for graph load/clear events emitted by the Graph component
     useEffect(() => {
         const handleGraphLoaded = () => {
             setGraphLoaded(true);
-            setSearchValue(undefined);
+            setSearchValue(null);
         };
 
         const handleGraphCleared = () => {
             setGraphLoaded(false);
-            setSearchValue(undefined);
+            setSearchValue(null);
         };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
@@ -82,10 +100,10 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
 
         try {
             const response = await axios.post(
-                "http://127.0.0.1:5051/api/export/glm",
+                `${API_BASE_URL}/api/export/glm`,
                 { data: exportData },
                 {
-                    responseType: "blob", // Important: tells axios to expect binary data
+                    responseType: "blob",
                     headers: {
                         "Content-Type": "application/json",
                     },
@@ -128,13 +146,16 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             case "object-studio":
                 setView(view === "object-studio" ? "graph" : "object-studio");
                 break;
+            case "dark-mode":
+                setDarkMode(!darkMode);
+                break;
             case "export-theme":
         }
     };
 
     return (
         <>
-            <div className="app-header">
+            <div className="app-header" style={{ backgroundColor: darkMode ? "#1f1f1f" : "#FFFFFF" }}>
                 <Dropdown
                     trigger={["click"]}
                     menu={{
@@ -156,7 +177,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         placeholder="Search by ID or Name"
                         onSelect={(val) => {
                             graphHelper.focus(JSON.parse(val));
-                            setSearchValue(undefined);
+                            setSearchValue(null);
                         }}
                         onChange={(val) => setSearchValue(val)}
                         filterOption={(input, option) =>
@@ -166,7 +187,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 )}
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
                     <Button
-                        color="#333333"
                         style={{ textTransform: "uppercase" }}
                         onClick={() => openModelLoader.current(true)}
                         size="middle"
@@ -175,7 +195,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         Load
                     </Button>
                     <Button
-                        color="#333333"
                         type="primary"
                         size="middle"
                         style={{ textTransform: "uppercase" }}

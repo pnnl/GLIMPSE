@@ -38,14 +38,7 @@ const MermaidDiagram = ({ mermaidContent, objectID }) => {
     }
 
     return (
-        <Card
-            style={{
-                maxHeight: "calc(100vh - 14rem)",
-                overflow: "auto",
-                margin: "0.5rem",
-            }}
-            styles={{ body: { padding: "0.5rem" } }}
-        >
+        <Card styles={{ body: { padding: "0.5rem" } }}>
             <div
                 ref={mermaidContainerRef}
                 style={{
@@ -53,8 +46,6 @@ const MermaidDiagram = ({ mermaidContent, objectID }) => {
                     border: "1px solid #d9d9d9",
                     borderRadius: "0.375rem",
                     backgroundColor: "#FFFFFF",
-                    minHeight: "12.5rem",
-                    overflow: "auto",
                 }}
             />
         </Card>

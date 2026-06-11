@@ -3,13 +3,19 @@
 // hover tooltips, and shadow/halo effects.
 // ============================================================================
 
+// ── Dark mode flag — toggled by setCanvasDarkMode() ────────────────────────
+let _isDark = false;
+export const setCanvasDarkMode = (val) => {
+    _isDark = val;
+};
+
 // ── Global Style Constants ──────────────────────────────────────────────────
 // Change these to adjust colors across ALL renderers at once.
-const TEXT_COLOR = "#000000"; // Main text color for labels & hover
-const HOVER_BG_COLOR = "#fff"; // Hover tooltip background
-const HOVER_SHADOW_COLOR = "#000"; // Hover tooltip drop-shadow color
-const LABEL_BG_COLOR = "#ffffffcc"; // Label background (with alpha for translucency)
-const LABEL_TEXT_COLOR = "#000"; // Label text drawn under each node
+const TEXT_COLOR = () => (_isDark ? "#ffffff" : "#000000");
+const HOVER_BG_COLOR = () => (_isDark ? "#1f1f1f" : "#ffffff");
+const HOVER_SHADOW_COLOR = () => (_isDark ? "#000000" : "#000000");
+const LABEL_BG_COLOR = () => (_isDark ? "#1f1f1fcc" : "#ffffffcc");
+const LABEL_TEXT_COLOR = () => (_isDark ? "#ffffff" : "#000000");
 
 // ── Hover Tooltip Layout ────────────────────────────────────────────────────
 // These control spacing inside the hover card that appears on node hover.
@@ -135,11 +141,11 @@ export function drawHover(context, data, settings) {
 
     // ── Draw background card with shadow ──
     context.beginPath();
-    context.fillStyle = HOVER_BG_COLOR;
+    context.fillStyle = HOVER_BG_COLOR();
     context.shadowOffsetX = HOVER_SHADOW_OFFSET_X;
     context.shadowOffsetY = HOVER_SHADOW_OFFSET_Y;
     context.shadowBlur = HOVER_SHADOW_BLUR;
-    context.shadowColor = HOVER_SHADOW_COLOR;
+    context.shadowColor = HOVER_SHADOW_COLOR();
 
     drawRoundRect(
         context,
@@ -162,14 +168,14 @@ export function drawHover(context, data, settings) {
     // ➤ To move text further from the node, increase the "+ 3" offset.
     const textStartX = data.x + data.size + 3;
 
-    context.fillStyle = TEXT_COLOR;
+    context.fillStyle = TEXT_COLOR();
     context.font = `${weight} ${idLabelSize}px ${font}`;
     context.fillText(idLabel, textStartX, data.y + idLabelSize / 3);
 
     // ── Draw the object-type label (group subtitle) ──
     // Sits above the ID label. Only drawn if `data.group` is truthy.
     if (objectTypeLabel) {
-        context.fillStyle = TEXT_COLOR;
+        context.fillStyle = TEXT_COLOR();
         context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
         context.fillText(objectTypeLabel, textStartX, data.y - (2 * idLabelSize) / 3 - 2);
     }
@@ -238,11 +244,11 @@ export function drawLabel(context, data, settings) {
     // ── Draw background ──
     context.textAlign = "center";
     context.textBaseline = "top";
-    context.fillStyle = LABEL_BG_COLOR;
+    context.fillStyle = LABEL_BG_COLOR();
     context.fillRect(centerX - rectWidth / 2, topY, rectWidth, rectHeight);
 
     // ── Draw each text line ──
-    context.fillStyle = LABEL_TEXT_COLOR;
+    context.fillStyle = LABEL_TEXT_COLOR();
     for (let i = 0; i < lines.length; i++) {
         const line = String(lines[i]);
         const yLine = topY + LABEL_PADDING_Y + i * lineHeight;

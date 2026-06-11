@@ -1,5 +1,6 @@
 import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
+import { API_BASE_URL } from "../config";
 
 class SocketClientHelper {
     //  Default Configs
@@ -87,7 +88,7 @@ class SocketClientHelper {
         error: [],
     };
 
-    constructor(serverUrl = "http://127.0.0.1:5051") {
+    constructor(serverUrl = API_BASE_URL) {
         this.socket = io(serverUrl, {
             reconnection: true,
             reconnectionAttempts: 10,
@@ -122,6 +123,7 @@ class SocketClientHelper {
         this.socket.on("sim-output", (output) => {
             // console.log(output);
             this.#emit("sim-output", output);
+            graphHelper.handleSimulationOutput(output);
         });
 
         this.socket.on("sim-log", (log) => {

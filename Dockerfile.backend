@@ -1,0 +1,38 @@
+# ============================================================================
+# GLIMPSE backend — Flask + SocketIO (gevent) server
+# ============================================================================
+
+# ---- builder: install Python deps into /usr/local --------------------------
+FROM python:3.12-slim AS builder
+
+# uv for fast installs; git to clone CIM-Builder.
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install server deps (no pyinstaller). --prerelease=allow: cim-graph is 0.4.3a10.
+COPY local-server/requirements-server.txt ./requirements-server.txt
+RUN uv pip install --system --prerelease=allow -r requirements-server.txt \
+    && uv pip install --system glm
+
+# CIM-Builder — installed without deps (it requires an older cim-graph).
+RUN git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git /tmp/CIM-Builder \
+    && uv pip install --system --no-deps /tmp/CIM-Builder
+
+# ---- runtime: slim image with only the installed packages + app ------------
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    FLASK_HOST=0.0.0.0 \
+    FLASK_PORT=5052
+
+# Copy everything uv installed (site-packages + console scripts). git and uv
+# stay behind in the builder stage and never reach the final image.
+COPY --from=builder /usr/local /usr/local
+
+WORKDIR /app
+COPY local-server/ ./
+
+EXPOSE 5052
+CMD ["python", "server.py"]

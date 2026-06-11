@@ -29,7 +29,10 @@ gridappsd_helper = GridAPPSDHelper()
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
-cors_origins = [
+# Allowed CORS origins. Override for deployment via the CORS_ORIGINS env var
+# (comma-separated list of origins, or "*" to allow any). Defaults to the local
+# dev ports.
+_default_cors_origins = [
     "http://localhost:5173",
     "http://localhost:4173",
     "http://localhost:3000",
@@ -39,6 +42,14 @@ cors_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:61613",
 ]
+
+_cors_env = os.environ.get("CORS_ORIGINS", "").strip()
+if _cors_env == "*":
+    cors_origins = "*"
+elif _cors_env:
+    cors_origins = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
+else:
+    cors_origins = _default_cors_origins
 
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
 allowed_headers = ["Content-Type", "Authorization"]
@@ -264,14 +275,6 @@ def glm_upload():
         # Serialize response data BEFORE cleanup to ensure no dangling references
         response = json.dumps({"data": glm_dict, "themeData": themeData})
         return response
-    except RuntimeError as re:
-        # Handle module reset failures
-        print(f"[SERVER] CRITICAL: {str(re)}")
-        return {"error": f"GLM module error (may need backend restart): {str(re)}"}, 500
-    except ValueError as ve:
-        # Handle validation errors (e.g., file too large)
-        print(f"[SERVER] Validation error: {str(ve)}")
-        return {"error": str(ve)}, 400
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
@@ -365,31 +368,40 @@ def cim_to_glimpse():
 
 @app.route("/api/export/export-cim", methods=["POST"])
 def export_cim_file():
-    cim_data = request.get_json()
+    try:
+        cim_data = request.get_json()
+        if not cim_data:
+            return jsonify({"error": "Request must be JSON"}), 400
 
-    export_dir = cim_data["savepath"]
-    print(export_dir)
-    data = cim_data["objs"]
-    og_filepath = cim_data["filename"]
+        export_dir = cim_data["savepath"]
+        data = cim_data["objs"]
+        og_filepath = cim_data["filename"]
 
-    cim_helper.export_cim(export_dir, og_filepath, data)
-    return "", 204
+        cim_helper.export_cim(export_dir, og_filepath, data)
+        return "", 204
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {e}"}), 400
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
 
 
 @app.route("/api/export/export-cim-coordinates", methods=["POST"])
-def export_cim_():
-    """
-    This endpoint exports the new coordinates of the nodes to the CIM file
-    """
+def export_cim_coordinates():
     cim_data = request.get_json()
+    if not cim_data:
+        return jsonify({"error": "Request must be JSON"}), 400
+
     new_coords_obj = cim_data["data"]
     output_path = cim_data["filepath"]
 
     try:
         cim_helper.export_cim_coords(new_coords_obj, output_path)
     except Exception as e:
-        print(f"Error exporting CIM coordinates: {e}")
-        return {"error": str(e)}, 500
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify({"error": str(e), "traceback": tb}), 500
     return "", 204
 
 
@@ -403,11 +415,10 @@ def get_models():
     print(f"\nModel IDs Received:\n{req_data}\n")
 
     try:
-        if gridappsd_helper is None:
-            return json.dumps({"error": "GridAPPS-D helper not initialized"}), 503
-
         gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
 
+        if gjs is None:
+            return jsonify({"error": "No data returned for the given model IDs"}), 404
         return gjs, 200
     except Exception as e:
         tb = traceback.format_exc()
@@ -418,9 +429,6 @@ def get_models():
 @app.route("/api/gridappsd/model-info", methods=["GET"])
 def get_gridappsd_models():
     try:
-        if gridappsd_helper is None:
-            return json.dumps({"error": "GridAPPS-D helper not initialized"}), 503
-
         if not gridappsd_helper.is_connected():
             return json.dumps({"error": "Not connected to GridAPPS-D"}), 503
 
@@ -504,90 +512,73 @@ def handle_start_simulation(config):
         result = gridappsd_helper.start_simulation(config)
 
         # Subscribe to output and relay to the client via WebSocket
-        def on_sim_output(headers, message):
-
-            TYPES = {
-                "LinearShuntCompensator": "capacitor",
-                "Breaker": "switch",
-                "Fuse": "switch",
-                "Switch": "switch",
-                "Sectionaliser": "switch",
-                "LoadBreakSwitch": "switch",
-                "Disconnector": "switch",
-                "Recloser": "switch",
-            }
-
-            socketio.emit("sim-output", message)
+        def on_sim_output(headers, message: dict):
+            sim_output = {"timestamp": "", "Analog": [], "Discrete": []}
 
             # Process measurements through the map to emit equipment-level updates
             active_measurement_map = cim_helper.active_measurement_map
             if active_measurement_map:
                 msg = message.get("message", message)
                 measurements = msg.get("measurements", {})
-                timestamp = msg.get("timestamp")
+                sim_output["timestamp"] = msg.get("timestamp")
 
-                switch_updates = []
-                capacitor_updates = []
 
                 for measurment_mRID, measurment_data in measurements.items():
-                    mapping = active_measurement_map.get(measurment_mRID)
-                    if not mapping:
-                        continue
 
-                    equipment_type = mapping.get("conducting_equipment_type", "")
-                    meas_type = mapping.get("measurement_type", "")
+                    if measurment_mRID in active_measurement_map["Analog"]:
+                        mapping = active_measurement_map["Analog"].get(measurment_mRID)
 
-                    # Switch state: Discrete "Pos" measurements carry value 0=open, 1=closed
-                    if (equipment_type in TYPES and TYPES[equipment_type] == "switch") and meas_type == "Pos":
-                        switch_updates.append(
-                            {
-                                "equipment_mrid": mapping.get(
-                                    "conducting_equipment_mrid", ""
-                                ),
-                                "equipment_name": mapping.get(
-                                    "conducting_equipment_name", ""
-                                ),
-                                "equipment_type": equipment_type,
-                                "measurement_mrid": measurment_mRID,
-                                "phases": mapping.get("phases", ""),
-                                "value": measurment_data["value"],
-                                "open": measurment_data["value"] == 0,
-                            }
-                        )
-                    
-                    if (equipment_type in TYPES and TYPES[equipment_type] == "capacitor") and meas_type == "Pos":
-                        capacitor_updates.append(
-                            {
-                                "equipment_mrid": mapping.get(
-                                    "conducting_equipment_mrid", ""
-                                ),
-                                "equipment_name": mapping.get(
-                                    "conducting_equipment_name", ""
-                                ),
-                                "equipment_type": equipment_type,
-                                "measurement_mrid": measurment_mRID,
-                                "phases": mapping.get("phases", ""),
-                                "value": measurment_data["value"],
-                            }
-                        )
-                
-                if switch_updates:
-                    socketio.emit(
-                        "switch-state-update",
-                        {
-                            "timestamp": timestamp,
-                            "switches": switch_updates,
-                        },
-                    )
-                
-                if capacitor_updates:
-                    socketio.emit(
-                        "capacitor-state-update",
-                        {
-                            "timestamp": timestamp,
-                            "capacitors": capacitor_updates,
-                        },
-                    )
+                        if not mapping:
+                            continue
+
+                        eq_type = mapping.get("conducting_equipment_type", "")
+                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
+                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
+                        measurement_type = mapping.get("measurement_type", "")
+
+                        measurment_output = {
+                            "equipment_mrid": eq_mRID,
+                            "equipment_name": conducting_eq_name,
+                            "equipment_type": eq_type,
+                            "measurement_type": measurement_type, # Pos, PNV, VA
+                            "phases": mapping.get("phases", ""),
+                            **measurment_data
+                        }
+
+                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
+                        if normal_limit:
+                            measurment_output["normal_limit"] = normal_limit
+
+                        sim_output["Analog"].append(measurment_output)
+
+                        
+                    if measurment_mRID in active_measurement_map["Discrete"]:
+                        mapping = active_measurement_map["Discrete"].get(measurment_mRID)
+
+                        if not mapping:
+                            continue
+
+                        eq_type = mapping.get("conducting_equipment_type", "")
+                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
+                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
+                        measurement_type = mapping.get("measurement_type", "")
+
+                        measurment_output = {
+                            "equipment_mrid": eq_mRID,
+                            "equipment_name": conducting_eq_name,
+                            "equipment_type": eq_type,
+                            "measurement_type": measurement_type, # Pos, PNV, VA
+                            "phases": mapping.get("phases", ""),
+                            **measurment_data
+                        }
+
+                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
+                        if normal_limit:
+                            measurment_output["normal_limit"] = normal_limit
+
+                        sim_output["Discrete"].append(measurment_output)
+            
+            socketio.emit("sim-output", sim_output)
 
         def on_sim_log(headers, message):
             socketio.emit("sim-log", message)
@@ -605,12 +596,9 @@ def handle_start_simulation(config):
 
 
 @socketio.on("sim-input")
-def handle_sim_input(input):
+def handle_sim_input(input_data):
     try:
-        print("=" * 10 + "Received sim input" + "=" * 10)
-        print(json.dumps(input, indent=2))
-        print("=" * 34)
-        gridappsd_helper.send_simulation_input(input)
+        gridappsd_helper.send_simulation_input(input_data)
         return "", 204
     except Exception as e:
         return {"error": str(e)}
@@ -657,10 +645,12 @@ def hello():
 
 if __name__ == "__main__":
     # Start the Flask-SocketIO server
-    port = int(os.environ.get("FLASK_PORT", 5051))
+    port = int(os.environ.get("FLASK_PORT", 5052))
+    # Bind to loopback for local dev; containers set FLASK_HOST=0.0.0.0
+    host = os.environ.get("FLASK_HOST", "127.0.0.1")
     socketio.run(
         app,
-        host="127.0.0.1",
+        host=host,
         port=port,
         debug=False,
         log_output=True,
