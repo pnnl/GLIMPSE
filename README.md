@@ -68,7 +68,7 @@ cd GLIMPSE/local-server/
 **Option A: UV (Recommended)**
 
 ```bash
-uv add -r requirements.txt --prerelease=allow
+uv sync
 ```
 
 **Option B: VENV**
@@ -108,35 +108,7 @@ If you used VENV or Conda, install requirements:
 pip install -r requirements.txt
 ```
 
-### Step 4: Install CIM-Builder (Required)
-
-CIM-Builder is needed to export modified CIM/XML files.
-
-In `GLIMPSE/local-server/`, clone CIM-Builder:
-
-```bash
-git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
-```
-
-Navigate to the CIM-Builder directory and install it (without dependencies, as it requires an older version of cim-graph):
-
-```bash
-cd CIM-Builder
-```
-
-**With PIP:**
-
-```bash
-python -m pip install . --no-deps
-```
-
-**With UV:**
-
-```bash
-uv pip install . --no-deps
-```
-
-### Step 5: Install GLM Parser
+### Step 4: Install GLM Parser
 
 #### Standard Installation (Windows, Linux, Intel/AMD Mac)
 
@@ -156,14 +128,14 @@ uv pip install glm
 
 You'll need to build the GLM parser from source using Nim.
 
-Clone the GLM parser:
+Clone the glm parser repository i forked:
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
 ```bash
-git clone https://github.com/NREL/glm.git
+git cone https://github.com/itsMando/glm.git
 ```
 
 ```bash
@@ -173,29 +145,26 @@ cd glm
 Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
 
 ```bash
-nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
+nimble -v
 ```
-
-Create a wheel:
 
 ```bash
-python setup.py bdist_wheel
-# or
-python3 setup.py bdist_wheel
+nimble package
+nimble release
 ```
 
-Install the wheel from `dist/` folder:
+Install the python binary distributable from `dist/` folder:
 
 **With PIP:**
 
 ```bash
-pip install dist/<whl-filename>.whl
+pip install dist/*.whl
 ```
 
 **With UV:**
 
 ```bash
-uv pip install dist/<whl-filename>.whl
+uv pip install dist/*.whl
 ```
 
 ## Start GLIMPSE

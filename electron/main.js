@@ -34,8 +34,7 @@ app.commandLine.appendSwitch("enable-unsafe-swiftshader");
 
 const isWSL =
     process.platform === "linux" &&
-    (process.env.WSL_DISTRO_NAME !== undefined ||
-        fs.existsSync("/proc/sys/fs/binfmt_misc/WSLInterop"));
+    (process.env.WSL_DISTRO_NAME !== undefined || fs.existsSync("/proc/sys/fs/binfmt_misc/WSLInterop"));
 if (isWSL) {
     app.commandLine.appendSwitch("ignore-gpu-blocklist");
 }
@@ -188,8 +187,8 @@ const createWindow = () => {
     mainWindow.once("ready-to-show", () => mainWindow.show());
 
     // Open external links in the default browser instead of new Electron windows
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        shell.openExternal(url);
+    mainWindow.webContents.setWindowOpenHandler((details) => {
+        shell.openExternal(details.url);
         return { action: "deny" };
     });
 
@@ -243,8 +242,11 @@ if (!gotSingleInstanceLock) {
     });
 }
 
+// Quit fully when the window is closed — including on macOS, where the
+// default is to keep the app (and our bundled backend) running. We don't
+// want an orphaned server holding the port after the user closes the window.
 app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") app.quit();
+    app.quit();
 });
 
 // Make sure the server is gone before the app exits
