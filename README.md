@@ -68,7 +68,7 @@ cd GLIMPSE/local-server/
 **Option A: UV (Recommended)**
 
 ```bash
-uv add -r requirements.txt --prerelease=allow
+uv sync
 ```
 
 **Option B: VENV**
@@ -108,35 +108,7 @@ If you used VENV or Conda, install requirements:
 pip install -r requirements.txt
 ```
 
-### Step 4: Install CIM-Builder (Required)
-
-CIM-Builder is needed to export modified CIM/XML files.
-
-In `GLIMPSE/local-server/`, clone CIM-Builder:
-
-```bash
-git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
-```
-
-Navigate to the CIM-Builder directory and install it (without dependencies, as it requires an older version of cim-graph):
-
-```bash
-cd CIM-Builder
-```
-
-**With PIP:**
-
-```bash
-python -m pip install . --no-deps
-```
-
-**With UV:**
-
-```bash
-uv pip install . --no-deps
-```
-
-### Step 5: Install GLM Parser
+### Step 4: Install GLM Parser
 
 #### Standard Installation (Windows, Linux, Intel/AMD Mac)
 
@@ -156,14 +128,14 @@ uv pip install glm
 
 You'll need to build the GLM parser from source using Nim.
 
-Clone the GLM parser:
+Clone the glm parser repository i forked:
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
 ```bash
-git clone https://github.com/NREL/glm.git
+git cone https://github.com/itsMando/glm.git
 ```
 
 ```bash
@@ -173,29 +145,26 @@ cd glm
 Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
 
 ```bash
-nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
+nimble -v
 ```
-
-Create a wheel:
 
 ```bash
-python setup.py bdist_wheel
-# or
-python3 setup.py bdist_wheel
+nimble package
+nimble release
 ```
 
-Install the wheel from `dist/` folder:
+Install the python binary distributable from `dist/` folder:
 
 **With PIP:**
 
 ```bash
-pip install dist/<whl-filename>.whl
+pip install dist/*.whl
 ```
 
 **With UV:**
 
 ```bash
-uv pip install dist/<whl-filename>.whl
+uv pip install dist/*.whl
 ```
 
 ## Start GLIMPSE
@@ -207,6 +176,43 @@ npm run dev
 ```
 
 The application will start in development mode. Open your browser and navigate to the provided local address (typically `http://localhost:5173/`) to access GLIMPSE.
+
+## Desktop App (Electron)
+
+GLIMPSE can also run as a standalone desktop application. The Electron shell starts the bundled local server automatically on launch and shuts it down (including all child processes) when the window is closed — no terminal or browser needed.
+
+> [!NOTE]
+> These steps assume you have completed the **Build from Source** setup above (Node dependencies and the Python environment for `local-server/`). The Python environment must include `pyinstaller`, which is listed in both `local-server/requirements.txt` and `local-server/pyproject.toml`.
+
+### Develop in a Desktop Window
+
+Runs the Python backend, the Vite dev server, and Electron together (with hot reload). Closing the Electron window stops all three:
+
+```bash
+npm run electron:dev
+```
+
+### Build an Installer
+
+Installers are built **on and for the OS you are running** (electron-builder cannot cross-compile, e.g. a Windows installer must be built on Windows):
+
+```bash
+npm run dist          # build for the current OS
+npm run dist:linux    # AppImage + .deb   (run on Linux)
+npm run dist:win      # NSIS installer    (run on Windows)
+npm run dist:mac      # .dmg              (run on macOS)
+```
+
+Each `dist` command runs three steps:
+
+1. `vite build` — bundles the React frontend into `dist/`
+2. `pyinstaller server.spec` — freezes the Python backend (with its Python runtime) into `local-server/dist/server/`
+3. `electron-builder` — packages both into an installer in `release/`
+
+The finished installer is written to the `release/` directory. The installed app needs no Node or Python on the target machine — the backend is fully self-contained.
+
+> [!TIP]
+> If `pyinstaller` is not on your PATH, activate the Python environment you created for `local-server/` first (or, with UV, run `uv run pyinstaller server.spec --noconfirm` inside `local-server/`).
 
 ## Run with Docker
 

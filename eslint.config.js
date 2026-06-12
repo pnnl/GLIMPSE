@@ -5,9 +5,18 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'release']),
+  {
+    files: ['electron/**/*.js'],
+    extends: [js.configs.recommended],
+    languageOptions: {
+      globals: globals.node,
+      sourceType: 'commonjs',
+    },
+  },
   {
     files: ['**/*.{js,jsx}'],
+    ignores: ['electron/**'],
     extends: [
       js.configs.recommended,
       reactHooks.configs['recommended-latest'],

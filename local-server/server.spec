@@ -5,8 +5,14 @@ import sys
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = []
-datas += collect_data_files("cimbuilder", include_py_files=True)
+# CIM-Builder is an optional install (see README); skip it when absent
+try:
+    datas += collect_data_files("cimbuilder", include_py_files=True)
+except Exception:
+    pass
 datas += collect_data_files("cimgraph", include_py_files=True)
+# JSON validation schemas loaded at runtime relative to jsonhelper.py
+datas += [("schemas", "schemas")]
 
 hiddenimports = collect_submodules('engineio.async_drivers') + collect_submodules('gevent')
 

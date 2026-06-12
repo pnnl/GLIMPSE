@@ -34,3 +34,7 @@ Dockerfile
 *.njsproj
 *.sln
 *.sw?
+
+# Electron / PyInstaller build outputs (build/ at repo root holds icons and IS tracked)
+release/
+local-server/build/
