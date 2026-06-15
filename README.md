@@ -16,7 +16,7 @@ The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigm
 
 ### Option 1: Pre-Built Installers (Easiest)
 
-**comming soon**
+[Releases](https://github.com/pnnl/GLIMPSE/releases/)
 
 ### Option 2: Build from Source
 
