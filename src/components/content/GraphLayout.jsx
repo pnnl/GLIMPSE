@@ -11,7 +11,7 @@ import { useGraph } from "../../contexts/GraphContext";
 
 // activePanel: "charts" | "legend" | null
 const GraphLayout = () => {
-    const { graphUpdateTrigger, darkMode } = useGraph();
+    const { graphUpdateTrigger, darkMode, newGraphUpdate } = useGraph();
     const [activePanel, setActivePanel] = useState("legend");
     const [simState, setSimState] = useState("inactive");
 
@@ -27,6 +27,19 @@ const GraphLayout = () => {
             unsubSimState();
         };
     });
+
+    // External scripts can push a graph over the socket "load-graph" event.
+    // graphHelper has already rebuilt its graph by the time this fires; we just
+    // bump the update trigger so the renderer remounts and shows it.
+    useEffect(() => {
+        const unsubLoadGraph = socketClientHelper.on("load-graph", () => {
+            newGraphUpdate();
+        });
+
+        return () => {
+            unsubLoadGraph();
+        };
+    }, [newGraphUpdate]);
 
     // Let sigma recalculate after the graph container resizes
     useEffect(() => {

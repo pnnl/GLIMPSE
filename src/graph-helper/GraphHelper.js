@@ -748,6 +748,260 @@ class GraphHelper {
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
     };
 
+    // ============================================================================
+    // EXTERNAL SOCKET API
+    // Methods driven by the socket "load-graph" / "update" / "add-*" / "delete-*"
+    // events so external scripts can load and mutate the live visualization.
+    // ============================================================================
+
+    /**
+     * Loads a graph received over the socket "load-graph" event. `fileData` is the
+     * normalized { name: { objects: [...] } } structure produced by the server for
+     * both GLIMPSE-format and NetworkX node-link payloads. Mirrors the file-upload
+     * flow so the rest of the app reacts the same way. The caller is responsible
+     * for triggering a React re-render (e.g. via the GraphContext) afterwards.
+     * @param {Object} fileData
+     * @param {Object|null} themeData
+     */
+    loadGraphFromData = (fileData, themeData = null) => {
+        if (this.graph.order > 0) {
+            this.clearGraphData();
+            if (typeof window !== "undefined")
+                window.dispatchEvent(new CustomEvent("graph-cleared"));
+        }
+
+        this.isCIM = false;
+        this.setThemeObject(themeData);
+        this.setGraphData(fileData);
+
+        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-loaded"));
+    };
+
+    /**
+     * Applies a color/size/hidden update to a single node or edge.
+     * @param {Object} data - { id, elementType: "node"|"edge", updates: { color, size, hidden } }
+     *   Any value in `updates` may be null/undefined to leave that property unchanged.
+     * @returns {boolean} whether the update was applied
+     */
+    applyUpdate = (data) => {
+        if (!data || typeof data !== "object") {
+            console.warn("[GraphHelper] update: invalid payload.", data);
+            return false;
+        }
+
+        const { id, elementType, updates } = data;
+        if (id === undefined || id === null || !updates || typeof updates !== "object") {
+            console.warn("[GraphHelper] update: payload needs 'id' and an 'updates' object.", data);
+            return false;
+        }
+
+        let setAttr;
+        if (elementType === "node") {
+            if (!this.graph.hasNode(id)) {
+                console.warn(`[GraphHelper] update: node "${id}" not found.`);
+                return false;
+            }
+            setAttr = (key, value) => this.graph.setNodeAttribute(id, key, value);
+        } else if (elementType === "edge") {
+            if (!this.graph.hasEdge(id)) {
+                console.warn(`[GraphHelper] update: edge "${id}" not found.`);
+                return false;
+            }
+            setAttr = (key, value) => this.graph.setEdgeAttribute(id, key, value);
+        } else {
+            console.warn(`[GraphHelper] update: unknown elementType "${elementType}".`);
+            return false;
+        }
+
+        const { color, size, hidden } = updates;
+        // null / undefined means "leave this property unchanged"
+        if (color !== null && color !== undefined) setAttr("color", color);
+        if (size !== null && size !== undefined) setAttr("size", size);
+        if (hidden !== null && hidden !== undefined) setAttr("hidden", hidden);
+
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Adds a single node to the live graph from a GLIMPSE-format object:
+     *   { objectType, elementType: "node", attributes: { id|name, x?, y?, ... } }
+     * @returns {boolean} whether the node was added
+     */
+    addNode = (obj) => {
+        if (!obj || typeof obj !== "object" || !obj.attributes) {
+            console.warn("[GraphHelper] add-node: payload must include an 'attributes' object.", obj);
+            return false;
+        }
+
+        if (!this.#theme || !this.#theme.groups) this.setThemeObject();
+
+        const attributes = obj.attributes;
+        const objectType = obj.objectType ?? obj.name ?? "node";
+        const nodeID = attributes.id ?? attributes.name;
+
+        if (nodeID === undefined || nodeID === null) {
+            console.warn("[GraphHelper] add-node: attributes must include an 'id' or 'name'.", obj);
+            return false;
+        }
+        if (this.graph.hasNode(nodeID)) {
+            console.warn(`[GraphHelper] add-node: node "${nodeID}" already exists.`);
+            return false;
+        }
+
+        // Register a theme entry + type for previously-unseen node types
+        if (!(objectType in this.#theme.groups)) {
+            this.#theme.groups[objectType] = { size: 4, color: this.getRandomColor() };
+        }
+        if (!this.nodeTypes.includes(objectType)) this.nodeTypes.push(objectType);
+
+        // Place the node at the supplied coordinates, or the center of the graph
+        const midX = (this.#boundsCoords.maxX + this.#boundsCoords.minX) / 2;
+        const midY = (this.#boundsCoords.maxY + this.#boundsCoords.minY) / 2;
+        const x = attributes.x !== undefined ? parseFloat(attributes.x) : midX;
+        const y = attributes.y !== undefined ? parseFloat(attributes.y) : midY;
+
+        const node = {
+            label: attributes.name ?? String(nodeID),
+            elementType: "node",
+            group: objectType,
+            attributes,
+            x,
+            y,
+            fixed: false,
+            ...this.#theme.groups[objectType],
+        };
+        node.attributesLabel = this.getTitle(attributes);
+
+        this.objectTypeCount.nodes[objectType] = (this.objectTypeCount.nodes[objectType] ?? 0) + 1;
+
+        this.graph.addNode(nodeID, node);
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Adds a single edge to the live graph from a GLIMPSE-format object:
+     *   { objectType, elementType: "edge", attributes: { id?, from, to, ... } }
+     * Both endpoint nodes must already exist.
+     * @returns {boolean} whether the edge was added
+     */
+    addEdge = (obj) => {
+        if (!obj || typeof obj !== "object" || !obj.attributes) {
+            console.warn("[GraphHelper] add-edge: payload must include an 'attributes' object.", obj);
+            return false;
+        }
+
+        if (!this.#theme || !this.#theme.edgeOptions) this.setThemeObject();
+
+        const attributes = obj.attributes;
+        const objectType = obj.objectType ?? obj.name ?? "edge";
+        const fromNode = attributes.from;
+        const toNode = attributes.to;
+        const edgeID = attributes.id ?? `${fromNode}->${toNode}`;
+
+        if (fromNode === undefined || toNode === undefined) {
+            console.warn("[GraphHelper] add-edge: attributes must include 'from' and 'to'.", obj);
+            return false;
+        }
+        if (!this.graph.hasNode(fromNode) || !this.graph.hasNode(toNode)) {
+            console.warn(
+                `[GraphHelper] add-edge: both endpoints "${fromNode}" and "${toNode}" must exist.`,
+            );
+            return false;
+        }
+        if (this.graph.hasEdge(edgeID)) {
+            console.warn(`[GraphHelper] add-edge: edge "${edgeID}" already exists.`);
+            return false;
+        }
+
+        if (!(objectType in this.#theme.edgeOptions)) {
+            this.#theme.edgeOptions[objectType] = { color: this.getRandomColor(), width: 2 };
+        }
+        if (!this.edgeTypes.includes(objectType)) this.edgeTypes.push(objectType);
+
+        const newEdge = {
+            elementType: "edge",
+            group: objectType,
+            type: "straight",
+            dotColor: "#ff0000",
+            dotSize: 6,
+            dotSpeed: 0.25,
+            dotPhase: Math.random(),
+            flowDirection: 1, // -1 for opposite flow
+            dotCount: 1,
+            attributes: { ...attributes, id: edgeID, from: fromNode, to: toNode },
+            ...this.#theme.edgeOptions[objectType],
+        };
+
+        // color switch edges red if they are open
+        if (objectType === "switch") {
+            newEdge.switchColor = "#ff0000";
+            newEdge.type = "switch";
+            newEdge.switchSize = 8;
+        }
+
+        this.objectTypeCount.edges[objectType] = (this.objectTypeCount.edges[objectType] ?? 0) + 1;
+
+        this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
+        this.assignParallelEdgeCurvatures(this.graph);
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Removes a node (and its attached edges) from the live graph.
+     * Accepts either the node id or an object containing an `id` key.
+     * @returns {boolean} whether the node was removed
+     */
+    deleteNode = (nodeID) => {
+        const id = typeof nodeID === "object" && nodeID !== null ? (nodeID.id ?? nodeID.nodeID) : nodeID;
+
+        if (!this.graph.hasNode(id)) {
+            console.warn(`[GraphHelper] delete-node: node "${id}" not found.`);
+            return false;
+        }
+
+        const group = this.graph.getNodeAttribute(id, "group");
+
+        // Keep edge type counts honest by tallying the edges dropNode will remove
+        this.graph.forEachEdge(id, (_edge, attrs) => {
+            if (attrs.group && this.objectTypeCount.edges[attrs.group] > 0)
+                this.objectTypeCount.edges[attrs.group]--;
+        });
+
+        this.graph.dropNode(id); // also removes attached edges
+        if (group && this.objectTypeCount.nodes[group] > 0) this.objectTypeCount.nodes[group]--;
+
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Removes an edge from the live graph.
+     * Accepts either the edge id or an object containing an `id` key.
+     * @returns {boolean} whether the edge was removed
+     */
+    deleteEdge = (edgeID) => {
+        const id = typeof edgeID === "object" && edgeID !== null ? (edgeID.id ?? edgeID.edgeID) : edgeID;
+
+        if (!this.graph.hasEdge(id)) {
+            console.warn(`[GraphHelper] delete-edge: edge "${id}" not found.`);
+            return false;
+        }
+
+        const group = this.graph.getEdgeAttribute(id, "group");
+        this.graph.dropEdge(id);
+        if (group && this.objectTypeCount.edges[group] > 0) this.objectTypeCount.edges[group]--;
+
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
     export = () => {
         const edgeIDs = this.graph.edges();
         const nodeIDs = this.graph.nodes();

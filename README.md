@@ -290,6 +290,27 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
 
+## Socket Events API
+
+GLIMPSE exposes a [SocketIO](https://socket.io/) event API so external scripts can
+**load graphs** and **update the live visualization** — adding, removing,
+restyling, hiding, and showing nodes and edges in any connected frontend. Both the
+GLIMPSE JSON format and NetworkX node-link data are accepted.
+
+- **Full reference:** [`socket-testing/EVENTS_API.md`](socket-testing/EVENTS_API.md)
+  — payload shapes, field references, the data model, and example clients.
+- **Runnable examples:** [`socket-testing/`](socket-testing/) — connect and exercise
+  every event (`load-graph`, `update`, `add-node`, `add-edge`, `delete-node`,
+  `delete-edge`).
+
+```python
+import socketio, networkx as nx
+sio = socketio.Client(); sio.connect("http://127.0.0.1:5052")
+sio.call("load-graph", nx.node_link_data(nx.karate_club_graph()))
+sio.call("update", {"id": "0", "elementType": "node",
+                    "updates": {"color": "#ff0000", "size": 18, "hidden": None}})
+```
+
 ## Cite as
 
 ```BibTeX

@@ -472,31 +472,113 @@ def get_gridappsd_status():
 # ================================================================================================
 # GLIMPSE WEBSOCKET EVENTS
 # ================================================================================================
+#
+# External-script API. A connected client (e.g. an analysis script) emits these
+# events to drive whatever GLIMPSE frontends are connected. The server validates
+# / normalizes each payload and broadcasts it so every connected frontend updates
+# its visualization. Each handler returns an ack so the emitting client can tell
+# whether the request was accepted.
+#
+#   load-graph  -> payload: a graph in the GLIMPSE objects format (like
+#                  socialExample.json) OR a NetworkX node-link data dump.
+#   update      -> payload: { "id": <str>, "elementType": "node"|"edge",
+#                  "updates": { "color": <str|null>, "size": <num|null>,
+#                  "hidden": <bool|null> } }. Any update value may be null to
+#                  leave that property unchanged.
+#   add-node    -> payload: a single GLIMPSE node object
+#                  { "objectType", "elementType": "node", "attributes": {...} }.
+#   add-edge    -> payload: a single GLIMPSE edge object
+#                  { "objectType", "elementType": "edge",
+#                  "attributes": { "from", "to", ... } }.
+#   delete-node -> payload: the node id (str).
+#   delete-edge -> payload: the edge id (str).
 
 
-@socketio.on("glimpse")
-def glimpse(data):
-    socketio.emit("update-data", data)
+@socketio.on("load-graph")
+def load_graph(data):
+    try:
+        # Accept GLIMPSE objects format or NetworkX node-link data and normalize
+        # it into the { name: { objects: [...] } } shape the frontend consumes.
+        prepared = json_helper.prepare_graph_payload(data)
+        socketio.emit("load-graph", {"data": prepared})
+
+        object_count = sum(len(f.get("objects", [])) for f in prepared.values())
+        return {"status": "ok", "objectCount": object_count}
+    except ValueError as e:
+        print(str(e))
+        return {"error": str(e)}
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": str(e), "traceback": tb}
 
 
-@socketio.on("addNode")
+@socketio.on("update")
+def update_data(data):
+    # Update node/edge color, size, and/or hidden state on the connected frontends.
+    try:
+        if not isinstance(data, dict):
+            return {"error": "Update payload must be a JSON object."}
+
+        object_id = data.get("id")
+        element_type = data.get("elementType")
+        updates = data.get("updates")
+
+        if object_id is None or element_type not in ("node", "edge"):
+            return {
+                "error": "Update payload requires 'id' and 'elementType' ('node' or 'edge')."
+            }
+        if not isinstance(updates, dict):
+            return {"error": "Update payload requires an 'updates' object."}
+
+        # Normalize to the supported update keys; null means "leave unchanged".
+        normalized = {
+            "id": object_id,
+            "elementType": element_type,
+            "updates": {
+                "color": updates.get("color"),
+                "size": updates.get("size"),
+                "hidden": updates.get("hidden"),
+            },
+        }
+        socketio.emit("update-data", normalized)
+        return {"status": "ok"}
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return {"error": str(e), "traceback": tb}
+
+
+@socketio.on("add-node")
 def add_node(new_node_data):
+    if not isinstance(new_node_data, dict) or "attributes" not in new_node_data:
+        return {"error": "add-node requires an object with an 'attributes' key."}
     socketio.emit("add-node", new_node_data)
+    return {"status": "ok"}
 
 
-@socketio.on("addEdge")
+@socketio.on("add-edge")
 def add_edge(new_edge_data):
+    if not isinstance(new_edge_data, dict) or "attributes" not in new_edge_data:
+        return {"error": "add-edge requires an object with an 'attributes' key."}
     socketio.emit("add-edge", new_edge_data)
+    return {"status": "ok"}
 
 
-@socketio.on("deleteNode")
+@socketio.on("delete-node")
 def delete_node(node_id):
+    if not node_id:
+        return {"error": "delete-node requires a node id."}
     socketio.emit("delete-node", node_id)
+    return {"status": "ok"}
 
 
-@socketio.on("deleteEdge")
+@socketio.on("delete-edge")
 def delete_edge(edge_id):
+    if not edge_id:
+        return {"error": "delete-edge requires an edge id."}
     socketio.emit("delete-edge", edge_id)
+    return {"status": "ok"}
 
 
 # ================================================================================================

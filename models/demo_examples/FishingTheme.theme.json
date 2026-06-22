@@ -2,62 +2,62 @@
     "groups": {
         "Location": {
             "size": 5,
-            "image": "/imgs/location.svg",
+            "image": "./imgs/location.svg",
             "type": "nodeImg"
         },
         "City": {
             "size": 5,
-            "image": "/imgs/city.svg",
+            "image": "./imgs/city.svg",
             "type": "nodeImg"
         },
         "FishingCompany": {
             "size": 5,
-            "image": "/imgs/FishingCompany.svg",
+            "image": "./imgs/FishingCompany.svg",
             "type": "nodeImg"
         },
         "Person": {
             "size": 5,
-            "image": "/imgs/person.svg",
+            "image": "./imgs/person.svg",
             "type": "nodeImg"
         },
         "Company": {
             "size": 5,
-            "image": "/imgs/company.svg",
+            "image": "./imgs/company.svg",
             "type": "nodeImg"
         },
         "Organization": {
             "size": 5,
-            "image": "/imgs/Organization.svg",
+            "image": "./imgs/Organization.svg",
             "type": "nodeImg"
         },
         "LogisticsCompany": {
             "size": 5,
-            "image": "/imgs/logisticsCompany.svg",
+            "image": "./imgs/logisticsCompany.svg",
             "type": "nodeImg"
         },
         "Region": {
             "size": 5,
-            "image": "/imgs/region.svg",
+            "image": "./imgs/region.svg",
             "type": "nodeImg"
         },
         "Point": {
             "size": 5,
-            "image": "/imgs/point.svg",
+            "image": "./imgs/point.svg",
             "type": "nodeImg"
         },
         "NGO": {
             "size": 5,
-            "image": "/imgs/NGO.svg",
+            "image": "./imgs/NGO.svg",
             "type": "nodeImg"
         },
         "Commodity": {
             "size": 5,
-            "image": "/imgs/Commodity.svg",
+            "image": "./imgs/Commodity.svg",
             "type": "nodeImg"
         },
         "GovernmentOrg": {
             "size": 5,
-            "image": "/imgs/GovernmentOrg.svg",
+            "image": "./imgs/GovernmentOrg.svg",
             "type": "nodeImg"
         }
     },
