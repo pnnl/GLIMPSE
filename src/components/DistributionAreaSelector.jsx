@@ -79,8 +79,13 @@ const DistributionAreaSelector = () => {
                     sigma,
                     createContoursProgram(nodes, {
                         radius: 75,
-                        border: { color: colorMapRef.current[areaId], thickness: 6 },
-                        levels: [{ color: "#00000000", threshold: 0.5 }],
+                        zoomToRadiusRatioFunction: (x) => x,
+                        // `levels[].color` is the fill (NOT `border`, which only draws the ring).
+                        // The layer renders behind edges/nodes (beforeLayer: "edges"), so a high
+                        // opacity won't hide the graph. `aa` ≈ 67%; use no alpha for fully opaque.
+                        feather: 3,
+                        levels: [{ color: `${colorMapRef.current[areaId]}77`, threshold: 0.65 }],
+                        border: { color: `#00000000`, thickness: 0 },
                     }),
                 );
                 return [cleanup];

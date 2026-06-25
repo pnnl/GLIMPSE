@@ -294,7 +294,7 @@ class CIMHelper:
             for transformer_end in p_transformer.PowerTransformerEnd:  # windings of a transformer
                 if transformer_end.RatioTapChanger is not None:
                     is_regulator = True
-                    for phase in ["AN", "BN", "CN", "A", "B", "C"]:
+                    for phase in ["AN", "BN", "CN"]:
                         new_edge["attributes"][phase] = {
                             "step": transformer_end.RatioTapChanger.step,
                             "tap": transformer_end.RatioTapChanger.mRID,
@@ -312,9 +312,6 @@ class CIMHelper:
                             cim.OrderedPhaseCodeKind.AN,
                             cim.OrderedPhaseCodeKind.BN,
                             cim.OrderedPhaseCodeKind.CN,
-                            cim.OrderedPhaseCodeKind.A,
-                            cim.OrderedPhaseCodeKind.B,
-                            cim.OrderedPhaseCodeKind.C,
                         ]:
                             if tank_end.RatioTapChanger is not None:
                                 is_regulator = True

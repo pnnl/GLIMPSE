@@ -6,6 +6,8 @@ import LegendGraphEvents from "./LegendGraphEvents";
 import { SigmaContainer } from "@react-sigma/core";
 import { EdgeRectangleProgram, createEdgeCompoundProgram } from "sigma/rendering";
 import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
+import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
+import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { createNodeCompoundProgram } from "sigma/rendering";
 import { createNodeImageProgram } from "@sigma/node-image";
@@ -65,6 +67,14 @@ const LegendRenderer = () => {
         return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
     }, []);
 
+    const RegulatorEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, RegulatorProgram]);
+    }, []);
+
+    const TransformerEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, TransformerProgram]);
+    }, []);
+
     return (
         <SigmaContainer
             style={LegendContainerStyles(darkMode)}
@@ -87,6 +97,8 @@ const LegendRenderer = () => {
                 edgeProgramClasses: {
                     straight: EdgeRectangleProgram,
                     switch: SwitchEdgeProgram,
+                    regulator: RegulatorEdgeProgram,
+                    transformer: TransformerEdgeProgram,
                 },
             }}
             graph={MultiGraph}

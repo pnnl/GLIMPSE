@@ -5,6 +5,7 @@ attribute vec4 a_color;
 attribute vec2 a_positionStart;
 attribute vec2 a_positionEnd;
 attribute float a_size;
+attribute float a_curvature;
 attribute vec2 a_corner;
 
 uniform mat3 u_matrix;
@@ -16,8 +17,11 @@ varying vec4 v_color;
 const float bias = 255.0 / 254.0;
 
 void main() {
-  // Place square exactly at the midpoint of the edge
-  vec2 center = (a_positionStart + a_positionEnd) * 0.5;
+  // Place the square on the apex of the (possibly curved) edge so parallel
+  // switches keep their square centered on the visible line. a_curvature == 0
+  // => plain midpoint.
+  vec2 diff = a_positionEnd - a_positionStart;
+  vec2 center = (a_positionStart + a_positionEnd) * 0.5 + 0.5 * vec2(-diff.y, diff.x) * a_curvature;
 
   // Half-size in graph/WebGL space
   float halfSize = a_size * u_correctionRatio / u_sizeRatio;
