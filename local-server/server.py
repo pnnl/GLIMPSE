@@ -415,7 +415,19 @@ def get_models():
     print(f"\nModel IDs Received:\n{req_data}\n")
 
     try:
-        gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
+        # Best-effort: pull distribution-area topology per model from the
+        # GridAPPS-D topology service. If it's unavailable, cim_to_gjs falls
+        # back to deriving areas from the CIM model itself.
+        topology_outputs = {}
+        if gridappsd_helper.is_connected():
+            for model_id in req_data:
+                topo = gridappsd_helper.get_distributed_areas(model_id)
+                if topo:
+                    topology_outputs[model_id] = topo
+
+        gjs = cim_helper.cim_to_gjs(
+            model_IDs=req_data, topology_outputs=topology_outputs
+        )
 
         if gjs is None:
             return jsonify({"error": "No data returned for the given model IDs"}), 404

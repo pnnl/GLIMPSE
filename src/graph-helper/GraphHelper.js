@@ -286,7 +286,21 @@ class GraphHelper {
         const title = [];
 
         for (let [key, val] of Object.entries(attributes)) {
-            title.push(`${key}: ${val}`);
+            // The dist_areas list of nested areas is rendered one area per line
+            // (type: name) so the tooltip card stays narrow instead of one wide
+            // JSON line.
+            if (key === "dist_areas" && Array.isArray(val)) {
+                title.push(`${key}:`);
+                for (const area of val) {
+                    title.push(`  ${area.dist_area_type}: ${area.dist_area_name || area.dist_area_id}`);
+                }
+                continue;
+            }
+
+            // Any other nested array/object would otherwise render as
+            // "[object Object]"; serialize it so the tooltip stays readable.
+            const display = val !== null && typeof val === "object" ? JSON.stringify(val) : val;
+            title.push(`${key}: ${display}`);
         }
 
         return title.join("\n");
@@ -761,14 +775,14 @@ class GraphHelper {
         if (edgeType === "regulator") {
             newEdge.type = "regulator";
             newEdge.iconType = "regulator";
-            newEdge.regulatorSize = 12;
+            newEdge.regulatorSize = 16;
         }
 
         // draw an IEEE transformer symbol in the middle of transformer edges
         if (edgeType === "transformer") {
             newEdge.type = "transformer";
             newEdge.iconType = "transformer";
-            newEdge.transformerSize = 12;
+            newEdge.transformerSize = 16;
         }
 
         this.graph.addNode(nodeID, newNode);
@@ -804,14 +818,14 @@ class GraphHelper {
         if (edgeType === "regulator") {
             newEdge.type = "regulator";
             newEdge.iconType = "regulator";
-            newEdge.regulatorSize = 12;
+            newEdge.regulatorSize = 16;
         }
 
         // draw an IEEE transformer symbol in the middle of transformer edges
         if (edgeType === "transformer") {
             newEdge.type = "transformer";
             newEdge.iconType = "transformer";
-            newEdge.transformerSize = 12;
+            newEdge.transformerSize = 16;
         }
 
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
@@ -1015,14 +1029,14 @@ class GraphHelper {
         if (objectType === "regulator") {
             newEdge.type = "regulator";
             newEdge.iconType = "regulator";
-            newEdge.regulatorSize = 12;
+            newEdge.regulatorSize = 16;
         }
 
         // draw an IEEE transformer symbol in the middle of transformer edges
         if (objectType === "transformer") {
             newEdge.type = "transformer";
             newEdge.iconType = "transformer";
-            newEdge.transformerSize = 12;
+            newEdge.transformerSize = 16;
         }
 
         this.objectTypeCount.edges[objectType] = (this.objectTypeCount.edges[objectType] ?? 0) + 1;
@@ -1214,20 +1228,35 @@ class GraphHelper {
             }
         }
 
-        // Collect distribution area metadata from node attributes
+        // Collect distribution area metadata from node attributes. A node may
+        // belong to several nested areas (dist_areas list); fall back to the
+        // flat dist_area_* fields for backward compatibility.
         this.distributionAreas = {};
+        const collectArea = (dist_area_type, dist_area_id, dist_area_name) => {
+            if (!dist_area_type || !dist_area_id) return;
+            if (!this.distributionAreas[dist_area_type]) {
+                this.distributionAreas[dist_area_type] = [];
+            }
+            if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
+                this.distributionAreas[dist_area_type].push({
+                    name: dist_area_name || dist_area_id,
+                    id: dist_area_id,
+                });
+            }
+        };
         newGraph.forEachNode((_nodeId, attrs) => {
-            const { dist_area_type, dist_area_id, dist_area_name } = attrs.attributes || {};
-            if (dist_area_type && dist_area_id) {
-                if (!this.distributionAreas[dist_area_type]) {
-                    this.distributionAreas[dist_area_type] = [];
-                }
-                if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
-                    this.distributionAreas[dist_area_type].push({
-                        name: dist_area_name || dist_area_id,
-                        id: dist_area_id,
-                    });
-                }
+            const attributes = attrs.attributes || {};
+            const areas = attributes.dist_areas;
+            if (Array.isArray(areas) && areas.length > 0) {
+                areas.forEach((a) =>
+                    collectArea(a.dist_area_type, a.dist_area_id, a.dist_area_name),
+                );
+            } else {
+                collectArea(
+                    attributes.dist_area_type,
+                    attributes.dist_area_id,
+                    attributes.dist_area_name,
+                );
             }
         });
 
@@ -1296,16 +1325,16 @@ class GraphHelper {
                     if (objectType === "regulator") {
                         newEdge.type = "regulator";
                         newEdge.iconType = "regulator";
-                        newEdge.regulatorSize = 12;
+                        newEdge.regulatorSize = 16;
                     } else if (objectType === "transformer") {
                         if (attributes?.class_type === "regulator") {
                             newEdge.type = "regulator";
                             newEdge.iconType = "regulator";
-                            newEdge.regulatorSize = 12;
+                            newEdge.regulatorSize = 16;
                         } else {
                             newEdge.type = "transformer";
                             newEdge.iconType = "transformer";
-                            newEdge.transformerSize = 12;
+                            newEdge.transformerSize = 16;
                         }
                     }
 

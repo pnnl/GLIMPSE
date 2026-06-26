@@ -1,6 +1,7 @@
 import os
 import logging
 import socket
+import json
 from collections.abc import Callable
 from enum import Enum
 from gridappsd import GridAPPSD, topics
@@ -37,6 +38,7 @@ class GridAPPSDHelper:
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
         self.current_limit_map = {}
+        self.distribution_area_map = {}
 
         self._available: bool = False
 
@@ -146,6 +148,38 @@ class GridAPPSDHelper:
             logger.error(f"Failed to retrieve models: {e}")
             raise GridAPPSDError(f"Failed to retrieve models: {e}") from e
 
+    def get_distributed_areas(self, model_mrid: str, timeout: int = 30) -> dict | None:
+        """
+        Request the distributed-areas topology for a model from the GridAPPS-D
+        topology service. The response shape matches ieee123_topo.json and is
+        consumed by CIMHelper to tag connectivity nodes with distribution areas.
+
+        Returns the topology dict, or None if the service is unavailable / returns
+        nothing (callers should fall back to deriving areas from the CIM model).
+        """
+        self._ensure_connected()
+        topic = "goss.gridappsd.request.data.cimtopology"
+        message = {
+            "requestType": "GET_DISTRIBUTED_AREAS",
+            "mRID": model_mrid,
+            "resultFormat": "JSON",
+        }
+        try:
+            response = self.gapps.get_response(topic, message, timeout=timeout)
+        except Exception as e:
+            # The topology service may not be running yet; don't break model load.
+            logger.warning(f"Topology service request failed for {model_mrid}: {e}")
+            return None
+
+        if not response or "error" in response:
+            logger.warning(f"No topology returned for {model_mrid}: {response}")
+            return None
+
+        # Some GridAPPS-D services wrap the payload under a "data" key.
+        if "DistributionArea" not in response and isinstance(response.get("data"), dict):
+            return response["data"]
+        return response
+
     # ─── Simulation Lifecycle ─────────────────────────────────────────
 
     def start_simulation(self, sim_config: dict) -> dict:
@@ -180,7 +214,7 @@ class GridAPPSDHelper:
                 res = self.gapps.get_response(topics.CONFIG, message, timeout=30)
                 for current in res["data"]["limits"]["currents"]:
                     self.current_limit_map[current["id"]] = current
-
+            
             self.sim_state = SimulationState.RUNNING
             logger.info(f"Simulation started: {self.sim_id}")
             return {"simulation_id": self.sim_id, "state": self.sim_state.value}

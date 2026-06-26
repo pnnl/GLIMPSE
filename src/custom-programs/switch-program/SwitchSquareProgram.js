@@ -2,10 +2,11 @@ import { floatColor } from "sigma/utils";
 import { EdgeProgram } from "sigma/rendering";
 import FRAGMENT_SHADER_SOURCE from "./switch-square.frag.glsl.js";
 import VERTEX_SHADER_SOURCE from "./switch-square.vert.glsl.js";
+import { iconFadeForOrder } from "../../utils/icon-lod";
 
 const { FLOAT, UNSIGNED_BYTE } = WebGLRenderingContext;
 
-const UNIFORMS = ["u_matrix", "u_sizeRatio", "u_correctionRatio"];
+const UNIFORMS = ["u_matrix", "u_sizeRatio", "u_correctionRatio", "u_fade"];
 
 export default class SwitchSquareProgram extends EdgeProgram {
     getDefinition() {
@@ -60,10 +61,11 @@ export default class SwitchSquareProgram extends EdgeProgram {
     }
 
     setUniforms(params, { gl, uniformLocations }) {
-        const { u_matrix, u_sizeRatio, u_correctionRatio } = uniformLocations;
+        const { u_matrix, u_sizeRatio, u_correctionRatio, u_fade } = uniformLocations;
 
         gl.uniformMatrix3fv(u_matrix, false, params.matrix);
         gl.uniform1f(u_sizeRatio, params.sizeRatio);
         gl.uniform1f(u_correctionRatio, params.correctionRatio);
+        gl.uniform1f(u_fade, iconFadeForOrder(this.renderer.getGraph().order));
     }
 }

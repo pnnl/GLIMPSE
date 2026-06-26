@@ -8,23 +8,25 @@ import { IoPlay, IoStop } from "react-icons/io5";
 import { useGraph } from "../../contexts/GraphContext";
 import "../../styles/GraphControls.css";
 
-/**
- * Custom replacements for sigma's built-in ZoomControl, FullScreenControl and
- * LayoutForceAtlas2Control. Gives us direct control over zoom, centering,
- * fullscreen and a start/stop ForceAtlas2 layout backed by a web worker.
- *
- * `layoutSettings` is the resolved FA2 settings object (see getFA2Settings).
- */
-const GraphControls = ({ layoutSettings }) => {
+const GraphControls = () => {
     const { darkMode } = useGraph();
     const sigma = useSigma();
     const { zoomIn, zoomOut, reset } = useCamera();
     const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
 
-    // FA2 web-worker supervisor: runs the layout off the main thread.
-    // `start`/`stop` control the worker; `isRunning` reflects its state.
     const { start, stop, kill, isRunning } = useWorkerLayoutForceAtlas2({
-        settings: layoutSettings,
+        settings: {
+            barnesHutOptimize: sigma.getGraph().order > 2_500,
+            barnesHutTheta: 0.5,
+            linLogMode: false,
+            adjustSizes: false,
+            edgeWeightInfluence: 1,
+            outboundAttractionDistribution: false,
+            scalingRatio: 1,
+            gravity: 1,
+            strongGravityMode: false,
+            slowDown: 5,
+        },
     });
 
     // Make sure the worker is torn down when the controls unmount.
@@ -60,7 +62,9 @@ const GraphControls = ({ layoutSettings }) => {
         const centerX = (minX + maxX) / 2;
         const centerY = (minY + maxY) / 2;
         const spread = Math.max(maxX - minX, maxY - minY);
-        const ratio = Math.min(5, Math.max(0.05, spread * 1.2));
+        // 1.05 → tight fit: the graph sits just barely inside the viewport with a
+        // sliver of margin so edge nodes aren't clipped. Raise for more padding.
+        const ratio = Math.min(5, Math.max(0.05, spread * 0.95));
 
         sigma.getCamera().animate({ x: centerX, y: centerY, ratio }, { duration: 500 });
     };
