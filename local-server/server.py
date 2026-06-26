@@ -730,7 +730,7 @@ def handle_stop_simulation(sim_id):
 @app.route("/")
 def hello():
     """Basic API information endpoint"""
-    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.7.0-alpha"}
+    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.7.1"}
 
 
 # ================================================================================================
