@@ -1,14 +1,14 @@
 import { floatColor } from "sigma/utils";
 import { EdgeProgram } from "sigma/rendering";
-import FRAGMENT_SHADER_SOURCE from "./switch-square.frag.glsl.js";
-import VERTEX_SHADER_SOURCE from "./switch-square.vert.glsl.js";
+import FRAGMENT_SHADER_SOURCE from "./transformer.frag.glsl.js";
+import VERTEX_SHADER_SOURCE from "./transformer.vert.glsl.js";
 import { iconFadeForOrder } from "../../utils/icon-lod";
 
 const { FLOAT, UNSIGNED_BYTE } = WebGLRenderingContext;
 
 const UNIFORMS = ["u_matrix", "u_sizeRatio", "u_correctionRatio", "u_fade"];
 
-export default class SwitchSquareProgram extends EdgeProgram {
+export default class TransformerProgram extends EdgeProgram {
     getDefinition() {
         return {
             VERTICES: 6,
@@ -42,10 +42,10 @@ export default class SwitchSquareProgram extends EdgeProgram {
         const x2 = targetData.x;
         const y2 = targetData.y;
 
-        // switchColor drives open (#4aff4a) vs closed (#ff0000)
-        const color = floatColor(data.switchColor || "#ff0000");
-        const squareSize = data.switchSize || 10;
-        // Match the line's curvature so the square sits on a curved parallel edge.
+        // Single-color IEEE transformer symbol; defaults to the transformer edge color.
+        const color = floatColor(data.transformerColor || data.color || "#009E73");
+        const iconSize = data.transformerSize || 14;
+        // Match the line's curvature so the icon sits on a curved parallel edge.
         const curvature = data.curvature || 0;
 
         const array = this.array;
@@ -54,7 +54,7 @@ export default class SwitchSquareProgram extends EdgeProgram {
         array[startIndex++] = y1;
         array[startIndex++] = x2;
         array[startIndex++] = y2;
-        array[startIndex++] = squareSize;
+        array[startIndex++] = iconSize;
         array[startIndex++] = curvature;
         array[startIndex++] = color;
         array[startIndex++] = edgeIndex;

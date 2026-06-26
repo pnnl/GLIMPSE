@@ -1,7 +1,6 @@
 import "@react-sigma/core/lib/style.css";
 import { useEffect, useMemo, useState } from "react";
-import { SigmaContainer, ControlsContainer, ZoomControl, FullScreenControl } from "@react-sigma/core";
-import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
+import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
 import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
@@ -20,8 +19,11 @@ import {
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
 import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
+import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
+import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import { getFA2Settings } from "../../utils/fa2-presets";
 import DistributionAreaSelector from "../DistributionAreaSelector";
+import GraphControls from "./GraphControls";
 
 const GraphRenderer = () => {
     const [layoutSettings, setLayoutSettings] = useState({});
@@ -54,6 +56,28 @@ const GraphRenderer = () => {
 
     const SwitchEdgeProgram = useMemo(() => {
         return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
+    }, []);
+
+    const RegulatorEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, RegulatorProgram]);
+    }, []);
+
+    const TransformerEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, TransformerProgram]);
+    }, []);
+
+    // Curved variants: a curved line + the same icon, used when parallel edges
+    // between two nodes are fanned out so the icon stays on the visible curve.
+    const CurvedSwitchEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, SwitchSquareProgram]);
+    }, []);
+
+    const CurvedRegulatorEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, RegulatorProgram]);
+    }, []);
+
+    const CurvedTransformerEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, TransformerProgram]);
     }, []);
 
     const customNodeReducer = (_n, attrs) => {
@@ -93,7 +117,8 @@ const GraphRenderer = () => {
         if (!graphHelper.isHighlighted(attrs.group)) {
             const inactiveColor = "rgba(145, 145, 145, 0.7)";
 
-            if (attrs.type === "switch") {
+            // Key off iconType (not type) so curved parallel variants dim too.
+            if (attrs.iconType === "switch") {
                 return {
                     ...attrs,
                     color: inactiveColor,
@@ -101,6 +126,26 @@ const GraphRenderer = () => {
                     size: 1,
                     switchColor: inactiveColor,
                     switchSize: 2,
+                };
+            }
+
+            if (attrs.iconType === "regulator") {
+                return {
+                    ...attrs,
+                    color: inactiveColor,
+                    label: "",
+                    size: 1,
+                    regulatorColor: inactiveColor,
+                };
+            }
+
+            if (attrs.iconType === "transformer") {
+                return {
+                    ...attrs,
+                    color: inactiveColor,
+                    label: "",
+                    size: 1,
+                    transformerColor: inactiveColor,
                 };
             }
 
@@ -127,17 +172,24 @@ const GraphRenderer = () => {
                 minCameraRatio: 0.02,
                 maxCameraRatio: null,
                 renderEdgeLabels: true,
-                itemSizesReference: "screen",
+                itemSizesReference: "screen", // sizes in screen px; pairs with zoomToSizeRatioFunction
                 autoRescale: true,
                 autoCenter: true,
                 doubleClickTimeout: 300,
                 doubleClickZoomingRatio: 2.2,
                 doubleClickZoomingDuration: 200,
                 inertiaDuration: 200,
+                // ratio ≈ 1 at full view, < 1 zoomed in, > 1 zoomed out.
+                // Asymmetric on purpose: zoomed in (≤1) keeps the 0.3 detail curve
+                // you liked; zoomed out (>1) uses a steeper 0.7 exponent so nodes
+                // shrink faster and the topology shows instead of nodes taking over.
+                // Both branches meet at 1.0 at full view. Dial = the 0.7 (higher =
+                // nodes vanish faster as you zoom out).
+                zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, 0.2),
                 inertiaRatio: 3,
                 cameraPanBoundaries: null,
                 zoomDuration: 250,
-                zoomingRatio: 1.7,
+                zoomingRatio: 1.5,
                 labelDensity: 0.7,
                 labelSize: 13,
                 labelGridCellSize: 80,
@@ -158,6 +210,11 @@ const GraphRenderer = () => {
                     curved: EdgeCurveProgram,
                     animated: AnimatedStraightEdgeProgram,
                     switch: SwitchEdgeProgram,
+                    regulator: RegulatorEdgeProgram,
+                    transformer: TransformerEdgeProgram,
+                    curvedSwitch: CurvedSwitchEdgeProgram,
+                    curvedRegulator: CurvedRegulatorEdgeProgram,
+                    curvedTransformer: CurvedTransformerEdgeProgram,
                 },
                 nodeReducer: customNodeReducer,
                 edgeReducer: customEdgeReducer,
@@ -169,10 +226,8 @@ const GraphRenderer = () => {
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-left"}>
                 <DistributionAreaSelector />
             </ControlsContainer>
-            <ControlsContainer position={"bottom-left"}>
-                <ZoomControl />
-                <FullScreenControl />
-                <LayoutForceAtlas2Control settings={{ settings: layoutSettings }} />
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
+                <GraphControls layoutSettings={layoutSettings} />
             </ControlsContainer>
         </SigmaContainer>
     );

@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import { TreeSelect } from "antd";
+import { TreeSelect, message } from "antd";
 import { useSigma } from "@react-sigma/core";
 import { bindWebGLLayer, createContoursProgram } from "@sigma/layer-webgl";
 import iwanthue from "iwanthue";
 import graphHelper from "../graph-helper/GraphHelper";
+
+// Each highlighted area is a separate full-canvas WebGL contour layer, so GPU
+// memory/draw cost scales linearly with the selection. Cap how many can render
+// at once to avoid exhausting the WebGL context (which crashes the canvas) on
+// large models with hundreds of distribution areas.
+const MAX_HIGHLIGHT_AREAS = 10;
 
 const buildTreeData = (areas) =>
     Object.entries(areas).map(([type, areaList]) => ({
@@ -12,6 +18,16 @@ const buildTreeData = (areas) =>
         selectable: false,
         children: areaList.map(({ name, id }) => ({ title: name, value: id })),
     }));
+
+// A node can belong to several nested areas (dist_areas list); fall back to the
+// flat dist_area_id for backward compatibility.
+const nodeInArea = (attrs, areaId) => {
+    const a = attrs.attributes || {};
+    if (Array.isArray(a.dist_areas)) {
+        return a.dist_areas.some((d) => d.dist_area_id === areaId);
+    }
+    return a.dist_area_id === areaId;
+};
 
 const DistributionAreaSelector = () => {
     const [treeData, setTreeData] = useState([]);
@@ -49,8 +65,12 @@ const DistributionAreaSelector = () => {
     useEffect(() => {
         if (!sigma || selectedAreas.length === 0) return;
 
+        // Hard cap the rendered set so we never exceed the WebGL layer budget,
+        // even if the selection was set programmatically.
+        const areasToRender = selectedAreas.slice(0, MAX_HIGHLIGHT_AREAS);
+
         // Assign a stable color to each newly selected area
-        const newAreaIds = selectedAreas.filter((id) => !colorMapRef.current[id]);
+        const newAreaIds = areasToRender.filter((id) => !colorMapRef.current[id]);
         if (newAreaIds.length > 0) {
             const colors = iwanthue(newAreaIds.length);
             newAreaIds.forEach((id, i) => {
@@ -59,17 +79,15 @@ const DistributionAreaSelector = () => {
         }
         // Drop colors for areas that are no longer selected
         Object.keys(colorMapRef.current).forEach((id) => {
-            if (!selectedAreas.includes(id)) delete colorMapRef.current[id];
+            if (!areasToRender.includes(id)) delete colorMapRef.current[id];
         });
 
         // Raise the listener cap so sigma doesn't warn on many simultaneous layers
-        sigma.setMaxListeners(selectedAreas.length + 10);
+        sigma.setMaxListeners(areasToRender.length + 10);
 
         // Build one WebGL contour layer per selected area
-        const cleanups = selectedAreas.flatMap((areaId) => {
-            const nodes = graphHelper.graph.filterNodes(
-                (_n, attrs) => attrs.attributes?.dist_area_id === areaId,
-            );
+        const cleanups = areasToRender.flatMap((areaId) => {
+            const nodes = graphHelper.graph.filterNodes((_n, attrs) => nodeInArea(attrs, areaId));
 
             if (nodes.length === 0) return [];
 
@@ -79,8 +97,13 @@ const DistributionAreaSelector = () => {
                     sigma,
                     createContoursProgram(nodes, {
                         radius: 75,
-                        border: { color: colorMapRef.current[areaId], thickness: 6 },
-                        levels: [{ color: "#00000000", threshold: 0.5 }],
+                        zoomToRadiusRatioFunction: (x) => x,
+                        // `levels[].color` is the fill (NOT `border`, which only draws the ring).
+                        // The layer renders behind edges/nodes (beforeLayer: "edges"), so a high
+                        // opacity won't hide the graph. `aa` ≈ 67%; use no alpha for fully opaque.
+                        feather: 3,
+                        levels: [{ color: `${colorMapRef.current[areaId]}77`, threshold: 0.65 }],
+                        border: { color: `#00000000`, thickness: 0 },
                     }),
                 );
                 return [cleanup];
@@ -96,9 +119,9 @@ const DistributionAreaSelector = () => {
         let minY = Infinity;
         let maxY = -Infinity;
 
-        selectedAreas.forEach((areaId) => {
+        areasToRender.forEach((areaId) => {
             graphHelper.graph
-                .filterNodes((_n, attrs) => attrs.attributes?.dist_area_id === areaId)
+                .filterNodes((_n, attrs) => nodeInArea(attrs, areaId))
                 .forEach((nodeId) => {
                     const d = sigma.getNodeDisplayData(nodeId);
                     if (d) {
@@ -114,12 +137,27 @@ const DistributionAreaSelector = () => {
             const centerX = (minX + maxX) / 2;
             const centerY = (minY + maxY) / 2;
             const spread = Math.max(maxX - minX, maxY - minY);
-            const ratio = Math.min(5, Math.max(0.05, spread * 1.2));
+            const ratio = Math.min(5, Math.max(0.05, spread * 1.15));
             sigma.getCamera().animate({ x: centerX, y: centerY, ratio }, { duration: 800 });
         }
 
         return () => cleanups.forEach((fn) => fn());
     }, [selectedAreas, sigma]);
+
+    // Cap the selection so we never spin up more WebGL layers than the GPU can
+    // handle; warn the user when their selection is truncated.
+    const handleChange = (values) => {
+        const next = values ?? [];
+        if (next.length > MAX_HIGHLIGHT_AREAS) {
+            message.warning(
+                `Only ${MAX_HIGHLIGHT_AREAS} distribution areas can be highlighted at once. ` +
+                    `Showing the first ${MAX_HIGHLIGHT_AREAS} of ${next.length}.`,
+            );
+            setSelectedAreas(next.slice(0, MAX_HIGHLIGHT_AREAS));
+            return;
+        }
+        setSelectedAreas(next);
+    };
 
     if (treeData.length === 0) return null;
 
@@ -135,7 +173,8 @@ const DistributionAreaSelector = () => {
             treeCheckable
             showCheckedStrategy={TreeSelect.SHOW_CHILD}
             treeNodeFilterProp="title"
-            onChange={(values) => setSelectedAreas(values ?? [])}
+            maxTagCount="responsive"
+            onChange={handleChange}
         />
     );
 };

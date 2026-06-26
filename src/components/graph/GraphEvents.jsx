@@ -50,6 +50,10 @@ const GraphEvents = () => {
             setDraggedNode(null);
         };
 
+        sigma.on("afterRender", () => {
+            if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+        });
+
         registerEvents({
             clickNode: (e) => console.log(graphHelper.graph.getNodeAttributes(e.node)),
             downNode: (e) => {

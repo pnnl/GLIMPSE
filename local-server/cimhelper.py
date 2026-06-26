@@ -78,17 +78,27 @@ class CIMHelper:
         return feeder_model
 
     # gjs: GLIMPSE JSON Structure
-    def cim_to_gjs( self, model_IDs: list[str] | None = None, filepaths: list[str] | None = None):
+    def cim_to_gjs(
+        self,
+        model_IDs: list[str] | None = None,
+        filepaths: list[str] | None = None,
+        topology_outputs: dict[str, dict] | None = None,
+    ):
+        """
+        topology_outputs: optional { key -> GridAPPS-D topology-service JSON },
+        where key is the model id (for model_IDs) or the file basename (for
+        filepaths). When a model's topology output is present, distribution
+        areas are sourced from it; otherwise they fall back to the CIM model.
+        """
+        topology_outputs = topology_outputs or {}
         self.active_measurement_map = {"Discrete": {}, "Analog": {}}  # Reset measurement map for new model(s)
         if model_IDs is not None:
             gjs = {id: {"objects": []} for id in model_IDs}
 
             for id in model_IDs:
-                result = self._parse_model(model_id=id)
-                if isinstance(result, dict) and "error" in result:
-                    gjs[id]["objects"] = result
-                else:
-                    gjs[id]["objects"] = result
+                gjs[id]["objects"] = self._parse_model(
+                    model_id=id, topology_json=topology_outputs.get(id)
+                )
 
             return gjs
 
@@ -97,15 +107,18 @@ class CIMHelper:
 
             for path in filepaths:
                 filename = os.path.basename(path)
-                result = self._parse_model(filepath=path)
-                if isinstance(result, dict) and "error" in result:
-                    gjs[filename]["objects"] = result
-                else:
-                    gjs[filename]["objects"] = result
+                gjs[filename]["objects"] = self._parse_model(
+                    filepath=path, topology_json=topology_outputs.get(filename)
+                )
 
             return gjs
 
-    def _parse_model(self, model_id: str | None = None, filepath: str | None = None):
+    def _parse_model(
+        self,
+        model_id: str | None = None,
+        filepath: str | None = None,
+        topology_json: dict | None = None,
+    ):
         """
         Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
         """
@@ -124,7 +137,6 @@ class CIMHelper:
 
                 # cim_utils.get_all_line_data(self._FEEDERS[feeder_id])
                 self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
-                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
                 self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegmentPhase)
                 self.FEEDERS[feeder_id].get_all_edges(cim.OverheadWireInfo)
                 self.FEEDERS[feeder_id].get_all_edges(cim.ConcentricNeutralCableInfo)
@@ -135,8 +147,15 @@ class CIMHelper:
                 self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTank)
                 self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTankEnd)
                 self.FEEDERS[feeder_id].get_all_edges(cim.PowerTransformerEnd)
-                self.FEEDERS[feeder_id].get_all_edges(cim.SubSchedulingArea)
                 self.FEEDERS[feeder_id].get_all_edges(cim.RatioTapChanger)
+
+                # Distribution areas (for area highlighting in the frontend).
+                # Load most-general to most-specific; the area->node map below
+                # resolves the tightest containing area for each node.
+                self.FEEDERS[feeder_id].get_all_edges(cim.DistributionArea)
+                self.FEEDERS[feeder_id].get_all_edges(cim.FeederArea)
+                self.FEEDERS[feeder_id].get_all_edges(cim.SwitchArea)
+                self.FEEDERS[feeder_id].get_all_edges(cim.SecondaryArea)
 
                 # cim_utils.get_all_load_data(self._FEEDERS[feeder_id])
                 self.FEEDERS[feeder_id].get_all_edges(cim.EnergyConsumer)
@@ -199,7 +218,21 @@ class CIMHelper:
             "NonConformLoad": "load",
         }
 
-        for node in self.FEEDERS[feeder_id].graph[cim.ConnectivityNode].values():
+        # Track equipment we've already emitted as a node so the same
+        # single-terminal device isn't added twice if it shows up on
+        # multiple connectivity nodes.
+        seen_equipment: set = set()
+
+        # Map every connectivity node to all the distribution areas containing
+        # it (FeederArea / SwitchArea / SecondaryArea), ordered general ->
+        # specific. Prefer the GridAPPS-D topology-service output when provided;
+        # otherwise derive the areas straight from the CIM model.
+        if topology_json:
+            dist_area_map = self._build_topology_area_map(topology_json, feeder_id)
+        else:
+            dist_area_map = self._build_distribution_area_map(feeder_id)
+
+        for node in self.FEEDERS[feeder_id].graph.get(cim.ConnectivityNode, {}).values():
             new_node = {
                 "objectType": "connectivity_node",
                 "elementType": "node",
@@ -210,8 +243,16 @@ class CIMHelper:
                 },
             }
 
+            # A node may belong to several nested areas at once. Expose the full
+            # list for nested highlighting, and keep the flat dist_area_* fields
+            # (set to the most specific area) for backward compatibility.
+            areas = dist_area_map.get(node.mRID)
+            if areas:
+                new_node["attributes"]["dist_areas"] = areas
+                new_node["attributes"].update(areas[-1])
+
             coordinates = self.find_shared_coordinates(node)
-            if coordinates["x"] and coordinates["y"]:
+            if coordinates["x"] is not None and coordinates["y"] is not None:
                 new_node["attributes"]["x"] = coordinates["x"]
                 new_node["attributes"]["y"] = coordinates["y"]
 
@@ -221,8 +262,8 @@ class CIMHelper:
                 if equipment is not None:
                     class_type = equipment.__class__.__name__
 
-
-                    if class_type in TYPES:
+                    if class_type in TYPES and equipment.mRID not in seen_equipment:
+                        seen_equipment.add(equipment.mRID)
                         new_obj = {
                             "objectType": TYPES[class_type],
                             "elementType": "node",
@@ -234,8 +275,6 @@ class CIMHelper:
                             },
                         }
 
-                        # Get distribution area info if available
-                        self._add_distribution_area_info(equipment, new_node)
                         self._add_attributes(equipment, new_obj)
                         objects.append(new_obj)
 
@@ -254,14 +293,22 @@ class CIMHelper:
             self._add_attributes(node, new_node)
             objects.append(new_node)
 
-        for line in self.FEEDERS[feeder_id].graph[cim.ACLineSegment].values():
+        for line in self.FEEDERS[feeder_id].graph.get(cim.ACLineSegment, {}).values():
+            terminals = line.Terminals
+            if (
+                len(terminals) < 2
+                or terminals[0].ConnectivityNode is None
+                or terminals[1].ConnectivityNode is None
+            ):
+                continue
+
             new_edge = {
                 "objectType": self.classify_line(line),
                 "elementType": "edge",
                 "attributes": {
                     "id": line.mRID,
-                    "from": line.Terminals[0].ConnectivityNode.mRID,
-                    "to": line.Terminals[1].ConnectivityNode.mRID,
+                    "from": terminals[0].ConnectivityNode.mRID,
+                    "to": terminals[1].ConnectivityNode.mRID,
                     "class_type": line.__class__.__name__,
                     "length": line.length,
                     "feeder_id": feeder_id,
@@ -286,6 +333,8 @@ class CIMHelper:
             }
 
             for terminal in p_transformer.Terminals:
+                if terminal.ConnectivityNode is None:
+                    continue
                 if terminal.sequenceNumber == 1:
                     new_edge["attributes"]["from"] = terminal.ConnectivityNode.mRID
                 elif terminal.sequenceNumber == 2:
@@ -294,7 +343,7 @@ class CIMHelper:
             for transformer_end in p_transformer.PowerTransformerEnd:  # windings of a transformer
                 if transformer_end.RatioTapChanger is not None:
                     is_regulator = True
-                    for phase in ["AN", "BN", "CN", "A", "B", "C"]:
+                    for phase in ["AN", "BN", "CN"]:
                         new_edge["attributes"][phase] = {
                             "step": transformer_end.RatioTapChanger.step,
                             "tap": transformer_end.RatioTapChanger.mRID,
@@ -312,9 +361,6 @@ class CIMHelper:
                             cim.OrderedPhaseCodeKind.AN,
                             cim.OrderedPhaseCodeKind.BN,
                             cim.OrderedPhaseCodeKind.CN,
-                            cim.OrderedPhaseCodeKind.A,
-                            cim.OrderedPhaseCodeKind.B,
-                            cim.OrderedPhaseCodeKind.C,
                         ]:
                             if tank_end.RatioTapChanger is not None:
                                 is_regulator = True
@@ -339,6 +385,14 @@ class CIMHelper:
         for cim_type in cim_switch_types:
             if cim_type in self.FEEDERS[feeder_id].graph:
                 for switch_obj in self.FEEDERS[feeder_id].graph[cim_type].values():
+                    switch_terminals = switch_obj.Terminals
+                    if (
+                        len(switch_terminals) < 2
+                        or switch_terminals[0].ConnectivityNode is None
+                        or switch_terminals[1].ConnectivityNode is None
+                    ):
+                        continue
+
                     # Collect measurement MRIDs associated with this switch
                     measurement_mrids = []
                     if hasattr(switch_obj, "Measurements") and switch_obj.Measurements:
@@ -367,8 +421,8 @@ class CIMHelper:
                         "elementType": "edge",
                         "attributes": {
                             "id": switch_obj.mRID,
-                            "from": switch_obj.Terminals[0].ConnectivityNode.mRID,
-                            "to": switch_obj.Terminals[1].ConnectivityNode.mRID,
+                            "from": switch_terminals[0].ConnectivityNode.mRID,
+                            "to": switch_terminals[1].ConnectivityNode.mRID,
                             "class_type": switch_obj.__class__.__name__,
                             "normalStatus": "OPEN" if normal_open else "CLOSED",
                             "open": switch_status,
@@ -384,7 +438,7 @@ class CIMHelper:
                     self._add_attributes(switch_obj, new_edge)
                     objects.append(new_edge)
 
-        for battery in self.FEEDERS[feeder_id].graph[cim.BatteryUnit].values():
+        for battery in self.FEEDERS[feeder_id].graph.get(cim.BatteryUnit, {}).values():
             new_battery = {
                 "objectType": "battery",
                 "elementType": "node",
@@ -399,7 +453,11 @@ class CIMHelper:
             self._add_attributes(battery, new_battery)
             objects.append(new_battery)
 
-            from_id = battery.PowerElectronicsConnection.Terminals[0].ConnectivityNode.mRID
+            pec = battery.PowerElectronicsConnection
+            if pec is None or len(pec.Terminals) < 1 or pec.Terminals[0].ConnectivityNode is None:
+                continue
+
+            from_id = pec.Terminals[0].ConnectivityNode.mRID
             to_id = battery.mRID
 
             new_edge = {
@@ -409,6 +467,7 @@ class CIMHelper:
                     "id": f"{from_id}-{to_id}",
                     "from": from_id,
                     "to": to_id,
+                    "feeder_id": feeder_id,
                 },
             }
             objects.append(new_edge)
@@ -419,12 +478,150 @@ class CIMHelper:
 
         return objects
 
-    def _add_distribution_area_info(self, cim_obj, new_obj):
-        dist_area = getattr(cim_obj, "SubSchedulingArea", None) or getattr(cim_obj, "BoundedSchedulingArea", None)
-        if dist_area is not None:
-            new_obj["attributes"]["dist_area_type"] = dist_area.__class__.__name__
-            new_obj["attributes"]["dist_area_name"] = dist_area.name
-            new_obj["attributes"]["dist_area_id"] = dist_area.mRID
+    def _build_distribution_area_map(self, feeder_id: str) -> dict:
+        """
+        Map every connectivity node to all the distribution areas containing it.
+
+        The CIM model nests areas as FeederArea -> SwitchArea -> SecondaryArea,
+        and a node can belong to several levels at once. Each node maps to a list
+        of area infos ordered general -> specific, so the most specific area is
+        the last element.
+
+        A node is considered "in" an area if it is touched by either:
+          - the terminals of any of the area's ContainedEquipment, or
+          - one of the area's BoundaryTerminals.
+
+        Returns: { connectivity_node_mRID: [ {dist_area_type, dist_area_id, dist_area_name}, ... ] }
+        """
+        graph = self.FEEDERS[feeder_id].graph
+        area_map: dict = {}
+
+        # General -> specific so each node's list ends with its tightest area.
+        area_classes = [cim.FeederArea, cim.SwitchArea, cim.SecondaryArea]
+
+        for area_class in area_classes:
+            for area in graph.get(area_class, {}).values():
+                area_info = {
+                    "dist_area_type": area.__class__.__name__,
+                    "dist_area_id": area.mRID,
+                    "dist_area_name": area.name if area.name else "",
+                }
+
+                node_mrids: set = set()
+
+                # Connectivity nodes touched by the area's contained equipment.
+                for equipment in getattr(area, "ContainedEquipment", None) or []:
+                    for terminal in getattr(equipment, "Terminals", None) or []:
+                        cn = terminal.ConnectivityNode
+                        if cn is not None:
+                            node_mrids.add(cn.mRID)
+
+                # Boundary terminals (captures areas like an empty SwitchArea
+                # whose only real content lives in a nested SecondaryArea).
+                for terminal in getattr(area, "BoundaryTerminals", None) or []:
+                    cn = terminal.ConnectivityNode
+                    if cn is not None:
+                        node_mrids.add(cn.mRID)
+
+                for node_mrid in node_mrids:
+                    area_map.setdefault(node_mrid, []).append(area_info)
+
+        return area_map
+
+    def _resolve_area_name(self, feeder_id: str, area_mrid: str) -> str:
+        """
+        The GridAPPS-D topology output carries no area names, so try to read the
+        name from the corresponding CIM object in the loaded model; if that
+        isn't available, fall back to the last segment of the mRID UUID.
+        """
+        try:
+            obj = self.FEEDERS[feeder_id].get_object(area_mrid)
+        except Exception:
+            obj = None
+
+        name = getattr(obj, "name", None) if obj is not None else None
+        if name:
+            return name
+
+        return str(area_mrid).split("-")[-1]
+
+    def _build_topology_area_map(self, topology_json: dict, feeder_id: str) -> dict:
+        """
+        Same result as _build_distribution_area_map, but sourced from the
+        GridAPPS-D topology service output (the "GET_DISTRIBUTED_AREAS" shape,
+        identical to ieee123_topo.json) instead of the CIM area objects.
+
+        The topology JSON only references equipment / terminal mRIDs, so each is
+        resolved back to its connectivity node(s) through the loaded model:
+          - AddressableEquipment / UnaddressableEquipment -> Terminals -> ConnectivityNode
+          - BoundaryTerminals -> ConnectivityNode
+
+        Areas are applied general -> specific (FeederArea, then SwitchAreas, then
+        SecondaryAreas) so each node's list ends with its tightest area.
+
+        Returns: { connectivity_node_mRID: [ {dist_area_type, dist_area_id, dist_area_name}, ... ] }
+        """
+        area_map: dict = {}
+        distribution_area = (topology_json or {}).get("DistributionArea", {})
+
+        # Gather every FeederArea in the model, then walk by specificity level.
+        feeder_areas: list[dict] = []
+        for substation in distribution_area.get("Substations", []) or []:
+            for feeder in substation.get("NormalEnergizedFeeder", []) or []:
+                feeder_area = feeder.get("FeederArea")
+                if feeder_area:
+                    feeder_areas.append(feeder_area)
+
+        switch_areas: list[dict] = []
+        for feeder_area in feeder_areas:
+            switch_areas.extend(feeder_area.get("SwitchAreas", []) or [])
+
+        secondary_areas: list[dict] = []
+        for switch_area in switch_areas:
+            secondary_areas.extend(switch_area.get("SecondaryAreas", []) or [])
+
+        # General -> specific so each node's list ends with its tightest area.
+        for area in [*feeder_areas, *switch_areas, *secondary_areas]:
+            self._apply_topology_area(area, feeder_id, area_map)
+
+        return area_map
+
+    def _apply_topology_area(self, area: dict, feeder_id: str, area_map: dict) -> None:
+        """Append a single topology-area to every connectivity node it reaches."""
+        area_id = area.get("@id")
+        if not area_id:
+            return
+
+        area_info = {
+            "dist_area_type": area.get("@type", ""),
+            "dist_area_id": area_id,
+            "dist_area_name": self._resolve_area_name(feeder_id, area_id),
+        }
+
+        node_mrids: set = set()
+
+        # Equipment -> Terminals -> ConnectivityNode
+        for key in ("AddressableEquipment", "UnaddressableEquipment"):
+            for entry in area.get(key, []) or []:
+                equipment = self.FEEDERS[feeder_id].get_object(entry.get("@id"))
+                if equipment is None:
+                    continue
+                for terminal in getattr(equipment, "Terminals", None) or []:
+                    cn = terminal.ConnectivityNode
+                    if cn is not None:
+                        node_mrids.add(cn.mRID)
+
+        # BoundaryTerminals -> ConnectivityNode
+        for entry in area.get("BoundaryTerminals", []) or []:
+            terminal = self.FEEDERS[feeder_id].get_object(entry.get("@id"))
+            if terminal is None:
+                continue
+            cn = getattr(terminal, "ConnectivityNode", None)
+            if cn is not None:
+                node_mrids.add(cn.mRID)
+
+        for node_mrid in node_mrids:
+            area_map.setdefault(node_mrid, []).append(area_info)
 
     def _build_measurement_map(self, feeder_id: str) -> dict:
         """
@@ -458,9 +655,6 @@ class CIMHelper:
                     "phases": str(measurement.phases) if measurement.phases else "",
                     "measurement_class": measurement_class
                 }
-
-                if measurement.PowerSystemResource is None:
-                    print("No PowerSystemResource")
 
                 # Link to conducting equipment via Terminal
                 if measurement.Terminal and measurement.Terminal.ConductingEquipment:
@@ -627,21 +821,20 @@ class CIMHelper:
             "TransformerTankInfo",
             "LoadResponse",
             "RegulatingControl"
+            "GeneratingUnit"
         ]
 
         for field in fields(cim_obj):
             if field.name == "identifier":
                 continue
 
-            if (
-                field.metadata["type"] == "Attribute"
-            ):  # association, aggregateof, and ofaggregate
+            if field.metadata.get("type") == "Attribute":  # association, aggregateof, and ofaggregate
                 attribute = getattr(cim_obj, field.name)
                 if field.name in dense_fields and attribute is not None:
                     if isinstance(attribute, list):
                         new_obj["attributes"][field.name] = len(attribute)
-
-                    new_obj["attributes"][field.name] = str(attribute.name)
+                    else:
+                        new_obj["attributes"][field.name] = str(attribute.name)
                 elif attribute is not None:
                     new_obj["attributes"][field.name] = str(attribute)
 

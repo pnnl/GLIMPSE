@@ -286,7 +286,21 @@ class GraphHelper {
         const title = [];
 
         for (let [key, val] of Object.entries(attributes)) {
-            title.push(`${key}: ${val}`);
+            // The dist_areas list of nested areas is rendered one area per line
+            // (type: name) so the tooltip card stays narrow instead of one wide
+            // JSON line.
+            if (key === "dist_areas" && Array.isArray(val)) {
+                title.push(`${key}:`);
+                for (const area of val) {
+                    title.push(`  ${area.dist_area_type}: ${area.dist_area_name || area.dist_area_id}`);
+                }
+                continue;
+            }
+
+            // Any other nested array/object would otherwise render as
+            // "[object Object]"; serialize it so the tooltip stays readable.
+            const display = val !== null && typeof val === "object" ? JSON.stringify(val) : val;
+            title.push(`${key}: ${display}`);
         }
 
         return title.join("\n");
@@ -418,13 +432,24 @@ class GraphHelper {
                     id: type,
                     from: nodeIDFrom,
                     to: nodeIDTo,
-                    type: type === "switch" ? "switch" : "straight",
+                    type:
+                        type === "switch"
+                            ? "switch"
+                            : type === "regulator"
+                              ? "regulator"
+                              : type === "transformer"
+                                ? "transformer"
+                                : "straight",
                     title: "Double Click to Highlight !",
                     label: `${type} [${this.objectTypeCount.edges[type]}]`,
                     forceLabel: true,
                     size: 8,
                     switchSize: 16,
                     switchColor: "#FF0000",
+                    regulatorSize: 50,
+                    regulatorColor: this.#theme.edgeOptions[type].color,
+                    transformerSize: 50,
+                    transformerColor: this.#theme.edgeOptions[type].color,
                     color: this.#theme.edgeOptions[type].color,
                 });
             } else {
@@ -519,16 +544,42 @@ class GraphHelper {
             edgeMaxIndexAttribute: "parallelMaxIndex",
         });
 
+        // Icon edges (switch / regulator / transformer) keep their custom symbol
+        // when fanned out: map to a curved-line variant instead of plain "curved"
+        // so the icon program still runs and draws the symbol on the curve.
+        const curvedIconType = {
+            switch: "curvedSwitch",
+            regulator: "curvedRegulator",
+            transformer: "curvedTransformer",
+        };
+        const curvedType = (iconType) => (iconType ? curvedIconType[iconType] : "curved");
+        // Tiny curvature for the otherwise-straight primary of an icon fan: keeps
+        // the whole fan in ONE curved edge type (so every icon is drawn after every
+        // line, i.e. on top) while staying visually straight. The curve program
+        // can't render an exactly-zero curvature, so this can't be 0.
+        const ICON_PRIMARY_CURVATURE = 0.012;
+
         // Step 2: assign type + curvature based on the indexed values
-        graph.forEachEdge((edge, { parallelIndex, parallelMinIndex, parallelMaxIndex }) => {
+        graph.forEachEdge((edge, { parallelIndex, parallelMinIndex, parallelMaxIndex, iconType }) => {
             if (typeof parallelMinIndex === "number") {
                 // ── Undirected parallel group ──
-                // The edge at index 0 gets to stay straight (the "primary" edge).
-                // All others are curved so they fan out on either side.
-                graph.mergeEdgeAttributes(edge, {
-                    type: parallelIndex ? "curved" : "straight",
-                    curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
-                });
+                // The edge at index 0 normally stays straight (the "primary" edge);
+                // all others curve so they fan out on either side.
+                const curvature = this.#getCurvature(parallelIndex, parallelMaxIndex);
+
+                if (iconType) {
+                    // Keep every member of an icon fan in the same curved type so the
+                    // icons always render on top of all the fan's lines.
+                    graph.mergeEdgeAttributes(edge, {
+                        type: curvedType(iconType),
+                        curvature: parallelIndex ? curvature : ICON_PRIMARY_CURVATURE,
+                    });
+                } else {
+                    graph.mergeEdgeAttributes(edge, {
+                        type: parallelIndex ? "curved" : "straight",
+                        curvature,
+                    });
+                }
 
                 return;
             }
@@ -537,7 +588,7 @@ class GraphHelper {
                 // ── Directed parallel group (shouldn't happen in our undirected
                 //    graph, but included for completeness) ──
                 graph.mergeEdgeAttributes(edge, {
-                    type: "curved",
+                    type: curvedType(iconType),
                     curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
                 });
             }
@@ -609,7 +660,9 @@ class GraphHelper {
                 this.graph.hasEdge(measurement.equipment_mrid)
             ) {
                 this.graph.updateEdgeAttributes(measurement.equipment_mrid, (edgeAttrs) => {
-                    if (!(edgeAttrs.type === "switch")) {
+                    // Don't animate icon edges (switch/regulator/transformer, straight
+                    // or curved) — that would replace their custom symbol program.
+                    if (!edgeAttrs.iconType) {
                         edgeAttrs.type = "animated";
 
                         if (-0.3 <= measurement.magnitude && measurement.magnitude <= 0.3) {
@@ -714,7 +767,22 @@ class GraphHelper {
         if (edgeType === "switch") {
             newEdge.switchColor = "#ff0000";
             newEdge.type = "switch";
+            newEdge.iconType = "switch";
             newEdge.switchSize = 8;
+        }
+
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (edgeType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (edgeType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
         }
 
         this.graph.addNode(nodeID, newNode);
@@ -742,7 +810,22 @@ class GraphHelper {
         if (edgeType === "switch") {
             newEdge.switchColor = "#ff0000";
             newEdge.type = "switch";
+            newEdge.iconType = "switch";
             newEdge.switchSize = 8;
+        }
+
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (edgeType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (edgeType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
         }
 
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
@@ -766,8 +849,7 @@ class GraphHelper {
     loadGraphFromData = (fileData, themeData = null) => {
         if (this.graph.order > 0) {
             this.clearGraphData();
-            if (typeof window !== "undefined")
-                window.dispatchEvent(new CustomEvent("graph-cleared"));
+            if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-cleared"));
         }
 
         this.isCIM = false;
@@ -939,7 +1021,22 @@ class GraphHelper {
         if (objectType === "switch") {
             newEdge.switchColor = "#ff0000";
             newEdge.type = "switch";
+            newEdge.iconType = "switch";
             newEdge.switchSize = 8;
+        }
+
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (objectType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (objectType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
         }
 
         this.objectTypeCount.edges[objectType] = (this.objectTypeCount.edges[objectType] ?? 0) + 1;
@@ -1131,20 +1228,35 @@ class GraphHelper {
             }
         }
 
-        // Collect distribution area metadata from node attributes
+        // Collect distribution area metadata from node attributes. A node may
+        // belong to several nested areas (dist_areas list); fall back to the
+        // flat dist_area_* fields for backward compatibility.
         this.distributionAreas = {};
+        const collectArea = (dist_area_type, dist_area_id, dist_area_name) => {
+            if (!dist_area_type || !dist_area_id) return;
+            if (!this.distributionAreas[dist_area_type]) {
+                this.distributionAreas[dist_area_type] = [];
+            }
+            if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
+                this.distributionAreas[dist_area_type].push({
+                    name: dist_area_name || dist_area_id,
+                    id: dist_area_id,
+                });
+            }
+        };
         newGraph.forEachNode((_nodeId, attrs) => {
-            const { dist_area_type, dist_area_id, dist_area_name } = attrs.attributes || {};
-            if (dist_area_type && dist_area_id) {
-                if (!this.distributionAreas[dist_area_type]) {
-                    this.distributionAreas[dist_area_type] = [];
-                }
-                if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
-                    this.distributionAreas[dist_area_type].push({
-                        name: dist_area_name || dist_area_id,
-                        id: dist_area_id,
-                    });
-                }
+            const attributes = attrs.attributes || {};
+            const areas = attributes.dist_areas;
+            if (Array.isArray(areas) && areas.length > 0) {
+                areas.forEach((a) =>
+                    collectArea(a.dist_area_type, a.dist_area_id, a.dist_area_name),
+                );
+            } else {
+                collectArea(
+                    attributes.dist_area_type,
+                    attributes.dist_area_id,
+                    attributes.dist_area_name,
+                );
             }
         });
 
@@ -1203,7 +1315,27 @@ class GraphHelper {
                     if (objectType === "switch") {
                         newEdge.switchColor = "#ff0000";
                         newEdge.type = "switch";
+                        newEdge.iconType = "switch";
                         newEdge.switchSize = 8;
+                    }
+
+                    // draw an IEEE symbol in the middle of transformer edges:
+                    // regulators (transformers tagged class_type "regulator") get the
+                    // tap-changer arrow, all other transformers get the plain windings.
+                    if (objectType === "regulator") {
+                        newEdge.type = "regulator";
+                        newEdge.iconType = "regulator";
+                        newEdge.regulatorSize = 16;
+                    } else if (objectType === "transformer") {
+                        if (attributes?.class_type === "regulator") {
+                            newEdge.type = "regulator";
+                            newEdge.iconType = "regulator";
+                            newEdge.regulatorSize = 16;
+                        } else {
+                            newEdge.type = "transformer";
+                            newEdge.iconType = "transformer";
+                            newEdge.transformerSize = 16;
+                        }
                     }
 
                     newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, newEdge);
@@ -1290,7 +1422,7 @@ class GraphHelper {
                     nodeCommunityAttribute: "CID",
                     resolution: 0.8,
                 });
-                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 5, center: 0 });
+                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 1, center: 0 });
             } else {
                 circlepack.assign(newGraph);
             }

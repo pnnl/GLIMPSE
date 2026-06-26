@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, Form, Input, Button, Divider, Typography, message, Spin, Empty } from "antd";
+import { Modal, Form, Input, Button, Divider, message, Spin, Empty } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
 
@@ -13,8 +13,39 @@ const EditAttributesModal = ({ close, context }) => {
 
     // Read-only attributes that shouldn't be edited
     const READ_ONLY_ATTRIBUTES = useMemo(
-        () => ["id", "name", "from", "to", "mRID", "x", "y", "parent"],
+        () => [
+            "id",
+            "name",
+            "from",
+            "to",
+            "mRID",
+            "x",
+            "y",
+            "parent",
+            "dist_areas",
+            "dist_area_type",
+            "dist_area_id",
+            "dist_area_name",
+            "class_type",
+            "feeder_id",
+            "Location",
+            "normalOpen",
+            "normalStatus",
+            "normalSections",
+            "GeneratingUnit",
+        ],
         [],
+    );
+
+    // Arrays/objects (e.g. dist_areas) can't render in a plain Input; show them
+    // as pretty JSON in a read-only textarea instead.
+    const isComplexValue = useCallback(
+        (value) => Array.isArray(value) || (value !== null && typeof value === "object"),
+        [],
+    );
+    const formatValue = useCallback(
+        (value) => (isComplexValue(value) ? JSON.stringify(value, null, 2) : value),
+        [isComplexValue],
     );
 
     // Initialize form with current attributes when modal opens
@@ -65,16 +96,21 @@ const EditAttributesModal = ({ close, context }) => {
             setLoading(true);
             const values = await form.validateFields();
 
+            // Only editable fields are registered in the form; merge them over
+            // the originals so read-only values (including complex ones like
+            // dist_areas) are preserved unchanged.
+            const merged = { ...attributes, ...values };
+
             // Update the graph with new attribute values
             if (object.type === "node") {
-                graphHelper.graph.setNodeAttribute(object.id, "attributes", values);
+                graphHelper.graph.setNodeAttribute(object.id, "attributes", merged);
                 graphHelper.graph.setNodeAttribute(
                     object.id,
                     "attributesLabel",
-                    graphHelper.getTitle(values),
+                    graphHelper.getTitle(merged),
                 );
             } else if (object.type === "edge") {
-                graphHelper.graph.setEdgeAttribute(object.id, "attributes", values);
+                graphHelper.graph.setEdgeAttribute(object.id, "attributes", merged);
             }
 
             graphHelper.sigmaInstance.refresh();
@@ -146,56 +182,66 @@ const EditAttributesModal = ({ close, context }) => {
                     >
                         {attributeEntries.map(([attributeName, value], i) => {
                             const isReadOnly = READ_ONLY_ATTRIBUTES.includes(attributeName);
+                            const label = (
+                                <span
+                                    style={{
+                                        fontWeight: "500",
+                                        fontSize: "14px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                    }}
+                                >
+                                    {attributeName}
+                                    {isReadOnly && (
+                                        <LockOutlined
+                                            style={{ fontSize: "12px", color: "#999" }}
+                                            title="Read-only attribute"
+                                        />
+                                    )}
+                                </span>
+                            );
+
+                            // Read-only fields are not registered with the form (they're
+                            // preserved via the merge on save), so AntD's disabled styling
+                            // applies and follows the active light/dark theme.
+                            if (isReadOnly) {
+                                return (
+                                    <Form.Item
+                                        label={label}
+                                        key={i}
+                                        tooltip="This field is read-only and cannot be edited"
+                                    >
+                                        {isComplexValue(value) ? (
+                                            <Input.TextArea
+                                                value={formatValue(value)}
+                                                disabled
+                                                autoSize={{ minRows: 1, maxRows: 8 }}
+                                                style={{ cursor: "not-allowed" }}
+                                            />
+                                        ) : (
+                                            <Input
+                                                value={value}
+                                                disabled
+                                                style={{ cursor: "not-allowed" }}
+                                            />
+                                        )}
+                                    </Form.Item>
+                                );
+                            }
 
                             return (
                                 <Form.Item
-                                    label={
-                                        <span
-                                            style={{
-                                                fontWeight: "500",
-                                                fontSize: "14px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "8px",
-                                            }}
-                                        >
-                                            {attributeName}
-                                            {isReadOnly && (
-                                                <LockOutlined
-                                                    style={{
-                                                        fontSize: "12px",
-                                                        color: "#999",
-                                                    }}
-                                                    title="Read-only attribute"
-                                                />
-                                            )}
-                                        </span>
-                                    }
+                                    label={label}
                                     name={attributeName}
                                     key={i}
                                     initialValue={value}
-                                    tooltip={
-                                        isReadOnly
-                                            ? "This field is read-only and cannot be edited"
-                                            : undefined
-                                    }
                                 >
-                                    {isReadOnly ? (
-                                        <Input
-                                            value={value}
-                                            disabled
-                                            style={{
-                                                backgroundColor: "#f5f5f5",
-                                                cursor: "not-allowed",
-                                            }}
-                                        />
-                                    ) : (
-                                        <Input
-                                            type={getInputType(value)}
-                                            placeholder={`Enter ${attributeName}`}
-                                            allowClear
-                                        />
-                                    )}
+                                    <Input
+                                        type={getInputType(value)}
+                                        placeholder={`Enter ${attributeName}`}
+                                        allowClear
+                                    />
                                 </Form.Item>
                             );
                         })}
