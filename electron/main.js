@@ -20,6 +20,7 @@ const SERVER_URL = `http://127.0.0.1:${SERVER_PORT}`;
 const DEV_URL = process.env.ELECTRON_START_URL;
 
 let mainWindow = null;
+let splashWindow = null;
 let serverProcess = null;
 let quitting = false;
 
@@ -168,6 +169,36 @@ const stopServer = () => {
 // Window
 // ------------------------------------------------------------------
 
+const createSplashWindow = () => {
+    const logoPath = DEV_URL
+        ? path.join(__dirname, "..", "public", "GLIMPSE_logo.png")
+        : path.join(__dirname, "..", "dist", "GLIMPSE_logo.png");
+    const logoUrl = `file://${logoPath.replace(/\\/g, "/")}`;
+
+    splashWindow = new BrowserWindow({
+        width: 600,
+        height: 340,
+        frame: false,
+        resizable: false,
+        center: true,
+        alwaysOnTop: true,
+        backgroundColor: "#041422",
+        webPreferences: {
+            sandbox: true,
+            nodeIntegration: false,
+            contextIsolation: true,
+        },
+    });
+
+    splashWindow.loadFile(path.join(__dirname, "splash.html"), {
+        query: { logoUrl },
+    });
+
+    splashWindow.on("closed", () => {
+        splashWindow = null;
+    });
+};
+
 const createWindow = () => {
     const iconPath = path.join(__dirname, "..", "build", "icon.png");
 
@@ -184,7 +215,12 @@ const createWindow = () => {
         },
     });
 
-    mainWindow.once("ready-to-show", () => mainWindow.show());
+    mainWindow.once("ready-to-show", () => {
+        mainWindow.show();
+        if (splashWindow && !splashWindow.isDestroyed()) {
+            splashWindow.close();
+        }
+    });
 
     // Open external links in the default browser instead of new Electron windows
     mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -221,6 +257,8 @@ if (!gotSingleInstanceLock) {
     });
 
     app.whenReady().then(async () => {
+        createSplashWindow();
+
         if (app.isPackaged) {
             startServer();
             try {
