@@ -135,7 +135,7 @@ cd GLIMPSE/local-server/
 ```
 
 ```bash
-git cone https://github.com/itsMando/glm.git
+git clone https://github.com/itsMando/glm.git
 ```
 
 ```bash
@@ -149,8 +149,8 @@ nimble -v
 ```
 
 ```bash
-nimble package
 nimble release
+nimble package
 ```
 
 Install the python binary distributable from `dist/` folder:
