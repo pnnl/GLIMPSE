@@ -92,13 +92,17 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                     <Space.Compact block>
                         {(simulationState === "idle" || simulationState === "stopped") && (
                             <Tooltip title={"Start Simulation"} placement="bottom">
-                                <Button size="large" onClick={handleStartSimulation} icon={<IoPlay />} />
+                                <Button
+                                    size="medium"
+                                    onClick={handleStartSimulation}
+                                    icon={<IoPlay />}
+                                />
                             </Tooltip>
                         )}
                         {simulationState === "running" && (
                             <Tooltip title={"Pause Simulation"} placement="bottom">
                                 <Button
-                                    size="large"
+                                    size="medium"
                                     icon={<IoPause />}
                                     onClick={handlePauseSimulation}
                                 />
@@ -107,7 +111,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                         <Tooltip title="Stop Simulation">
                             <Button
                                 disabled={!(simulationState === "running")}
-                                size="large"
+                                size="medium"
                                 onClick={handleStopSimulation}
                                 icon={<IoStop />}
                             />
@@ -122,7 +126,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                         >
                             <Button
                                 style={{ width: "4rem" }}
-                                size="large"
+                                size="medium"
                                 type={activePanel === "charts" ? "primary" : "default"}
                                 icon={<MdShowChart />}
                                 onClick={onToggleCharts}
@@ -138,16 +142,16 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
             >
                 <Space.Compact block>
                     <Tooltip title="Rotate Counter-Clockwise">
-                        <Button size="large" onClick={rotateCCW} icon={<BiRotateLeft />} />
+                        <Button size="medium" onClick={rotateCCW} icon={<BiRotateLeft />} />
                     </Tooltip>
                     <Tooltip title="Rotate Clockwise">
-                        <Button size="large" onClick={rotateCW} icon={<BiRotateRight />} />
+                        <Button size="medium" onClick={rotateCW} icon={<BiRotateRight />} />
                     </Tooltip>
                 </Space.Compact>
 
                 <Space.Compact block>
                     <Button
-                        size="large"
+                        size="medium"
                         onClick={goToPrevious}
                         style={{ textTransform: "uppercase" }}
                         type="default"
@@ -155,7 +159,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                         Prev
                     </Button>
                     <Button
-                        size="large"
+                        size="medium"
                         onClick={goToNext}
                         style={{ textTransform: "uppercase" }}
                         type="default"
@@ -164,7 +168,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                     </Button>
                 </Space.Compact>
                 <Button
-                    size="large"
+                    size="medium"
                     type="default"
                     style={{ textTransform: "uppercase" }}
                     onClick={handleReset}

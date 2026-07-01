@@ -4,7 +4,6 @@ import forceAtlas2 from "graphology-layout-forceatlas2";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
-import { getFA2Settings } from "../utils/fa2-presets";
 import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
 
 class GraphHelper {
@@ -559,34 +558,6 @@ class GraphHelper {
         const maxCurvature = amplitude * (1 - Math.exp(-maxIndex / amplitude)) * DEFAULT_EDGE_CURVATURE;
 
         return (maxCurvature * index) / maxIndex;
-    }
-
-    /**
-     * Runs a synchronous ForceAtlas2 pass on a freshly-built graph so it renders
-     * already unraveled. Iteration count scales down as the graph grows so the
-     * blocking pass stays responsive on large models.
-     * @param {MultiUndirectedGraph} graph
-     */
-    #preWarmLayout(graph) {
-        const order = graph.order;
-
-        // More nodes → fewer iterations to keep the synchronous pass snappy.
-        // ~600 iters for small graphs, tapering to a floor of ~80 for huge ones.
-        let iterations;
-        if (order <= 1_000) iterations = 300;
-        else if (order <= 5_000) iterations = 200;
-        else if (order <= 20_000) iterations = 120;
-        else iterations = 80;
-
-        try {
-            forceAtlas2.assign(graph, {
-                iterations,
-                settings: getFA2Settings(graph),
-            });
-        } catch (err) {
-            // Layout is a best-effort enhancement; never block graph loading on it.
-            console.warn("FA2 pre-warm failed, falling back to initial placement:", err);
-        }
     }
 
     assignParallelEdgeCurvatures = (graph) => {

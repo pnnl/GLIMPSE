@@ -13,40 +13,41 @@ productName: GLIMPSE
 copyright: Copyright © 2026 Pacific Northwest National Laboratory
 
 directories:
-  output: release
-  buildResources: build
+    output: release
+    buildResources: build
 
 # The frontend is fully bundled by Vite, so node_modules are not needed at runtime.
 files:
-  - dist/**
-  - electron/**
-  - package.json
-  - "!node_modules/**"
+    - dist/**
+    - electron/**
+    - package.json
+    - "!node_modules/**"
 
 # PyInstaller onedir output for the Flask/SocketIO backend. Packaged into
 # <app>/resources/server/ and spawned by electron/main.js on startup.
 extraResources:
-  - from: local-server/dist/server
-    to: server
+    - from: local-server/dist/server
+      to: server
 
 asar: true
 
 win:
-  target:
-    - nsis
+    target:
+        - nsis
 
 nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+    oneClick: false
+    allowToChangeInstallationDirectory: true
 
 mac:
-  target:
-    - dmg
-  category: public.app-category.utilities
+    target:
+        - dmg
+    category: public.app-category.utilities
 
 linux:
-  target:
-    - AppImage
-    - deb
-  category: Science
-  synopsis: Power grid model visualization tool
+    target:
+        - AppImage
+        - deb
+        - tar.gz
+    category: Science
+    synopsis: Power grid model visualization tool

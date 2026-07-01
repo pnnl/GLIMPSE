@@ -878,8 +878,8 @@ class CIMHelper:
             "VoltageLevel",
             "TransformerTankInfo",
             "LoadResponse",
-            "RegulatingControl"
-            "GeneratingUnit"
+            "RegulatingControl",
+            "GeneratingUnit",
             "WireSpacingInfo"
         ]
 
