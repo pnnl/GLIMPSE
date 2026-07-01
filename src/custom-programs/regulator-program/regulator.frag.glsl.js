@@ -65,6 +65,10 @@ void main(void) {
   float alpha = 1.0 - smoothstep(-aa, aa, d);
   if (alpha <= 0.0) discard;
   gl_FragColor = mix(transparent, v_color, alpha);
+  // Sigma blends premultiplied (gl.ONE, gl.ONE_MINUS_SRC_ALPHA), so the RGB must
+  // also be scaled by the (zoom-faded) v_color.a. Without this the color leaks /
+  // brightens toward white at full view instead of fading out as alpha -> 0.
+  gl_FragColor.rgb *= v_color.a;
 #endif
 }
 `;

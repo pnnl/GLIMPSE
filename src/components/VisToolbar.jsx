@@ -4,11 +4,11 @@ import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
 import { IoPlay, IoAddCircle, IoStop, IoPause } from "react-icons/io5";
-import { MdOutlineHideSource, MdShowChart } from "react-icons/md";
+import { MdShowChart } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../contexts/GraphContext";
 
-const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
+const VisToolbar = ({ onToggleCharts, activePanel }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
     const { darkMode } = useGraph();
 
@@ -114,8 +114,8 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                         </Tooltip>
                     </Space.Compact>
                 )}
-                <Space.Compact block>
-                    {simulationState !== "inactive" && (
+                {simulationState !== "inactive" && (
+                    <Space.Compact block>
                         <Tooltip
                             title={activePanel === "charts" ? "Hide Charts" : "Show Charts"}
                             placement="bottomLeft"
@@ -128,20 +128,8 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                                 onClick={onToggleCharts}
                             />
                         </Tooltip>
-                    )}
-                    <Tooltip
-                        title={activePanel === "legend" ? "Hide Legend" : "Show Legend"}
-                        placement="bottomLeft"
-                    >
-                        <Button
-                            style={{ width: "4rem" }}
-                            size="large"
-                            type={activePanel === "legend" ? "primary" : "default"}
-                            icon={<MdOutlineHideSource />}
-                            onClick={onToggleLegend}
-                        />
-                    </Tooltip>
-                </Space.Compact>
+                    </Space.Compact>
+                )}
             </Space>
             <Space
                 size={2}

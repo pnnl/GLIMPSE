@@ -13,6 +13,7 @@ class GraphHelper {
     #theme = {};
     #highlightedGroups = [];
     #highlightedEdgeTypes = [];
+    #highlightedAreas = []; // selected distribution-area ids (any level)
     #hasFixedNodes = false;
 
     #ROTATE_ANGLE = Math.PI / 12; // 15 degrees in radians
@@ -166,29 +167,80 @@ class GraphHelper {
         );
     };
 
+    // Flat legend data for the DOM legend panel: only types actually present in the
+    // model (count > 0), each with its themed color so the panel can render swatches
+    // without reaching into the private theme.
+    getLegendData = () => {
+        const nodes = Object.entries(this.objectTypeCount.nodes)
+            .filter(([, count]) => count > 0)
+            .map(([type, count]) => ({
+                type,
+                count,
+                color: this.#theme.groups?.[type]?.color ?? "#888888",
+                borderColor: this.#theme.groups?.[type]?.borderColor ?? "#00000033",
+            }));
+
+        const edges = Object.entries(this.objectTypeCount.edges)
+            .filter(([, count]) => count > 0)
+            .map(([type, count]) => ({
+                type,
+                count,
+                color: this.#theme.edgeOptions?.[type]?.color ?? "#888888",
+            }));
+
+        return { nodes, edges };
+    };
+
+    // Distribution-area highlighting. Selected ids may be at any level
+    // (feeder / switch / secondary); a node or edge is "in" the selection if any
+    // of its area ids match. Because a member carries its full ancestry, selecting
+    // a switch area also matches the nodes/edges in that switch area's secondary
+    // areas, and selecting a feeder area matches everything under it.
+    setHighlightedAreas = (areaIds) => {
+        this.#highlightedAreas = Array.isArray(areaIds) ? areaIds : [];
+    };
+
+    getHighlightedAreas = () => {
+        return this.#highlightedAreas;
+    };
+
+    isInHighlightedArea = (attrs) => {
+        if (this.#highlightedAreas.length === 0) return true;
+        const a = (attrs && attrs.attributes) || {};
+        return (
+            this.#highlightedAreas.includes(a.feeder_area_id) ||
+            this.#highlightedAreas.includes(a.switch_area_id) ||
+            this.#highlightedAreas.includes(a.secondary_area_id)
+        );
+    };
+
     reset = () => {
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
+        this.#highlightedAreas.length = 0;
         this.highlightedNodeIDs.length = 0;
         this.highlightedEdgeIDs.length = 0;
         this.highlightedObjects.length = 0;
         this.focusIndex = -1;
 
         // show any hidden edges and nodes
-        this.graph.updateEachEdgeAttributes((e, attrs) => ({
-            ...attrs,
-            size: this.#theme.edgeOptions[attrs.group].size,
+        this.graph.updateEachEdgeAttributes((id, edge) => ({
+            ...edge,
+            size: this.#theme.edgeOptions[edge.group].size,
+            type: edge.type === "animated" ? "straight" : edge.type,
             hidden: false,
+            color: this.#theme.edgeOptions[edge.group].color,
+            size: this.#theme.edgeOptions[edge.group].size,
         }));
-        this.graph.updateEachNodeAttributes((n, attrs) => ({
-            ...attrs,
+
+        this.graph.updateEachNodeAttributes((id, node) => ({
+            ...node,
             hidden: false,
         }));
 
-        this.graph.updateEachEdgeAttributes((e, attrs) => ({
-            ...attrs,
-            type: attrs.type === "animated" ? "straight" : attrs.type,
-        }));
+        // Let UI (e.g. the legend panel) clear any per-type highlight/hide state it
+        // mirrors locally, since we just cleared it on the graph.
+        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-reset"));
     };
 
     clearGraphData = () => {
@@ -198,6 +250,7 @@ class GraphHelper {
         // Clear highlighted arrays and state
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
+        this.#highlightedAreas.length = 0;
         this.highlightedNodeIDs.length = 0;
         this.highlightedEdgeIDs.length = 0;
         this.highlightedObjects.length = 0;
@@ -654,46 +707,98 @@ class GraphHelper {
     handleSimulationOutput = (output) => {
         const { timestamp, Analog, Discrete } = output;
 
+        // Real part of the complex power below this (in VA) is treated as zero so
+        // we don't pick a flow direction off of numerical noise.
+        const FLOW_THRESHOLD = 1e-6;
+
+        // On a one-line diagram a single edge carries several VA measurements
+        // (one per phase). The true power flow is the complex sum of all of them,
+        // so aggregate by edge before deciding direction. magnitude/angle describe
+        // the polar form of each complex VA measurement (angle is in degrees).
+        const edgePowerSums = new Map(); // equipment_mrid -> { real, imag, normalLimit }
+
         for (let measurement of Analog) {
+            // Only VA (power) measurements determine flow; skip PNV/Pos/etc.
+            if (measurement.measurement_type !== "VA") continue;
+
             if (
-                !this.graph.hasNode(measurement.equipment_mrid) &&
-                this.graph.hasEdge(measurement.equipment_mrid)
-            ) {
-                this.graph.updateEdgeAttributes(measurement.equipment_mrid, (edgeAttrs) => {
-                    // Don't animate icon edges (switch/regulator/transformer, straight
-                    // or curved) — that would replace their custom symbol program.
-                    if (!edgeAttrs.iconType) {
-                        edgeAttrs.type = "animated";
-
-                        if (-0.3 <= measurement.magnitude && measurement.magnitude <= 0.3) {
-                            edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
-                            edgeAttrs.type = "straight";
-                            return edgeAttrs;
-                        }
-
-                        const powerFlow = measurement.magnitude / measurement.normal_limit.Normal;
-                        const newSize = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
-                        edgeAttrs.size = newSize;
-
-                        if (-90 <= measurement.angle && measurement.angle <= 90) {
-                            edgeAttrs.flowDirection = 1; // forward
-                        } else if (Math.abs(180 + measurement.angle) <= 1) {
-                            // Is angle ~ -180?
-                            edgeAttrs.flowDirection = -1; // reverse
-                            console.log(`Reversing flow for: ${edgeAttrs.attributes.name}`);
-                        }
-                    }
-
-                    return edgeAttrs;
-                });
-            } else if (
-                !this.graph.hasEdge(measurement.equipment_mrid) &&
+                !this.graph.hasEdge(measurement.equipment_mrid) ||
                 this.graph.hasNode(measurement.equipment_mrid)
             ) {
-                // console.log("Analog node measurement");
-                // console.log(measurement);
                 continue;
             }
+
+            const angleRad = (measurement.angle * Math.PI) / 180;
+            const sum = edgePowerSums.get(measurement.equipment_mrid) || {
+                real: 0,
+                imag: 0,
+                normalLimit: measurement.normal_limit?.Normal,
+            };
+            sum.real += measurement.magnitude * Math.cos(angleRad);
+            sum.imag += measurement.magnitude * Math.sin(angleRad);
+            if (sum.normalLimit == null && measurement.normal_limit) {
+                sum.normalLimit = measurement.normal_limit.Normal;
+            }
+            edgePowerSums.set(measurement.equipment_mrid, sum);
+        }
+
+        for (const [edgeID, sum] of edgePowerSums) {
+            this.graph.updateEdgeAttributes(edgeID, (edgeAttrs) => {
+                // Don't animate icon edges (switch/regulator/transformer, straight
+                // or curved) — that would replace their custom symbol program.
+                if (edgeAttrs.iconType) {
+                    return edgeAttrs;
+                }
+
+                // Direction follows the sign of the real part of the summed power;
+                // when the real part is ~0 fall back to the imaginary part. Same
+                // sign->direction mapping for either: positive = from->to (forward).
+                let flowDirection;
+                if (Math.abs(sum.real) >= FLOW_THRESHOLD) {
+                    flowDirection = sum.real > 0 ? 1 : -1;
+                } else if (Math.abs(sum.imag) >= FLOW_THRESHOLD) {
+                    flowDirection = sum.imag > 0 ? 1 : -1;
+                } else {
+                    flowDirection = 0; // both parts within the threshold -> no flow
+                }
+
+                const prevFlowDirection = edgeAttrs.flowDirection;
+                const edgeName = edgeAttrs.attributes?.name ?? edgeID;
+                console.log(
+                    `[flow] ${edgeName}: VA sum real=${sum.real.toExponential(3)} ` +
+                        `imag=${sum.imag.toExponential(3)} -> flowDirection ${prevFlowDirection} => ${flowDirection}` +
+                        (prevFlowDirection !== flowDirection ? " (CHANGED)" : " (unchanged)"),
+                );
+
+                if (flowDirection === 0) {
+                    edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
+                    edgeAttrs.type = "straight";
+                    edgeAttrs.flowDirection = flowDirection;
+                    return edgeAttrs;
+                }
+
+                edgeAttrs.type = "animated";
+                edgeAttrs.flowDirection = flowDirection;
+                // Restore the edge's theme color in case it was greyed out while
+                // it had no flow on a previous tick.
+                edgeAttrs.color = this.#theme.edgeOptions[edgeAttrs.group]?.color ?? edgeAttrs.color;
+
+                if (sum.normalLimit) {
+                    const powerFlow = Math.hypot(sum.real, sum.imag) / sum.normalLimit;
+                    edgeAttrs.size = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
+                    // Dots travel faster the more power the line carries. dotSpeed is
+                    // in cycles/sec; clamp to a band so low flow still creeps and
+                    // high flow doesn't blur into a solid line.
+                    const DOT_SPEED_MIN = 0.1;
+                    const DOT_SPEED_MAX = 1.0;
+                    edgeAttrs.dotSpeed = Math.min(
+                        DOT_SPEED_MAX,
+                        Math.max(DOT_SPEED_MIN, Math.log(powerFlow + 1) * 0.6),
+                    );
+                }
+
+                return edgeAttrs;
+            });
         }
 
         for (let measurement of Discrete) {
@@ -1248,9 +1353,7 @@ class GraphHelper {
             const attributes = attrs.attributes || {};
             const areas = attributes.dist_areas;
             if (Array.isArray(areas) && areas.length > 0) {
-                areas.forEach((a) =>
-                    collectArea(a.dist_area_type, a.dist_area_id, a.dist_area_name),
-                );
+                areas.forEach((a) => collectArea(a.dist_area_type, a.dist_area_id, a.dist_area_name));
             } else {
                 collectArea(
                     attributes.dist_area_type,
