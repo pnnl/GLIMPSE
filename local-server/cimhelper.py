@@ -223,14 +223,15 @@ class CIMHelper:
         # multiple connectivity nodes.
         seen_equipment: set = set()
 
-        # Map every connectivity node to all the distribution areas containing
-        # it (FeederArea / SwitchArea / SecondaryArea), ordered general ->
-        # specific. Prefer the GridAPPS-D topology-service output when provided;
-        # otherwise derive the areas straight from the CIM model.
+        # Map every connectivity node AND equipment mRID to its full distribution
+        # area ancestry (feeder / switch / secondary ids + names). Prefer the
+        # GridAPPS-D topology-service output when provided; otherwise derive the
+        # areas straight from the CIM model. Applied to both nodes and edges so
+        # area highlighting can grey out everything outside the selected areas.
         if topology_json:
-            dist_area_map = self._build_topology_area_map(topology_json, feeder_id)
+            area_map = self._build_topology_area_map(topology_json, feeder_id)
         else:
-            dist_area_map = self._build_distribution_area_map(feeder_id)
+            area_map = self._build_distribution_area_map(feeder_id)
 
         for node in self.FEEDERS[feeder_id].graph.get(cim.ConnectivityNode, {}).values():
             new_node = {
@@ -243,13 +244,9 @@ class CIMHelper:
                 },
             }
 
-            # A node may belong to several nested areas at once. Expose the full
-            # list for nested highlighting, and keep the flat dist_area_* fields
-            # (set to the most specific area) for backward compatibility.
-            areas = dist_area_map.get(node.mRID)
-            if areas:
-                new_node["attributes"]["dist_areas"] = areas
-                new_node["attributes"].update(areas[-1])
+            # Stamp the node with the feeder/switch/secondary area ids it belongs
+            # to (plus a dist_areas list for the area tree and hover tooltip).
+            new_node["attributes"].update(self._area_attrs(area_map.get(node.mRID)))
 
             coordinates = self.find_shared_coordinates(node)
             if coordinates["x"] is not None and coordinates["y"] is not None:
@@ -275,6 +272,7 @@ class CIMHelper:
                             },
                         }
 
+                        new_obj["attributes"].update(self._area_attrs(area_map.get(equipment.mRID)))
                         self._add_attributes(equipment, new_obj)
                         objects.append(new_obj)
 
@@ -287,6 +285,7 @@ class CIMHelper:
                                 "from": node.mRID,
                                 "to": equipment.mRID,
                                 "feeder_id": feeder_id,
+                                **self._area_attrs(area_map.get(equipment.mRID)),
                             },
                         })
 
@@ -315,6 +314,7 @@ class CIMHelper:
                 },
             }
 
+            new_edge["attributes"].update(self._area_attrs(area_map.get(line.mRID)))
             self._add_attributes(line, new_edge)
             objects.append(new_edge)
 
@@ -370,6 +370,7 @@ class CIMHelper:
                                     "tap": tank_end.RatioTapChanger.mRID,
                                 }
 
+            new_edge["attributes"].update(self._area_attrs(area_map.get(p_transformer.mRID)))
             objects.append(new_edge)
 
         cim_switch_types = [
@@ -435,6 +436,7 @@ class CIMHelper:
                     if hasattr(switch_obj, "breakingCapacity") and switch_obj.breakingCapacity is not None:
                         new_edge["attributes"]["breakingCapacity"] = str(switch_obj.breakingCapacity)
 
+                    new_edge["attributes"].update(self._area_attrs(area_map.get(switch_obj.mRID)))
                     self._add_attributes(switch_obj, new_edge)
                     objects.append(new_edge)
 
@@ -450,6 +452,8 @@ class CIMHelper:
                 },
             }
 
+            battery_area_attrs = self._area_attrs(area_map.get(battery.mRID))
+            new_battery["attributes"].update(battery_area_attrs)
             self._add_attributes(battery, new_battery)
             objects.append(new_battery)
 
@@ -468,6 +472,7 @@ class CIMHelper:
                     "from": from_id,
                     "to": to_id,
                     "feeder_id": feeder_id,
+                    **battery_area_attrs,
                 },
             }
             objects.append(new_edge)
@@ -478,55 +483,101 @@ class CIMHelper:
 
         return objects
 
+    def _area_attrs(self, record: dict | None) -> dict:
+        """
+        Convert an ancestry record (feeder/switch/secondary ids + names) into the
+        attribute fields stored on a node or edge: the flat <level>_area_id /
+        <level>_area_name fields used for nesting-aware matching, plus a dist_areas
+        list (general -> specific) used for the area tree and hover tooltip.
+        """
+        if not record:
+            return {}
+
+        attrs = dict(record)
+        dist_areas = []
+        for level, type_name in (
+            ("feeder_area", "FeederArea"),
+            ("switch_area", "SwitchArea"),
+            ("secondary_area", "SecondaryArea"),
+        ):
+            area_id = record.get(f"{level}_id")
+            if area_id:
+                dist_areas.append({
+                    "dist_area_type": type_name,
+                    "dist_area_id": area_id,
+                    "dist_area_name": record.get(f"{level}_name", ""),
+                })
+        attrs["dist_areas"] = dist_areas
+        return attrs
+
+    @staticmethod
+    def _uuid_tail(mrid) -> str:
+        return str(mrid).split("-")[-1]
+
     def _build_distribution_area_map(self, feeder_id: str) -> dict:
         """
-        Map every connectivity node to all the distribution areas containing it.
+        Map every connectivity node AND equipment mRID to the full distribution-area
+        ancestry containing it, sourced from the CIM area objects.
 
-        The CIM model nests areas as FeederArea -> SwitchArea -> SecondaryArea,
-        and a node can belong to several levels at once. Each node maps to a list
-        of area infos ordered general -> specific, so the most specific area is
-        the last element.
+        The model nests areas as FeederArea -> SwitchArea -> SecondaryArea. Walking
+        top-down lets every member carry the id/name of each ancestor level, so a
+        node/edge inside a SecondaryArea also records its parent SwitchArea and
+        FeederArea. That is what lets the frontend highlight a SwitchArea and have
+        its SecondaryArea members light up too.
 
-        A node is considered "in" an area if it is touched by either:
-          - the terminals of any of the area's ContainedEquipment, or
-          - one of the area's BoundaryTerminals.
+        A node/edge is "in" an area if it is the area's ContainedEquipment (edges +
+        single-terminal equipment, keyed by their own mRID), is a connectivity node
+        on that equipment's terminals, or sits on one of the area's BoundaryTerminals.
 
-        Returns: { connectivity_node_mRID: [ {dist_area_type, dist_area_id, dist_area_name}, ... ] }
+        Returns: { mRID: {feeder_area_id, feeder_area_name, switch_area_id, ...} }
         """
         graph = self.FEEDERS[feeder_id].graph
-        area_map: dict = {}
+        area_by_mrid: dict = {}
 
-        # General -> specific so each node's list ends with its tightest area.
-        area_classes = [cim.FeederArea, cim.SwitchArea, cim.SecondaryArea]
+        for feeder_area in graph.get(cim.FeederArea, {}).values():
+            feeder_ctx = {
+                "feeder_area_id": feeder_area.mRID,
+                "feeder_area_name": feeder_area.name or self._uuid_tail(feeder_area.mRID),
+            }
+            self._tag_cim_area_members(feeder_area, feeder_ctx, area_by_mrid)
 
-        for area_class in area_classes:
-            for area in graph.get(area_class, {}).values():
-                area_info = {
-                    "dist_area_type": area.__class__.__name__,
-                    "dist_area_id": area.mRID,
-                    "dist_area_name": area.name if area.name else "",
+            for switch_area in getattr(feeder_area, "SwitchAreas", None) or []:
+                switch_ctx = {
+                    **feeder_ctx,
+                    "switch_area_id": switch_area.mRID,
+                    "switch_area_name": switch_area.name or self._uuid_tail(switch_area.mRID),
                 }
+                self._tag_cim_area_members(switch_area, switch_ctx, area_by_mrid)
 
-                node_mrids: set = set()
+                for secondary_area in getattr(switch_area, "SecondaryAreas", None) or []:
+                    secondary_ctx = {
+                        **switch_ctx,
+                        "secondary_area_id": secondary_area.mRID,
+                        "secondary_area_name": secondary_area.name
+                        or self._uuid_tail(secondary_area.mRID),
+                    }
+                    self._tag_cim_area_members(secondary_area, secondary_ctx, area_by_mrid)
 
-                # Connectivity nodes touched by the area's contained equipment.
-                for equipment in getattr(area, "ContainedEquipment", None) or []:
-                    for terminal in getattr(equipment, "Terminals", None) or []:
-                        cn = terminal.ConnectivityNode
-                        if cn is not None:
-                            node_mrids.add(cn.mRID)
+        return area_by_mrid
 
-                # Boundary terminals (captures areas like an empty SwitchArea
-                # whose only real content lives in a nested SecondaryArea).
-                for terminal in getattr(area, "BoundaryTerminals", None) or []:
-                    cn = terminal.ConnectivityNode
-                    if cn is not None:
-                        node_mrids.add(cn.mRID)
+    def _tag_cim_area_members(self, area, context: dict, area_by_mrid: dict) -> None:
+        """Stamp the ancestry context onto every mRID a CIM area object reaches."""
+        mrids: set = set()
 
-                for node_mrid in node_mrids:
-                    area_map.setdefault(node_mrid, []).append(area_info)
+        for equipment in getattr(area, "ContainedEquipment", None) or []:
+            mrids.add(equipment.mRID)  # the equipment itself (edge / equipment-node)
+            for terminal in getattr(equipment, "Terminals", None) or []:
+                cn = terminal.ConnectivityNode
+                if cn is not None:
+                    mrids.add(cn.mRID)
 
-        return area_map
+        for terminal in getattr(area, "BoundaryTerminals", None) or []:
+            cn = terminal.ConnectivityNode
+            if cn is not None:
+                mrids.add(cn.mRID)
+
+        for mrid in mrids:
+            area_by_mrid.setdefault(mrid, {}).update(context)
 
     def _resolve_area_name(self, feeder_id: str, area_mrid: str) -> str:
         """
@@ -543,73 +594,80 @@ class CIMHelper:
         if name:
             return name
 
-        return str(area_mrid).split("-")[-1]
+        return self._uuid_tail(area_mrid)
 
     def _build_topology_area_map(self, topology_json: dict, feeder_id: str) -> dict:
         """
-        Same result as _build_distribution_area_map, but sourced from the
-        GridAPPS-D topology service output (the "GET_DISTRIBUTED_AREAS" shape,
-        identical to ieee123_topo.json) instead of the CIM area objects.
+        Same result as _build_distribution_area_map, but sourced from the GridAPPS-D
+        topology service output (the "GET_DISTRIBUTED_AREAS" shape, identical to
+        ieee123_topo.json) instead of the CIM area objects.
 
-        The topology JSON only references equipment / terminal mRIDs, so each is
-        resolved back to its connectivity node(s) through the loaded model:
-          - AddressableEquipment / UnaddressableEquipment -> Terminals -> ConnectivityNode
-          - BoundaryTerminals -> ConnectivityNode
+        The topology JSON only references equipment / terminal mRIDs, which are
+        resolved back to the loaded model so each member records its full ancestry
+        (FeederArea -> SwitchArea -> SecondaryArea).
 
-        Areas are applied general -> specific (FeederArea, then SwitchAreas, then
-        SecondaryAreas) so each node's list ends with its tightest area.
-
-        Returns: { connectivity_node_mRID: [ {dist_area_type, dist_area_id, dist_area_name}, ... ] }
+        Returns: { mRID: {feeder_area_id, feeder_area_name, switch_area_id, ...} }
         """
-        area_map: dict = {}
+        area_by_mrid: dict = {}
         distribution_area = (topology_json or {}).get("DistributionArea", {})
 
-        # Gather every FeederArea in the model, then walk by specificity level.
-        feeder_areas: list[dict] = []
         for substation in distribution_area.get("Substations", []) or []:
             for feeder in substation.get("NormalEnergizedFeeder", []) or []:
                 feeder_area = feeder.get("FeederArea")
-                if feeder_area:
-                    feeder_areas.append(feeder_area)
+                if not feeder_area:
+                    continue
 
-        switch_areas: list[dict] = []
-        for feeder_area in feeder_areas:
-            switch_areas.extend(feeder_area.get("SwitchAreas", []) or [])
+                feeder_ctx = self._topology_area_context(feeder_area, feeder_id, "feeder_area")
+                self._tag_topology_area_members(feeder_area, feeder_ctx, feeder_id, area_by_mrid)
 
-        secondary_areas: list[dict] = []
-        for switch_area in switch_areas:
-            secondary_areas.extend(switch_area.get("SecondaryAreas", []) or [])
+                for switch_area in feeder_area.get("SwitchAreas", []) or []:
+                    switch_ctx = {
+                        **feeder_ctx,
+                        **self._topology_area_context(switch_area, feeder_id, "switch_area"),
+                    }
+                    self._tag_topology_area_members(switch_area, switch_ctx, feeder_id, area_by_mrid)
 
-        # General -> specific so each node's list ends with its tightest area.
-        for area in [*feeder_areas, *switch_areas, *secondary_areas]:
-            self._apply_topology_area(area, feeder_id, area_map)
+                    for secondary_area in switch_area.get("SecondaryAreas", []) or []:
+                        secondary_ctx = {
+                            **switch_ctx,
+                            **self._topology_area_context(
+                                secondary_area, feeder_id, "secondary_area"
+                            ),
+                        }
+                        self._tag_topology_area_members(
+                            secondary_area, secondary_ctx, feeder_id, area_by_mrid
+                        )
 
-        return area_map
+        return area_by_mrid
 
-    def _apply_topology_area(self, area: dict, feeder_id: str, area_map: dict) -> None:
-        """Append a single topology-area to every connectivity node it reaches."""
+    def _topology_area_context(self, area: dict, feeder_id: str, level: str) -> dict:
+        """Build the {<level>_id, <level>_name} pair for one topology-area dict."""
         area_id = area.get("@id")
         if not area_id:
-            return
-
-        area_info = {
-            "dist_area_type": area.get("@type", ""),
-            "dist_area_id": area_id,
-            "dist_area_name": self._resolve_area_name(feeder_id, area_id),
+            return {}
+        return {
+            f"{level}_id": area_id,
+            f"{level}_name": self._resolve_area_name(feeder_id, area_id),
         }
 
-        node_mrids: set = set()
+    def _tag_topology_area_members(
+        self, area: dict, context: dict, feeder_id: str, area_by_mrid: dict
+    ) -> None:
+        """Stamp the ancestry context onto every mRID a topology-area dict reaches."""
+        mrids: set = set()
 
-        # Equipment -> Terminals -> ConnectivityNode
+        # Equipment: tag the equipment's own mRID (edges / equipment-nodes) and the
+        # connectivity nodes on its terminals.
         for key in ("AddressableEquipment", "UnaddressableEquipment"):
             for entry in area.get(key, []) or []:
                 equipment = self.FEEDERS[feeder_id].get_object(entry.get("@id"))
                 if equipment is None:
                     continue
+                mrids.add(equipment.mRID)
                 for terminal in getattr(equipment, "Terminals", None) or []:
                     cn = terminal.ConnectivityNode
                     if cn is not None:
-                        node_mrids.add(cn.mRID)
+                        mrids.add(cn.mRID)
 
         # BoundaryTerminals -> ConnectivityNode
         for entry in area.get("BoundaryTerminals", []) or []:
@@ -618,10 +676,10 @@ class CIMHelper:
                 continue
             cn = getattr(terminal, "ConnectivityNode", None)
             if cn is not None:
-                node_mrids.add(cn.mRID)
+                mrids.add(cn.mRID)
 
-        for node_mrid in node_mrids:
-            area_map.setdefault(node_mrid, []).append(area_info)
+        for mrid in mrids:
+            area_by_mrid.setdefault(mrid, {}).update(context)
 
     def _build_measurement_map(self, feeder_id: str) -> dict:
         """
@@ -822,6 +880,7 @@ class CIMHelper:
             "LoadResponse",
             "RegulatingControl"
             "GeneratingUnit"
+            "WireSpacingInfo"
         ]
 
         for field in fields(cim_obj):

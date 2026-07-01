@@ -3,19 +3,23 @@ import { useState, useEffect } from "react";
 import { Flex } from "antd";
 import VisToolbar from "../VisToolbar";
 import GraphRenderer from "../graph/GraphRenderer";
-import LegendRenderer from "../legend/LegendRenderer";
 import SimulationCharts from "../SimulationCharts";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
 
-// activePanel: "charts" | "legend" | null
+// activePanel: "charts" | null. The legend is no longer a right-hand panel — it
+// lives inside the sigma ControlsContainer (see LegendPanel), so it never shares
+// this flex row and never resizes the graph.
 const GraphLayout = () => {
-    const { graphUpdateTrigger, darkMode, newGraphUpdate } = useGraph();
-    const [activePanel, setActivePanel] = useState("legend");
+    const { darkMode, newGraphUpdate } = useGraph();
+    const [activePanel, setActivePanel] = useState(null);
     const [simState, setSimState] = useState("inactive");
 
-    const rightPanelVisible = activePanel !== null;
+    // Only the charts panel shares the flex row and shrinks the graph (to keep the
+    // full topology visible next to live gridappsd charts). With it closed the graph
+    // is always full width.
+    const chartsActive = activePanel === "charts";
 
     // Track CIM model status and auto-switch panels when model type changes
     useEffect(() => {
@@ -41,71 +45,65 @@ const GraphLayout = () => {
         };
     }, [newGraphUpdate]);
 
-    // Let sigma recalculate after the graph container resizes
+    // The graph container only resizes when the charts panel opens/closes. Let
+    // sigma re-fit and nudge ECharts (which resizes off window events) after the
+    // column width settles. Toggling the legend doesn't hit this — it overlays.
     useEffect(() => {
-        const id = requestAnimationFrame(() => graphHelper.sigmaInstance?.refresh());
+        const id = requestAnimationFrame(() => {
+            graphHelper.sigmaInstance?.refresh();
+            window.dispatchEvent(new Event("resize"));
+        });
         return () => cancelAnimationFrame(id);
-    }, [rightPanelVisible]);
+    }, [chartsActive]);
 
-    // Clicking the active panel's button collapses the right panel; clicking the
-    // other panel's button switches to it.
+    // The charts button collapses the panel when it's already active, else opens it.
     const toggleCharts = () => setActivePanel((v) => (v === "charts" ? null : "charts"));
-    const toggleLegend = () => setActivePanel((v) => (v === "legend" ? null : "legend"));
 
     const border = darkMode ? "#3a3a3a" : "#e0e0e0";
 
     return (
         <div className="graph-layout">
-            <VisToolbar
-                onToggleLegend={toggleLegend}
-                onToggleCharts={toggleCharts}
-                activePanel={activePanel}
-            />
+            <VisToolbar onToggleCharts={toggleCharts} activePanel={activePanel} />
             <Flex direction="row" gap="0" style={{ height: "inherit", width: "100%" }}>
-                {/* Main graph — expands when right panel is hidden */}
-                <div style={{ width: rightPanelVisible ? "70%" : "100%", height: "100%" }}>
+                {/* Main graph — always full width unless the charts panel is open. */}
+                <div
+                    style={{
+                        width: chartsActive ? "70%" : "100%",
+                        height: "100%",
+                        position: "relative",
+                    }}
+                >
                     <GraphRenderer />
                 </div>
 
-                {/* Right panel */}
-                <div
-                    style={{
-                        display: rightPanelVisible ? "block" : "none",
-                        width: "30%",
-                        height: "100%",
-                        position: "relative",
-                        overflow: "hidden",
-                        borderLeft: `1px solid ${border}`,
-                    }}
-                >
-                    {simState !== "inactive" && (
+                {/* Charts column — shares the flex row so the graph shrinks and the full
+                    topology stays visible during a live gridappsd sim. Kept mounted (not
+                    unmounted) whenever a sim is active so accumulated chart history isn't
+                    wiped when switching panels; it just collapses to zero width. */}
+                {simState !== "inactive" && (
+                    <div
+                        style={{
+                            width: chartsActive ? "30%" : "0",
+                            height: "100%",
+                            position: "relative",
+                            overflow: "hidden",
+                            borderLeft: chartsActive ? `1px solid ${border}` : "none",
+                        }}
+                    >
                         <div
                             style={{
-                                visibility: activePanel === "charts" ? "visible" : "hidden",
-                                pointerEvents: activePanel === "charts" ? "auto" : "none",
+                                visibility: chartsActive ? "visible" : "hidden",
                                 display: "flex",
                                 flexDirection: "column",
                                 position: "absolute",
                                 inset: 0,
                                 overflowY: "auto",
-                                zIndex: activePanel === "charts" ? 1 : 0,
                             }}
                         >
                             <SimulationCharts />
                         </div>
-                    )}
-
-                    {/* Legend */}
-                    <div
-                        style={{
-                            display: activePanel === "legend" ? "block" : "none",
-                            position: "absolute",
-                            inset: 0,
-                        }}
-                    >
-                        <LegendRenderer />
                     </div>
-                </div>
+                )}
             </Flex>
         </div>
     );

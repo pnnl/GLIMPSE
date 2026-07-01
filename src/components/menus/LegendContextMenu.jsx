@@ -2,17 +2,9 @@ import { useRef, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Menu } from "antd";
 
-const ITEMS = [
-    { key: "hide-all", label: "Hide All", disabled: false },
-    { key: "edit-theme", label: "Edit Theme", disabled: true },
-];
+const ITEMS = [{ key: "hide-all", label: "Hide All", disabled: false }];
 
-const LegendContextMenu = ({
-    context,
-    close,
-    onHideAll: hideAll,
-    onEditTheme: showThemeEditor,
-}) => {
+const LegendContextMenu = ({ context, close, onHideAll: hideAll, onEditTheme: showThemeEditor }) => {
     const menuRef = useRef(null);
     const [position, setPosition] = useState({ x: context.x, y: context.y });
 
@@ -54,6 +46,7 @@ const LegendContextMenu = ({
     return ReactDOM.createPortal(
         <div
             ref={menuRef}
+            data-legend-menu
             style={{
                 position: "absolute",
                 left: position.x,
