@@ -579,17 +579,51 @@ class CIMHelper:
         for mrid in mrids:
             area_by_mrid.setdefault(mrid, {}).update(context)
 
-    def _resolve_area_name(self, feeder_id: str, area_mrid: str) -> str:
+    @staticmethod
+    def _norm_mrid(mrid) -> str:
+        """Normalize an mRID for dict-key comparison (case + legacy '_' prefix)."""
+        return str(mrid).lstrip("_").lower()
+
+    def _build_mrid_index(self, feeder_id: str) -> dict:
+        """
+        One-time in-memory {normalized mRID -> object} index over everything the
+        bulk get_all_edges load already fetched.
+
+        FeederModel.get_object() is NOT an in-memory lookup — every call runs 1-4
+        live SPARQL queries against Blazegraph (retrying case/prefix variants on
+        miss). Resolving the topology service's per-equipment references through
+        it turns one model load into hundreds of sequential round trips. Every
+        mRID the topology references is already in the loaded graph, so a dict
+        lookup replaces all of that.
+        """
+        index: dict = {}
+        for instances in self.FEEDERS[feeder_id].graph.values():
+            for obj in instances.values():
+                mrid = getattr(obj, "mRID", None)
+                if mrid:
+                    index[self._norm_mrid(mrid)] = obj
+        return index
+
+    def _lookup_mrid(self, feeder_id: str, mrid_index: dict, mrid) -> object | None:
+        """Resolve an mRID via the in-memory index; fall back to a live
+        get_object query only for references the bulk load didn't cover."""
+        if not mrid:
+            return None
+        obj = mrid_index.get(self._norm_mrid(mrid))
+        if obj is not None:
+            return obj
+        try:
+            return self.FEEDERS[feeder_id].get_object(mrid)
+        except Exception:
+            return None
+
+    def _resolve_area_name(self, feeder_id: str, area_mrid: str, mrid_index: dict) -> str:
         """
         The GridAPPS-D topology output carries no area names, so try to read the
         name from the corresponding CIM object in the loaded model; if that
         isn't available, fall back to the last segment of the mRID UUID.
         """
-        try:
-            obj = self.FEEDERS[feeder_id].get_object(area_mrid)
-        except Exception:
-            obj = None
-
+        obj = self._lookup_mrid(feeder_id, mrid_index, area_mrid)
         name = getattr(obj, "name", None) if obj is not None else None
         if name:
             return name
@@ -611,47 +645,62 @@ class CIMHelper:
         area_by_mrid: dict = {}
         distribution_area = (topology_json or {}).get("DistributionArea", {})
 
+        # Resolve every topology reference against this in-memory index instead of
+        # FeederModel.get_object() (1-4 SPARQL round trips per call) — see
+        # _build_mrid_index for why this matters for load time.
+        mrid_index = self._build_mrid_index(feeder_id)
+
         for substation in distribution_area.get("Substations", []) or []:
             for feeder in substation.get("NormalEnergizedFeeder", []) or []:
                 feeder_area = feeder.get("FeederArea")
                 if not feeder_area:
                     continue
 
-                feeder_ctx = self._topology_area_context(feeder_area, feeder_id, "feeder_area")
-                self._tag_topology_area_members(feeder_area, feeder_ctx, feeder_id, area_by_mrid)
+                feeder_ctx = self._topology_area_context(
+                    feeder_area, feeder_id, "feeder_area", mrid_index
+                )
+                self._tag_topology_area_members(
+                    feeder_area, feeder_ctx, feeder_id, area_by_mrid, mrid_index
+                )
 
                 for switch_area in feeder_area.get("SwitchAreas", []) or []:
                     switch_ctx = {
                         **feeder_ctx,
-                        **self._topology_area_context(switch_area, feeder_id, "switch_area"),
+                        **self._topology_area_context(
+                            switch_area, feeder_id, "switch_area", mrid_index
+                        ),
                     }
-                    self._tag_topology_area_members(switch_area, switch_ctx, feeder_id, area_by_mrid)
+                    self._tag_topology_area_members(
+                        switch_area, switch_ctx, feeder_id, area_by_mrid, mrid_index
+                    )
 
                     for secondary_area in switch_area.get("SecondaryAreas", []) or []:
                         secondary_ctx = {
                             **switch_ctx,
                             **self._topology_area_context(
-                                secondary_area, feeder_id, "secondary_area"
+                                secondary_area, feeder_id, "secondary_area", mrid_index
                             ),
                         }
                         self._tag_topology_area_members(
-                            secondary_area, secondary_ctx, feeder_id, area_by_mrid
+                            secondary_area, secondary_ctx, feeder_id, area_by_mrid, mrid_index
                         )
 
         return area_by_mrid
 
-    def _topology_area_context(self, area: dict, feeder_id: str, level: str) -> dict:
+    def _topology_area_context(
+        self, area: dict, feeder_id: str, level: str, mrid_index: dict
+    ) -> dict:
         """Build the {<level>_id, <level>_name} pair for one topology-area dict."""
         area_id = area.get("@id")
         if not area_id:
             return {}
         return {
             f"{level}_id": area_id,
-            f"{level}_name": self._resolve_area_name(feeder_id, area_id),
+            f"{level}_name": self._resolve_area_name(feeder_id, area_id, mrid_index),
         }
 
     def _tag_topology_area_members(
-        self, area: dict, context: dict, feeder_id: str, area_by_mrid: dict
+        self, area: dict, context: dict, feeder_id: str, area_by_mrid: dict, mrid_index: dict
     ) -> None:
         """Stamp the ancestry context onto every mRID a topology-area dict reaches."""
         mrids: set = set()
@@ -660,7 +709,7 @@ class CIMHelper:
         # connectivity nodes on its terminals.
         for key in ("AddressableEquipment", "UnaddressableEquipment"):
             for entry in area.get(key, []) or []:
-                equipment = self.FEEDERS[feeder_id].get_object(entry.get("@id"))
+                equipment = self._lookup_mrid(feeder_id, mrid_index, entry.get("@id"))
                 if equipment is None:
                     continue
                 mrids.add(equipment.mRID)
@@ -671,7 +720,7 @@ class CIMHelper:
 
         # BoundaryTerminals -> ConnectivityNode
         for entry in area.get("BoundaryTerminals", []) or []:
-            terminal = self.FEEDERS[feeder_id].get_object(entry.get("@id"))
+            terminal = self._lookup_mrid(feeder_id, mrid_index, entry.get("@id"))
             if terminal is None:
                 continue
             cn = getattr(terminal, "ConnectivityNode", None)
@@ -727,6 +776,28 @@ class CIMHelper:
                     entry["conducting_equipment_type"] = psr.__class__.__name__
 
                 self.active_measurement_map[measurement_class][measurement.mRID] = entry
+
+
+    def get_measurement_catalog(self) -> list:
+        """
+        Flatten active_measurement_map into a list of measurement descriptors for
+        the frontend plot creator. Uses the same field names the live sim-output
+        stream carries (measurement_type / equipment_name / equipment_type /
+        phases / measurement_mrid) so the client can fold both sources through one
+        code path. Populated at CIM model-load time, so plots can be built before a
+        simulation starts. Empty for non-CIM models (GLM/JSON).
+        """
+        catalog = []
+        for measurement_class in ("Analog", "Discrete"):
+            for entry in self.active_measurement_map.get(measurement_class, {}).values():
+                catalog.append({
+                    "measurement_mrid": entry.get("measurement_mrid", ""),
+                    "measurement_type": entry.get("measurement_type", ""),
+                    "equipment_name": entry.get("conducting_equipment_name", ""),
+                    "equipment_type": entry.get("conducting_equipment_type", ""),
+                    "phases": entry.get("phases", ""),
+                })
+        return catalog
 
 
     def _object_to_detail(self, obj):

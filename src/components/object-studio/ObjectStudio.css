@@ -1,9 +1,20 @@
+/* Full-cover, opaque overlay. GraphLayout stays mounted behind it (so the Sigma
+   instance survives the view toggle), so the studio MUST paint an opaque
+   background over an absolutely-positioned box — otherwise the graph's plots
+   panel and the "Filter by Distribution Area" control bleed through. */
 .object-studio {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 3rem);
+    height: 100%;
     overflow: hidden;
-    z-index: 999;
+    background-color: #ffffff;
+}
+
+.object-studio.dark-mode {
+    background-color: #141414;
 }
 
 .object-studio-header {

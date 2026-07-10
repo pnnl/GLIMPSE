@@ -3,7 +3,9 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
-    overflow-y: auto;
+    /* Keep the default plots at full panel height and never let the growing
+       custom-plots section below squish them — the parent column scrolls. */
+    flex-shrink: 0;
 }
 
 .sim-charts__label {

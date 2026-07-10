@@ -260,6 +260,32 @@ docker compose down
 
 This stops and removes the containers and network. Built images remain cached for the next start. (If you ran in the foreground, you can also press `Ctrl+C` first, then run `docker compose down` to clean up.)
 
+### Deployment & Security Configuration
+
+The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the defaults below are safe as-is. **A networked deployment is different**: the Docker backend binds to `0.0.0.0`, which makes it reachable by any client that can route to the port. Because the backend has no per-user login, treat the following environment variables as required hardening before exposing it beyond localhost.
+
+| Variable | Applies to | Default | Purpose |
+| :------- | :--------- | :------ | :------ |
+| `GLIMPSE_API_TOKEN` | backend + frontend | _(empty → auth **off**)_ | Shared bearer token. When set, **every** HTTP request and WebSocket connection must present it or is rejected (`401` / refused handshake). Compose passes the same value to the backend (`GLIMPSE_API_TOKEN`) and the frontend (`API_TOKEN`). |
+| `CORS_ORIGINS` | backend | local dev ports | Comma-separated list of browser origins allowed to call the API (e.g. `https://glimpse.example.org`). `*` allows any origin but **disables credentialed CORS**. Pin this to your frontend's real origin in production. |
+| `GLIMPSE_EXPORT_DIR` | backend | system temp `/glimpse_exports` | Directory that CIM export writes are confined to. Client-supplied export paths are resolved inside this directory; absolute paths and `..` traversal are rejected. |
+| `GLIMPSE_ALLOW_ANY_EXPORT_PATH` | backend | `0` | Set to `1` only for a **desktop** build where the user intentionally picks any save location. Disables the export-path confinement above — do not enable on a shared/networked server. |
+| `MAX_UPLOAD_MB` | backend | `50` | Maximum request body size (MB) for uploads, to bound memory use. Requests over the limit get `413`. |
+| `EXPOSE_TRACEBACKS` | backend | `0` | When `1`, includes Python tracebacks in error responses (useful for local debugging). Leave off in production so internal details aren't leaked to clients. |
+| `GRIDAPPSD_ADDRESS` / `GRIDAPPSD_PORT` / `GRIDAPPSD_USER` / `GRIDAPPSD_PASSWORD` | backend | `localhost` / `61613` / `system` / `manager` | GridAPPS-D broker connection. The defaults are GridAPPS-D's own defaults — **change the credentials** for any real broker and source them from your secret store, not the compose file. |
+
+#### Enabling authentication
+
+Generate a random secret and set it before starting the stack — both containers pick it up:
+
+```bash
+export GLIMPSE_API_TOKEN="$(openssl rand -hex 32)"
+docker compose up --build
+```
+
+> [!IMPORTANT]
+> This token is a **coarse gate**, not per-user authentication. It is embedded in the frontend bundle (served in `env.js` and sent on every request), so anyone who can load the UI can read it. Its job is to keep arbitrary network clients that *don't* have the frontend from reaching the `0.0.0.0`-bound backend. If you need real per-user authorization, put GLIMPSE behind an authenticating reverse proxy or add session/OAuth login on top of this gate. For anything sensitive, also terminate TLS at a proxy so the token isn't sent in cleartext.
+
 ## Supported Input Files
 
 ### JSON Formats

@@ -128,7 +128,12 @@ const GraphRenderer = () => {
     }, []);
 
     const customEdgeReducer = useCallback(
-        (_e, attrs) => {
+        (edgeId, attrs) => {
+            // Searched/focused edge always wins: pulse it and keep it on top —
+            // never dim it, whatever the area/group highlight state is.
+            const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
+            if (focusStyle) return focusStyle;
+
             // Distribution-area highlighting takes precedence: grey out any edge that
             // is not in a selected area.
             if (graphHelper.getHighlightedAreas().length > 0) {

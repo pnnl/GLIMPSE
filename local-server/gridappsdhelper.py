@@ -42,6 +42,11 @@ class GridAPPSDHelper:
 
         self._available: bool = False
 
+        # Set True after a topology-service request fails, so later model loads
+        # skip the request (and its timeout) entirely. Reset on try_connect() so
+        # a reconnect gives the service another chance once it's deployed.
+        self._topology_service_down: bool = False
+
         # ── One-shot initial connection attempt ───────────────────────
         self._try_initial_connect()
 
@@ -66,12 +71,14 @@ class GridAPPSDHelper:
     def _try_initial_connect(self):
         if not self._is_port_open():
             logger.warning("GridAPPS-D port 61613 is not open — skipping connection. Features disabled.")
+            print("port not available")
             self.gapps = None
             self._available = False
             return
 
         try:
             self.gapps = GridAPPSD()
+            print("connected")
             self._available = True
             logger.info("Connected to GridAPPS-D")
         except Exception as e:
@@ -91,6 +98,7 @@ class GridAPPSDHelper:
         try:
             self.gapps = GridAPPSD()
             self._available = True
+            self._topology_service_down = False  # give the topology service another chance
             logger.info("Reconnected to GridAPPS-D")
             return True
         except Exception as e:
@@ -148,7 +156,7 @@ class GridAPPSDHelper:
             logger.error(f"Failed to retrieve models: {e}")
             raise GridAPPSDError(f"Failed to retrieve models: {e}") from e
 
-    def get_distributed_areas(self, model_mrid: str, timeout: int = 30) -> dict | None:
+    def get_distributed_areas(self, model_mrid: str, timeout: int | None = None) -> dict | None:
         """
         Request the distributed-areas topology for a model from the GridAPPS-D
         topology service. The response shape matches ieee123_topo.json and is
@@ -156,7 +164,23 @@ class GridAPPSDHelper:
 
         Returns the topology dict, or None if the service is unavailable / returns
         nothing (callers should fall back to deriving areas from the CIM model).
+
+        The topology service may not be deployed yet. To keep model loads fast in
+        that case, the request uses a short timeout (GLIMPSE_TOPOLOGY_TIMEOUT env
+        var, default 5s), and after the first failure the service is marked down
+        for the rest of the session — subsequent loads skip the request entirely.
+        try_connect() clears the mark so a reconnect retries the service.
         """
+        if self._topology_service_down:
+            logger.info(
+                f"Skipping topology request for {model_mrid}: service marked "
+                "unavailable earlier this session (reconnect to retry)."
+            )
+            return None
+
+        if timeout is None:
+            timeout = int(os.environ.get("GLIMPSE_TOPOLOGY_TIMEOUT", "30"))
+
         self._ensure_connected()
         topic = "goss.gridappsd.request.data.cimtopology"
         message = {
@@ -167,8 +191,14 @@ class GridAPPSDHelper:
         try:
             response = self.gapps.get_response(topic, message, timeout=timeout)
         except Exception as e:
-            # The topology service may not be running yet; don't break model load.
-            logger.warning(f"Topology service request failed for {model_mrid}: {e}")
+            # The topology service may not be running yet; don't break model load,
+            # and don't pay this timeout again on the next model.
+            self._topology_service_down = True
+            logger.warning(
+                f"Topology service request failed for {model_mrid} ({e}). "
+                "Marking the service unavailable for this session; distribution "
+                "areas will be derived from the CIM model instead."
+            )
             return None
 
         if not response or "error" in response:

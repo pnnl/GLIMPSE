@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, API_TOKEN } from "../config";
 
 class SocketClientHelper {
     //  Default Configs
@@ -91,6 +91,9 @@ class SocketClientHelper {
 
     constructor(serverUrl = API_BASE_URL) {
         this.socket = io(serverUrl, {
+            // Sent in the connection handshake; the server rejects the connection
+            // if a token is required and this doesn't match. Empty when auth is off.
+            auth: API_TOKEN ? { token: API_TOKEN } : {},
             reconnection: true,
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,

@@ -9,6 +9,7 @@ lerna-debug.log*
 
 # Match at any depth (a bare name only matches the context root in .dockerignore)
 **/node_modules
+**/gridappsd-viz
 **/__pycache__
 package-lock.json
 **/glm
@@ -23,6 +24,8 @@ package-lock.json
 *.local
 Dockerfile
 .dockerignore
+
+CLAUDE.md
 
 # Editor directories and files
 .vscode/*

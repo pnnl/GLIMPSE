@@ -208,7 +208,7 @@ const createWindow = () => {
         show: false,
         icon: fs.existsSync(iconPath) ? iconPath : undefined,
         webPreferences: {
-            sandbox: false,
+            sandbox: true,
             nodeIntegration: false,
             contextIsolation: true,
             enableRemoteModule: false,
@@ -222,10 +222,20 @@ const createWindow = () => {
         }
     });
 
-    // Open external links in the default browser instead of new Electron windows
+    // Open external links in the default browser instead of new Electron windows.
+    // Only http(s) is handed to the OS — never file:, smb:, or other schemes that
+    // shell.openExternal would otherwise launch (defense against injected links).
     mainWindow.webContents.setWindowOpenHandler((details) => {
-        shell.openExternal(details.url);
+        if (/^https?:\/\//i.test(details.url)) shell.openExternal(details.url);
         return { action: "deny" };
+    });
+
+    // The app is a SPA (client-side routing via the History API, which does not
+    // fire will-navigate). Any full-page navigation is therefore unexpected —
+    // block it, and send http(s) targets to the default browser instead.
+    mainWindow.webContents.on("will-navigate", (event, url) => {
+        event.preventDefault();
+        if (/^https?:\/\//i.test(url)) shell.openExternal(url);
     });
 
     if (DEV_URL) {

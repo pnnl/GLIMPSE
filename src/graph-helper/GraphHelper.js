@@ -15,6 +15,13 @@ class GraphHelper {
     #highlightedAreas = []; // selected distribution-area ids (any level)
     #hasFixedNodes = false;
 
+    // Searched/focused edge: pulsed and raised to the top so overlapping edges
+    // (e.g. when two endpoint nodes share coordinates) don't steal its clicks.
+    // See setFocusedEdge / getFocusedEdgeStyle.
+    #focusedEdgeId = null;
+    #focusPulseStart = 0;
+    #now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
+
     #ROTATE_ANGLE = Math.PI / 12; // 15 degrees in radians
 
     // public
@@ -33,6 +40,12 @@ class GraphHelper {
     glmFileData = {};
     focusedNode = null;
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
+
+    // Edge focus-pulse tuning. DURATION is how long the attention pulse plays
+    // before settling into a steady emphasis; PERIOD is one grow/shrink cycle.
+    FOCUS_PULSE_DURATION = 2600; // ms
+    FOCUS_PULSE_PERIOD = 650; // ms
+    FOCUS_COLOR = "#ff9500";
 
     constructor() {
         this.legendGraph = new MultiGraph();
@@ -221,6 +234,7 @@ class GraphHelper {
         this.highlightedEdgeIDs.length = 0;
         this.highlightedObjects.length = 0;
         this.focusIndex = -1;
+        this.clearEdgeFocus();
 
         // show any hidden edges and nodes
         this.graph.updateEachEdgeAttributes((id, edge) => ({
@@ -228,6 +242,7 @@ class GraphHelper {
             size: this.#theme.edgeOptions[edge.group].size,
             type: edge.type === "animated" ? "straight" : edge.type,
             hidden: false,
+            zIndex: 0,
             color: this.#theme.edgeOptions[edge.group].color,
             size: this.#theme.edgeOptions[edge.group].size,
         }));
@@ -294,17 +309,98 @@ class GraphHelper {
         return this.highlightedObjects[this.focusIndex];
     };
 
+    // ── Searched-edge focus pulse ────────────────────────────────────────────
+    // When the user searches for (or steps Prev/Next to) an edge we pulse it and
+    // raise its zIndex so it draws — and hit-tests — on top of any edges stacked
+    // underneath it (e.g. when two nodes share the same coordinates). The pulse
+    // plays for FOCUS_PULSE_DURATION then eases into a steady emphasis that holds
+    // until reset() or another edge is focused.
+
+    setFocusedEdge = (edgeId) => {
+        // restore the previously focused edge's normal stacking order
+        if (
+            this.#focusedEdgeId &&
+            this.#focusedEdgeId !== edgeId &&
+            this.graph.hasEdge(this.#focusedEdgeId)
+        ) {
+            this.graph.setEdgeAttribute(this.#focusedEdgeId, "zIndex", 0);
+        }
+
+        this.#focusedEdgeId = edgeId;
+        this.#focusPulseStart = this.#now();
+
+        // zIndex is a layout-impacting field, so setting it triggers a re-index +
+        // z-order re-sort on the next (full) refresh — this is what actually
+        // brings the edge to the top for drawing and click/double-click picking.
+        if (edgeId && this.graph.hasEdge(edgeId)) {
+            this.graph.setEdgeAttribute(edgeId, "zIndex", 1000);
+        }
+    };
+
+    clearEdgeFocus = () => {
+        if (this.#focusedEdgeId && this.graph.hasEdge(this.#focusedEdgeId)) {
+            this.graph.setEdgeAttribute(this.#focusedEdgeId, "zIndex", 0);
+        }
+        this.#focusedEdgeId = null;
+        this.#focusPulseStart = 0;
+    };
+
+    getFocusedEdgeId = () => this.#focusedEdgeId;
+
+    // True only while the attention pulse is still animating, so the render
+    // ticker knows to keep issuing frames. Once false the edge keeps its steady
+    // emphasis from the last rendered frame without any ongoing refreshes.
+    isFocusPulseActive = () => {
+        if (!this.#focusedEdgeId) return false;
+        return this.#now() - this.#focusPulseStart <= this.FOCUS_PULSE_DURATION;
+    };
+
+    // Returns a pulsed/emphasized copy of `attrs` when `edgeId` is the focused
+    // edge, otherwise null. Called from the Sigma edge reducer BEFORE any dimming
+    // logic so the focused edge is never greyed out.
+    getFocusedEdgeStyle = (edgeId, attrs) => {
+        if (!this.#focusedEdgeId || edgeId !== this.#focusedEdgeId) return null;
+
+        const elapsed = this.#now() - this.#focusPulseStart;
+        // Amplitude eases full → 0 across the pulse window; afterward `decay` is 0
+        // so the edge holds a steady 2× emphasis instead of oscillating forever.
+        const decay = Math.max(0, 1 - elapsed / this.FOCUS_PULSE_DURATION);
+        const wave = 0.5 + 0.5 * Math.sin((elapsed / this.FOCUS_PULSE_PERIOD) * 2 * Math.PI);
+        const base = attrs.size || 2;
+
+        const styled = {
+            ...attrs,
+            color: this.FOCUS_COLOR,
+            size: base * (2 + 2 * wave * decay),
+            zIndex: 1000,
+            label: attrs.attributes?.name ?? edgeId,
+            forceLabel: true,
+        };
+
+        // Icon edges pulse their symbol too, without overwriting a switch's
+        // open/closed status color (which stays meaningful).
+        const iconScale = 1 + 0.6 * wave * decay;
+        if (attrs.iconType === "switch") styled.switchSize = (attrs.switchSize || 8) * iconScale;
+        else if (attrs.iconType === "regulator")
+            styled.regulatorSize = (attrs.regulatorSize || 16) * iconScale;
+        else if (attrs.iconType === "transformer")
+            styled.transformerSize = (attrs.transformerSize || 16) * iconScale;
+
+        return styled;
+    };
+
     focus = (obj) => {
         console.log("Focusing on: " + obj.id);
 
         if (obj.type === "node") {
+            this.clearEdgeFocus();
             this.graph.setNodeAttribute(obj.id, "highlighted", true);
             this.focusedNode = obj.id;
 
             const { x, y } = this.sigmaInstance.getNodeDisplayData(obj.id);
             this.sigmaInstance.getCamera().animate({ x: x, y: y, ratio: 0.05 }, { duration: 1000 });
         } else if (obj.type === "edge") {
-            this.graph.setEdgeAttribute(obj.id, "label", obj.id);
+            this.setFocusedEdge(obj.id);
             const { attributes } = this.graph.getEdgeAttributes(obj.id);
             const fromNode = this.sigmaInstance.getNodeDisplayData(attributes.from);
             const toNode = this.sigmaInstance.getNodeDisplayData(attributes.to);

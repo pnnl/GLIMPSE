@@ -4,6 +4,7 @@ import { Flex } from "antd";
 import VisToolbar from "../VisToolbar";
 import GraphRenderer from "../graph/GraphRenderer";
 import SimulationCharts from "../SimulationCharts";
+import CustomSimulationCharts from "../plots/CustomSimulationCharts";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
@@ -101,6 +102,7 @@ const GraphLayout = () => {
                             }}
                         >
                             <SimulationCharts />
+                            <CustomSimulationCharts />
                         </div>
                     </div>
                 )}

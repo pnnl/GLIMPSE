@@ -127,7 +127,7 @@ const DistributionAreaSelector = () => {
                     `dist-area-${areaId}`,
                     sigma,
                     createContoursProgram(nodes, {
-                        radius: sigma.getGraph().order < 250 ? 60 : 25,
+                        radius: sigma.getGraph().order < 500 ? 60 : 25,
                         zoomToRadiusRatioFunction: (x) => x,
                         levels: [{ color: `${colorMapRef.current[areaId]}AA`, threshold: 0.4 }],
                         border: { color: `#00000000`, thickness: 0 },

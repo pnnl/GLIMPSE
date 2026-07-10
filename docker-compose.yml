@@ -8,6 +8,10 @@ services:
       FLASK_PORT: "5052"
       # Comma-separated allowed browser origins (or "*"). Empty = local dev defaults.
       CORS_ORIGINS: "${CORS_ORIGINS:-}"
+      # Shared bearer token required on every request/socket. Empty = auth disabled
+      # (only safe when the backend is not reachable off-host). Set this for any
+      # networked deployment; it must match the frontend's API_TOKEN.
+      GLIMPSE_API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
       # GridAPPS-D broker. Defaults assume it runs on the Docker host; override
       # in a .env file or your shell for a remote broker.
       GRIDAPPSD_ADDRESS: "${GRIDAPPSD_ADDRESS:-host.docker.internal}"
@@ -28,6 +32,8 @@ services:
       # URL the *browser* uses to reach the backend. For local use the default
       # is fine; when deploying, set this to the backend's public URL.
       API_URL: "${API_URL:-http://127.0.0.1:5052}"
+      # Must match the backend's GLIMPSE_API_TOKEN (baked into env.js at start).
+      API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
     ports:
       # 5173 is already in the backend's CORS allow-list.
       - "5173:80"

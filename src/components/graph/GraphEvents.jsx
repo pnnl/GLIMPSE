@@ -6,6 +6,7 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import NewObjectModal from "../modals/NewObjectModal";
 import NewEdgeModal from "../modals/NewEdgeModal";
 import UpdateDeviceModal from "../modals/UpdateDeviceModal";
+import UpdateRegulatorModal from "../modals/UpdateRegulatorModal";
 
 const GraphEvents = () => {
     const [context, setContext] = useState({ open: false, x: 0, y: 0 });
@@ -20,6 +21,10 @@ const GraphEvents = () => {
         open: false,
         object: null,
         deviceType: null,
+    });
+    const [updateRegulatorContext, setUpdateRegulatorContext] = useState({
+        open: false,
+        object: null,
     });
     const sigma = useSigma();
     const registerEvents = useRegisterEvents();
@@ -136,13 +141,23 @@ const GraphEvents = () => {
                 const edgeAttributes = graphHelper.graph.getEdgeAttributes(payload.edge);
                 console.log(edgeAttributes);
 
-                // Check if this edge type can have its status updated
-                const statusEditableTypes = ["switch", "regulator"];
-                if (!statusEditableTypes.includes(edgeAttributes.group)) {
+                // A regulator is a transformer edge tagged class_type "regulator"
+                // (CIM) or an edge whose group is literally "regulator" (JSON/GLM).
+                // It opens the tap-changer modal instead of the open/close one.
+                const isRegulator =
+                    edgeAttributes.group === "regulator" ||
+                    edgeAttributes.attributes?.class_type === "regulator";
+
+                if (isRegulator) {
+                    setUpdateRegulatorContext({ open: true, object: payload.edge });
                     return;
                 }
 
-                // Open the update device modal for switches/regulators
+                // Only switches use the open/close status modal.
+                if (edgeAttributes.group !== "switch") {
+                    return;
+                }
+
                 setUpdateDeviceContext({ open: true, object: payload.edge, deviceType: "switch" });
             },
             doubleClickNode: (e) => {
@@ -239,6 +254,10 @@ const GraphEvents = () => {
         setUpdateDeviceContext({ open: false, object: null, deviceType: null });
     };
 
+    const closeUpdateRegulatorModal = () => {
+        setUpdateRegulatorContext({ open: false, object: null });
+    };
+
     const openAttributesModal = () => {
         setAttributesEditorContext({ ...attributesEditorContext, open: true });
     };
@@ -258,6 +277,11 @@ const GraphEvents = () => {
                 object={updateDeviceContext.object}
                 deviceType={updateDeviceContext.deviceType}
                 close={closeUpdateDeviceModal}
+            />
+            <UpdateRegulatorModal
+                open={updateRegulatorContext.open}
+                object={updateRegulatorContext.object}
+                close={closeUpdateRegulatorModal}
             />
             <NewObjectModal open={openNewNodeForm} close={() => setOpenNewNodeForm(false)} />
             <NewEdgeModal open={openNewEdgeForm} close={() => setOpenNewEdgeForm(false)} />
