@@ -101,7 +101,6 @@ const GridAPPSDModelForm = ({ onModelSelect }) => {
                             options={modelInfo
                                 .filter((model) => model.regionName === regionName)
                                 .map((model) => ({
-                                    // value: model.modelId,
                                     value: JSON.stringify(model),
                                     label: model.modelName,
                                 }))}
