@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, API_TOKEN } from "../config";
 
 class SocketClientHelper {
     //  Default Configs
@@ -80,6 +80,7 @@ class SocketClientHelper {
         "sim-log": [],
         "sim-state-change": [],
         "connection-change": [],
+        "load-graph": [],
         "update-data": [],
         "add-node": [],
         "add-edge": [],
@@ -90,6 +91,9 @@ class SocketClientHelper {
 
     constructor(serverUrl = API_BASE_URL) {
         this.socket = io(serverUrl, {
+            // Sent in the connection handshake; the server rejects the connection
+            // if a token is required and this doesn't match. Empty when auth is off.
+            auth: API_TOKEN ? { token: API_TOKEN } : {},
             reconnection: true,
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
@@ -147,12 +151,43 @@ class SocketClientHelper {
             graphHelper.updateCapacitors(data);
         });
 
-        // Graph mutation events
-        this.socket.on("update-data", (data) => this.#emit("update-data", data));
-        this.socket.on("add-node", (data) => this.#emit("add-node", data));
-        this.socket.on("add-edge", (data) => this.#emit("add-edge", data));
-        this.socket.on("delete-node", (id) => this.#emit("delete-node", id));
-        this.socket.on("delete-edge", (id) => this.#emit("delete-edge", id));
+        // External-script graph API. The server broadcasts these so connected
+        // frontends load/mutate their visualization. We apply the change to the
+        // shared graphHelper, then re-emit for any React subscribers (e.g. to
+        // trigger a re-render on load-graph).
+
+        this.socket.on("load-graph", (payload) => {
+            try {
+                // Server sends { data: { name: { objects: [...] } } }
+                graphHelper.loadGraphFromData(payload?.data ?? payload, payload?.themeData ?? null);
+            } catch (err) {
+                console.error("[Socket] Failed to load graph:", err);
+                this.#emit("error", { type: "load-graph", message: err.message });
+                return;
+            }
+            this.#emit("load-graph", payload);
+        });
+
+        this.socket.on("update-data", (data) => {
+            graphHelper.applyUpdate(data);
+            this.#emit("update-data", data);
+        });
+        this.socket.on("add-node", (data) => {
+            graphHelper.addNode(data);
+            this.#emit("add-node", data);
+        });
+        this.socket.on("add-edge", (data) => {
+            graphHelper.addEdge(data);
+            this.#emit("add-edge", data);
+        });
+        this.socket.on("delete-node", (id) => {
+            graphHelper.deleteNode(id);
+            this.#emit("delete-node", id);
+        });
+        this.socket.on("delete-edge", (id) => {
+            graphHelper.deleteEdge(id);
+            this.#emit("delete-edge", id);
+        });
     }
 
     // Event Emitter

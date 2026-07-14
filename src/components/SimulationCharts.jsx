@@ -194,7 +194,7 @@ const SimulationCharts = () => {
             <ReactECharts
                 ref={voltageChartRef}
                 option={voltageOption}
-                style={{ height: "50%" }}
+                style={{ flex: 1, minHeight: 0 }}
                 notMerge={false}
                 lazyUpdate
             />
@@ -204,7 +204,7 @@ const SimulationCharts = () => {
             <ReactECharts
                 ref={loadChartRef}
                 option={loadOption}
-                style={{ height: "50%" }}
+                style={{ flex: 1, minHeight: 0 }}
                 notMerge={false}
                 lazyUpdate
             />

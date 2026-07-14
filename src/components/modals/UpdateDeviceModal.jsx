@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { Modal, Form, Select, Button, Divider, message, Spin } from "antd";
+import { Modal, Form, Select, Button, Divider, message, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { v4 as uuidv4 } from "uuid";
 
 const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
     const [form] = Form.useForm();
+    const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
     const [currentStatus, setCurrentStatus] = useState(null);
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
@@ -48,14 +49,17 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
                 console.log(edge);
                 const status = edge.attributes[config.statusSource];
 
+                // Normalize whatever the source attribute holds ("True"/"False" for
+                // switches, a numeric section count for capacitors) into the canonical
+                // "OPEN"/"CLOSED" label the form and statusValueMap are keyed by.
+                let normalizedStatus;
                 if (status !== "False" && status !== "True") {
-                    const capStatus = parseInt(status, 10) ? "CLOSED" : "OPEN"; // Handle capacitor status mapping
-                    setCurrentStatus(capStatus);
-                    form.setFieldsValue({ status: capStatus });
+                    normalizedStatus = parseInt(status, 10) ? "CLOSED" : "OPEN"; // Handle capacitor status mapping
                 } else {
-                    setCurrentStatus(status);
-                    form.setFieldsValue({ status: status === "False" ? "CLOSED" : "OPEN" });
+                    normalizedStatus = status === "False" ? "CLOSED" : "OPEN";
                 }
+                setCurrentStatus(normalizedStatus);
+                form.setFieldsValue({ status: normalizedStatus });
             } catch (error) {
                 console.error("Error loading device status:", error);
                 message.error("Failed to load device status");
@@ -130,6 +134,36 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
             // Emit the update to the backend
             console.log(inputMessage);
             socketClientHelper.socket.emit("sim-input", inputMessage);
+
+            // Optimistically reflect the change in the local graph so that reopening
+            // this modal (or reading the device elsewhere) shows the new state, rather
+            // than waiting for the next simulation output to echo it back.
+            const applyLocalUpdate = (attrs) => {
+                const nextAttributes = {
+                    ...attrs.attributes,
+                    [config.statusSource]:
+                        deviceType === "switch"
+                            ? newStatus === "OPEN"
+                                ? "True"
+                                : "False"
+                            : newValue,
+                    status: newStatus,
+                };
+                const next = { ...attrs, attributes: nextAttributes };
+                if (deviceType === "switch") {
+                    next.switchColor = newStatus === "OPEN" ? "#4aff4a" : "#ff0000";
+                }
+                return next;
+            };
+
+            if (deviceType === "switch") {
+                graphHelper.graph.updateEdgeAttributes(object, applyLocalUpdate);
+            } else {
+                graphHelper.graph.updateNodeAttributes(object, applyLocalUpdate);
+            }
+            graphHelper.sigmaInstance?.refresh();
+            setCurrentStatus(newStatus);
+
             message.success(`Status update request sent to backend`);
             close();
         } catch (error) {
@@ -185,16 +219,20 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
                             placeholder="Select status"
                             options={config.statusOptions}
                             style={{ width: "100%" }}
+                            // Render the dropdown inside the (themed) modal body so it
+                            // follows the active light/dark theme instead of the
+                            // document-body default.
+                            getPopupContainer={(trigger) => trigger.parentElement}
                         />
                     </Form.Item>
                     <div
                         style={{
                             marginTop: "16px",
                             padding: "12px",
-                            backgroundColor: "#f5f5f5",
-                            borderRadius: "4px",
+                            backgroundColor: token.colorFillTertiary,
+                            borderRadius: token.borderRadiusLG,
                             fontSize: "12px",
-                            color: "#666",
+                            color: token.colorTextSecondary,
                         }}
                     >
                         <p>

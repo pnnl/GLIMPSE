@@ -13,12 +13,35 @@ RUN apt-get update \
 
 # Install server deps (no pyinstaller). --prerelease=allow: cim-graph is 0.4.3a10.
 COPY local-server/requirements-server.txt ./requirements-server.txt
-RUN uv pip install --system --prerelease=allow -r requirements-server.txt \
-    && uv pip install --system glm
+RUN uv pip install --system --prerelease=allow -r requirements-server.txt
 
-# CIM-Builder — installed without deps (it requires an older cim-graph).
-RUN git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git /tmp/CIM-Builder \
-    && uv pip install --system --no-deps /tmp/CIM-Builder
+# ---- Nim toolchain: build the glm parser into a Python wheel ----------------
+# glm (https://github.com/itsMando/glm) is a Nim project that exposes a Python
+# binary extension (lib/_glm.so). It needs Nim >= 2.0, a C compiler, and
+# choosenim to fetch the toolchain (Debian's packaged Nim is too old).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential curl xz-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV CHOOSENIM_NO_ANALYTICS=1
+RUN curl -sSf https://nim-lang.org/choosenim/init.sh | sh -s -- -y
+ENV PATH="/root/.nimble/bin:${PATH}"
+
+# setup.py builds the binary (non-pure) wheel; these are its build-backend deps.
+RUN uv pip install --system setuptools wheel
+
+# Clone the glm fork and build the Nim shared library (lib/_glm.so), then install
+# straight from source into the system site-packages. setup.py copies the freshly
+# built _glm.so into the package and tags the wheel for whatever platform we are
+# building on, so this stays arch-agnostic (x86_64, arm64, ...) — unlike `nimble
+# package`, which hard-codes a manylinux2014_x86_64 tag. The install carries over
+# to the runtime stage via the /usr/local copy below.
+RUN git clone https://github.com/itsMando/glm.git /tmp/glm \
+    && cd /tmp/glm \
+    && nimble install -y --depsOnly \
+    && nimble release \
+    && uv pip install --system --no-build-isolation /tmp/glm \
+    && rm -rf /tmp/glm
 
 # ---- runtime: slim image with only the installed packages + app ------------
 FROM python:3.12-slim

@@ -10,13 +10,13 @@ GLIMPSE is a graph-based desktop application to visualize and update GridLAB-D p
 The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigma.js**, and **Python**.
 
 > [!NOTE]
-> If you're looking for the EPA-developed energy planning tool called GLIMPSE, visit [epa.gov/glimpse](https://epa.gov/glimpse).
+> If you're looking for the EPA-developed energy planning tool called glimpse, visit [epa.gov/glimpse](https://epa.gov/glimpse).
 
 ## Installation
 
 ### Option 1: Pre-Built Installers (Easiest)
 
-Pre-built installers for Windows, macOS, and Linux are available in the [releases](https://github.com/pnnl/GLIMPSE/releases). Download and run the installer for your system.
+[Releases](https://github.com/pnnl/GLIMPSE/releases/)
 
 ### Option 2: Build from Source
 
@@ -68,7 +68,7 @@ cd GLIMPSE/local-server/
 **Option A: UV (Recommended)**
 
 ```bash
-uv add -r requirements.txt --prerelease=allow
+uv sync
 ```
 
 **Option B: VENV**
@@ -108,35 +108,7 @@ If you used VENV or Conda, install requirements:
 pip install -r requirements.txt
 ```
 
-### Step 4: Install CIM-Builder (Required)
-
-CIM-Builder is needed to export modified CIM/XML files.
-
-In `GLIMPSE/local-server/`, clone CIM-Builder:
-
-```bash
-git clone -b develop https://github.com/PNNL-CIM-Tools/CIM-Builder.git
-```
-
-Navigate to the CIM-Builder directory and install it (without dependencies, as it requires an older version of cim-graph):
-
-```bash
-cd CIM-Builder
-```
-
-**With PIP:**
-
-```bash
-python -m pip install . --no-deps
-```
-
-**With UV:**
-
-```bash
-uv pip install . --no-deps
-```
-
-### Step 5: Install GLM Parser
+### Step 4: Install GLM Parser
 
 #### Standard Installation (Windows, Linux, Intel/AMD Mac)
 
@@ -156,14 +128,14 @@ uv pip install glm
 
 You'll need to build the GLM parser from source using Nim.
 
-Clone the GLM parser:
+Clone the glm parser repository i forked:
 
 ```bash
 cd GLIMPSE/local-server/
 ```
 
 ```bash
-git clone https://github.com/NREL/glm.git
+git clone https://github.com/itsMando/glm.git
 ```
 
 ```bash
@@ -173,29 +145,26 @@ cd glm
 Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
 
 ```bash
-nim c -d:release --opt:size --passC:"-flto" --passL:"-flto" --app:lib --out:lib/_glm.so src/glm.nim
+nimble -v
 ```
-
-Create a wheel:
 
 ```bash
-python setup.py bdist_wheel
-# or
-python3 setup.py bdist_wheel
+nimble release
+nimble package
 ```
 
-Install the wheel from `dist/` folder:
+Install the python binary distributable from `dist/` folder:
 
 **With PIP:**
 
 ```bash
-pip install dist/<whl-filename>.whl
+pip install dist/*.whl
 ```
 
 **With UV:**
 
 ```bash
-uv pip install dist/<whl-filename>.whl
+uv pip install dist/*.whl
 ```
 
 ## Start GLIMPSE
@@ -207,6 +176,115 @@ npm run dev
 ```
 
 The application will start in development mode. Open your browser and navigate to the provided local address (typically `http://localhost:5173/`) to access GLIMPSE.
+
+## Desktop App (Electron)
+
+GLIMPSE can also run as a standalone desktop application. The Electron shell starts the bundled local server automatically on launch and shuts it down (including all child processes) when the window is closed — no terminal or browser needed.
+
+> [!NOTE]
+> These steps assume you have completed the **Build from Source** setup above (Node dependencies and the Python environment for `local-server/`). The Python environment must include `pyinstaller`, which is listed in both `local-server/requirements.txt` and `local-server/pyproject.toml`.
+
+### Develop in a Desktop Window
+
+Runs the Python backend, the Vite dev server, and Electron together (with hot reload). Closing the Electron window stops all three:
+
+```bash
+npm run electron:dev
+```
+
+### Build an Installer
+
+Installers are built **on and for the OS you are running** (electron-builder cannot cross-compile, e.g. a Windows installer must be built on Windows):
+
+```bash
+npm run dist          # build for the current OS
+npm run dist:linux    # AppImage + .deb   (run on Linux)
+npm run dist:win      # NSIS installer    (run on Windows)
+npm run dist:mac      # .dmg              (run on macOS)
+```
+
+Each `dist` command runs three steps:
+
+1. `vite build` — bundles the React frontend into `dist/`
+2. `pyinstaller server.spec` — freezes the Python backend (with its Python runtime) into `local-server/dist/server/`
+3. `electron-builder` — packages both into an installer in `release/`
+
+The finished installer is written to the `release/` directory. The installed app needs no Node or Python on the target machine — the backend is fully self-contained.
+
+> [!TIP]
+> If `pyinstaller` is not on your PATH, activate the Python environment you created for `local-server/` first (or, with UV, run `uv run pyinstaller server.spec --noconfirm` inside `local-server/`).
+
+## Run with Docker
+
+The repository ships with a [Docker Compose](https://docs.docker.com/compose/) setup that builds and runs GLIMPSE as two containers — the React frontend (served by nginx) and the Flask + SocketIO backend — so you don't need to install Node, Python, or any of the plugins yourself.
+
+> [!NOTE]
+> This section assumes you already have a working **Docker Engine** with the **Docker Compose** plugin (`docker compose version` should print a version). If not, see [Docker's install guide](https://docs.docker.com/engine/install/).
+
+### Step 1: Clone the Repository
+
+```bash
+git clone http://github.com/pnnl/GLIMPSE
+cd GLIMPSE
+```
+
+### Step 2: Build and Start the Containers
+
+From the `GLIMPSE/` root directory (where `docker-compose.yml` lives), run:
+
+```bash
+docker compose up --build
+```
+
+The first build takes a few minutes while images are created; subsequent runs are cached and start quickly. Add `-d` to run detached (in the background):
+
+```bash
+docker compose up --build -d
+```
+
+### Step 3: Open GLIMPSE
+
+Once the containers are running, open your browser and navigate to:
+
+```
+http://localhost:5173
+```
+
+The frontend serves the UI on port **5173** and the backend listens on port **5052**.
+
+### Stopping the Containers
+
+```bash
+docker compose down
+```
+
+This stops and removes the containers and network. Built images remain cached for the next start. (If you ran in the foreground, you can also press `Ctrl+C` first, then run `docker compose down` to clean up.)
+
+### Deployment & Security Configuration
+
+The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the defaults below are safe as-is. **A networked deployment is different**: the Docker backend binds to `0.0.0.0`, which makes it reachable by any client that can route to the port. Because the backend has no per-user login, treat the following environment variables as required hardening before exposing it beyond localhost.
+
+| Variable | Applies to | Default | Purpose |
+| :------- | :--------- | :------ | :------ |
+| `GLIMPSE_API_TOKEN` | backend + frontend | _(empty → auth **off**)_ | Shared bearer token. When set, **every** HTTP request and WebSocket connection must present it or is rejected (`401` / refused handshake). Compose passes the same value to the backend (`GLIMPSE_API_TOKEN`) and the frontend (`API_TOKEN`). |
+| `CORS_ORIGINS` | backend | local dev ports | Comma-separated list of browser origins allowed to call the API (e.g. `https://glimpse.example.org`). `*` allows any origin but **disables credentialed CORS**. Pin this to your frontend's real origin in production. |
+| `GLIMPSE_EXPORT_DIR` | backend | system temp `/glimpse_exports` | Directory that CIM export writes are confined to. Client-supplied export paths are resolved inside this directory; absolute paths and `..` traversal are rejected. |
+| `GLIMPSE_ALLOW_ANY_EXPORT_PATH` | backend | `0` | Set to `1` only for a **desktop** build where the user intentionally picks any save location. Disables the export-path confinement above — do not enable on a shared/networked server. |
+| `MAX_UPLOAD_MB` | backend | `50` | Maximum request body size (MB) for uploads, to bound memory use. Requests over the limit get `413`. |
+| `EXPOSE_TRACEBACKS` | backend | `0` | When `1`, includes Python tracebacks in error responses (useful for local debugging). Leave off in production so internal details aren't leaked to clients. |
+| `GRIDAPPSD_ADDRESS` / `GRIDAPPSD_PORT` / `GRIDAPPSD_USER` / `GRIDAPPSD_PASSWORD` | backend | `localhost` / `61613` / `system` / `manager` | GridAPPS-D broker connection. The defaults are GridAPPS-D's own defaults — **change the credentials** for any real broker and source them from your secret store, not the compose file. |
+
+#### Enabling authentication
+
+Generate a random secret and set it before starting the stack — both containers pick it up:
+
+```bash
+export GLIMPSE_API_TOKEN="$(openssl rand -hex 32)"
+docker compose up --build
+```
+
+> [!IMPORTANT]
+> This token is a **coarse gate**, not per-user authentication. It is embedded in the frontend bundle (served in `env.js` and sent on every request), so anyone who can load the UI can read it. Its job is to keep arbitrary network clients that *don't* have the frontend from reaching the `0.0.0.0`-bound backend. If you need real per-user authorization, put GLIMPSE behind an authenticating reverse proxy or add session/OAuth login on top of this gate. For anything sensitive, also terminate TLS at a proxy so the token isn't sent in cleartext.
 
 ## Supported Input Files
 
@@ -237,6 +315,27 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
+
+## Socket Events API
+
+GLIMPSE exposes a [SocketIO](https://socket.io/) event API so external scripts can
+**load graphs** and **update the live visualization** — adding, removing,
+restyling, hiding, and showing nodes and edges in any connected frontend. Both the
+GLIMPSE JSON format and NetworkX node-link data are accepted.
+
+- **Full reference:** [`socket-testing/EVENTS_API.md`](socket-testing/EVENTS_API.md)
+  — payload shapes, field references, the data model, and example clients.
+- **Runnable examples:** [`socket-testing/`](socket-testing/) — connect and exercise
+  every event (`load-graph`, `update`, `add-node`, `add-edge`, `delete-node`,
+  `delete-edge`).
+
+```python
+import socketio, networkx as nx
+sio = socketio.Client(); sio.connect("http://127.0.0.1:5052")
+sio.call("load-graph", nx.node_link_data(nx.karate_club_graph()))
+sio.call("update", {"id": "0", "elementType": "node",
+                    "updates": {"color": "#ff0000", "size": 18, "hidden": None}})
+```
 
 ## Cite as
 

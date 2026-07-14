@@ -4,7 +4,6 @@ import forceAtlas2 from "graphology-layout-forceatlas2";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
-import { getFA2Settings } from "../utils/fa2-presets";
 import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
 
 class GraphHelper {
@@ -13,7 +12,15 @@ class GraphHelper {
     #theme = {};
     #highlightedGroups = [];
     #highlightedEdgeTypes = [];
+    #highlightedAreas = []; // selected distribution-area ids (any level)
     #hasFixedNodes = false;
+
+    // Searched/focused edge: pulsed and raised to the top so overlapping edges
+    // (e.g. when two endpoint nodes share coordinates) don't steal its clicks.
+    // See setFocusedEdge / getFocusedEdgeStyle.
+    #focusedEdgeId = null;
+    #focusPulseStart = 0;
+    #now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
     #ROTATE_ANGLE = Math.PI / 12; // 15 degrees in radians
 
@@ -33,6 +40,12 @@ class GraphHelper {
     glmFileData = {};
     focusedNode = null;
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
+
+    // Edge focus-pulse tuning. DURATION is how long the attention pulse plays
+    // before settling into a steady emphasis; PERIOD is one grow/shrink cycle.
+    FOCUS_PULSE_DURATION = 2600; // ms
+    FOCUS_PULSE_PERIOD = 650; // ms
+    FOCUS_COLOR = "#ff9500";
 
     constructor() {
         this.legendGraph = new MultiGraph();
@@ -166,29 +179,82 @@ class GraphHelper {
         );
     };
 
+    // Flat legend data for the DOM legend panel: only types actually present in the
+    // model (count > 0), each with its themed color so the panel can render swatches
+    // without reaching into the private theme.
+    getLegendData = () => {
+        const nodes = Object.entries(this.objectTypeCount.nodes)
+            .filter(([, count]) => count > 0)
+            .map(([type, count]) => ({
+                type,
+                count,
+                color: this.#theme.groups?.[type]?.color ?? "#888888",
+                borderColor: this.#theme.groups?.[type]?.borderColor ?? "#00000033",
+            }));
+
+        const edges = Object.entries(this.objectTypeCount.edges)
+            .filter(([, count]) => count > 0)
+            .map(([type, count]) => ({
+                type,
+                count,
+                color: this.#theme.edgeOptions?.[type]?.color ?? "#888888",
+            }));
+
+        return { nodes, edges };
+    };
+
+    // Distribution-area highlighting. Selected ids may be at any level
+    // (feeder / switch / secondary); a node or edge is "in" the selection if any
+    // of its area ids match. Because a member carries its full ancestry, selecting
+    // a switch area also matches the nodes/edges in that switch area's secondary
+    // areas, and selecting a feeder area matches everything under it.
+    setHighlightedAreas = (areaIds) => {
+        this.#highlightedAreas = Array.isArray(areaIds) ? areaIds : [];
+    };
+
+    getHighlightedAreas = () => {
+        return this.#highlightedAreas;
+    };
+
+    isInHighlightedArea = (attrs) => {
+        if (this.#highlightedAreas.length === 0) return true;
+        const a = (attrs && attrs.attributes) || {};
+        return (
+            this.#highlightedAreas.includes(a.feeder_area_id) ||
+            this.#highlightedAreas.includes(a.switch_area_id) ||
+            this.#highlightedAreas.includes(a.secondary_area_id)
+        );
+    };
+
     reset = () => {
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
+        this.#highlightedAreas.length = 0;
         this.highlightedNodeIDs.length = 0;
         this.highlightedEdgeIDs.length = 0;
         this.highlightedObjects.length = 0;
         this.focusIndex = -1;
+        this.clearEdgeFocus();
 
         // show any hidden edges and nodes
-        this.graph.updateEachEdgeAttributes((e, attrs) => ({
-            ...attrs,
-            size: this.#theme.edgeOptions[attrs.group].size,
+        this.graph.updateEachEdgeAttributes((id, edge) => ({
+            ...edge,
+            size: this.#theme.edgeOptions[edge.group].size,
+            type: edge.type === "animated" ? "straight" : edge.type,
             hidden: false,
+            zIndex: 0,
+            color: this.#theme.edgeOptions[edge.group].color,
+            size: this.#theme.edgeOptions[edge.group].size,
         }));
-        this.graph.updateEachNodeAttributes((n, attrs) => ({
-            ...attrs,
+
+        this.graph.updateEachNodeAttributes((id, node) => ({
+            ...node,
             hidden: false,
         }));
 
-        this.graph.updateEachEdgeAttributes((e, attrs) => ({
-            ...attrs,
-            type: attrs.type === "animated" ? "straight" : attrs.type,
-        }));
+        // Let UI (e.g. the legend panel) clear any per-type highlight/hide state it
+        // mirrors locally, since we just cleared it on the graph.
+        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-reset"));
     };
 
     clearGraphData = () => {
@@ -198,6 +264,7 @@ class GraphHelper {
         // Clear highlighted arrays and state
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
+        this.#highlightedAreas.length = 0;
         this.highlightedNodeIDs.length = 0;
         this.highlightedEdgeIDs.length = 0;
         this.highlightedObjects.length = 0;
@@ -242,17 +309,98 @@ class GraphHelper {
         return this.highlightedObjects[this.focusIndex];
     };
 
+    // ── Searched-edge focus pulse ────────────────────────────────────────────
+    // When the user searches for (or steps Prev/Next to) an edge we pulse it and
+    // raise its zIndex so it draws — and hit-tests — on top of any edges stacked
+    // underneath it (e.g. when two nodes share the same coordinates). The pulse
+    // plays for FOCUS_PULSE_DURATION then eases into a steady emphasis that holds
+    // until reset() or another edge is focused.
+
+    setFocusedEdge = (edgeId) => {
+        // restore the previously focused edge's normal stacking order
+        if (
+            this.#focusedEdgeId &&
+            this.#focusedEdgeId !== edgeId &&
+            this.graph.hasEdge(this.#focusedEdgeId)
+        ) {
+            this.graph.setEdgeAttribute(this.#focusedEdgeId, "zIndex", 0);
+        }
+
+        this.#focusedEdgeId = edgeId;
+        this.#focusPulseStart = this.#now();
+
+        // zIndex is a layout-impacting field, so setting it triggers a re-index +
+        // z-order re-sort on the next (full) refresh — this is what actually
+        // brings the edge to the top for drawing and click/double-click picking.
+        if (edgeId && this.graph.hasEdge(edgeId)) {
+            this.graph.setEdgeAttribute(edgeId, "zIndex", 1000);
+        }
+    };
+
+    clearEdgeFocus = () => {
+        if (this.#focusedEdgeId && this.graph.hasEdge(this.#focusedEdgeId)) {
+            this.graph.setEdgeAttribute(this.#focusedEdgeId, "zIndex", 0);
+        }
+        this.#focusedEdgeId = null;
+        this.#focusPulseStart = 0;
+    };
+
+    getFocusedEdgeId = () => this.#focusedEdgeId;
+
+    // True only while the attention pulse is still animating, so the render
+    // ticker knows to keep issuing frames. Once false the edge keeps its steady
+    // emphasis from the last rendered frame without any ongoing refreshes.
+    isFocusPulseActive = () => {
+        if (!this.#focusedEdgeId) return false;
+        return this.#now() - this.#focusPulseStart <= this.FOCUS_PULSE_DURATION;
+    };
+
+    // Returns a pulsed/emphasized copy of `attrs` when `edgeId` is the focused
+    // edge, otherwise null. Called from the Sigma edge reducer BEFORE any dimming
+    // logic so the focused edge is never greyed out.
+    getFocusedEdgeStyle = (edgeId, attrs) => {
+        if (!this.#focusedEdgeId || edgeId !== this.#focusedEdgeId) return null;
+
+        const elapsed = this.#now() - this.#focusPulseStart;
+        // Amplitude eases full → 0 across the pulse window; afterward `decay` is 0
+        // so the edge holds a steady 2× emphasis instead of oscillating forever.
+        const decay = Math.max(0, 1 - elapsed / this.FOCUS_PULSE_DURATION);
+        const wave = 0.5 + 0.5 * Math.sin((elapsed / this.FOCUS_PULSE_PERIOD) * 2 * Math.PI);
+        const base = attrs.size || 2;
+
+        const styled = {
+            ...attrs,
+            color: this.FOCUS_COLOR,
+            size: base * (2 + 2 * wave * decay),
+            zIndex: 1000,
+            label: attrs.attributes?.name ?? edgeId,
+            forceLabel: true,
+        };
+
+        // Icon edges pulse their symbol too, without overwriting a switch's
+        // open/closed status color (which stays meaningful).
+        const iconScale = 1 + 0.6 * wave * decay;
+        if (attrs.iconType === "switch") styled.switchSize = (attrs.switchSize || 8) * iconScale;
+        else if (attrs.iconType === "regulator")
+            styled.regulatorSize = (attrs.regulatorSize || 16) * iconScale;
+        else if (attrs.iconType === "transformer")
+            styled.transformerSize = (attrs.transformerSize || 16) * iconScale;
+
+        return styled;
+    };
+
     focus = (obj) => {
         console.log("Focusing on: " + obj.id);
 
         if (obj.type === "node") {
+            this.clearEdgeFocus();
             this.graph.setNodeAttribute(obj.id, "highlighted", true);
             this.focusedNode = obj.id;
 
             const { x, y } = this.sigmaInstance.getNodeDisplayData(obj.id);
             this.sigmaInstance.getCamera().animate({ x: x, y: y, ratio: 0.05 }, { duration: 1000 });
         } else if (obj.type === "edge") {
-            this.graph.setEdgeAttribute(obj.id, "label", obj.id);
+            this.setFocusedEdge(obj.id);
             const { attributes } = this.graph.getEdgeAttributes(obj.id);
             const fromNode = this.sigmaInstance.getNodeDisplayData(attributes.from);
             const toNode = this.sigmaInstance.getNodeDisplayData(attributes.to);
@@ -286,7 +434,21 @@ class GraphHelper {
         const title = [];
 
         for (let [key, val] of Object.entries(attributes)) {
-            title.push(`${key}: ${val}`);
+            // The dist_areas list of nested areas is rendered one area per line
+            // (type: name) so the tooltip card stays narrow instead of one wide
+            // JSON line.
+            if (key === "dist_areas" && Array.isArray(val)) {
+                title.push(`${key}:`);
+                for (const area of val) {
+                    title.push(`  ${area.dist_area_type}: ${area.dist_area_name || area.dist_area_id}`);
+                }
+                continue;
+            }
+
+            // Any other nested array/object would otherwise render as
+            // "[object Object]"; serialize it so the tooltip stays readable.
+            const display = val !== null && typeof val === "object" ? JSON.stringify(val) : val;
+            title.push(`${key}: ${display}`);
         }
 
         return title.join("\n");
@@ -418,13 +580,24 @@ class GraphHelper {
                     id: type,
                     from: nodeIDFrom,
                     to: nodeIDTo,
-                    type: type === "switch" ? "switch" : "straight",
+                    type:
+                        type === "switch"
+                            ? "switch"
+                            : type === "regulator"
+                              ? "regulator"
+                              : type === "transformer"
+                                ? "transformer"
+                                : "straight",
                     title: "Double Click to Highlight !",
                     label: `${type} [${this.objectTypeCount.edges[type]}]`,
                     forceLabel: true,
                     size: 8,
                     switchSize: 16,
                     switchColor: "#FF0000",
+                    regulatorSize: 50,
+                    regulatorColor: this.#theme.edgeOptions[type].color,
+                    transformerSize: 50,
+                    transformerColor: this.#theme.edgeOptions[type].color,
                     color: this.#theme.edgeOptions[type].color,
                 });
             } else {
@@ -483,34 +656,6 @@ class GraphHelper {
         return (maxCurvature * index) / maxIndex;
     }
 
-    /**
-     * Runs a synchronous ForceAtlas2 pass on a freshly-built graph so it renders
-     * already unraveled. Iteration count scales down as the graph grows so the
-     * blocking pass stays responsive on large models.
-     * @param {MultiUndirectedGraph} graph
-     */
-    #preWarmLayout(graph) {
-        const order = graph.order;
-
-        // More nodes → fewer iterations to keep the synchronous pass snappy.
-        // ~600 iters for small graphs, tapering to a floor of ~80 for huge ones.
-        let iterations;
-        if (order <= 1_000) iterations = 300;
-        else if (order <= 5_000) iterations = 200;
-        else if (order <= 20_000) iterations = 120;
-        else iterations = 80;
-
-        try {
-            forceAtlas2.assign(graph, {
-                iterations,
-                settings: getFA2Settings(graph),
-            });
-        } catch (err) {
-            // Layout is a best-effort enhancement; never block graph loading on it.
-            console.warn("FA2 pre-warm failed, falling back to initial placement:", err);
-        }
-    }
-
     assignParallelEdgeCurvatures = (graph) => {
         // Step 1: let the library detect which edges are parallel
         indexParallelEdgesIndex(graph, {
@@ -519,16 +664,42 @@ class GraphHelper {
             edgeMaxIndexAttribute: "parallelMaxIndex",
         });
 
+        // Icon edges (switch / regulator / transformer) keep their custom symbol
+        // when fanned out: map to a curved-line variant instead of plain "curved"
+        // so the icon program still runs and draws the symbol on the curve.
+        const curvedIconType = {
+            switch: "curvedSwitch",
+            regulator: "curvedRegulator",
+            transformer: "curvedTransformer",
+        };
+        const curvedType = (iconType) => (iconType ? curvedIconType[iconType] : "curved");
+        // Tiny curvature for the otherwise-straight primary of an icon fan: keeps
+        // the whole fan in ONE curved edge type (so every icon is drawn after every
+        // line, i.e. on top) while staying visually straight. The curve program
+        // can't render an exactly-zero curvature, so this can't be 0.
+        const ICON_PRIMARY_CURVATURE = 0.012;
+
         // Step 2: assign type + curvature based on the indexed values
-        graph.forEachEdge((edge, { parallelIndex, parallelMinIndex, parallelMaxIndex }) => {
+        graph.forEachEdge((edge, { parallelIndex, parallelMinIndex, parallelMaxIndex, iconType }) => {
             if (typeof parallelMinIndex === "number") {
                 // ── Undirected parallel group ──
-                // The edge at index 0 gets to stay straight (the "primary" edge).
-                // All others are curved so they fan out on either side.
-                graph.mergeEdgeAttributes(edge, {
-                    type: parallelIndex ? "curved" : "straight",
-                    curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
-                });
+                // The edge at index 0 normally stays straight (the "primary" edge);
+                // all others curve so they fan out on either side.
+                const curvature = this.#getCurvature(parallelIndex, parallelMaxIndex);
+
+                if (iconType) {
+                    // Keep every member of an icon fan in the same curved type so the
+                    // icons always render on top of all the fan's lines.
+                    graph.mergeEdgeAttributes(edge, {
+                        type: curvedType(iconType),
+                        curvature: parallelIndex ? curvature : ICON_PRIMARY_CURVATURE,
+                    });
+                } else {
+                    graph.mergeEdgeAttributes(edge, {
+                        type: parallelIndex ? "curved" : "straight",
+                        curvature,
+                    });
+                }
 
                 return;
             }
@@ -537,7 +708,7 @@ class GraphHelper {
                 // ── Directed parallel group (shouldn't happen in our undirected
                 //    graph, but included for completeness) ──
                 graph.mergeEdgeAttributes(edge, {
-                    type: "curved",
+                    type: curvedType(iconType),
                     curvature: this.#getCurvature(parallelIndex, parallelMaxIndex),
                 });
             }
@@ -603,44 +774,98 @@ class GraphHelper {
     handleSimulationOutput = (output) => {
         const { timestamp, Analog, Discrete } = output;
 
+        // Real part of the complex power below this (in VA) is treated as zero so
+        // we don't pick a flow direction off of numerical noise.
+        const FLOW_THRESHOLD = 1e-6;
+
+        // On a one-line diagram a single edge carries several VA measurements
+        // (one per phase). The true power flow is the complex sum of all of them,
+        // so aggregate by edge before deciding direction. magnitude/angle describe
+        // the polar form of each complex VA measurement (angle is in degrees).
+        const edgePowerSums = new Map(); // equipment_mrid -> { real, imag, normalLimit }
+
         for (let measurement of Analog) {
+            // Only VA (power) measurements determine flow; skip PNV/Pos/etc.
+            if (measurement.measurement_type !== "VA") continue;
+
             if (
-                !this.graph.hasNode(measurement.equipment_mrid) &&
-                this.graph.hasEdge(measurement.equipment_mrid)
-            ) {
-                this.graph.updateEdgeAttributes(measurement.equipment_mrid, (edgeAttrs) => {
-                    if (!(edgeAttrs.type === "switch")) {
-                        edgeAttrs.type = "animated";
-
-                        if (-0.3 <= measurement.magnitude && measurement.magnitude <= 0.3) {
-                            edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
-                            edgeAttrs.type = "straight";
-                            return edgeAttrs;
-                        }
-
-                        const powerFlow = measurement.magnitude / measurement.normal_limit.Normal;
-                        const newSize = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
-                        edgeAttrs.size = newSize;
-
-                        if (-90 <= measurement.angle && measurement.angle <= 90) {
-                            edgeAttrs.flowDirection = 1; // forward
-                        } else if (Math.abs(180 + measurement.angle) <= 1) {
-                            // Is angle ~ -180?
-                            edgeAttrs.flowDirection = -1; // reverse
-                            console.log(`Reversing flow for: ${edgeAttrs.attributes.name}`);
-                        }
-                    }
-
-                    return edgeAttrs;
-                });
-            } else if (
-                !this.graph.hasEdge(measurement.equipment_mrid) &&
+                !this.graph.hasEdge(measurement.equipment_mrid) ||
                 this.graph.hasNode(measurement.equipment_mrid)
             ) {
-                // console.log("Analog node measurement");
-                // console.log(measurement);
                 continue;
             }
+
+            const angleRad = (measurement.angle * Math.PI) / 180;
+            const sum = edgePowerSums.get(measurement.equipment_mrid) || {
+                real: 0,
+                imag: 0,
+                normalLimit: measurement.normal_limit?.Normal,
+            };
+            sum.real += measurement.magnitude * Math.cos(angleRad);
+            sum.imag += measurement.magnitude * Math.sin(angleRad);
+            if (sum.normalLimit == null && measurement.normal_limit) {
+                sum.normalLimit = measurement.normal_limit.Normal;
+            }
+            edgePowerSums.set(measurement.equipment_mrid, sum);
+        }
+
+        for (const [edgeID, sum] of edgePowerSums) {
+            this.graph.updateEdgeAttributes(edgeID, (edgeAttrs) => {
+                // Don't animate icon edges (switch/regulator/transformer, straight
+                // or curved) — that would replace their custom symbol program.
+                if (edgeAttrs.iconType) {
+                    return edgeAttrs;
+                }
+
+                // Direction follows the sign of the real part of the summed power;
+                // when the real part is ~0 fall back to the imaginary part. Same
+                // sign->direction mapping for either: positive = from->to (forward).
+                let flowDirection;
+                if (Math.abs(sum.real) >= FLOW_THRESHOLD) {
+                    flowDirection = sum.real > 0 ? 1 : -1;
+                } else if (Math.abs(sum.imag) >= FLOW_THRESHOLD) {
+                    flowDirection = sum.imag > 0 ? 1 : -1;
+                } else {
+                    flowDirection = 0; // both parts within the threshold -> no flow
+                }
+
+                const prevFlowDirection = edgeAttrs.flowDirection;
+                const edgeName = edgeAttrs.attributes?.name ?? edgeID;
+                console.log(
+                    `[flow] ${edgeName}: VA sum real=${sum.real.toExponential(3)} ` +
+                        `imag=${sum.imag.toExponential(3)} -> flowDirection ${prevFlowDirection} => ${flowDirection}` +
+                        (prevFlowDirection !== flowDirection ? " (CHANGED)" : " (unchanged)"),
+                );
+
+                if (flowDirection === 0) {
+                    edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
+                    edgeAttrs.type = "straight";
+                    edgeAttrs.flowDirection = flowDirection;
+                    return edgeAttrs;
+                }
+
+                edgeAttrs.type = "animated";
+                edgeAttrs.flowDirection = flowDirection;
+                // Restore the edge's theme color in case it was greyed out while
+                // it had no flow on a previous tick.
+                edgeAttrs.color = this.#theme.edgeOptions[edgeAttrs.group]?.color ?? edgeAttrs.color;
+
+                if (sum.normalLimit) {
+                    const powerFlow = Math.hypot(sum.real, sum.imag) / sum.normalLimit;
+                    edgeAttrs.size = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
+                    // Dots travel faster the more power the line carries. dotSpeed is
+                    // in cycles/sec; clamp to a band so low flow still creeps and
+                    // high flow doesn't blur into a solid line.
+                    const DOT_SPEED_MIN = 0.1;
+                    const DOT_SPEED_MAX = 1.0;
+                    edgeAttrs.dotSpeed = Math.min(
+                        DOT_SPEED_MAX,
+                        Math.max(DOT_SPEED_MIN, Math.log(powerFlow + 1) * 0.6),
+                    );
+                }
+
+                return edgeAttrs;
+            });
         }
 
         for (let measurement of Discrete) {
@@ -714,7 +939,22 @@ class GraphHelper {
         if (edgeType === "switch") {
             newEdge.switchColor = "#ff0000";
             newEdge.type = "switch";
+            newEdge.iconType = "switch";
             newEdge.switchSize = 8;
+        }
+
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (edgeType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (edgeType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
         }
 
         this.graph.addNode(nodeID, newNode);
@@ -742,10 +982,293 @@ class GraphHelper {
         if (edgeType === "switch") {
             newEdge.switchColor = "#ff0000";
             newEdge.type = "switch";
+            newEdge.iconType = "switch";
             newEdge.switchSize = 8;
         }
 
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (edgeType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (edgeType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
+        }
+
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
+    };
+
+    // ============================================================================
+    // EXTERNAL SOCKET API
+    // Methods driven by the socket "load-graph" / "update" / "add-*" / "delete-*"
+    // events so external scripts can load and mutate the live visualization.
+    // ============================================================================
+
+    /**
+     * Loads a graph received over the socket "load-graph" event. `fileData` is the
+     * normalized { name: { objects: [...] } } structure produced by the server for
+     * both GLIMPSE-format and NetworkX node-link payloads. Mirrors the file-upload
+     * flow so the rest of the app reacts the same way. The caller is responsible
+     * for triggering a React re-render (e.g. via the GraphContext) afterwards.
+     * @param {Object} fileData
+     * @param {Object|null} themeData
+     */
+    loadGraphFromData = (fileData, themeData = null) => {
+        if (this.graph.order > 0) {
+            this.clearGraphData();
+            if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-cleared"));
+        }
+
+        this.isCIM = false;
+        this.setThemeObject(themeData);
+        this.setGraphData(fileData);
+
+        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-loaded"));
+    };
+
+    /**
+     * Applies a color/size/hidden update to a single node or edge.
+     * @param {Object} data - { id, elementType: "node"|"edge", updates: { color, size, hidden } }
+     *   Any value in `updates` may be null/undefined to leave that property unchanged.
+     * @returns {boolean} whether the update was applied
+     */
+    applyUpdate = (data) => {
+        if (!data || typeof data !== "object") {
+            console.warn("[GraphHelper] update: invalid payload.", data);
+            return false;
+        }
+
+        const { id, elementType, updates } = data;
+        if (id === undefined || id === null || !updates || typeof updates !== "object") {
+            console.warn("[GraphHelper] update: payload needs 'id' and an 'updates' object.", data);
+            return false;
+        }
+
+        let setAttr;
+        if (elementType === "node") {
+            if (!this.graph.hasNode(id)) {
+                console.warn(`[GraphHelper] update: node "${id}" not found.`);
+                return false;
+            }
+            setAttr = (key, value) => this.graph.setNodeAttribute(id, key, value);
+        } else if (elementType === "edge") {
+            if (!this.graph.hasEdge(id)) {
+                console.warn(`[GraphHelper] update: edge "${id}" not found.`);
+                return false;
+            }
+            setAttr = (key, value) => this.graph.setEdgeAttribute(id, key, value);
+        } else {
+            console.warn(`[GraphHelper] update: unknown elementType "${elementType}".`);
+            return false;
+        }
+
+        const { color, size, hidden } = updates;
+        // null / undefined means "leave this property unchanged"
+        if (color !== null && color !== undefined) setAttr("color", color);
+        if (size !== null && size !== undefined) setAttr("size", size);
+        if (hidden !== null && hidden !== undefined) setAttr("hidden", hidden);
+
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Adds a single node to the live graph from a GLIMPSE-format object:
+     *   { objectType, elementType: "node", attributes: { id|name, x?, y?, ... } }
+     * @returns {boolean} whether the node was added
+     */
+    addNode = (obj) => {
+        if (!obj || typeof obj !== "object" || !obj.attributes) {
+            console.warn("[GraphHelper] add-node: payload must include an 'attributes' object.", obj);
+            return false;
+        }
+
+        if (!this.#theme || !this.#theme.groups) this.setThemeObject();
+
+        const attributes = obj.attributes;
+        const objectType = obj.objectType ?? obj.name ?? "node";
+        const nodeID = attributes.id ?? attributes.name;
+
+        if (nodeID === undefined || nodeID === null) {
+            console.warn("[GraphHelper] add-node: attributes must include an 'id' or 'name'.", obj);
+            return false;
+        }
+        if (this.graph.hasNode(nodeID)) {
+            console.warn(`[GraphHelper] add-node: node "${nodeID}" already exists.`);
+            return false;
+        }
+
+        // Register a theme entry + type for previously-unseen node types
+        if (!(objectType in this.#theme.groups)) {
+            this.#theme.groups[objectType] = { size: 4, color: this.getRandomColor() };
+        }
+        if (!this.nodeTypes.includes(objectType)) this.nodeTypes.push(objectType);
+
+        // Place the node at the supplied coordinates, or the center of the graph
+        const midX = (this.#boundsCoords.maxX + this.#boundsCoords.minX) / 2;
+        const midY = (this.#boundsCoords.maxY + this.#boundsCoords.minY) / 2;
+        const x = attributes.x !== undefined ? parseFloat(attributes.x) : midX;
+        const y = attributes.y !== undefined ? parseFloat(attributes.y) : midY;
+
+        const node = {
+            label: attributes.name ?? String(nodeID),
+            elementType: "node",
+            group: objectType,
+            attributes,
+            x,
+            y,
+            fixed: false,
+            ...this.#theme.groups[objectType],
+        };
+        node.attributesLabel = this.getTitle(attributes);
+
+        this.objectTypeCount.nodes[objectType] = (this.objectTypeCount.nodes[objectType] ?? 0) + 1;
+
+        this.graph.addNode(nodeID, node);
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Adds a single edge to the live graph from a GLIMPSE-format object:
+     *   { objectType, elementType: "edge", attributes: { id?, from, to, ... } }
+     * Both endpoint nodes must already exist.
+     * @returns {boolean} whether the edge was added
+     */
+    addEdge = (obj) => {
+        if (!obj || typeof obj !== "object" || !obj.attributes) {
+            console.warn("[GraphHelper] add-edge: payload must include an 'attributes' object.", obj);
+            return false;
+        }
+
+        if (!this.#theme || !this.#theme.edgeOptions) this.setThemeObject();
+
+        const attributes = obj.attributes;
+        const objectType = obj.objectType ?? obj.name ?? "edge";
+        const fromNode = attributes.from;
+        const toNode = attributes.to;
+        const edgeID = attributes.id ?? `${fromNode}->${toNode}`;
+
+        if (fromNode === undefined || toNode === undefined) {
+            console.warn("[GraphHelper] add-edge: attributes must include 'from' and 'to'.", obj);
+            return false;
+        }
+        if (!this.graph.hasNode(fromNode) || !this.graph.hasNode(toNode)) {
+            console.warn(
+                `[GraphHelper] add-edge: both endpoints "${fromNode}" and "${toNode}" must exist.`,
+            );
+            return false;
+        }
+        if (this.graph.hasEdge(edgeID)) {
+            console.warn(`[GraphHelper] add-edge: edge "${edgeID}" already exists.`);
+            return false;
+        }
+
+        if (!(objectType in this.#theme.edgeOptions)) {
+            this.#theme.edgeOptions[objectType] = { color: this.getRandomColor(), width: 2 };
+        }
+        if (!this.edgeTypes.includes(objectType)) this.edgeTypes.push(objectType);
+
+        const newEdge = {
+            elementType: "edge",
+            group: objectType,
+            type: "straight",
+            dotColor: "#ff0000",
+            dotSize: 6,
+            dotSpeed: 0.25,
+            dotPhase: Math.random(),
+            flowDirection: 1, // -1 for opposite flow
+            dotCount: 1,
+            attributes: { ...attributes, id: edgeID, from: fromNode, to: toNode },
+            ...this.#theme.edgeOptions[objectType],
+        };
+
+        // color switch edges red if they are open
+        if (objectType === "switch") {
+            newEdge.switchColor = "#ff0000";
+            newEdge.type = "switch";
+            newEdge.iconType = "switch";
+            newEdge.switchSize = 8;
+        }
+
+        // draw an IEEE regulator symbol in the middle of regulator edges
+        if (objectType === "regulator") {
+            newEdge.type = "regulator";
+            newEdge.iconType = "regulator";
+            newEdge.regulatorSize = 16;
+        }
+
+        // draw an IEEE transformer symbol in the middle of transformer edges
+        if (objectType === "transformer") {
+            newEdge.type = "transformer";
+            newEdge.iconType = "transformer";
+            newEdge.transformerSize = 16;
+        }
+
+        this.objectTypeCount.edges[objectType] = (this.objectTypeCount.edges[objectType] ?? 0) + 1;
+
+        this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
+        this.assignParallelEdgeCurvatures(this.graph);
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Removes a node (and its attached edges) from the live graph.
+     * Accepts either the node id or an object containing an `id` key.
+     * @returns {boolean} whether the node was removed
+     */
+    deleteNode = (nodeID) => {
+        const id = typeof nodeID === "object" && nodeID !== null ? (nodeID.id ?? nodeID.nodeID) : nodeID;
+
+        if (!this.graph.hasNode(id)) {
+            console.warn(`[GraphHelper] delete-node: node "${id}" not found.`);
+            return false;
+        }
+
+        const group = this.graph.getNodeAttribute(id, "group");
+
+        // Keep edge type counts honest by tallying the edges dropNode will remove
+        this.graph.forEachEdge(id, (_edge, attrs) => {
+            if (attrs.group && this.objectTypeCount.edges[attrs.group] > 0)
+                this.objectTypeCount.edges[attrs.group]--;
+        });
+
+        this.graph.dropNode(id); // also removes attached edges
+        if (group && this.objectTypeCount.nodes[group] > 0) this.objectTypeCount.nodes[group]--;
+
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
+    };
+
+    /**
+     * Removes an edge from the live graph.
+     * Accepts either the edge id or an object containing an `id` key.
+     * @returns {boolean} whether the edge was removed
+     */
+    deleteEdge = (edgeID) => {
+        const id = typeof edgeID === "object" && edgeID !== null ? (edgeID.id ?? edgeID.edgeID) : edgeID;
+
+        if (!this.graph.hasEdge(id)) {
+            console.warn(`[GraphHelper] delete-edge: edge "${id}" not found.`);
+            return false;
+        }
+
+        const group = this.graph.getEdgeAttribute(id, "group");
+        this.graph.dropEdge(id);
+        if (group && this.objectTypeCount.edges[group] > 0) this.objectTypeCount.edges[group]--;
+
+        this.setLegendData();
+        this.sigmaInstance?.refresh();
+        return true;
     };
 
     export = () => {
@@ -877,20 +1400,33 @@ class GraphHelper {
             }
         }
 
-        // Collect distribution area metadata from node attributes
+        // Collect distribution area metadata from node attributes. A node may
+        // belong to several nested areas (dist_areas list); fall back to the
+        // flat dist_area_* fields for backward compatibility.
         this.distributionAreas = {};
+        const collectArea = (dist_area_type, dist_area_id, dist_area_name) => {
+            if (!dist_area_type || !dist_area_id) return;
+            if (!this.distributionAreas[dist_area_type]) {
+                this.distributionAreas[dist_area_type] = [];
+            }
+            if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
+                this.distributionAreas[dist_area_type].push({
+                    name: dist_area_name || dist_area_id,
+                    id: dist_area_id,
+                });
+            }
+        };
         newGraph.forEachNode((_nodeId, attrs) => {
-            const { dist_area_type, dist_area_id, dist_area_name } = attrs.attributes || {};
-            if (dist_area_type && dist_area_id) {
-                if (!this.distributionAreas[dist_area_type]) {
-                    this.distributionAreas[dist_area_type] = [];
-                }
-                if (!this.distributionAreas[dist_area_type].find((a) => a.id === dist_area_id)) {
-                    this.distributionAreas[dist_area_type].push({
-                        name: dist_area_name || dist_area_id,
-                        id: dist_area_id,
-                    });
-                }
+            const attributes = attrs.attributes || {};
+            const areas = attributes.dist_areas;
+            if (Array.isArray(areas) && areas.length > 0) {
+                areas.forEach((a) => collectArea(a.dist_area_type, a.dist_area_id, a.dist_area_name));
+            } else {
+                collectArea(
+                    attributes.dist_area_type,
+                    attributes.dist_area_id,
+                    attributes.dist_area_name,
+                );
             }
         });
 
@@ -949,7 +1485,27 @@ class GraphHelper {
                     if (objectType === "switch") {
                         newEdge.switchColor = "#ff0000";
                         newEdge.type = "switch";
+                        newEdge.iconType = "switch";
                         newEdge.switchSize = 8;
+                    }
+
+                    // draw an IEEE symbol in the middle of transformer edges:
+                    // regulators (transformers tagged class_type "regulator") get the
+                    // tap-changer arrow, all other transformers get the plain windings.
+                    if (objectType === "regulator") {
+                        newEdge.type = "regulator";
+                        newEdge.iconType = "regulator";
+                        newEdge.regulatorSize = 16;
+                    } else if (objectType === "transformer") {
+                        if (attributes?.class_type === "regulator") {
+                            newEdge.type = "regulator";
+                            newEdge.iconType = "regulator";
+                            newEdge.regulatorSize = 16;
+                        } else {
+                            newEdge.type = "transformer";
+                            newEdge.iconType = "transformer";
+                            newEdge.transformerSize = 16;
+                        }
                     }
 
                     newGraph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, newEdge);
@@ -1036,7 +1592,7 @@ class GraphHelper {
                     nodeCommunityAttribute: "CID",
                     resolution: 0.8,
                 });
-                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 5, center: 0 });
+                circlepack.assign(newGraph, { hierarchyAttributes: ["CID"], scale: 1, center: 0 });
             } else {
                 circlepack.assign(newGraph);
             }

@@ -1,12 +1,10 @@
 import React from "react";
 import { Table, Typography } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
-import { useGraph } from "../../contexts/GraphContext";
 
 const { Link } = Typography;
 
 const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
-    const { darkMode } = useGraph();
     const handleObjectClick = (record) => {
         if (isCIM) {
             onEditObject({
@@ -38,18 +36,6 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
                 key: colName,
                 fixed: "left",
                 width: 120,
-                onCell: (_, index) => ({
-                    style: {
-                        backgroundColor:
-                            index % 2 === 0
-                                ? darkMode
-                                    ? "#1f1f1f"
-                                    : "#ffffff"
-                                : darkMode
-                                  ? "#2a2a2a"
-                                  : "#fafafa",
-                    },
-                }),
                 render: (_, record) => <Typography.Text strong>{record.group}</Typography.Text>,
             };
         }

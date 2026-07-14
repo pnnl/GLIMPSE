@@ -1,0 +1,4 @@
+# Dependencies for the GLIMPSE socket API test scripts.
+#   pip install -r socket-testing/requirements.txt
+python-socketio[client]
+networkx

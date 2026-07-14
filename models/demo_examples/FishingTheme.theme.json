@@ -1,0 +1,118 @@
+{
+    "groups": {
+        "Location": {
+            "size": 5,
+            "image": "./imgs/location.svg",
+            "type": "nodeImg"
+        },
+        "City": {
+            "size": 5,
+            "image": "./imgs/city.svg",
+            "type": "nodeImg"
+        },
+        "FishingCompany": {
+            "size": 5,
+            "image": "./imgs/FishingCompany.svg",
+            "type": "nodeImg"
+        },
+        "Person": {
+            "size": 5,
+            "image": "./imgs/person.svg",
+            "type": "nodeImg"
+        },
+        "Company": {
+            "size": 5,
+            "image": "./imgs/company.svg",
+            "type": "nodeImg"
+        },
+        "Organization": {
+            "size": 5,
+            "image": "./imgs/Organization.svg",
+            "type": "nodeImg"
+        },
+        "LogisticsCompany": {
+            "size": 5,
+            "image": "./imgs/logisticsCompany.svg",
+            "type": "nodeImg"
+        },
+        "Region": {
+            "size": 5,
+            "image": "./imgs/region.svg",
+            "type": "nodeImg"
+        },
+        "Point": {
+            "size": 5,
+            "image": "./imgs/point.svg",
+            "type": "nodeImg"
+        },
+        "NGO": {
+            "size": 5,
+            "image": "./imgs/NGO.svg",
+            "type": "nodeImg"
+        },
+        "Commodity": {
+            "size": 5,
+            "image": "./imgs/Commodity.svg",
+            "type": "nodeImg"
+        },
+        "GovernmentOrg": {
+            "size": 5,
+            "image": "./imgs/GovernmentOrg.svg",
+            "type": "nodeImg"
+        }
+    },
+    "edgeOptions": {
+        "Fishing": {
+            "width": 1,
+            "color": "#6a994e"
+        },
+        "Summons": {
+            "width": 1,
+            "color": "#1b4965"
+        },
+        "Invest": {
+            "width": 1,
+            "color": "#A66AC7"
+        },
+        "Aid": {
+            "width": 1,
+            "color": "#75ED90"
+        },
+        "Transaction": {
+            "width": 1,
+            "color": "#C23394"
+        },
+        "SustainableFishing": {
+            "width": 1,
+            "color": "#EAE2b7"
+        },
+        "Conference": {
+            "width": 1,
+            "color": "#A7FA52"
+        },
+        "OverFishing": {
+            "width": 1,
+            "color": "#CB3632"
+        },
+        "Criticize": {
+            "width": 1,
+            "color": "#53D84D"
+        },
+        "PartiallyOwns": {
+            "width": 1,
+            "color": "#44C51"
+        },
+        "Applaud": {
+            "width": 1,
+            "color": "#F8E814"
+        },
+        "CertificateIssued": {
+            "width": 1,
+            "color": "#D8D582"
+        },
+        "Convicted": {
+            "width": 1,
+            "color": "#10494A"
+        }
+    }
+}

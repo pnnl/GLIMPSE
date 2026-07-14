@@ -5,21 +5,21 @@
             "color": "#E69F00",
             "type": "nodeImg",
             "borderColor": "#A67000",
-            "image": "/imgs/Load.svg"
+            "image": "./imgs/Load.svg"
         },
         "triplex_load": {
             "size": 5,
             "color": "#F0C060",
             "type": "nodeImg",
             "borderColor": "#A67000",
-            "image": "/imgs/Load.svg"
+            "image": "./imgs/Load.svg"
         },
         "capacitor": {
             "size": 5,
             "color": "#56B4E9",
             "type": "nodeImg",
             "borderColor": "#1F6F9C",
-            "image": "/imgs/Capacitor.svg"
+            "image": "./imgs/Capacitor.svg"
         },
         "triplex_node": {
             "size": 2.5,
@@ -31,14 +31,14 @@
             "color": "#D55E00",
             "type": "nodeImg",
             "borderColor": "#8C3D00",
-            "image": "/imgs/substation.svg"
+            "image": "./imgs/substation.svg"
         },
         "triplex_meter": {
             "size": 5,
             "color": "#0072B2",
             "borderColor": "#004D78",
             "type": "nodeImg",
-            "image": "/imgs/meter.svg"
+            "image": "./imgs/meter.svg"
         },
         "node": {
             "size": 2.5,
@@ -50,25 +50,25 @@
             "color": "#CC79A7",
             "type": "nodeImg",
             "borderColor": "#8C4E75",
-            "image": "/imgs/meter.svg"
+            "image": "./imgs/meter.svg"
         },
         "inverter_dyn": {
             "size": 5,
             "color": "#F0E442",
             "borderColor": "#A89E00",
             "type": "nodeImg",
-            "image": "/imgs/Inverter.svg"
+            "image": "./imgs/Inverter.svg"
         },
         "inverter": {
             "size": 5,
             "color": "#F0E442",
-            "image": "/imgs/Inverter.svg",
+            "image": "./imgs/Inverter.svg",
             "type": "nodeImg"
         },
         "battery": {
             "size": 5,
             "color": "#CC79A7",
-            "image": "/imgs/battery.svg",
+            "image": "./imgs/battery.svg",
             "type": "nodeImg"
         },
         "diesel_dg": {
@@ -76,21 +76,21 @@
             "color": "#D55E00",
             "borderColor": "#8C3D00",
             "type": "nodeImg",
-            "image": "/imgs/generator-g.svg"
+            "image": "./imgs/generator-g.svg"
         },
         "communication_node": {
             "size": 5,
             "color": "#CC79A7",
             "borderColor": "#8C4E75",
             "type": "nodeImg",
-            "image": "/imgs/comm.jpg"
+            "image": "./imgs/comm.jpg"
         },
         "microgrid": {
             "size": 5,
             "color": "#009E73",
             "borderColor": "#006B4F",
             "type": "nodeImg",
-            "image": "/imgs/microgrid.svg"
+            "image": "./imgs/microgrid.svg"
         },
         "inactive": {
             "color": "rgba(180, 180, 180, 0.4)"

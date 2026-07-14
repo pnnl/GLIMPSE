@@ -1,0 +1,53 @@
+# electron-builder configuration for GLIMPSE desktop installers.
+#
+# Build the renderer (vite build) and the backend (pyinstaller) first —
+# the `dist`/`dist:*` npm scripts chain all three steps.
+#
+# Installers can only be built on (or for) the OS you are running on:
+#   npm run dist:linux  -> AppImage + .deb   (build on Linux)
+#   npm run dist:win    -> NSIS installer    (build on Windows)
+#   npm run dist:mac    -> .dmg              (build on macOS)
+
+appId: gov.pnnl.glimpse
+productName: GLIMPSE
+copyright: Copyright © 2026 Pacific Northwest National Laboratory
+
+directories:
+    output: release
+    buildResources: build
+
+# The frontend is fully bundled by Vite, so node_modules are not needed at runtime.
+files:
+    - dist/**
+    - electron/**
+    - package.json
+    - "!node_modules/**"
+
+# PyInstaller onedir output for the Flask/SocketIO backend. Packaged into
+# <app>/resources/server/ and spawned by electron/main.js on startup.
+extraResources:
+    - from: local-server/dist/server
+      to: server
+
+asar: true
+
+win:
+    target:
+        - nsis
+
+nsis:
+    oneClick: false
+    allowToChangeInstallationDirectory: true
+
+mac:
+    target:
+        - dmg
+    category: public.app-category.utilities
+
+linux:
+    target:
+        - AppImage
+        - deb
+        - tar.gz
+    category: Science
+    synopsis: Power grid model visualization tool

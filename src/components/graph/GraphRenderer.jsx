@@ -1,7 +1,6 @@
 import "@react-sigma/core/lib/style.css";
-import { useEffect, useMemo, useState } from "react";
-import { SigmaContainer, ControlsContainer, ZoomControl, FullScreenControl } from "@react-sigma/core";
-import { LayoutForceAtlas2Control } from "@react-sigma/layout-forceatlas2";
+import { useEffect, useMemo, useCallback } from "react";
+import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
 import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
@@ -20,11 +19,35 @@ import {
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
 import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
-import { getFA2Settings } from "../../utils/fa2-presets";
+import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
+import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
+import GraphControls from "./GraphControls";
+import LegendPanel from "../legend/LegendPanel";
+
+const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
+
+// Grey out a node (used when it falls outside the highlighted groups/areas).
+const dimNodeAttrs = (attrs) => ({
+    ...attrs,
+    color: INACTIVE_COLOR,
+    borderColor: INACTIVE_COLOR,
+    type: "node",
+    label: "",
+    image: "",
+});
+
+// Grey out an edge, keeping its icon program but dimming the icon too. Keyed off
+// iconType (not type) so curved parallel variants dim as well.
+const dimEdgeAttrs = (attrs) => {
+    const base = { ...attrs, color: INACTIVE_COLOR, label: "", size: 1 };
+    if (attrs.iconType === "switch") return { ...base, switchColor: INACTIVE_COLOR, switchSize: 2 };
+    if (attrs.iconType === "regulator") return { ...base, regulatorColor: INACTIVE_COLOR };
+    if (attrs.iconType === "transformer") return { ...base, transformerColor: INACTIVE_COLOR };
+    return base;
+};
 
 const GraphRenderer = () => {
-    const [layoutSettings, setLayoutSettings] = useState({});
     const { graphUpdateTrigger, darkMode } = useGraph();
 
     useEffect(() => {
@@ -56,8 +79,38 @@ const GraphRenderer = () => {
         return createEdgeCompoundProgram([EdgeRectangleProgram, SwitchSquareProgram]);
     }, []);
 
-    const customNodeReducer = (_n, attrs) => {
+    const RegulatorEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, RegulatorProgram]);
+    }, []);
+
+    const TransformerEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeRectangleProgram, TransformerProgram]);
+    }, []);
+
+    // Curved variants: a curved line + the same icon, used when parallel edges
+    // between two nodes are fanned out so the icon stays on the visible curve.
+    const CurvedSwitchEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, SwitchSquareProgram]);
+    }, []);
+
+    const CurvedRegulatorEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, RegulatorProgram]);
+    }, []);
+
+    const CurvedTransformerEdgeProgram = useMemo(() => {
+        return createEdgeCompoundProgram([EdgeCurveProgram, TransformerProgram]);
+    }, []);
+
+    const customNodeReducer = useCallback((_n, attrs) => {
         if (graphHelper.graph.order === 0) return attrs;
+
+        // Distribution-area highlighting takes precedence: grey out any node that
+        // is not in a selected area. Members keep their styling (the colored
+        // contour hull marks them); nesting is handled in isInHighlightedArea.
+        if (graphHelper.getHighlightedAreas().length > 0) {
+            return graphHelper.isInHighlightedArea(attrs) ? attrs : dimNodeAttrs(attrs);
+        }
+
         if (
             graphHelper.getHighlightedGroups().length === 0 &&
             graphHelper.getHighlightedEdgeTypes().length === 0
@@ -69,52 +122,112 @@ const GraphRenderer = () => {
             (graphHelper.getHighlightedGroups().length === 0 &&
                 graphHelper.getHighlightedEdgeTypes().length > 0)
         ) {
-            return {
-                ...attrs,
-                color: "rgba(145, 145, 145, 0.7)",
-                borderColor: "rgba(145, 145, 145, 0.7)",
-                type: "node",
-                label: "",
-                image: "",
-            };
+            return dimNodeAttrs(attrs);
         }
         return { ...attrs, size: attrs.size * 2 };
-    };
+    }, []);
 
-    const customEdgeReducer = (_e, attrs) => {
-        if (
-            graphHelper.getHighlightedEdgeTypes().length === 0 &&
-            graphHelper.getHighlightedGroups().length === 0
-        ) {
-            if (darkMode && attrs.group === "overhead_line") attrs.color = "#bfc0c0";
-            return attrs;
-        }
+    const customEdgeReducer = useCallback(
+        (edgeId, attrs) => {
+            // Searched/focused edge always wins: pulse it and keep it on top —
+            // never dim it, whatever the area/group highlight state is.
+            const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
+            if (focusStyle) return focusStyle;
 
-        if (!graphHelper.isHighlighted(attrs.group)) {
-            const inactiveColor = "rgba(145, 145, 145, 0.7)";
-
-            if (attrs.type === "switch") {
-                return {
-                    ...attrs,
-                    color: inactiveColor,
-                    label: "",
-                    size: 1,
-                    switchColor: inactiveColor,
-                    switchSize: 2,
-                };
+            // Distribution-area highlighting takes precedence: grey out any edge that
+            // is not in a selected area.
+            if (graphHelper.getHighlightedAreas().length > 0) {
+                return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
             }
 
-            return { ...attrs, color: inactiveColor, label: "", size: 1 };
-        }
+            if (
+                graphHelper.getHighlightedEdgeTypes().length === 0 &&
+                graphHelper.getHighlightedGroups().length === 0
+            ) {
+                if (darkMode && attrs.group === "overhead_line") attrs.color = "#bfc0c0";
+                return attrs;
+            }
 
-        return { ...attrs, size: attrs.size * 1.5 };
-    };
+            if (!graphHelper.isHighlighted(attrs.group)) {
+                return dimEdgeAttrs(attrs);
+            }
 
-    useEffect(() => {
-        if (graphHelper.graph.order > 0) {
-            setLayoutSettings(getFA2Settings(graphHelper.graph));
-        }
-    }, [graphUpdateTrigger]);
+            return { ...attrs, size: attrs.size * 1.5 };
+        },
+        [darkMode],
+    );
+
+    // Memoized so its identity is stable across re-renders. Passing a fresh
+    // settings object makes react-sigma tear down and rebuild the Sigma instance
+    // (which reloads the graph and resets the camera). Keyed on darkMode + the
+    // program classes; the reducers are useCallback-stable, so unrelated parent
+    // re-renders (charts panel, sim state, etc.) no longer reload the graph.
+    const settings = useMemo(
+        () => ({
+            allowInvalidContainer: true,
+            minCameraRatio: 0.02,
+            maxCameraRatio: null,
+            renderEdgeLabels: true,
+            itemSizesReference: "screen", // sizes in screen px; pairs with zoomToSizeRatioFunction
+            autoRescale: true,
+            autoCenter: true,
+            doubleClickTimeout: 300,
+            doubleClickZoomingRatio: 2.2,
+            doubleClickZoomingDuration: 200,
+            inertiaDuration: 200,
+            // ratio ≈ 1 at full view, < 1 zoomed in, > 1 zoomed out.
+            // Asymmetric on purpose: zoomed in (≤1) keeps the 0.3 detail curve
+            // you liked; zoomed out (>1) uses a steeper 0.7 exponent so nodes
+            // shrink faster and the topology shows instead of nodes taking over.
+            // Both branches meet at 1.0 at full view. Dial = the 0.7 (higher =
+            // nodes vanish faster as you zoom out).
+            zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, 0.2),
+            inertiaRatio: 3,
+            cameraPanBoundaries: null,
+            zoomDuration: 250,
+            zoomingRatio: 1.5,
+            labelDensity: 0.7,
+            labelSize: 13,
+            labelGridCellSize: 80,
+            labelRenderedSizeThreshold: 8,
+            hideEdgesOnMove: false,
+            hideLabelsOnMove: true,
+            zIndex: true,
+            enableEdgeEvents: true,
+            defaultNodeType: "node",
+            defaultDrawNodeLabel: drawLabel,
+            defaultDrawNodeHover: drawHover,
+            nodeProgramClasses: {
+                nodeImg: BorderImageNodeProgram,
+                node: NodeBorderProgram,
+            },
+            edgeProgramClasses: {
+                straight: EdgeRectangleProgram,
+                curved: EdgeCurveProgram,
+                animated: AnimatedStraightEdgeProgram,
+                switch: SwitchEdgeProgram,
+                regulator: RegulatorEdgeProgram,
+                transformer: TransformerEdgeProgram,
+                curvedSwitch: CurvedSwitchEdgeProgram,
+                curvedRegulator: CurvedRegulatorEdgeProgram,
+                curvedTransformer: CurvedTransformerEdgeProgram,
+            },
+            nodeReducer: customNodeReducer,
+            edgeReducer: customEdgeReducer,
+        }),
+        [
+            customNodeReducer,
+            customEdgeReducer,
+            BorderImageNodeProgram,
+            AnimatedStraightEdgeProgram,
+            SwitchEdgeProgram,
+            RegulatorEdgeProgram,
+            TransformerEdgeProgram,
+            CurvedSwitchEdgeProgram,
+            CurvedRegulatorEdgeProgram,
+            CurvedTransformerEdgeProgram,
+        ],
+    );
 
     return (
         <SigmaContainer
@@ -122,46 +235,7 @@ const GraphRenderer = () => {
             className={darkMode ? "sigma-dark" : ""}
             style={{ backgroundColor: darkMode ? "#1D1D1D" : "#ffffff" }}
             graph={MultiUndirectedGraph}
-            settings={{
-                allowInvalidContainer: true,
-                minCameraRatio: 0.02,
-                maxCameraRatio: null,
-                renderEdgeLabels: true,
-                itemSizesReference: "screen",
-                autoRescale: true,
-                autoCenter: true,
-                doubleClickTimeout: 300,
-                doubleClickZoomingRatio: 2.2,
-                doubleClickZoomingDuration: 200,
-                inertiaDuration: 200,
-                inertiaRatio: 3,
-                cameraPanBoundaries: null,
-                zoomDuration: 250,
-                zoomingRatio: 1.7,
-                labelDensity: 0.7,
-                labelSize: 13,
-                labelGridCellSize: 80,
-                labelRenderedSizeThreshold: 8,
-                hideEdgesOnMove: false,
-                hideLabelsOnMove: true,
-                zIndex: true,
-                enableEdgeEvents: true,
-                defaultNodeType: "node",
-                defaultDrawNodeLabel: drawLabel,
-                defaultDrawNodeHover: drawHover,
-                nodeProgramClasses: {
-                    nodeImg: BorderImageNodeProgram,
-                    node: NodeBorderProgram,
-                },
-                edgeProgramClasses: {
-                    straight: EdgeRectangleProgram,
-                    curved: EdgeCurveProgram,
-                    animated: AnimatedStraightEdgeProgram,
-                    switch: SwitchEdgeProgram,
-                },
-                nodeReducer: customNodeReducer,
-                edgeReducer: customEdgeReducer,
-            }}
+            settings={settings}
         >
             <Graph />
             <GraphEvents />
@@ -169,10 +243,11 @@ const GraphRenderer = () => {
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-left"}>
                 <DistributionAreaSelector />
             </ControlsContainer>
-            <ControlsContainer position={"bottom-left"}>
-                <ZoomControl />
-                <FullScreenControl />
-                <LayoutForceAtlas2Control settings={{ settings: layoutSettings }} />
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"top-right"}>
+                <LegendPanel />
+            </ControlsContainer>
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
+                <GraphControls />
             </ControlsContainer>
         </SigmaContainer>
     );

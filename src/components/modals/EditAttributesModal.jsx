@@ -1,20 +1,55 @@
 import ReactDOM from "react-dom";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, Form, Input, Button, Divider, Typography, message, Spin, Empty } from "antd";
+import { Modal, Form, Input, Button, Divider, message, Spin, Empty, theme } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
 
+// Read-only attributes that shouldn't be edited
+const READ_ONLY_ATTRIBUTES = [
+    "secondary_area_name",
+    "secondary_area_id",
+    "feeder_area_name",
+    "switch_area_name",
+    "feeder_area_id",
+    "switch_area_id",
+    "normalSections",
+    "GeneratingUnit",
+    "normalStatus",
+    "dist_areas",
+    "class_type",
+    "normalOpen",
+    "feeder_id",
+    "Location",
+    "parent",
+    "name",
+    "from",
+    "mRID",
+    "AN",
+    "BN",
+    "CN",
+    "id",
+    "to",
+    "x",
+    "y",
+];
+
 const EditAttributesModal = ({ close, context }) => {
     const [form] = Form.useForm();
+    const { token } = theme.useToken();
     const [attributes, setAttributes] = useState({});
     const [loading, setLoading] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const { open, object } = context;
 
-    // Read-only attributes that shouldn't be edited
-    const READ_ONLY_ATTRIBUTES = useMemo(
-        () => ["id", "name", "from", "to", "mRID", "x", "y", "parent"],
+    // Arrays/objects (e.g. dist_areas) can't render in a plain Input; show them
+    // as pretty JSON in a read-only textarea instead.
+    const isComplexValue = useCallback(
+        (value) => Array.isArray(value) || (value !== null && typeof value === "object"),
         [],
+    );
+    const formatValue = useCallback(
+        (value) => (isComplexValue(value) ? JSON.stringify(value, null, 2) : value),
+        [isComplexValue],
     );
 
     // Initialize form with current attributes when modal opens
@@ -65,16 +100,21 @@ const EditAttributesModal = ({ close, context }) => {
             setLoading(true);
             const values = await form.validateFields();
 
+            // Only editable fields are registered in the form; merge them over
+            // the originals so read-only values (including complex ones like
+            // dist_areas) are preserved unchanged.
+            const merged = { ...attributes, ...values };
+
             // Update the graph with new attribute values
             if (object.type === "node") {
-                graphHelper.graph.setNodeAttribute(object.id, "attributes", values);
+                graphHelper.graph.setNodeAttribute(object.id, "attributes", merged);
                 graphHelper.graph.setNodeAttribute(
                     object.id,
                     "attributesLabel",
-                    graphHelper.getTitle(values),
+                    graphHelper.getTitle(merged),
                 );
             } else if (object.type === "edge") {
-                graphHelper.graph.setEdgeAttribute(object.id, "attributes", values);
+                graphHelper.graph.setEdgeAttribute(object.id, "attributes", merged);
             }
 
             graphHelper.sigmaInstance.refresh();
@@ -146,56 +186,89 @@ const EditAttributesModal = ({ close, context }) => {
                     >
                         {attributeEntries.map(([attributeName, value], i) => {
                             const isReadOnly = READ_ONLY_ATTRIBUTES.includes(attributeName);
-
-                            return (
-                                <Form.Item
-                                    label={
-                                        <span
-                                            style={{
-                                                fontWeight: "500",
-                                                fontSize: "14px",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "8px",
-                                            }}
-                                        >
-                                            {attributeName}
-                                            {isReadOnly && (
-                                                <LockOutlined
-                                                    style={{
-                                                        fontSize: "12px",
-                                                        color: "#999",
-                                                    }}
-                                                    title="Read-only attribute"
-                                                />
-                                            )}
-                                        </span>
-                                    }
-                                    name={attributeName}
-                                    key={i}
-                                    initialValue={value}
-                                    tooltip={
-                                        isReadOnly
-                                            ? "This field is read-only and cannot be edited"
-                                            : undefined
-                                    }
+                            const label = (
+                                <span
+                                    style={{
+                                        fontWeight: "500",
+                                        fontSize: "14px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                    }}
                                 >
-                                    {isReadOnly ? (
-                                        <Input
-                                            value={value}
-                                            disabled
-                                            style={{
-                                                backgroundColor: "#f5f5f5",
-                                                cursor: "not-allowed",
-                                            }}
-                                        />
-                                    ) : (
-                                        <Input
-                                            type={getInputType(value)}
-                                            placeholder={`Enter ${attributeName}`}
-                                            allowClear
+                                    {attributeName}
+                                    {isReadOnly && (
+                                        <LockOutlined
+                                            style={{ fontSize: "12px", color: "#999" }}
+                                            title="Read-only attribute"
                                         />
                                     )}
+                                </span>
+                            );
+
+                            // Read-only fields — and any complex value (arrays/objects
+                            // such as per-phase regulator taps like AN/BN/CN, or
+                            // dist_areas) — are not registered with the form. A
+                            // name-bound Form.Item makes AntD inject the raw store value
+                            // into the input, which for an object renders as
+                            // "[object Object]"; leaving off `name` lets our explicit
+                            // pretty-JSON `value` show instead. Both are preserved
+                            // unchanged via the merge on save.
+                            if (isReadOnly) {
+                                // Render read-only values as full-contrast text in a
+                                // bordered box (not a greyed-out disabled input). Uses
+                                // AntD theme tokens so it tracks the active light/dark
+                                // theme and lines up with the input metrics.
+                                const boxStyle = {
+                                    minHeight: token.controlHeight,
+                                    border: `1px solid ${token.colorBorder}`,
+                                    borderRadius: token.borderRadius,
+                                    background: token.colorFillTertiary,
+                                    color: token.colorText,
+                                    padding: `${token.paddingXXS}px ${token.paddingSM}px`,
+                                    lineHeight: token.lineHeight,
+                                };
+                                return (
+                                    <Form.Item
+                                        label={label}
+                                        key={i}
+                                        tooltip={
+                                            isReadOnly
+                                                ? "This field is read-only and cannot be edited"
+                                                : undefined
+                                        }
+                                    >
+                                        {isComplexValue(value) ? (
+                                            <pre
+                                                style={{
+                                                    ...boxStyle,
+                                                    margin: 0,
+                                                    maxHeight: 200,
+                                                    overflow: "auto",
+                                                    fontFamily: token.fontFamilyCode,
+                                                    fontSize: token.fontSizeSM,
+                                                }}
+                                            >
+                                                {formatValue(value)}
+                                            </pre>
+                                        ) : (
+                                            <div
+                                                style={{
+                                                    ...boxStyle,
+                                                    whiteSpace: "pre-wrap",
+                                                    wordBreak: "break-word",
+                                                }}
+                                            >
+                                                {value === "" || value == null ? "—" : String(value)}
+                                            </div>
+                                        )}
+                                    </Form.Item>
+                                );
+                            }
+
+                            return (
+                                <Form.Item label={label} name={attributeName} key={i}>
+                                    <Input value={value} />
                                 </Form.Item>
                             );
                         })}

@@ -4,6 +4,7 @@ import tempfile
 import traceback
 import gc
 import time
+import hmac
 
 
 from flask import Flask, request, jsonify, send_file
@@ -54,17 +55,124 @@ else:
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
 allowed_headers = ["Content-Type", "Authorization"]
 
+# Never combine credentialed requests with a wildcard origin: that reflects any
+# origin back with Access-Control-Allow-Credentials, which browsers reject and
+# which would broaden cross-origin access. Only allow credentials when origins
+# are explicitly pinned.
+allow_credentials = cors_origins != "*"
+
 app = Flask(__name__)
+
+# Cap request bodies so unbounded JSON/CIM uploads can't exhaust memory. Override
+# with MAX_UPLOAD_MB. (GLM parsing enforces its own per-file limit as well.)
+app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "65")) * 1024 * 1024
+
 CORS(
     app,
     origins=cors_origins,
     methods=methods,
     allow_headers=allowed_headers,
-    supports_credentials=True,
+    supports_credentials=allow_credentials,
 )
 socketio = SocketIO(
     app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
+
+# Whether to include Python tracebacks in error responses. Off by default so we
+# don't leak internal paths/stack details to clients; enable for local debugging.
+EXPOSE_TRACEBACKS = os.environ.get("EXPOSE_TRACEBACKS", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def error_body(exc, tb, message=None, extra=None):
+    """Build an error response body. Always logs the traceback server-side, but
+    only exposes it to the client when EXPOSE_TRACEBACKS is set."""
+    print(tb)
+    body = {"error": message if message is not None else str(exc)}
+    if extra:
+        body.update(extra)
+    if EXPOSE_TRACEBACKS:
+        body["traceback"] = tb
+    return body
+
+
+# ---------------------------------------------------------------------------
+# Export path safety
+# ---------------------------------------------------------------------------
+# Export endpoints historically accepted an absolute destination path from the
+# request body and wrote to it directly (arbitrary write / path traversal). By
+# default we confine writes to GLIMPSE_EXPORT_DIR and reject traversal. A desktop
+# build that intentionally lets the user pick any save location can opt out with
+# GLIMPSE_ALLOW_ANY_EXPORT_PATH=1.
+EXPORT_BASE_DIR = os.path.abspath(
+    os.environ.get("GLIMPSE_EXPORT_DIR", os.path.join(tempfile.gettempdir(), "glimpse_exports"))
+)
+ALLOW_ANY_EXPORT_PATH = os.environ.get("GLIMPSE_ALLOW_ANY_EXPORT_PATH", "").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+
+def safe_export_path(user_path):
+    """Resolve a client-supplied export path. Raises ValueError if it escapes the
+    allowed base directory (unless explicitly allowed via env)."""
+    if not user_path or not isinstance(user_path, str):
+        raise ValueError("A destination path is required.")
+    if ALLOW_ANY_EXPORT_PATH:
+        return user_path
+    os.makedirs(EXPORT_BASE_DIR, exist_ok=True)
+    # Treat the input as relative to the base dir; strip any leading separators so
+    # an absolute path can't jump out of it.
+    candidate = os.path.abspath(os.path.join(EXPORT_BASE_DIR, user_path.lstrip("/\\")))
+    if os.path.commonpath([candidate, EXPORT_BASE_DIR]) != EXPORT_BASE_DIR:
+        raise ValueError("Destination path escapes the allowed export directory.")
+    return candidate
+
+
+# ---------------------------------------------------------------------------
+# Authentication
+# ---------------------------------------------------------------------------
+# Shared bearer token. When GLIMPSE_API_TOKEN is unset (the default), auth is
+# disabled — appropriate for the desktop build where the server is bound to
+# loopback only. For any networked deployment (FLASK_HOST=0.0.0.0), set the token
+# so every HTTP request and WebSocket connection must present it.
+API_TOKEN = os.environ.get("GLIMPSE_API_TOKEN", "").strip()
+
+# Paths reachable without a token even when auth is enabled: CORS preflight
+# carries no Authorization header, and the root health check is used by the
+# Electron launcher / container healthchecks to detect readiness.
+_AUTH_EXEMPT_PATHS = {"/"}
+
+
+def _valid_token(token):
+    return bool(token) and hmac.compare_digest(token, API_TOKEN)
+
+
+@app.before_request
+def _require_api_token():
+    if not API_TOKEN:
+        return None
+    if request.method == "OPTIONS" or request.path in _AUTH_EXEMPT_PATHS:
+        return None
+    header = request.headers.get("Authorization", "")
+    token = header[7:].strip() if header[:7].lower() == "bearer " else ""
+    if not _valid_token(token):
+        return jsonify({"error": "Unauthorized"}), 401
+    return None
+
+
+@socketio.on("connect")
+def _authenticate_socket(auth=None):
+    # Returning False rejects the connection before any event handlers run.
+    # auth defaults to None for flask-socketio versions that omit the handshake arg.
+    if not API_TOKEN:
+        return True
+    token = auth.get("token") if isinstance(auth, dict) else None
+    return _valid_token(token)
 
 # ================================================================================================
 # CIM OBJECT MANAGEMENT ENDPOINTS
@@ -93,7 +201,7 @@ def get_object():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return jsonify({"error": str(e), "traceback": tb}), 500
+        return jsonify(error_body(e, tb)), 500
 
 
 @app.route("/api/cim/objects", methods=["DELETE"])
@@ -129,7 +237,7 @@ def delete_object():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return jsonify({"error": str(e), "traceback": tb}), 500
+        return jsonify(error_body(e, tb)), 500
 
 
 @app.route("/api/cim/objects/mermaid", methods=["POST"])
@@ -152,7 +260,7 @@ def get_object_mermaid():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return jsonify({"error": str(e), "traceback": tb}), 500
+        return jsonify(error_body(e, tb)), 500
 
 
 # ================================================================================================
@@ -214,12 +322,12 @@ def upload_json():
         except ValueError as e:
             tb = traceback.format_exc()
             print(tb)
-            return {"error": str(e), "traceback": tb}, 400
+            return error_body(e, tb), 400
 
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
     finally:
         # Clean up temp files/dir
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -278,7 +386,7 @@ def glm_upload():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
     finally:
         try:
             print("[SERVER] Running cleanup and garbage collection...")
@@ -317,7 +425,7 @@ def export_glm():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return {"error": f"Export failed: {str(e)}", "traceback": tb}, 500
+        return error_body(e, tb, message=f"Export failed: {str(e)}"), 500
 
     finally:
         # Clean up temp directory
@@ -360,7 +468,7 @@ def cim_to_glimpse():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return {"error": f"Server error: {str(e)}", "traceback": tb}, 500
+        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
     finally:
         # Cleanup
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -368,23 +476,13 @@ def cim_to_glimpse():
 
 @app.route("/api/export/export-cim", methods=["POST"])
 def export_cim_file():
-    try:
-        cim_data = request.get_json()
-        if not cim_data:
-            return jsonify({"error": "Request must be JSON"}), 400
-
-        export_dir = cim_data["savepath"]
-        data = cim_data["objs"]
-        og_filepath = cim_data["filename"]
-
-        cim_helper.export_cim(export_dir, og_filepath, data)
-        return "", 204
-    except KeyError as e:
-        return jsonify({"error": f"Missing required field: {e}"}), 400
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify({"error": str(e), "traceback": tb}), 500
+    # CIM structural export (adding / rewiring objects and writing a new XML) is
+    # unfinished: cim_helper.export_cim and its cimbuilder dependencies are still
+    # commented out (see cimhelper.py), and no client calls this route yet. Return
+    # an explicit 501 rather than the previous 500 AttributeError. When the export
+    # logic is completed, validate the destination with safe_export_path() before
+    # writing (as export-cim-coordinates does).
+    return jsonify({"error": "CIM structural export is not implemented yet."}), 501
 
 
 @app.route("/api/export/export-cim-coordinates", methods=["POST"])
@@ -393,16 +491,34 @@ def export_cim_coordinates():
     if not cim_data:
         return jsonify({"error": "Request must be JSON"}), 400
 
-    new_coords_obj = cim_data["data"]
-    output_path = cim_data["filepath"]
+    try:
+        feeder_id = cim_data["feeder_id"]
+        new_coords_obj = cim_data["data"]
+        output_path = safe_export_path(cim_data["filepath"])
+    except KeyError as e:
+        return jsonify({"error": f"Missing required field: {e}"}), 400
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
     try:
-        cim_helper.export_cim_coords(new_coords_obj, output_path)
+        cim_helper.export_cim_coords(feeder_id, new_coords_obj, output_path)
+    except Exception as e:
+        tb = traceback.format_exc()
+        return jsonify(error_body(e, tb)), 500
+    return "", 204
+
+
+@app.route("/api/cim/measurements", methods=["GET"])
+def get_cim_measurements():
+    # Expose the measurement map built at CIM model-load time so the frontend plot
+    # creator can list device measurements before a simulation starts. Returns an
+    # empty list for non-CIM models (GLM/JSON have no measurement map).
+    try:
+        return jsonify({"measurements": cim_helper.get_measurement_catalog()}), 200
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return jsonify({"error": str(e), "traceback": tb}), 500
-    return "", 204
+        return jsonify(error_body(e, tb)), 500
 
 
 # ================================================================================================
@@ -415,7 +531,19 @@ def get_models():
     print(f"\nModel IDs Received:\n{req_data}\n")
 
     try:
-        gjs = cim_helper.cim_to_gjs(model_IDs=req_data)
+        # Best-effort: pull distribution-area topology per model from the
+        # GridAPPS-D topology service. If it's unavailable, cim_to_gjs falls
+        # back to deriving areas from the CIM model itself.
+        topology_outputs = {}
+        if gridappsd_helper.is_connected():
+            for model_id in req_data:
+                topo = gridappsd_helper.get_distributed_areas(model_id)
+                if topo:
+                    topology_outputs[model_id] = topo
+
+        gjs = cim_helper.cim_to_gjs(
+            model_IDs=req_data, topology_outputs=topology_outputs
+        )
 
         if gjs is None:
             return jsonify({"error": "No data returned for the given model IDs"}), 404
@@ -423,7 +551,7 @@ def get_models():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps({"error": str(e), "traceback": tb}), 500
+        return json.dumps(error_body(e, tb)), 500
 
 
 @app.route("/api/gridappsd/model-info", methods=["GET"])
@@ -437,7 +565,7 @@ def get_gridappsd_models():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps({"error": str(e), "traceback": tb}), 503
+        return json.dumps(error_body(e, tb)), 503
 
 
 @app.route("/api/gridappsd/status", methods=["GET"])
@@ -464,7 +592,7 @@ def get_gridappsd_status():
         tb = traceback.format_exc()
         print(tb)
         return (
-            json.dumps({"connected": False, "error": str(e), "traceback": tb}),
+            json.dumps(error_body(e, tb, extra={"connected": False})),
             200,
         )  # Return 200 so React app can handle the response
 
@@ -472,31 +600,91 @@ def get_gridappsd_status():
 # ================================================================================================
 # GLIMPSE WEBSOCKET EVENTS
 # ================================================================================================
+@socketio.on("load-graph")
+def load_graph(data):
+    try:
+        # Accept GLIMPSE objects format or NetworkX node-link data and normalize
+        # it into the { name: { objects: [...] } } shape the frontend consumes.
+        prepared = json_helper.prepare_graph_payload(data)
+        socketio.emit("load-graph", {"data": prepared})
+
+        object_count = sum(len(f.get("objects", [])) for f in prepared.values())
+        return {"status": "ok", "objectCount": object_count}
+    except ValueError as e:
+        print(str(e))
+        return {"error": str(e)}
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return error_body(e, tb)
 
 
-@socketio.on("glimpse")
-def glimpse(data):
-    socketio.emit("update-data", data)
+@socketio.on("update")
+def update_data(data):
+    # Update node/edge color, size, and/or hidden state on the connected frontends.
+    try:
+        if not isinstance(data, dict):
+            return {"error": "Update payload must be a JSON object."}
+
+        object_id = data.get("id")
+        element_type = data.get("elementType")
+        updates = data.get("updates")
+
+        if object_id is None or element_type not in ("node", "edge"):
+            return {
+                "error": "Update payload requires 'id' and 'elementType' ('node' or 'edge')."
+            }
+        if not isinstance(updates, dict):
+            return {"error": "Update payload requires an 'updates' object."}
+
+        # Normalize to the supported update keys; null means "leave unchanged".
+        normalized = {
+            "id": object_id,
+            "elementType": element_type,
+            "updates": {
+                "color": updates.get("color"),
+                "size": updates.get("size"),
+                "hidden": updates.get("hidden"),
+            },
+        }
+        socketio.emit("update-data", normalized)
+        return {"status": "ok"}
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return error_body(e, tb)
 
 
-@socketio.on("addNode")
+@socketio.on("add-node")
 def add_node(new_node_data):
+    if not isinstance(new_node_data, dict) or "attributes" not in new_node_data:
+        return {"error": "add-node requires an object with an 'attributes' key."}
     socketio.emit("add-node", new_node_data)
+    return {"status": "ok"}
 
 
-@socketio.on("addEdge")
+@socketio.on("add-edge")
 def add_edge(new_edge_data):
+    if not isinstance(new_edge_data, dict) or "attributes" not in new_edge_data:
+        return {"error": "add-edge requires an object with an 'attributes' key."}
     socketio.emit("add-edge", new_edge_data)
+    return {"status": "ok"}
 
 
-@socketio.on("deleteNode")
+@socketio.on("delete-node")
 def delete_node(node_id):
+    if not node_id:
+        return {"error": "delete-node requires a node id."}
     socketio.emit("delete-node", node_id)
+    return {"status": "ok"}
 
 
-@socketio.on("deleteEdge")
+@socketio.on("delete-edge")
 def delete_edge(edge_id):
+    if not edge_id:
+        return {"error": "delete-edge requires an edge id."}
     socketio.emit("delete-edge", edge_id)
+    return {"status": "ok"}
 
 
 # ================================================================================================
@@ -636,7 +824,7 @@ def handle_stop_simulation(sim_id):
 @app.route("/")
 def hello():
     """Basic API information endpoint"""
-    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.7.0-alpha"}
+    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.7.3"}
 
 
 # ================================================================================================

@@ -4,11 +4,11 @@ import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
 import { IoPlay, IoAddCircle, IoStop, IoPause } from "react-icons/io5";
-import { MdOutlineHideSource, MdShowChart } from "react-icons/md";
+import { MdShowChart } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../contexts/GraphContext";
 
-const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
+const VisToolbar = ({ onToggleCharts, activePanel }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
     const { darkMode } = useGraph();
 
@@ -92,13 +92,17 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                     <Space.Compact block>
                         {(simulationState === "idle" || simulationState === "stopped") && (
                             <Tooltip title={"Start Simulation"} placement="bottom">
-                                <Button size="large" onClick={handleStartSimulation} icon={<IoPlay />} />
+                                <Button
+                                    size="medium"
+                                    onClick={handleStartSimulation}
+                                    icon={<IoPlay />}
+                                />
                             </Tooltip>
                         )}
                         {simulationState === "running" && (
                             <Tooltip title={"Pause Simulation"} placement="bottom">
                                 <Button
-                                    size="large"
+                                    size="medium"
                                     icon={<IoPause />}
                                     onClick={handlePauseSimulation}
                                 />
@@ -107,41 +111,29 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                         <Tooltip title="Stop Simulation">
                             <Button
                                 disabled={!(simulationState === "running")}
-                                size="large"
+                                size="medium"
                                 onClick={handleStopSimulation}
                                 icon={<IoStop />}
                             />
                         </Tooltip>
                     </Space.Compact>
                 )}
-                <Space.Compact block>
-                    {simulationState !== "inactive" && (
+                {simulationState !== "inactive" && (
+                    <Space.Compact block>
                         <Tooltip
                             title={activePanel === "charts" ? "Hide Charts" : "Show Charts"}
                             placement="bottomLeft"
                         >
                             <Button
                                 style={{ width: "4rem" }}
-                                size="large"
+                                size="medium"
                                 type={activePanel === "charts" ? "primary" : "default"}
                                 icon={<MdShowChart />}
                                 onClick={onToggleCharts}
                             />
                         </Tooltip>
-                    )}
-                    <Tooltip
-                        title={activePanel === "legend" ? "Hide Legend" : "Show Legend"}
-                        placement="bottomLeft"
-                    >
-                        <Button
-                            style={{ width: "4rem" }}
-                            size="large"
-                            type={activePanel === "legend" ? "primary" : "default"}
-                            icon={<MdOutlineHideSource />}
-                            onClick={onToggleLegend}
-                        />
-                    </Tooltip>
-                </Space.Compact>
+                    </Space.Compact>
+                )}
             </Space>
             <Space
                 size={2}
@@ -150,16 +142,16 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
             >
                 <Space.Compact block>
                     <Tooltip title="Rotate Counter-Clockwise">
-                        <Button size="large" onClick={rotateCCW} icon={<BiRotateLeft />} />
+                        <Button size="medium" onClick={rotateCCW} icon={<BiRotateLeft />} />
                     </Tooltip>
                     <Tooltip title="Rotate Clockwise">
-                        <Button size="large" onClick={rotateCW} icon={<BiRotateRight />} />
+                        <Button size="medium" onClick={rotateCW} icon={<BiRotateRight />} />
                     </Tooltip>
                 </Space.Compact>
 
                 <Space.Compact block>
                     <Button
-                        size="large"
+                        size="medium"
                         onClick={goToPrevious}
                         style={{ textTransform: "uppercase" }}
                         type="default"
@@ -167,7 +159,7 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                         Prev
                     </Button>
                     <Button
-                        size="large"
+                        size="medium"
                         onClick={goToNext}
                         style={{ textTransform: "uppercase" }}
                         type="default"
@@ -176,7 +168,7 @@ const VisToolbar = ({ onToggleLegend, onToggleCharts, activePanel }) => {
                     </Button>
                 </Space.Compact>
                 <Button
-                    size="large"
+                    size="medium"
                     type="default"
                     style={{ textTransform: "uppercase" }}
                     onClick={handleReset}
