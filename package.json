@@ -2,7 +2,7 @@
     "name": "glimpse",
     "productName": "GLIMPSE",
     "description": "GLIMPSE",
-    "version": "0.7.3",
+    "version": "0.8.0",
     "author": {
         "name": "Armando Mendoza Sanchez",
         "email": "mendozasanchez166@pnnl.gov"
@@ -32,6 +32,7 @@
         "@react-sigma/layout-forceatlas2": "^5.0.6",
         "@sigma/edge-curve": "^3.1.0",
         "@sigma/export-image": "^3.0.0",
+        "@sigma/layer-leaflet": "^3.0.0",
         "@sigma/layer-webgl": "^3.0.0",
         "@sigma/node-border": "^3.0.0",
         "@sigma/node-image": "^3.0.0",
@@ -44,6 +45,7 @@
         "graphology-layout-forceatlas2": "^0.10.1",
         "graphology-metrics": "^2.4.0",
         "iwanthue": "^2.0.0",
+        "leaflet": "^1.9.4",
         "mermaid": "^11.14.0",
         "react": "^19.1.1",
         "react-dom": "^19.1.1",

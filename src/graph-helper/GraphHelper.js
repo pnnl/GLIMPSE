@@ -40,6 +40,7 @@ class GraphHelper {
     glmFileData = {};
     focusedNode = null;
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
+    hasGeoCoords = false; // true when node x/y hold real longitude/latitude (enables map background)
 
     // Edge focus-pulse tuning. DURATION is how long the attention pulse plays
     // before settling into a steady emphasis; PERIOD is one grow/shrink cycle.
@@ -250,6 +251,7 @@ class GraphHelper {
         this.graph.updateEachNodeAttributes((id, node) => ({
             ...node,
             hidden: false,
+            highlighted: false,
         }));
 
         // Let UI (e.g. the legend panel) clear any per-type highlight/hide state it
@@ -278,6 +280,7 @@ class GraphHelper {
 
         this.sigmaInstance = null;
         this.#hasFixedNodes = false;
+        this.hasGeoCoords = false;
         this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
         this.communitiesArray = [];
         this.communityColorPallet = {};
@@ -1400,6 +1403,19 @@ class GraphHelper {
             }
         }
 
+        // Geographic models (e.g. CIM feeders exported with real PositionPoints,
+        // like IEEE 9500) store longitude in x and latitude in y. Flag the graph
+        // as geographic when every positioned node falls inside valid lon/lat
+        // ranges so the UI can offer a map background; planar drawing
+        // coordinates (IEEE 13/123) fall outside these ranges and fail the check.
+        this.hasGeoCoords =
+            this.#hasFixedNodes &&
+            newGraph.order > 0 &&
+            this.#boundsCoords.minX >= -180 &&
+            this.#boundsCoords.maxX <= 180 &&
+            this.#boundsCoords.minY >= -90 &&
+            this.#boundsCoords.maxY <= 90;
+
         // Collect distribution area metadata from node attributes. A node may
         // belong to several nested areas (dist_areas list); fall back to the
         // flat dist_area_* fields for backward compatibility.
@@ -1543,8 +1559,10 @@ class GraphHelper {
         }
 
         if (this.#hasFixedNodes) {
-            // Ensure bounds have a minimum spread so nodes don't stack
-            const MIN_SPREAD = 500;
+            // Ensure bounds have a minimum spread so nodes don't stack. For
+            // geographic graphs the spread must stay in degrees — inflating it
+            // to 500 would scatter coordinate-less nodes outside valid lon/lat.
+            const MIN_SPREAD = this.hasGeoCoords ? 0.01 : 500;
             const rangeX = Math.max(this.#boundsCoords.maxX - this.#boundsCoords.minX, MIN_SPREAD);
             const rangeY = Math.max(this.#boundsCoords.maxY - this.#boundsCoords.minY, MIN_SPREAD);
             const centerX = (this.#boundsCoords.maxX + this.#boundsCoords.minX) / 2;
@@ -1600,6 +1618,18 @@ class GraphHelper {
             // Pre-warm: run a synchronous FA2 pass so the graph renders already
             // unraveled instead of requiring the user to press play and wait.
             // this.#preWarmLayout(newGraph);
+        }
+
+        // Map background support: stamp lat/lng (the attributes read by
+        // @sigma/layer-leaflet) from the geographic positions, since binding
+        // the map layer overwrites x/y with projected coordinates. Latitude is
+        // clamped to the Web-Mercator limit so projection stays finite.
+        if (this.hasGeoCoords) {
+            newGraph.updateEachNodeAttributes((_node, attrs) => ({
+                ...attrs,
+                lng: attrs.x,
+                lat: Math.max(-85, Math.min(85, attrs.y)),
+            }));
         }
 
         this.assignParallelEdgeCurvatures(newGraph);

@@ -281,7 +281,7 @@ class CIMHelper:
                             "objectType": "line",
                             "elementType": "edge",
                             "attributes": {
-                                "id": f"{node.mRID}_{terminal.mRID}",
+                                "id": f"{node.mRID}->{terminal.mRID}",
                                 "from": node.mRID,
                                 "to": equipment.mRID,
                                 "feeder_id": feeder_id,
@@ -468,7 +468,7 @@ class CIMHelper:
                 "objectType": "line",
                 "elementType": "edge",
                 "attributes": {
-                    "id": f"{from_id}-{to_id}",
+                    "id": f"{from_id}->{to_id}",
                     "from": from_id,
                     "to": to_id,
                     "feeder_id": feeder_id,
@@ -898,42 +898,42 @@ class CIMHelper:
         cim_utils.get_all_data(self.FEEDERS[feeder_id])
         cim_utils.write_xml(self.FEEDERS[feeder_id], output_path)
 
-    def get_multi_coordinate(self, coords: list):
-        if len(coords) == 0:
-            return None
-
-        if len(coords) <= 2:
-            return max(coords)
-
-        counts = {}
-        for item in coords:
-            counts[item] = counts.get(item, 0) + 1
-        for item, count in counts.items():
-            if count >= 2:
-                return item
-
     def find_shared_coordinates(self, cim_obj) -> dict:
-        multi_location_x = []
-        multi_location_y = []
-
-        # Process all positions from all terminals
+        # A connectivity node has no coordinates of its own in CIM; it sits
+        # where the attached equipment endpoints meet. For each terminal, take
+        # only the position point that corresponds to that terminal
+        # (sequenceNumber 1 -> first point, otherwise last point) so a line's
+        # intermediate bend points can't skew the match. xPosition/yPosition
+        # are strings in cimgraph, so compare as floats and as (x, y) pairs.
+        candidates = []
         for terminal in cim_obj.Terminals:
             equipment = terminal.ConductingEquipment
-            if equipment.Location is not None:
-                location = equipment.Location
-                for point in location.PositionPoints:
-                    x = point.xPosition
-                    y = point.yPosition
-                    if x is not None and y is not None:
-                        multi_location_x.append(x)
-                        multi_location_y.append(y)
+            if equipment is None or equipment.Location is None:
+                continue
 
-        coords = {
-            "x": self.get_multi_coordinate(multi_location_x),
-            "y": self.get_multi_coordinate(multi_location_y),
-        }
+            points = [
+                point
+                for point in equipment.Location.PositionPoints
+                if point.xPosition is not None and point.yPosition is not None
+            ]
+            if not points:
+                continue
 
-        return coords
+            points.sort(key=lambda p: p.sequenceNumber if p.sequenceNumber is not None else 0)
+            point = points[0] if terminal.sequenceNumber == 1 else points[-1]
+
+            try:
+                candidates.append((float(point.xPosition), float(point.yPosition)))
+            except (TypeError, ValueError):
+                continue
+
+        if not candidates:
+            return {"x": None, "y": None}
+
+        # Prefer the point where the most equipment endpoints agree; if none
+        # repeat, fall back to the first terminal's endpoint.
+        x, y = max(candidates, key=candidates.count)
+        return {"x": x, "y": y}
 
     def _add_attributes(self, cim_obj, new_obj):
         dense_fields = [

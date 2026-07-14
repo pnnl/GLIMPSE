@@ -157,6 +157,11 @@ const GraphRenderer = () => {
         [darkMode],
     );
 
+    const sizeRatioFunc = (ratio) => {
+        const exponent = graphHelper.graph.order > 1000 ? 0.2 : 0.6;
+        return Math.pow(ratio, exponent);
+    };
+
     // Memoized so its identity is stable across re-renders. Passing a fresh
     // settings object makes react-sigma tear down and rebuild the Sigma instance
     // (which reloads the graph and resets the camera). Keyed on darkMode + the
@@ -175,13 +180,7 @@ const GraphRenderer = () => {
             doubleClickZoomingRatio: 2.2,
             doubleClickZoomingDuration: 200,
             inertiaDuration: 200,
-            // ratio ≈ 1 at full view, < 1 zoomed in, > 1 zoomed out.
-            // Asymmetric on purpose: zoomed in (≤1) keeps the 0.3 detail curve
-            // you liked; zoomed out (>1) uses a steeper 0.7 exponent so nodes
-            // shrink faster and the topology shows instead of nodes taking over.
-            // Both branches meet at 1.0 at full view. Dial = the 0.7 (higher =
-            // nodes vanish faster as you zoom out).
-            zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, 0.2),
+            zoomToSizeRatioFunction: sizeRatioFunc,
             inertiaRatio: 3,
             cameraPanBoundaries: null,
             zoomDuration: 250,
@@ -215,18 +214,7 @@ const GraphRenderer = () => {
             nodeReducer: customNodeReducer,
             edgeReducer: customEdgeReducer,
         }),
-        [
-            customNodeReducer,
-            customEdgeReducer,
-            BorderImageNodeProgram,
-            AnimatedStraightEdgeProgram,
-            SwitchEdgeProgram,
-            RegulatorEdgeProgram,
-            TransformerEdgeProgram,
-            CurvedSwitchEdgeProgram,
-            CurvedRegulatorEdgeProgram,
-            CurvedTransformerEdgeProgram,
-        ],
+        [customNodeReducer, customEdgeReducer],
     );
 
     return (
