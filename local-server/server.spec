@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_data_files
 import sys
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
@@ -14,14 +14,14 @@ datas += collect_data_files("cimgraph", include_py_files=True)
 # JSON validation schemas loaded at runtime relative to jsonhelper.py
 datas += [("schemas", "schemas")]
 
-hiddenimports = collect_submodules('engineio.async_drivers') + collect_submodules('gevent')
+# hiddenimports = ['engineio.async_drivers.gevent', 'engineio.async_drivers.gevent_uwsgi']
 
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=hiddenimports,
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
