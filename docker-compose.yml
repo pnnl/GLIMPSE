@@ -20,6 +20,10 @@ services:
       GRIDAPPSD_PASSWORD: "${GRIDAPPSD_PASSWORD:-manager}"
     ports:
       - "5052:5052"
+    volumes:
+      # Example models for the frontend's "Example Models" tab (/api/examples).
+      # Read-only bind mount instead of a COPY so the image stays small.
+      - ./models:/app/models:ro
     # Lets the container resolve host.docker.internal on Linux (built in on Docker Desktop).
     extra_hosts:
       - "host.docker.internal:host-gateway"

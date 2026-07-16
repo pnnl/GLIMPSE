@@ -6,6 +6,8 @@ import gc
 import time
 import hmac
 
+import gevent
+from gevent.lock import BoundedSemaphore
 
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
@@ -26,6 +28,11 @@ json_helper = JSONHelper()
 glm_helper = GLMHelper()
 cim_helper = CIMHelper()
 gridappsd_helper = GridAPPSDHelper()
+
+# CIM loads run off the event loop (gevent threadpool) so the server stays
+# responsive, which means two loads could now interleave — but cim_helper keeps
+# per-load state (FEEDERS, measurement map). Serialize them.
+cim_load_lock = BoundedSemaphore(1)
 
 # ================================================================================================
 # FLASK APP SETUP
@@ -173,6 +180,117 @@ def _authenticate_socket(auth=None):
         return True
     token = auth.get("token") if isinstance(auth, dict) else None
     return _valid_token(token)
+
+
+# ---------------------------------------------------------------------------
+# Bundled example models
+# ---------------------------------------------------------------------------
+# A few sample models offered in the frontend's "Example Models" tab so users
+# can explore GLIMPSE without hunting for files. `file` is relative to the
+# models directory, resolved at startup in this order: GLIMPSE_MODELS_DIR env
+# override, a `models/` folder next to this file (the PyInstaller bundle — see
+# server.spec — or a Docker bind mount), or the repo's top-level models/ folder
+# when running from source. Entries whose file is missing are not offered.
+EXAMPLE_MODELS = {
+    "ieee123": {
+        "name": "IEEE 123 Node Test Feeder",
+        "description": "Medium-size CIM distribution feeder (IEEE123.xml)",
+        "file": os.path.join("CIM", "IEEE123.xml"),
+        "format": "cim",
+    },
+    "glm3000": {
+        "name": "3000 Bus GridLAB-D Model",
+        "description": "GridLAB-D transmission model (3000_model.glm)",
+        "file": os.path.join("3000", "3000_model.glm"),
+        "format": "glm",
+    },
+    "ieee9500": {
+        "name": "IEEE 9500 Node Test Feeder",
+        "description": "Large CIM distribution feeder (IEEE9500bal.xml) — takes a while to load",
+        "file": os.path.join("CIM", "IEEE9500bal.xml"),
+        "format": "cim",
+    },
+}
+
+
+def _resolve_models_dir():
+    """Locate the directory holding the bundled example models, or None."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.environ.get("GLIMPSE_MODELS_DIR", "").strip(),
+        os.path.join(here, "models"),
+        os.path.abspath(os.path.join(here, "..", "models")),
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isdir(candidate):
+            return candidate
+    return None
+
+
+MODELS_DIR = _resolve_models_dir()
+
+
+def _example_model_path(example_id):
+    """Absolute path of an example model's file, or None if unavailable."""
+    entry = EXAMPLE_MODELS.get(example_id)
+    if entry is None or MODELS_DIR is None:
+        return None
+    path = os.path.join(MODELS_DIR, entry["file"])
+    return path if os.path.isfile(path) else None
+
+
+# ================================================================================================
+# EXAMPLE MODEL ENDPOINTS
+# ================================================================================================
+
+
+@app.route("/api/examples", methods=["GET"])
+def list_examples():
+    """List the bundled example models that are actually present on disk."""
+    examples = [
+        {
+            "id": example_id,
+            "name": entry["name"],
+            "description": entry["description"],
+            "format": entry["format"],
+        }
+        for example_id, entry in EXAMPLE_MODELS.items()
+        if _example_model_path(example_id)
+    ]
+    return jsonify({"examples": examples}), 200
+
+
+@app.route("/api/examples/load", methods=["POST"])
+def load_example():
+    """Parse a bundled example model server-side and return it in the same
+    { data, themeData } shape as the /api/upload/* endpoints."""
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+
+    example_id = (request.get_json() or {}).get("id")
+    entry = EXAMPLE_MODELS.get(example_id)
+    path = _example_model_path(example_id)
+    if entry is None or path is None:
+        return jsonify({"error": f"Unknown or unavailable example model: {example_id}"}), 404
+
+    try:
+        if entry["format"] == "glm":
+            data = glm_helper.parse_glm([path])
+        else:
+            # Same lock and threadpool treatment as /api/upload/cim: XML
+            # parsing shares cim_helper state and can take a while on big files.
+            with cim_load_lock:
+                data = gevent.get_hub().threadpool.apply(
+                    cim_helper.cim_to_gjs, kwds={"filepaths": [path]}
+                )
+        return json.dumps(
+            {"data": data, "themeData": None, "isCIM": entry["format"] == "cim"}
+        )
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
+
 
 # ================================================================================================
 # CIM OBJECT MANAGEMENT ENDPOINTS
@@ -461,7 +579,12 @@ def cim_to_glimpse():
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        glimpse_structure_data = cim_helper.cim_to_gjs(filepaths=paths)
+        # Same lock and threadpool treatment as /api/gridappsd/models: XML
+        # parsing shares cim_helper state and can take a while on big files.
+        with cim_load_lock:
+            glimpse_structure_data = gevent.get_hub().threadpool.apply(
+                cim_helper.cim_to_gjs, kwds={"filepaths": paths}
+            )
 
         return glimpse_structure_data
 
@@ -531,19 +654,45 @@ def get_models():
     print(f"\nModel IDs Received:\n{req_data}\n")
 
     try:
-        # Best-effort: pull distribution-area topology per model from the
-        # GridAPPS-D topology service. If it's unavailable, cim_to_gjs falls
-        # back to deriving areas from the CIM model itself.
-        topology_outputs = {}
-        if gridappsd_helper.is_connected():
-            for model_id in req_data:
-                topo = gridappsd_helper.get_distributed_areas(model_id)
-                if topo:
-                    topology_outputs[model_id] = topo
+        # Written by the load thread via progress_cb, read by this greenlet.
+        progress = {}
 
-        gjs = cim_helper.cim_to_gjs(
-            model_IDs=req_data, topology_outputs=topology_outputs
-        )
+        def load_models():
+            # Best-effort: pull distribution-area topology per model from the
+            # GridAPPS-D topology service. If it's unavailable, cim_to_gjs falls
+            # back to deriving areas from the CIM model itself.
+            topology_outputs = {}
+            if gridappsd_helper.is_connected():
+                for model_id in req_data:
+                    topo = gridappsd_helper.get_distributed_areas(model_id)
+                    if topo:
+                        topology_outputs[model_id] = topo
+
+            if topology_outputs:
+                print("Topology outputs retrieved from GridAPPS-D")
+            else:
+                print("No topology outputs retrieved from GridAPPS-D; falling back to CIM model")
+
+            return cim_helper.cim_to_gjs(
+                model_IDs=req_data,
+                topology_outputs=topology_outputs,
+                progress_cb=progress.update,
+            )
+
+        # Run the load in a native thread (gevent threadpool): its blocking
+        # SPARQL/STOMP I/O would otherwise freeze the whole event loop — health
+        # checks, Socket.IO ping/pong, every other request — for minutes on a
+        # large model. This greenlet polls cooperatively and relays progress to
+        # connected clients while the thread works.
+        with cim_load_lock:
+            worker = gevent.get_hub().threadpool.spawn(load_models)
+            last_reported = None
+            while not worker.ready():
+                gevent.sleep(0.5)
+                if progress and progress != last_reported:
+                    last_reported = dict(progress)
+                    socketio.emit("model-load-progress", last_reported)
+            gjs = worker.get()
 
         if gjs is None:
             return jsonify({"error": "No data returned for the given model IDs"}), 404

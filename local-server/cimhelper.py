@@ -1,11 +1,11 @@
 import os
 import json
-import traceback
-
-from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from uuid import UUID
 from dataclasses import fields, is_dataclass
+
+from SPARQLWrapper import JSON as SPARQL_JSON, POST as SPARQL_POST, SPARQLWrapper
 
 # from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
 # from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
@@ -36,11 +36,54 @@ os.environ["CIMG_NAMESPACE"] = "http://iec.ch/TC57/CIM100#"
 os.environ["CIMG_IEC61970_301"] = "8"
 os.environ["CIMG_USE_UNITS"] = "False"
 
+# Per-query limits for Blazegraph. cimgraph's get_all_edges batches instances
+# into chunks of 100 mRIDs and fires the batches from a thread pool sized to
+# os.cpu_count(), so a large model (e.g. IEEE 9500) generates hundreds of
+# heavyweight queries with real concurrency.
+SPARQL_QUERY_TIMEOUT = int(os.environ.get("GLIMPSE_SPARQL_TIMEOUT", "120"))
+SPARQL_MAX_CONCURRENT = int(os.environ.get("GLIMPSE_SPARQL_MAX_CONCURRENT", "4"))
+
+
+class SafeBlazegraphConnection(BlazegraphConnection):
+    """
+    BlazegraphConnection hardened for cimgraph's threaded get_all_edges:
+
+    - The stock class shares one SPARQLWrapper across all worker threads, and
+      setQuery()/query() is not atomic, so concurrent batches can execute the
+      same query twice while silently skipping others. Build a fresh wrapper
+      per query instead.
+    - SPARQLWrapper sets no HTTP timeout by default, so one stalled response
+      hangs a model load forever. Cap every query at SPARQL_QUERY_TIMEOUT.
+    - Up to os.cpu_count() simultaneous heavy queries can push the Blazegraph
+      JVM into GC thrash on large models; a semaphore caps in-flight queries
+      at SPARQL_MAX_CONCURRENT.
+    """
+
+    def __init__(self):
+        self._query_slots = threading.BoundedSemaphore(SPARQL_MAX_CONCURRENT)
+        super().__init__()
+
+    def _run_query(self, message: str):
+        wrapper = SPARQLWrapper(self.url)
+        wrapper.setReturnFormat(SPARQL_JSON)
+        wrapper.setMethod(SPARQL_POST)
+        wrapper.setTimeout(SPARQL_QUERY_TIMEOUT)
+        wrapper.setQuery(message)
+        with self._query_slots:
+            return wrapper.query()
+
+    def _execute_raw_query(self, query_message: str):
+        return self._run_query(query_message).convert()
+
+    def _update_raw(self, update_message: str):
+        return self._run_query(update_message)
+
 
 # Current CIM network model - this holds the main graph data
 class CIMHelper:
     def __init__(self) -> None:
         self.active_measurement_map: dict = {"Discrete": {}, "Analog": {}}
+        self.FEEDERS: dict[str, FeederModel] = {}
 
     def classify_line(self, line: object) -> str:
         UNDERGROUND_INFO = (
@@ -71,7 +114,7 @@ class CIMHelper:
         return "line"
 
     def _get_cim_feeder(self, model_id: str):
-        database = BlazegraphConnection()
+        database = SafeBlazegraphConnection()
         # database = GridappsdConnection()
         feeder = cim.Feeder(mRID=model_id)
         feeder_model = FeederModel(connection=database, container=feeder)
@@ -83,21 +126,31 @@ class CIMHelper:
         model_IDs: list[str] | None = None,
         filepaths: list[str] | None = None,
         topology_outputs: dict[str, dict] | None = None,
+        progress_cb=None,
     ):
         """
         topology_outputs: optional { key -> GridAPPS-D topology-service JSON },
         where key is the model id (for model_IDs) or the file basename (for
         filepaths). When a model's topology output is present, distribution
         areas are sourced from it; otherwise they fall back to the CIM model.
+
+        progress_cb: optional callable({model, stage, step, total}) invoked as
+        each load stage of each model starts (relayed to clients as socket
+        progress events during long Blazegraph loads).
         """
         topology_outputs = topology_outputs or {}
         self.active_measurement_map = {"Discrete": {}, "Analog": {}}  # Reset measurement map for new model(s)
+        # Reset once per load request (not per model) so a multi-model load
+        # keeps every FeederModel available for object lookups and exports.
+        self.FEEDERS = {}
         if model_IDs is not None:
             gjs = {id: {"objects": []} for id in model_IDs}
 
             for id in model_IDs:
                 gjs[id]["objects"] = self._parse_model(
-                    model_id=id, topology_json=topology_outputs.get(id)
+                    model_id=id,
+                    topology_json=topology_outputs.get(id),
+                    progress_cb=progress_cb,
                 )
 
             return gjs
@@ -118,83 +171,87 @@ class CIMHelper:
         model_id: str | None = None,
         filepath: str | None = None,
         topology_json: dict | None = None,
+        progress_cb=None,
     ):
         """
         Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
         """
-        self.FEEDERS: dict[str, FeederModel] = {}
         feeder_id: str | None = None
 
         if model_id is not None:
-            executor = ThreadPoolExecutor(max_workers=1)
-            future = executor.submit(self._get_cim_feeder, model_id=model_id)
-            try:
-                feeder_id = model_id
-                self.FEEDERS[feeder_id] = future.result(timeout=60)
-                # cim_utils.get_all_bus_data(self._FEEDERS[feeder_id])
-                self.FEEDERS[feeder_id].get_all_edges(cim.ConnectivityNode)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Terminal)
-
-                # cim_utils.get_all_line_data(self._FEEDERS[feeder_id])
-                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegment)
-                self.FEEDERS[feeder_id].get_all_edges(cim.ACLineSegmentPhase)
-                self.FEEDERS[feeder_id].get_all_edges(cim.OverheadWireInfo)
-                self.FEEDERS[feeder_id].get_all_edges(cim.ConcentricNeutralCableInfo)
-                self.FEEDERS[feeder_id].get_all_edges(cim.TapeShieldCableInfo)
-
-                # cim_utils.get_all_transformer_data(self._FEEDERS[feeder_id])
-                self.FEEDERS[feeder_id].get_all_edges(cim.PowerTransformer)
-                self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTank)
-                self.FEEDERS[feeder_id].get_all_edges(cim.TransformerTankEnd)
-                self.FEEDERS[feeder_id].get_all_edges(cim.PowerTransformerEnd)
-                self.FEEDERS[feeder_id].get_all_edges(cim.RatioTapChanger)
-
+            # Each get_all_edges call costs ceil(N/100) SPARQL queries, so this
+            # list is kept to what the visualization actually consumes. Classes
+            # that are only referenced (WireInfo subtypes, BaseVoltage, ...)
+            # don't need their own load: expanding the parent class already adds
+            # them as stubs typed by their concrete class, which is all
+            # classify_line's isinstance checks need.
+            load_stages = [
+                ("connectivity nodes", [cim.ConnectivityNode, cim.Terminal]),
+                ("lines", [cim.ACLineSegment, cim.ACLineSegmentPhase]),
+                ("transformers", [
+                    cim.PowerTransformer,
+                    cim.TransformerTank,
+                    cim.TransformerTankEnd,
+                    cim.PowerTransformerEnd,
+                    cim.RatioTapChanger,
+                ]),
                 # Distribution areas (for area highlighting in the frontend).
-                # Load most-general to most-specific; the area->node map below
-                # resolves the tightest containing area for each node.
-                self.FEEDERS[feeder_id].get_all_edges(cim.DistributionArea)
-                self.FEEDERS[feeder_id].get_all_edges(cim.FeederArea)
-                self.FEEDERS[feeder_id].get_all_edges(cim.SwitchArea)
-                self.FEEDERS[feeder_id].get_all_edges(cim.SecondaryArea)
+                # Load most-general to most-specific; the area->node map built
+                # later resolves the tightest containing area for each node.
+                ("distribution areas", [
+                    cim.DistributionArea,
+                    cim.FeederArea,
+                    cim.SwitchArea,
+                    cim.SecondaryArea,
+                ]),
+                ("loads", [cim.EnergyConsumer, cim.ConformLoad, cim.NonConformLoad]),
+                ("generation & storage", [
+                    cim.RotatingMachine,
+                    cim.SynchronousMachine,
+                    cim.AsynchronousMachine,
+                    cim.EnergySource,
+                    cim.ShuntCompensator,
+                    cim.LinearShuntCompensator,
+                    cim.SeriesCompensator,
+                    cim.PowerElectronicsConnection,
+                    cim.BatteryUnit,
+                ]),
+                ("switches", [
+                    cim.Breaker,
+                    cim.Fuse,
+                    cim.Switch,
+                    cim.Sectionaliser,
+                    cim.LoadBreakSwitch,
+                    cim.Disconnector,
+                    cim.Recloser,
+                ]),
+                # Needed to map simulation output to equipment. Analog and
+                # Discrete cover every instance; loading the abstract
+                # Measurement parent would just re-fetch the same objects.
+                ("measurements", [cim.Analog, cim.Discrete]),
+            ]
+            total_steps = len(load_stages) + 2  # + feeder graph + coordinates
 
-                # cim_utils.get_all_load_data(self._FEEDERS[feeder_id])
-                self.FEEDERS[feeder_id].get_all_edges(cim.EnergyConsumer)
-                self.FEEDERS[feeder_id].get_all_edges(cim.ConformLoad)
-                self.FEEDERS[feeder_id].get_all_edges(cim.NonConformLoad)
+            def report(stage: str, step: int):
+                if progress_cb is not None:
+                    progress_cb({
+                        "model": model_id,
+                        "stage": stage,
+                        "step": step,
+                        "total": total_steps,
+                    })
 
-                self.FEEDERS[feeder_id].get_all_edges(cim.RotatingMachine)
-                self.FEEDERS[feeder_id].get_all_edges(cim.SynchronousMachine)
-                self.FEEDERS[feeder_id].get_all_edges(cim.AsynchronousMachine)
-                self.FEEDERS[feeder_id].get_all_edges(cim.EnergySource)
+            feeder_id = model_id
+            report("feeder graph", 1)
+            self.FEEDERS[feeder_id] = self._get_cim_feeder(model_id=model_id)
 
-                self.FEEDERS[feeder_id].get_all_edges(cim.ShuntCompensator)
-                self.FEEDERS[feeder_id].get_all_edges(cim.LinearShuntCompensator)
-                self.FEEDERS[feeder_id].get_all_edges(cim.SeriesCompensator)
+            for index, (stage, cim_classes) in enumerate(load_stages, start=2):
+                report(stage, index)
+                for cim_class in cim_classes:
+                    self.FEEDERS[feeder_id].get_all_edges(cim_class)
 
-                # cim_utils.get_all_inverter_data(self._FEEDERS[feeder_id])
-                self.FEEDERS[feeder_id].get_all_edges(cim.PowerElectronicsConnection)
-                self.FEEDERS[feeder_id].get_all_edges(cim.BatteryUnit)
-
-                # Switch types
-                self.FEEDERS[feeder_id].get_all_edges(cim.Breaker)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Fuse)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Switch)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Sectionaliser)
-                self.FEEDERS[feeder_id].get_all_edges(cim.LoadBreakSwitch)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Disconnector)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Recloser)
-
-                # Measurements (needed to map simulation output to equipment)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Analog)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Discrete)
-                self.FEEDERS[feeder_id].get_all_edges(cim.Measurement)
-
-                # cim_utils.get_all_limit_data(self._FEEDERS[feeder_id])
-                cim_utils.get_all_location_data(self.FEEDERS[feeder_id])
-            except Exception as e:
-                tb = traceback.format_exc()
-                print(tb)
-                return {"error": "Database connection timeout", "traceback": tb}
+            report("coordinates", total_steps)
+            cim_utils.get_all_location_data(self.FEEDERS[feeder_id])
         elif filepath is not None:
             # For regular CIM file reading without multi-feeder support
             cim_file = XMLFile(filepath)

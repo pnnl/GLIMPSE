@@ -4,11 +4,14 @@ import axios from "axios";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../../config";
 
-const GridAPPSDModelForm = ({ onModelSelect }) => {
+// initialConnected: pass true when the caller has already verified the broker
+// is reachable (LoadModelModal only shows this tab after a status check) — it
+// skips the manual "Connect" button and fetches model info immediately.
+const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
     const [regionNames, setRegionNames] = useState(null);
     const [regionName, setRegionName] = useState(null);
     const [modelInfo, setModelInfo] = useState(false);
-    const [connected, setConnected] = useState(false);
+    const [connected, setConnected] = useState(initialConnected);
     const [loading, setLoading] = useState(false);
 
     const connectToGridAPPSD = async () => {

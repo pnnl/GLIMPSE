@@ -271,8 +271,11 @@ The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the de
 | `GLIMPSE_EXPORT_DIR` | backend | system temp `/glimpse_exports` | Directory that CIM export writes are confined to. Client-supplied export paths are resolved inside this directory; absolute paths and `..` traversal are rejected. |
 | `GLIMPSE_ALLOW_ANY_EXPORT_PATH` | backend | `0` | Set to `1` only for a **desktop** build where the user intentionally picks any save location. Disables the export-path confinement above — do not enable on a shared/networked server. |
 | `MAX_UPLOAD_MB` | backend | `50` | Maximum request body size (MB) for uploads, to bound memory use. Requests over the limit get `413`. |
+| `GLIMPSE_MODELS_DIR` | backend | auto-detected | Directory holding the bundled example models offered in the "Example Models" tab. By default the backend looks for a `models/` folder next to the server (PyInstaller bundle / Docker bind mount) and then the repo's top-level `models/` folder. Missing files are simply not offered. |
 | `EXPOSE_TRACEBACKS` | backend | `0` | When `1`, includes Python tracebacks in error responses (useful for local debugging). Leave off in production so internal details aren't leaked to clients. |
 | `GRIDAPPSD_ADDRESS` / `GRIDAPPSD_PORT` / `GRIDAPPSD_USER` / `GRIDAPPSD_PASSWORD` | backend | `localhost` / `61613` / `system` / `manager` | GridAPPS-D broker connection. The defaults are GridAPPS-D's own defaults — **change the credentials** for any real broker and source them from your secret store, not the compose file. |
+| `GLIMPSE_SPARQL_TIMEOUT` | backend | `120` | Per-query timeout (seconds) for Blazegraph SPARQL queries during CIM model loads, so one stalled query can't hang a load forever. Raise it if a very slow Blazegraph instance times out on large models. |
+| `GLIMPSE_SPARQL_MAX_CONCURRENT` | backend | `4` | Maximum in-flight SPARQL queries during a CIM model load. Caps the pressure on the Blazegraph JVM when loading large models (e.g. IEEE 9500); raise it on a beefy Blazegraph host for faster loads. |
 
 #### Enabling authentication
 

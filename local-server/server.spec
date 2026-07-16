@@ -13,6 +13,13 @@ except Exception:
 datas += collect_data_files("cimgraph", include_py_files=True)
 # JSON validation schemas loaded at runtime relative to jsonhelper.py
 datas += [("schemas", "schemas")]
+# Example models served by /api/examples — destination paths must mirror the
+# EXAMPLE_MODELS registry in server.py ("<models dir>/CIM/...", "<models dir>/3000/...").
+datas += [
+    ("../models/CIM/IEEE123.xml", "models/CIM"),
+    ("../models/CIM/IEEE9500bal.xml", "models/CIM"),
+    ("../models/3000/3000_model.glm", "models/3000"),
+]
 
 # hiddenimports = ['engineio.async_drivers.gevent', 'engineio.async_drivers.gevent_uwsgi']
 
