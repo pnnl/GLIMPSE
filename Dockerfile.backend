@@ -13,7 +13,7 @@ RUN apt-get update \
 
 # Install server deps (no pyinstaller). --prerelease=allow: cim-graph is 0.4.3a10.
 COPY local-server/requirements-server.txt ./requirements-server.txt
-RUN uv pip install --system --prerelease=allow -r requirements-server.txt
+RUN uv pip install --system -r requirements-server.txt
 
 # ---- Nim toolchain: build the glm parser into a Python wheel ----------------
 # glm (https://github.com/itsMando/glm) is a Nim project that exposes a Python

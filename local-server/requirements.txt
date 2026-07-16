@@ -3,11 +3,10 @@ Flask-SocketIO
 flask-cors
 gevent
 gevent-websocket
-networkx
 requests
 wheel
 setuptools
-cim-graph==0.4.3a10
-gridappsd-python==2026.2.1
+cim-graph>=0.4.3a10
+gridappsd-python>=2026.2.1
 jsonschema
 pyinstaller>=6.18.0

@@ -80,6 +80,7 @@ class SocketClientHelper {
         "sim-log": [],
         "sim-state-change": [],
         "connection-change": [],
+        "model-load-progress": [],
         "load-graph": [],
         "update-data": [],
         "add-node": [],
@@ -141,6 +142,12 @@ class SocketClientHelper {
         this.socket.on("sim-state-change", (state) => {
             this.simulationState = state;
             this.#emit("sim-state-change", state);
+        });
+
+        // Per-stage progress while the backend loads a CIM model from
+        // Blazegraph. Payload: { model, stage, step, total }.
+        this.socket.on("model-load-progress", (progress) => {
+            this.#emit("model-load-progress", progress);
         });
 
         this.socket.on("switch-state-update", (data) => {

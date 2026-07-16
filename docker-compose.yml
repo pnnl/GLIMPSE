@@ -18,8 +18,17 @@ services:
       GRIDAPPSD_PORT: "${GRIDAPPSD_PORT:-61613}"
       GRIDAPPSD_USER: "${GRIDAPPSD_USER:-system}"
       GRIDAPPSD_PASSWORD: "${GRIDAPPSD_PASSWORD:-manager}"
+      # Blazegraph SPARQL endpoint used for CIM model loads. Empty = derived
+      # from GRIDAPPSD_ADDRESS (http://<host>:8889/bigdata/namespace/kb/sparql),
+      # which covers the standard GridAPPS-D deployment. Set explicitly if
+      # Blazegraph runs elsewhere.
+      CIMG_URL: "${CIMG_URL:-}"
     ports:
       - "5052:5052"
+    volumes:
+      # Example models for the frontend's "Example Models" tab (/api/examples).
+      # Read-only bind mount instead of a COPY so the image stays small.
+      - ./models:/app/models:ro
     # Lets the container resolve host.docker.internal on Linux (built in on Docker Desktop).
     extra_hosts:
       - "host.docker.internal:host-gateway"
