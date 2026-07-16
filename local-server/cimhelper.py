@@ -24,17 +24,44 @@ import cimgraph.data_profile.cimhub_2023 as cim
 #   WebSocket:     ws://localhost:61614
 #   OpenWire:      tcp://localhost:61616
 
-# Environment setup
-os.environ["CIMG_CIM_PROFILE"] = "cimhub_2023"
-os.environ["CIMG_URL"] = "http://localhost:8889/bigdata/namespace/kb/sparql"
-os.environ["CIMG_DATABASE"] = "powergridmodel"
-os.environ["CIMG_HOST"] = "localhost"
-os.environ["CIMG_PORT"] = "61613"
-os.environ["CIMG_USERNAME"] = "test_app_user"
-os.environ["CIMG_PASSWORD"] = "4Test"
-os.environ["CIMG_NAMESPACE"] = "http://iec.ch/TC57/CIM100#"
-os.environ["CIMG_IEC61970_301"] = "8"
-os.environ["CIMG_USE_UNITS"] = "False"
+# Environment setup for cimgraph. Defaults only — every CIMG_* value can be
+# overridden from the environment (an empty value counts as unset). These were
+# previously hard assignments, which broke any deployment where Blazegraph
+# isn't on localhost: the Docker backend reached GridAPPS-D's broker via
+# GRIDAPPSD_ADDRESS but still sent SPARQL queries to the container's own
+# localhost. The Blazegraph/STOMP hosts therefore default to the
+# GRIDAPPSD_ADDRESS host (GridAPPS-D runs Blazegraph alongside the broker), so
+# the compose default of host.docker.internal covers both.
+
+
+def _env_default(name: str, value: str) -> None:
+    if not os.environ.get(name, "").strip():
+        os.environ[name] = value
+
+
+def _gridappsd_host() -> str:
+    """Host part of GRIDAPPSD_ADDRESS — a bare hostname or a URI like
+    tcp://broker:61613 — falling back to localhost."""
+    address = os.environ.get("GRIDAPPSD_ADDRESS", "").strip()
+    if not address:
+        return "localhost"
+    from urllib.parse import urlsplit
+
+    parsed = urlsplit(address if "//" in address else f"//{address}")
+    return parsed.hostname or "localhost"
+
+
+_blazegraph_host = _gridappsd_host()
+_env_default("CIMG_CIM_PROFILE", "cimhub_2023")
+_env_default("CIMG_URL", f"http://{_blazegraph_host}:8889/bigdata/namespace/kb/sparql")
+_env_default("CIMG_DATABASE", "powergridmodel")
+_env_default("CIMG_HOST", _blazegraph_host)
+_env_default("CIMG_PORT", "61613")
+_env_default("CIMG_USERNAME", "test_app_user")
+_env_default("CIMG_PASSWORD", "4Test")
+_env_default("CIMG_NAMESPACE", "http://iec.ch/TC57/CIM100#")
+_env_default("CIMG_IEC61970_301", "8")
+_env_default("CIMG_USE_UNITS", "False")
 
 # Per-query limits for Blazegraph. cimgraph's get_all_edges batches instances
 # into chunks of 100 mRIDs and fires the batches from a thread pool sized to
