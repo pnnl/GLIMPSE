@@ -21,14 +21,15 @@ datas += [
     ("../models/3000/3000_model.glm", "models/3000"),
 ]
 
-# hiddenimports = ['engineio.async_drivers.gevent', 'engineio.async_drivers.gevent_uwsgi']
-
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    # engineio loads its async driver dynamically (importlib), so PyInstaller's
+    # static analysis misses it. Without this the packaged server crashes at
+    # startup with "ValueError: Invalid async_mode specified".
+    hiddenimports=['engineio.async_drivers.gevent'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
