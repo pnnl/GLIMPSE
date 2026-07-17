@@ -36,7 +36,12 @@ const contourNodeInArea = (attrs, areaId) =>
     attrs.group === "connectivity_node" && nodeInArea(attrs, areaId);
 
 const DistributionAreaSelector = () => {
-    const [treeData, setTreeData] = useState([]);
+    // The tree can be resolved synchronously when the component mounts with a
+    // graph already loaded; graph load/clear events update it afterwards.
+    const [treeData, setTreeData] = useState(() => {
+        const current = graphHelper.distributionAreas;
+        return Object.keys(current).length > 0 ? buildTreeData(current) : [];
+    });
     const [selectedAreas, setSelectedAreas] = useState([]);
     const [legend, setLegend] = useState([]); // [{ id, name, color }] mirrors colorMapRef for rendering
     const colorMapRef = useRef({}); // areaId -> color; stable across renders
@@ -53,13 +58,8 @@ const DistributionAreaSelector = () => {
         return map;
     }, [treeData]);
 
-    // Populate tree on mount and listen for graph load/clear events
+    // Listen for graph load/clear events
     useEffect(() => {
-        const current = graphHelper.distributionAreas;
-        if (Object.keys(current).length > 0) {
-            setTreeData(buildTreeData(current));
-        }
-
         const handleGraphLoaded = () => {
             setTreeData(buildTreeData(graphHelper.distributionAreas));
         };
@@ -83,35 +83,15 @@ const DistributionAreaSelector = () => {
     // Create / destroy WebGL contour layers whenever the selection or sigma instance changes
     useEffect(() => {
         if (!sigma || selectedAreas.length === 0) {
-            setLegend([]);
             return;
         }
 
         // Hard cap the rendered set so we never exceed the WebGL layer budget,
-        // even if the selection was set programmatically.
-        const areasToRender = selectedAreas.slice(0, MAX_HIGHLIGHT_AREAS);
-
-        // Assign a stable color to each newly selected area
-        const newAreaIds = areasToRender.filter((id) => !colorMapRef.current[id]);
-        if (newAreaIds.length > 0) {
-            const colors = iwanthue(newAreaIds.length, {
-                colorSpace: [0, 360, 35, 100, 25, 65],
-            });
-            newAreaIds.forEach((id, i) => {
-                colorMapRef.current[id] = colors[i];
-            });
-        }
-        // Drop colors for areas that are no longer selected
-        Object.keys(colorMapRef.current).forEach((id) => {
-            if (!areasToRender.includes(id)) delete colorMapRef.current[id];
-        });
-
-        // Mirror the assigned colors into state so the legend can render them
-        setLegend(
-            areasToRender
-                .filter((id) => colorMapRef.current[id])
-                .map((id) => ({ id, name: nameById[id] ?? id, color: colorMapRef.current[id] })),
-        );
+        // even if the selection was set programmatically. Colors were assigned
+        // by the selection handler before the selection state landed here.
+        const areasToRender = selectedAreas
+            .slice(0, MAX_HIGHLIGHT_AREAS)
+            .filter((id) => colorMapRef.current[id]);
 
         // Raise the listener cap so sigma doesn't warn on many simultaneous layers
         sigma.setMaxListeners(areasToRender.length + 10);
@@ -187,10 +167,29 @@ const DistributionAreaSelector = () => {
                 `Only ${MAX_HIGHLIGHT_AREAS} distribution areas can be highlighted at once. ` +
                     `Showing the first ${MAX_HIGHLIGHT_AREAS} of ${next.length}.`,
             );
-            setSelectedAreas(next.slice(0, MAX_HIGHLIGHT_AREAS));
-            return;
         }
-        setSelectedAreas(next);
+        const capped = next.slice(0, MAX_HIGHLIGHT_AREAS);
+
+        // Assign a stable color to each newly selected area and drop colors of
+        // deselected ones. Done here (event time) so the layer effect and the
+        // legend always find their colors ready.
+        const newAreaIds = capped.filter((id) => !colorMapRef.current[id]);
+        if (newAreaIds.length > 0) {
+            const colors = iwanthue(newAreaIds.length, {
+                colorSpace: [0, 360, 35, 100, 25, 65],
+            });
+            newAreaIds.forEach((id, i) => {
+                colorMapRef.current[id] = colors[i];
+            });
+        }
+        Object.keys(colorMapRef.current).forEach((id) => {
+            if (!capped.includes(id)) delete colorMapRef.current[id];
+        });
+
+        setLegend(
+            capped.map((id) => ({ id, name: nameById[id] ?? id, color: colorMapRef.current[id] })),
+        );
+        setSelectedAreas(capped);
     };
 
     if (treeData.length === 0) return null;

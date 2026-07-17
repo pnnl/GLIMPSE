@@ -1,6 +1,5 @@
 import { MultiUndirectedGraph, MultiGraph } from "graphology";
 import louvain from "graphology-communities-louvain";
-import forceAtlas2 from "graphology-layout-forceatlas2";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
@@ -61,6 +60,10 @@ class GraphHelper {
             edges: {},
         };
     }
+
+    setIsCIM = (value) => {
+        this.isCIM = Boolean(value);
+    };
 
     setThemeObject = (jsonTheme = null) => {
         if (this.themeName === "custom-theme") {
@@ -240,7 +243,6 @@ class GraphHelper {
         // show any hidden edges and nodes
         this.graph.updateEachEdgeAttributes((id, edge) => ({
             ...edge,
-            size: this.#theme.edgeOptions[edge.group].size,
             type: edge.type === "animated" ? "straight" : edge.type,
             hidden: false,
             zIndex: 0,
@@ -470,7 +472,7 @@ class GraphHelper {
             if (count > 0) currentEdgeTypes.push(type);
         });
 
-        let x_increment = null;
+        let x_increment;
         if (currentNodeTypes.length === 5) x_increment = 800 / 5;
         else if (currentNodeTypes.length === 2) x_increment = 400;
         else x_increment = 900 / 6;
@@ -719,10 +721,10 @@ class GraphHelper {
     };
 
     updateSwitches = (simOutput) => {
-        const { timestamp, switches } = simOutput;
+        const { switches } = simOutput;
 
         switches.forEach((sw) => {
-            const { equipment_mrid: switchID, open, value } = sw;
+            const { equipment_mrid: switchID, value } = sw;
 
             if (!this.graph.hasEdge(switchID)) {
                 console.warn(`Switch with ID ${switchID} not found in the graph.`);
@@ -775,7 +777,7 @@ class GraphHelper {
     };
 
     handleSimulationOutput = (output) => {
-        const { timestamp, Analog, Discrete } = output;
+        const { Analog, Discrete } = output;
 
         // Real part of the complex power below this (in VA) is treated as zero so
         // we don't pick a flow direction off of numerical noise.
@@ -898,6 +900,8 @@ class GraphHelper {
                 });
             }
         }
+
+        this.sigmaInstance.refresh();
     };
 
     newNodeWithEdge = (newNodeData) => {

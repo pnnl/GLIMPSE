@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import ReactDom from "react-dom";
 import { Modal, Table } from "antd";
-import { density, modularity } from "graphology-metrics/graph";
+import { density } from "graphology-metrics/graph";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { UndirectedGraph } from "graphology";
 
@@ -24,8 +24,11 @@ const MetricsModal = ({ open, close }) => {
         },
     ];
 
+    // Recomputed each time the modal opens (the graph is a module singleton,
+    // so `open` is the signal that fresh metrics are needed). Previously this
+    // useMemo had no dependency array at all, which recomputed every render.
     const metricsData = useMemo(() => {
-        if (graphHelper.graph.order === 0) return [];
+        if (!open || graphHelper.graph.order === 0) return [];
 
         const graph = graphHelper.graph;
 
@@ -96,7 +99,7 @@ const MetricsModal = ({ open, close }) => {
                 description: "Number of edges that connect a node to itself.",
             },
         ];
-    });
+    }, [open]);
 
     return ReactDom.createPortal(
         <Modal centered open={open} footer={[]} title={"Metrics"} onCancel={close}>

@@ -62,7 +62,7 @@ export default class AnimatedDotProgram extends EdgeProgram {
         array[startIndex++] = phase;
         array[startIndex++] = direction;
         array[startIndex++] = color;
-        array[startIndex++] = edgeIndex;
+        array[startIndex] = edgeIndex;
     }
 
     setUniforms(params, { gl, uniformLocations }) {

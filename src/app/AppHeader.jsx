@@ -87,6 +87,10 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         }));
 
         return [...nodeOptions, ...edgeOptions];
+        // graphUpdateTrigger is the app-wide invalidation counter for the
+        // module-singleton graph (bumped by newGraphUpdate after mutations) —
+        // it's intentionally a dep even though it isn't read in the callback.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [graphLoaded, graphUpdateTrigger]);
 
     const handleExport = async () => {

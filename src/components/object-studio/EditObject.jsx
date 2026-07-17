@@ -46,99 +46,92 @@ const invalidateCache = (feederId, mRID) => {
 
 const EditObject = ({ object, onNavigate }) => {
     const { newGraphUpdate } = useGraph();
-    const [objectToEdit, setObjectToEdit] = useState(null);
-    const [mermaidContent, setMermaidContent] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
     const isCIM = graphHelper.isCIM;
+
+    // The parent remounts this component (via key) for each object viewed, so
+    // the initializers below run per object: non-CIM objects and cached CIM
+    // objects resolve synchronously; everything else starts empty and is
+    // filled by the fetch effect.
+    const [objectToEdit, setObjectToEdit] = useState(() => {
+        if (!object) return null;
+        if (isCIM) return getCachedObject(object.feederId, object.mRID)?.objectData ?? null;
+
+        const { type, id } = object;
+        const attrs =
+            type === "edge"
+                ? graphHelper.graph.getEdgeAttributes(id)
+                : graphHelper.graph.getNodeAttributes(id);
+        return { id, elementType: type, attributes: { ...attrs.attributes } };
+    });
+    const [mermaidContent, setMermaidContent] = useState(() => {
+        if (!object || !isCIM) return null;
+        return getCachedObject(object.feederId, object.mRID)?.mermaidData ?? null;
+    });
+    const [loading, setLoading] = useState(
+        () => Boolean(object) && isCIM && !getCachedObject(object.feederId, object.mRID),
+    );
+    const [saving, setSaving] = useState(false);
 
     // Track the current request to avoid race conditions
     const requestRef = useRef(0);
 
     useEffect(() => {
-        if (!object) {
-            setObjectToEdit(null);
-            setMermaidContent(null);
+        if (!object || !isCIM) return;
+
+        const { feederId, mRID } = object;
+
+        if (!feederId || !mRID) {
+            console.error("EditObject: Missing feederId or mRID", object);
             return;
         }
 
+        // Cache hits were already resolved synchronously by the state
+        // initializers (or by a completed fetch for this same object).
+        if (getCachedObject(feederId, mRID)) return;
+
         const currentRequest = ++requestRef.current;
 
-        if (isCIM) {
-            const { feederId, mRID } = object;
+        const fetchCIMData = async () => {
+            try {
+                const [objRes, mermaidRes] = await Promise.all([
+                    axios.post(`${API_BASE_URL}/api/cim/objects`, {
+                        feeder_id: feederId,
+                        mRID: mRID,
+                    }),
+                    axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
+                        feeder_id: feederId,
+                        mRID: mRID,
+                    }),
+                ]);
 
-            if (!feederId || !mRID) {
-                console.error("EditObject: Missing feederId or mRID", object);
-                return;
-            }
-
-            // Check cache first
-            const cached = getCachedObject(feederId, mRID);
-            if (cached) {
+                // Guard against stale responses
                 if (currentRequest !== requestRef.current) return;
-                setObjectToEdit(cached.objectData);
-                setMermaidContent(cached.mermaidData);
-                return;
-            }
 
-            setLoading(true);
+                const objectData = {
+                    ...objRes.data.object,
+                    // Ensure feederId is always stored with the object
+                    _feederId: feederId,
+                    _mRID: mRID,
+                };
+                const mermaidData = mermaidRes.data.mermaid;
 
-            const fetchCIMData = async () => {
-                try {
-                    const [objRes, mermaidRes] = await Promise.all([
-                        axios.post(`${API_BASE_URL}/api/cim/objects`, {
-                            feeder_id: feederId,
-                            mRID: mRID,
-                        }),
-                        axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
-                            feeder_id: feederId,
-                            mRID: mRID,
-                        }),
-                    ]);
+                // Cache the result
+                setCachedObject(feederId, mRID, { objectData, mermaidData });
 
-                    // Guard against stale responses
-                    if (currentRequest !== requestRef.current) return;
-
-                    const objectData = {
-                        ...objRes.data.object,
-                        // Ensure feederId is always stored with the object
-                        _feederId: feederId,
-                        _mRID: mRID,
-                    };
-                    const mermaidData = mermaidRes.data.mermaid;
-
-                    // Cache the result
-                    setCachedObject(feederId, mRID, { objectData, mermaidData });
-
-                    setObjectToEdit(objectData);
-                    setMermaidContent(mermaidData);
-                } catch (error) {
-                    if (currentRequest !== requestRef.current) return;
-                    console.error("Failed to fetch CIM object:", error);
-                    message.error("Failed to load object data");
-                } finally {
-                    if (currentRequest === requestRef.current) {
-                        setLoading(false);
-                    }
+                setObjectToEdit(objectData);
+                setMermaidContent(mermaidData);
+            } catch (error) {
+                if (currentRequest !== requestRef.current) return;
+                console.error("Failed to fetch CIM object:", error);
+                message.error("Failed to load object data");
+            } finally {
+                if (currentRequest === requestRef.current) {
+                    setLoading(false);
                 }
-            };
+            }
+        };
 
-            fetchCIMData();
-        } else {
-            // Non-CIM: read directly from graph
-            const { type, id } = object;
-            const attrs =
-                type === "edge"
-                    ? graphHelper.graph.getEdgeAttributes(id)
-                    : graphHelper.graph.getNodeAttributes(id);
-
-            setObjectToEdit({
-                id,
-                elementType: type,
-                attributes: { ...attrs.attributes },
-            });
-            setMermaidContent(null);
-        }
+        fetchCIMData();
     }, [object, isCIM]);
 
     const handleChange = useCallback((key, value) => {

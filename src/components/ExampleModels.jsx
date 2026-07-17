@@ -47,7 +47,7 @@ const ExampleModels = ({ closeModal }) => {
                 window.dispatchEvent(new CustomEvent("graph-cleared"));
             }
 
-            graphHelper.isCIM = Boolean(response.isCIM);
+            graphHelper.setIsCIM(response.isCIM);
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
 

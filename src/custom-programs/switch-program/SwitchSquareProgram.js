@@ -57,7 +57,7 @@ export default class SwitchSquareProgram extends EdgeProgram {
         array[startIndex++] = squareSize;
         array[startIndex++] = curvature;
         array[startIndex++] = color;
-        array[startIndex++] = edgeIndex;
+        array[startIndex] = edgeIndex;
     }
 
     setUniforms(params, { gl, uniformLocations }) {

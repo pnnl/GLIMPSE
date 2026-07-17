@@ -23,6 +23,7 @@ import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorP
 import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
 import GraphControls from "./GraphControls";
+import SimulationIdBadge from "../SimulationIdBadge";
 import LegendPanel from "../legend/LegendPanel";
 
 const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
@@ -214,7 +215,18 @@ const GraphRenderer = () => {
             nodeReducer: customNodeReducer,
             edgeReducer: customEdgeReducer,
         }),
-        [customNodeReducer, customEdgeReducer],
+        [
+            customNodeReducer,
+            customEdgeReducer,
+            BorderImageNodeProgram,
+            AnimatedStraightEdgeProgram,
+            SwitchEdgeProgram,
+            RegulatorEdgeProgram,
+            TransformerEdgeProgram,
+            CurvedSwitchEdgeProgram,
+            CurvedRegulatorEdgeProgram,
+            CurvedTransformerEdgeProgram,
+        ],
     );
 
     return (
@@ -236,6 +248,12 @@ const GraphRenderer = () => {
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
                 <GraphControls />
+            </ControlsContainer>
+            <ControlsContainer
+                style={{ border: "none", background: "none" }}
+                position={"bottom-right"}
+            >
+                <SimulationIdBadge />
             </ControlsContainer>
         </SigmaContainer>
     );

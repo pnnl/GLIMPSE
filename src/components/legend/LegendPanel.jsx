@@ -12,12 +12,97 @@ import { useGraph } from "../../contexts/GraphContext";
 // highlight it; right-click for a context menu (Hide All).
 const key = (elementType, type) => `${elementType}:${type}`;
 
+// Row/Section live at module scope (not recreated per LegendPanel render) so
+// React treats them as stable component types across renders.
+const Row = ({ elementType, item, c, isOn, isHidden, onToggleHighlight, onOpenMenu }) => (
+    <div
+        onDoubleClick={() => onToggleHighlight(elementType, item.type)}
+        onContextMenu={(e) => onOpenMenu(e, elementType, item.type)}
+        title="Double-click to highlight · right-click for options"
+        style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "3px 8px",
+            borderRadius: 4,
+            cursor: "pointer",
+            userSelect: "none",
+            background: isOn ? c.hover : "transparent",
+            borderLeft: `3px solid ${isOn ? c.accent : "transparent"}`,
+            opacity: isHidden ? 0.45 : 1,
+        }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = c.hover)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = isOn ? c.hover : "transparent")}
+    >
+        {/* Swatch: circle for nodes, bar for edges */}
+        {elementType === "node" ? (
+            <span
+                style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    flexShrink: 0,
+                    background: item.color,
+                    border: `1px solid ${item.borderColor}`,
+                }}
+            />
+        ) : (
+            <span style={{ width: 14, height: 4, borderRadius: 2, flexShrink: 0, background: item.color }} />
+        )}
+        <span
+            style={{
+                flex: 1,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                fontWeight: isOn ? 600 : 400,
+                textDecoration: isHidden ? "line-through" : "none",
+            }}
+        >
+            {item.type}
+        </span>
+        <span style={{ color: c.sub, fontVariantNumeric: "tabular-nums" }}>{item.count}</span>
+    </div>
+);
+
+const Section = ({ title, elementType, items, c, highlighted, hidden, onToggleHighlight, onOpenMenu }) =>
+    items.length === 0 ? null : (
+        <div>
+            <div
+                style={{
+                    padding: "6px 8px 2px",
+                    fontSize: 10,
+                    fontWeight: 600,
+                    letterSpacing: 0.4,
+                    textTransform: "uppercase",
+                    color: c.sub,
+                }}
+            >
+                {title}
+            </div>
+            {items.map((item) => (
+                <Row
+                    key={item.type}
+                    elementType={elementType}
+                    item={item}
+                    c={c}
+                    isOn={highlighted.has(key(elementType, item.type))}
+                    isHidden={hidden.has(key(elementType, item.type))}
+                    onToggleHighlight={onToggleHighlight}
+                    onOpenMenu={onOpenMenu}
+                />
+            ))}
+        </div>
+    );
+
 const LegendPanel = () => {
     const sigma = useSigma();
     const { darkMode } = useGraph();
 
     const [expanded, setExpanded] = useState(true);
-    const [data, setData] = useState({ nodes: [], edges: [] });
+    // Initialized straight from the graph — it's already loaded when this
+    // mounts inside the SigmaContainer; load/clear events keep it in sync.
+    const [data, setData] = useState(() => graphHelper.getLegendData());
     const [highlighted, setHighlighted] = useState(() => new Set());
     const [hidden, setHidden] = useState(() => new Set());
     const [context, setContext] = useState({ open: false, x: 0, y: 0 });
@@ -27,8 +112,6 @@ const LegendPanel = () => {
     // Re-read on graph load/clear; wipe local highlight/hide state since the graph
     // (and graphHelper's highlight sets) reset with it.
     useEffect(() => {
-        refresh();
-
         const handleGraphLoaded = () => {
             refresh();
             setHighlighted(new Set());
@@ -106,83 +189,6 @@ const LegendPanel = () => {
 
     const isEmpty = data.nodes.length === 0 && data.edges.length === 0;
 
-    const Row = ({ elementType, item }) => {
-        const k = key(elementType, item.type);
-        const isOn = highlighted.has(k);
-        const isHidden = hidden.has(k);
-        return (
-            <div
-                onDoubleClick={() => toggleHighlight(elementType, item.type)}
-                onContextMenu={(e) => openMenu(e, elementType, item.type)}
-                title="Double-click to highlight · right-click for options"
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "3px 8px",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                    userSelect: "none",
-                    background: isOn ? c.hover : "transparent",
-                    borderLeft: `3px solid ${isOn ? c.accent : "transparent"}`,
-                    opacity: isHidden ? 0.45 : 1,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = c.hover)}
-                onMouseLeave={(e) => (e.currentTarget.style.background = isOn ? c.hover : "transparent")}
-            >
-                {/* Swatch: circle for nodes, bar for edges */}
-                {elementType === "node" ? (
-                    <span
-                        style={{
-                            width: 12,
-                            height: 12,
-                            borderRadius: "50%",
-                            flexShrink: 0,
-                            background: item.color,
-                            border: `1px solid ${item.borderColor}`,
-                        }}
-                    />
-                ) : (
-                    <span style={{ width: 14, height: 4, borderRadius: 2, flexShrink: 0, background: item.color }} />
-                )}
-                <span
-                    style={{
-                        flex: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                        fontWeight: isOn ? 600 : 400,
-                        textDecoration: isHidden ? "line-through" : "none",
-                    }}
-                >
-                    {item.type}
-                </span>
-                <span style={{ color: c.sub, fontVariantNumeric: "tabular-nums" }}>{item.count}</span>
-            </div>
-        );
-    };
-
-    const Section = ({ title, elementType, items }) =>
-        items.length === 0 ? null : (
-            <div>
-                <div
-                    style={{
-                        padding: "6px 8px 2px",
-                        fontSize: 10,
-                        fontWeight: 600,
-                        letterSpacing: 0.4,
-                        textTransform: "uppercase",
-                        color: c.sub,
-                    }}
-                >
-                    {title}
-                </div>
-                {items.map((item) => (
-                    <Row key={item.type} elementType={elementType} item={item} />
-                ))}
-            </div>
-        );
-
     return (
         <div
             style={{
@@ -224,8 +230,26 @@ const LegendPanel = () => {
                         <div style={{ padding: "10px 8px", color: c.sub }}>No model loaded.</div>
                     ) : (
                         <>
-                            <Section title="Nodes" elementType="node" items={data.nodes} />
-                            <Section title="Edges" elementType="edge" items={data.edges} />
+                            <Section
+                                title="Nodes"
+                                elementType="node"
+                                items={data.nodes}
+                                c={c}
+                                highlighted={highlighted}
+                                hidden={hidden}
+                                onToggleHighlight={toggleHighlight}
+                                onOpenMenu={openMenu}
+                            />
+                            <Section
+                                title="Edges"
+                                elementType="edge"
+                                items={data.edges}
+                                c={c}
+                                highlighted={highlighted}
+                                hidden={hidden}
+                                onToggleHighlight={toggleHighlight}
+                                onOpenMenu={openMenu}
+                            />
                         </>
                     )}
 

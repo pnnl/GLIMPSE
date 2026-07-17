@@ -31,7 +31,7 @@ const NewObjectModal = ({ open, close }) => {
         }
     };
 
-    const handleValuesChange = (changedValue, _) => {
+    const handleValuesChange = (changedValue) => {
         setFormFields((prev) => ({ ...prev, ...changedValue }));
     };
 
@@ -42,25 +42,28 @@ const NewObjectModal = ({ open, close }) => {
             label: type,
             value: type,
         }));
-    }, [graphHelper.graph]);
+    }, []);
 
+    // The graph is a module singleton (mutations don't re-render this modal),
+    // so `open` is the recompute signal: options are rebuilt each time the
+    // modal opens and stay stable while it's up.
     const nodeIDs = useMemo(() => {
         // return nothing if there are no nodes in the graph
-        if (graphHelper.graph.order === 0) return [];
+        if (!open || graphHelper.graph.order === 0) return [];
 
         return graphHelper.graph.mapNodes((node, attrs) => ({
             label: attrs.attributes.name ?? node,
             value: node,
         }));
-    }, [graphHelper.graph]);
+    }, [open]);
 
     const edgeTypes = useMemo(() => {
-        if (graphHelper.graph.order === 0) return [];
+        if (!open || graphHelper.graph.order === 0) return [];
         return graphHelper.edgeTypes.map((type) => ({
             label: type,
             value: type,
         }));
-    }, [graphHelper.graph]);
+    }, [open]);
 
     const footer = [
         <Button
@@ -126,11 +129,7 @@ const NewObjectModal = ({ open, close }) => {
                 autoComplete="off"
                 onValuesChange={handleValuesChange}
             >
-                <Space
-                    orientation="vertical"
-                    size="small"
-                    style={{ width: "100%", marginBottom: 16 }}
-                >
+                <Space orientation="vertical" size="small" style={{ width: "100%", marginBottom: 16 }}>
                     <span style={{ fontSize: 12, color: "#999" }}>Node Definition</span>
                 </Space>
 
@@ -167,8 +166,7 @@ const NewObjectModal = ({ open, close }) => {
                         { required: true, message: "Please enter a node ID" },
                         {
                             pattern: /^[a-zA-Z0-9_-]+$/,
-                            message:
-                                "ID can only contain letters, numbers, hyphens, and underscores",
+                            message: "ID can only contain letters, numbers, hyphens, and underscores",
                         },
                     ]}
                 >
@@ -201,9 +199,7 @@ const NewObjectModal = ({ open, close }) => {
                         disabled={hasNoGraph}
                         showSearch
                         filterOption={(input, option) =>
-                            (option?.label ?? "")
-                                .toLowerCase()
-                                .includes(input.toLowerCase())
+                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
                         }
                     />
                 </Form.Item>

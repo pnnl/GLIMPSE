@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { bindWebGLLayer, createContoursProgram } from "@sigma/layer-webgl";
 import { useLoadGraph, useSigma } from "@react-sigma/core";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
