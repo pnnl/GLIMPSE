@@ -88,10 +88,17 @@ class SocketClientHelper {
     simulationID = null;
     simulationState = "inactive"; // inactive | idle | running | paused | stopped | error
 
+    // Rolling buffer of GridAPPS-D simulation log messages. Kept here (not in
+    // the log panel) so the panel renders full history even when it mounts, or
+    // is un-minimized, partway through a run. Capped to bound memory.
+    simulationLogs = [];
+    #MAX_SIM_LOGS = 1000;
+
     // Event Listeners
     #listeners = {
         "sim-output": [],
         "sim-log": [],
+        "sim-log-clear": [],
         "sim-state-change": [],
         "connection-change": [],
         "model-load-progress": [],
@@ -146,8 +153,15 @@ class SocketClientHelper {
         });
 
         this.socket.on("sim-log", (log) => {
-            // console.log(log);
+            // Buffer first so a panel that mounts (or un-minimizes) mid-run can
+            // read history via getSimulationLogs(); then notify live listeners.
+            this.simulationLogs.push(log);
+            if (this.simulationLogs.length > this.#MAX_SIM_LOGS) {
+                this.simulationLogs.shift();
+            }
+
             if (log.processStatus === "COMPLETE") {
+                graphHelper.reset();
                 this.#emit("sim-state-change", "stopped");
             }
             this.#emit("sim-log", log);
@@ -313,11 +327,7 @@ class SocketClientHelper {
      * application_config/service_configs/test_config, and
      * powerSystemConfigsByModelId stores one power_system_config per feeder.
      */
-    applySimulationConfig = ({
-        simulationConfig,
-        advancedConfig,
-        powerSystemConfigsByModelId,
-    } = {}) => {
+    applySimulationConfig = ({ simulationConfig, advancedConfig, powerSystemConfigsByModelId } = {}) => {
         if (simulationConfig) {
             this.gridappsdConfiguration.simulation_config = {
                 ...this.gridappsdConfiguration.simulation_config,
@@ -328,10 +338,7 @@ class SocketClientHelper {
             Object.assign(this.gridappsdConfiguration, structuredClone(advancedConfig));
         }
         if (powerSystemConfigsByModelId) {
-            Object.assign(
-                this.powerSystemConfigOverrides,
-                structuredClone(powerSystemConfigsByModelId),
-            );
+            Object.assign(this.powerSystemConfigOverrides, structuredClone(powerSystemConfigsByModelId));
         }
         this.simulationConfigCustomized = true;
     };
@@ -352,6 +359,9 @@ class SocketClientHelper {
                 reject(new Error("Socket not connected to server."));
                 return;
             }
+
+            // Fresh run — drop logs from any previous simulation.
+            this.clearSimulationLogs();
 
             const gridappsdConfig = this.buildGridappsdConfig(models);
 
@@ -435,6 +445,17 @@ class SocketClientHelper {
     setSimulationState = (state) => {
         this.simulationState = state;
         this.#emit("sim-state-change", state);
+    };
+
+    // Simulation Logs
+
+    /** Snapshot of the buffered simulation log messages (oldest first). */
+    getSimulationLogs = () => [...this.simulationLogs];
+
+    /** Drop all buffered logs and notify listeners so panels can reset. */
+    clearSimulationLogs = () => {
+        this.simulationLogs = [];
+        this.#emit("sim-log-clear");
     };
 
     getStatus = () => ({

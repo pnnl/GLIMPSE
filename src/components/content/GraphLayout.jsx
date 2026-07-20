@@ -4,6 +4,7 @@ import { Flex } from "antd";
 import VisToolbar from "../VisToolbar";
 import GraphRenderer from "../graph/GraphRenderer";
 import SimulationCharts from "../SimulationCharts";
+import SimulationLog from "../SimulationLog";
 import CustomSimulationCharts from "../plots/CustomSimulationCharts";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
@@ -16,6 +17,11 @@ const GraphLayout = () => {
     const { darkMode, newGraphUpdate } = useGraph();
     const [activePanel, setActivePanel] = useState(null);
     const [simState, setSimState] = useState("inactive");
+    // Log panel expand/collapse is owned here (not in SimulationLog) because it
+    // changes the graph's height — the resize effect below must re-fit sigma.
+    const [logExpanded, setLogExpanded] = useState(true);
+
+    const simActive = simState !== "inactive";
 
     // Only the charts panel shares the flex row and shrinks the graph (to keep the
     // full topology visible next to live gridappsd charts). With it closed the graph
@@ -46,16 +52,24 @@ const GraphLayout = () => {
         };
     }, [newGraphUpdate]);
 
-    // The graph container only resizes when the charts panel opens/closes. Let
-    // sigma re-fit and nudge ECharts (which resizes off window events) after the
-    // column width settles. Toggling the legend doesn't hit this — it overlays.
+    // Re-fit sigma whenever the graph container changes size: the charts panel
+    // opening/closing (width), or the sim log panel mounting/expanding (height).
+    // sigma.resize(true) forces it to recompute canvas dimensions from the
+    // container immediately — without it, sigma waits on its ResizeObserver and
+    // the old-height canvas visibly bleeds into the log area until you click.
+    // The double rAF lets the flex layout settle before we read the new size.
+    // window resize also nudges ECharts (which resizes off window events).
+    // Toggling the legend doesn't hit this — it overlays.
     useEffect(() => {
         const id = requestAnimationFrame(() => {
-            graphHelper.sigmaInstance?.refresh();
-            window.dispatchEvent(new Event("resize"));
+            requestAnimationFrame(() => {
+                graphHelper.sigmaInstance?.resize(true);
+                graphHelper.sigmaInstance?.refresh();
+                window.dispatchEvent(new Event("resize"));
+            });
         });
         return () => cancelAnimationFrame(id);
-    }, [chartsActive]);
+    }, [chartsActive, logExpanded, simActive]);
 
     // The charts button collapses the panel when it's already active, else opens it.
     const toggleCharts = () => setActivePanel((v) => (v === "charts" ? null : "charts"));
@@ -65,13 +79,18 @@ const GraphLayout = () => {
     return (
         <div className="graph-layout">
             <VisToolbar onToggleCharts={toggleCharts} activePanel={activePanel} />
-            <Flex direction="row" gap="0" style={{ height: "inherit", width: "100%" }}>
-                {/* Main graph — always full width unless the charts panel is open. */}
+            {/* flex:1 + minHeight:0 lets this row give up vertical space to the
+                docked log panel below (which is flex-shrink:0). */}
+            <Flex direction="row" gap="0" style={{ flex: 1, minHeight: 0, width: "100%" }}>
+                {/* Main graph — always full width unless the charts panel is open.
+                    overflow:hidden clips the sigma canvas to this box so it can
+                    never paint over the docked log panel during a resize. */}
                 <div
                     style={{
                         width: chartsActive ? "70%" : "100%",
                         height: "100%",
                         position: "relative",
+                        overflow: "hidden",
                     }}
                 >
                     <GraphRenderer />
@@ -107,6 +126,16 @@ const GraphLayout = () => {
                     </div>
                 )}
             </Flex>
+
+            {/* Docked below the graph row (only during a sim) so it never
+                overlaps the sigma corner controls. Collapsing it leaves just
+                the header bar; log history is retained in socketClientHelper. */}
+            {simActive && (
+                <SimulationLog
+                    expanded={logExpanded}
+                    onToggleExpanded={() => setLogExpanded((v) => !v)}
+                />
+            )}
         </div>
     );
 };

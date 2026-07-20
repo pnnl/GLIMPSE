@@ -1,0 +1,103 @@
+/* Bottom-docked simulation log panel. Collapses to just its header bar so it
+   can be minimized instantly without unmounting (log history is retained in
+   socketClientHelper's buffer regardless). */
+.sim-log {
+   display: flex;
+   flex-direction: column;
+   width: 100%;
+   border-top: 1px solid #e0e0e0;
+   background-color: #ffffff;
+   font-size: 12px;
+   flex-shrink: 0;
+}
+
+.sim-log--dark {
+   border-top-color: #3a3a3a;
+   background-color: #1f1f1f;
+   color: #e0e0e0;
+}
+
+.sim-log__header {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   padding: 4px 8px;
+   min-height: 32px;
+}
+
+.sim-log__toggle {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+   background: transparent;
+   border: none;
+   cursor: pointer;
+   color: inherit;
+   font-size: 13px;
+   font-weight: 600;
+   padding: 2px 4px;
+}
+
+.sim-log__title {
+   white-space: nowrap;
+}
+
+/* Level legend — pushed to the right, hidden on narrow panels. */
+.sim-log__legend {
+   display: flex;
+   align-items: center;
+   gap: 2px;
+   margin-left: auto;
+   overflow: hidden;
+}
+
+.sim-log__legend-tag {
+   margin: 0;
+   font-size: 10px;
+   line-height: 16px;
+   padding: 0 5px;
+}
+
+.sim-log__body {
+   overflow-y: auto;
+   max-height: 200px;
+   min-height: 80px;
+   padding: 4px 8px 8px;
+   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.sim-log__row {
+   display: flex;
+   align-items: baseline;
+   gap: 6px;
+   padding: 2px 0;
+   border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+   white-space: nowrap;
+}
+
+.sim-log__time {
+   color: #8c8c8c;
+   flex-shrink: 0;
+   font-variant-numeric: tabular-nums;
+}
+
+.sim-log__level,
+.sim-log__status {
+   margin: 0;
+   flex-shrink: 0;
+   font-size: 10px;
+   line-height: 18px;
+}
+
+.sim-log__message {
+   flex: 1;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+}
+
+/* Let a row's message wrap on hover so long lines are fully readable. */
+.sim-log__row:hover .sim-log__message {
+   white-space: normal;
+   word-break: break-word;
+}
