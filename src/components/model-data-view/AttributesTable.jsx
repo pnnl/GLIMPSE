@@ -14,9 +14,10 @@ const AttributesTable = ({
     onChange,
     onSave,
     feederId,
+    liveRows = [],
 }) => {
     const { token } = theme.useToken();
-    const dataSource = attributes
+    const attributeRows = attributes
         ? Object.entries(attributes).map(([key, rawValue], index) => {
               let value;
               try {
@@ -28,19 +29,43 @@ const AttributesTable = ({
           })
         : [];
 
+    // Live simulation measurements are pinned above the object's own attributes
+    // and flagged so they render read-only with a distinct highlight.
+    const liveDataSource = liveRows.map((row, i) => ({
+        key: `live-${i}`,
+        attrKey: row.attrKey,
+        value: row.value,
+        isLive: true,
+    }));
+
+    const dataSource = [...liveDataSource, ...attributeRows];
+
     const columns = [
         {
             title: "Attribute",
             dataIndex: "attrKey",
             key: "attrKey",
             width: "30%",
-            render: (text) => <Text strong>{text}</Text>,
+            render: (text, record) =>
+                record.isLive ? (
+                    <Text strong style={{ color: token.colorPrimary }}>
+                        ⚡ {text}
+                    </Text>
+                ) : (
+                    <Text strong>{text}</Text>
+                ),
         },
         {
             title: "Value",
             key: "value",
             render: (_, record) => {
                 const { attrKey, value } = record;
+
+                // Live simulation values are always read-only display text.
+                if (record.isLive) {
+                    return <Text style={{ color: token.colorPrimary }}>{String(value)}</Text>;
+                }
+
                 const isReadOnly = readOnlyAttributes.has(attrKey);
 
                 // Empty array
@@ -116,8 +141,12 @@ const AttributesTable = ({
                     dataSource={dataSource}
                     pagination={false}
                     size="middle"
-                    rowClassName={(_, index) =>
-                        index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd"
+                    rowClassName={(record, index) =>
+                        record.isLive
+                            ? "attributes-live-row"
+                            : index % 2 === 0
+                              ? "object-table-row-even"
+                              : "object-table-row-odd"
                     }
                 />
             </div>

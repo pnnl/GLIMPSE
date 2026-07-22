@@ -21,7 +21,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         { type: "divider" },
         { key: "graph-metrics", label: "Metrics", disabled: false },
         { type: "divider" },
-        { key: "object-studio", label: "Object Studio", disabled: false },
+        { key: "object-studio", label: "Model Data View", disabled: false },
         { type: "divider" },
         {
             key: "themes",

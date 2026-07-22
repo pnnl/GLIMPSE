@@ -879,6 +879,7 @@ def handle_start_simulation(config):
                             "equipment_type": eq_type,
                             "measurement_type": measurement_type, # Pos, PNV, VA
                             "phases": mapping.get("phases", ""),
+                            "connectivity_node_mrid": mapping.get("connectivity_node_mrid", ""),
                             **measurment_data
                         }
 
@@ -906,6 +907,7 @@ def handle_start_simulation(config):
                             "equipment_type": eq_type,
                             "measurement_type": measurement_type, # Pos, PNV, VA
                             "phases": mapping.get("phases", ""),
+                            "connectivity_node_mrid": mapping.get("connectivity_node_mrid", ""),
                             **measurment_data
                         }
 

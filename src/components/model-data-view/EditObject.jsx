@@ -6,6 +6,17 @@ import MermaidDiagram from "./MermaidDiagram";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL } from "../../config";
+import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
+
+// Split a formatted "A 2401.3 V" / "A 12.30 kW, 4.50 kVAR" line into a
+// { attrKey, value } row keyed by measurement kind + phase for the table.
+const toLiveRows = (kind, lines) =>
+    lines.map((line) => {
+        const spaceIdx = line.indexOf(" ");
+        const phase = spaceIdx === -1 ? line : line.slice(0, spaceIdx);
+        const value = spaceIdx === -1 ? "" : line.slice(spaceIdx + 1);
+        return { attrKey: `${kind} ${phase}`, value };
+    });
 
 const READ_ONLY_ATTRIBUTES = new Set([
     "name",
@@ -44,7 +55,7 @@ const invalidateCache = (feederId, mRID) => {
     objectCache.delete(key);
 };
 
-const EditObject = ({ object, onNavigate }) => {
+const EditObject = ({ object, onNavigate, simActive = false }) => {
     const { newGraphUpdate } = useGraph();
     const isCIM = graphHelper.isCIM;
 
@@ -214,6 +225,25 @@ const EditObject = ({ object, onNavigate }) => {
 
     const heading = objectToEdit.attributes?.name ?? objectToEdit.id ?? String(object?.mRID || object);
 
+    // Live simulation values for the object currently being viewed. Recomputed
+    // every render (the parent re-renders per sim frame) and shown as read-only
+    // rows above the object's own attributes — the model data is never altered.
+    const graphId = object?.mRID ?? object?.id;
+    let liveRows = [];
+    if (simActive && graphId) {
+        if (graphHelper.graph.hasNode(graphId)) {
+            liveRows = toLiveRows(
+                "voltage",
+                formatVoltageLines(graphHelper.liveMeasurements.nodes.get(graphId)?.voltage),
+            );
+        } else if (graphHelper.graph.hasEdge(graphId)) {
+            liveRows = toLiveRows(
+                "power",
+                formatPowerLines(graphHelper.liveMeasurements.edges.get(graphId)?.power),
+            );
+        }
+    }
+
     const tabItems = [
         {
             key: "attributes",
@@ -228,6 +258,7 @@ const EditObject = ({ object, onNavigate }) => {
                     onSave={handleSave}
                     feederId={currentFeederId}
                     saving={saving}
+                    liveRows={liveRows}
                 />
             ),
         },

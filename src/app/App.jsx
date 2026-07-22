@@ -7,7 +7,7 @@ import GraphLayout from "../components/content/GraphLayout";
 import AppHeader from "./AppHeader";
 import LoadModelModal from "../components/modals/LoadModelModal";
 import { GraphProvider, useGraph } from "../contexts/GraphContext";
-import ObjectStudio from "../components/object-studio/ObjectStudio";
+import ModelDataView from "../components/model-data-view/ModelDataView";
 
 const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
     const { view, darkMode } = useGraph();
@@ -99,7 +99,7 @@ const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
                     >
                         <GraphLayout />
                     </div>
-                    {view === "object-studio" && <ObjectStudio />}
+                    {view === "object-studio" && <ModelDataView />}
                 </Content>
             </Layout>
         </ConfigProvider>
