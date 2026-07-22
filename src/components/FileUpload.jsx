@@ -4,6 +4,7 @@ import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
+import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
 
 const { Dragger } = Upload;
@@ -90,6 +91,10 @@ const FileUpload = ({ closeModal }) => {
             graphHelper.isCIM = endPoint === "api/upload/cim";
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
+
+            // A file-uploaded model isn't driveable via GridAPPS-D, so hide the
+            // simulation controls/log even if a GridAPPS-D model was loaded before.
+            socketClientHelper.setSimulationState("inactive");
 
             window.dispatchEvent(new CustomEvent("graph-loaded"));
             newGraphUpdate();

@@ -283,7 +283,7 @@ const SimulationConfigForm = ({ open, onClose }) => {
                     type="info"
                     showIcon
                     style={{ marginBottom: 16 }}
-                    message="No GridAPPS-D feeders selected"
+                    title="No GridAPPS-D feeders selected"
                     description="Load one or more models through “Load w/ GridAPPS-D” to configure per-feeder settings. The simulation settings below still apply."
                 />
             )}

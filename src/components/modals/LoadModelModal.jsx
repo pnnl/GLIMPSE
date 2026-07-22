@@ -117,6 +117,10 @@ const LoadModelModal = ({ onMount }) => {
             graphHelper.setGraphData(response.data ?? response);
             newGraphUpdate();
             window.dispatchEvent(new CustomEvent("graph-loaded"));
+            // Only a model loaded through GridAPPS-D gets the simulation
+            // lifecycle controls and log panel — flip the sim state to idle so
+            // they mount (VisToolbar / GraphLayout gate on sim state).
+            socketClientHelper.setSimulationState("idle");
             setOpen(false);
         } catch (e) {
             console.log(e);

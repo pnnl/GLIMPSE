@@ -871,14 +871,6 @@ class GraphHelper {
                     flowDirection = 0; // both parts within the threshold -> no flow
                 }
 
-                const prevFlowDirection = edgeAttrs.flowDirection;
-                const edgeName = edgeAttrs.attributes?.name ?? edgeID;
-                console.log(
-                    `[flow] ${edgeName}: VA sum real=${sum.real.toExponential(3)} ` +
-                        `imag=${sum.imag.toExponential(3)} -> flowDirection ${prevFlowDirection} => ${flowDirection}` +
-                        (prevFlowDirection !== flowDirection ? " (CHANGED)" : " (unchanged)"),
-                );
-
                 if (flowDirection === 0) {
                     edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
                     edgeAttrs.type = "straight";

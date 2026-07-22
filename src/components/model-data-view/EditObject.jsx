@@ -212,7 +212,7 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
     if (loading) {
         return (
             <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-                <Spin size="large" tip="Loading object..." />
+                <Spin size="large" description="Loading object..." />
             </div>
         );
     }
