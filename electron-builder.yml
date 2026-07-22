@@ -40,14 +40,19 @@ nsis:
     allowToChangeInstallationDirectory: true
 
 mac:
+    category: "public.app-category.utilities"
     target:
-        - dmg
-    category: public.app-category.utilities
+        - target: "dmg"
+          arch:
+              - "universal"
+    # Required for modern macOS:
+    hardenedRuntime: true
+    gatekeeperAssess: false
+    entitlements: "build/entitlements.mac.plist"
+    entitlementsInherit: "build/entitlements.mac.inherit.plist"
 
 linux:
     target:
-        - AppImage
-        - deb
         - tar.gz
     category: Science
     synopsis: Power grid model visualization tool
