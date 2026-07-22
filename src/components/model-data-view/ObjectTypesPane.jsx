@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Collapse, Tag, Divider } from "antd";
+import { Typography, Collapse, Tag, Divider, Space } from "antd";
 
 const ObjectTypesPane = ({ nodeTypes, edgeTypes, filterTypes, setFilterTypes }) => {
     const handleFilterClick = (category, typeName) => {
@@ -81,13 +81,12 @@ const ObjectTypesPane = ({ nodeTypes, edgeTypes, filterTypes, setFilterTypes }) 
     ];
 
     return (
-        <div style={{ padding: "0.75rem 0" }}>
-            <Typography.Title level={5} style={{ textAlign: "center", margin: 0 }}>
+        <Space orientation="vertical" separator={<Divider style={{ margin: 0 }} />}>
+            <Typography.Title level={5} style={{ textAlign: "center", margin: "1rem 0" }}>
                 Object Types
             </Typography.Title>
-            <Divider style={{ margin: "0.75rem 0" }} />
             <Collapse defaultActiveKey={["nodes", "edges"]} ghost items={collapseItems} />
-        </div>
+        </Space>
     );
 };
 

@@ -36,7 +36,6 @@ const READ_ONLY_ATTRIBUTES = [
 const EditAttributesModal = ({ close, context }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
-    const [attributes, setAttributes] = useState({});
     const [loading, setLoading] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const { open, object } = context;
@@ -52,41 +51,45 @@ const EditAttributesModal = ({ close, context }) => {
         [isComplexValue],
     );
 
-    // Initialize form with current attributes when modal opens
-    useEffect(() => {
-        if (open && object) {
-            let currentAttributes = {};
+    // Snapshot the object's attributes when the modal opens. Derived during
+    // render (not in an effect) so the form renders in a single pass.
+    const { attributes, loadError } = useMemo(() => {
+        if (!open || !object) return { attributes: {}, loadError: null };
 
-            try {
-                if (object.type === "node") {
-                    currentAttributes =
-                        graphHelper.graph.getNodeAttribute(object.id, "attributes") || {};
-                } else if (object.type === "edge") {
-                    currentAttributes =
-                        graphHelper.graph.getEdgeAttribute(object.id, "attributes") || {};
-                }
-            } catch (error) {
-                console.error("Error loading attributes:", error);
-                message.error("Failed to load attributes");
-                return;
+        try {
+            if (object.type === "node") {
+                return {
+                    attributes: graphHelper.graph.getNodeAttribute(object.id, "attributes") || {},
+                    loadError: null,
+                };
             }
-
-            setAttributes(currentAttributes);
-            form.setFieldsValue(currentAttributes);
-            setHasChanges(false);
+            if (object.type === "edge") {
+                return {
+                    attributes: graphHelper.graph.getEdgeAttribute(object.id, "attributes") || {},
+                    loadError: null,
+                };
+            }
+            return { attributes: {}, loadError: null };
+        } catch (error) {
+            return { attributes: {}, loadError: error };
         }
-    }, [open, object, form]);
+    }, [open, object]);
+
+    // Push the snapshot into the antd form (an external store) on open.
+    useEffect(() => {
+        if (!open || !object) return;
+
+        if (loadError) {
+            console.error("Error loading attributes:", loadError);
+            message.error("Failed to load attributes");
+            return;
+        }
+        form.setFieldsValue(attributes);
+    }, [open, object, attributes, loadError, form]);
 
     // Track form changes to enable/disable save button
     const handleFormChange = useCallback(() => {
         setHasChanges(true);
-    }, []);
-
-    // Determine input type based on value
-    const getInputType = useCallback((value) => {
-        if (typeof value === "number") return "number";
-        if (typeof value === "boolean") return "checkbox";
-        return "text";
     }, []);
 
     const handleSave = async () => {
@@ -119,6 +122,7 @@ const EditAttributesModal = ({ close, context }) => {
 
             graphHelper.sigmaInstance.refresh();
             message.success("Attributes updated successfully");
+            setHasChanges(false);
             close();
         } catch (error) {
             console.error("Save failed:", error);
@@ -137,6 +141,7 @@ const EditAttributesModal = ({ close, context }) => {
                 cancelText: "Keep Editing",
                 onOk() {
                     form.resetFields();
+                    setHasChanges(false);
                     close();
                 },
             });

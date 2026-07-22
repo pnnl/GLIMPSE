@@ -13,6 +13,7 @@ lerna-debug.log*
 **/__pycache__
 package-lock.json
 **/glm
+**/.claude
 **/.venv
 **/.env
 *.lock

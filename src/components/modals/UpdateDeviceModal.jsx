@@ -9,7 +9,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
-    const [currentStatus, setCurrentStatus] = useState(null);
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
 
     // Configuration for different device types
@@ -41,31 +40,42 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
 
     const config = useMemo(() => deviceConfig[deviceType], [deviceType, deviceConfig]);
 
-    // Initialize form with current status when modal opens
-    useEffect(() => {
-        if (open && object && config) {
-            try {
-                const edge = config.getAttributes(object);
-                console.log(edge);
-                const status = edge.attributes[config.statusSource];
+    // Current status, read straight off the graph while the modal is open.
+    // Derived (not state): the modal closes right after a save, and the save
+    // path updates the graph optimistically, so the next open re-reads the
+    // fresh value here.
+    const { currentStatus, loadError } = useMemo(() => {
+        if (!open || !object || !config) return { currentStatus: null, loadError: null };
 
-                // Normalize whatever the source attribute holds ("True"/"False" for
-                // switches, a numeric section count for capacitors) into the canonical
-                // "OPEN"/"CLOSED" label the form and statusValueMap are keyed by.
-                let normalizedStatus;
-                if (status !== "False" && status !== "True") {
-                    normalizedStatus = parseInt(status, 10) ? "CLOSED" : "OPEN"; // Handle capacitor status mapping
-                } else {
-                    normalizedStatus = status === "False" ? "CLOSED" : "OPEN";
-                }
-                setCurrentStatus(normalizedStatus);
-                form.setFieldsValue({ status: normalizedStatus });
-            } catch (error) {
-                console.error("Error loading device status:", error);
-                message.error("Failed to load device status");
+        try {
+            const status = config.getAttributes(object).attributes[config.statusSource];
+
+            // Normalize whatever the source attribute holds ("True"/"False" for
+            // switches, a numeric section count for capacitors) into the canonical
+            // "OPEN"/"CLOSED" label the form and statusValueMap are keyed by.
+            let normalizedStatus;
+            if (status !== "False" && status !== "True") {
+                normalizedStatus = parseInt(status, 10) ? "CLOSED" : "OPEN"; // Handle capacitor status mapping
+            } else {
+                normalizedStatus = status === "False" ? "CLOSED" : "OPEN";
             }
+            return { currentStatus: normalizedStatus, loadError: null };
+        } catch (error) {
+            return { currentStatus: null, loadError: error };
         }
-    }, [open, object, deviceType, config, form]);
+    }, [open, object, config]);
+
+    // Sync the antd form (an external store) with the derived status on open.
+    useEffect(() => {
+        if (!open) return;
+
+        if (loadError) {
+            console.error("Error loading device status:", loadError);
+            message.error("Failed to load device status");
+            return;
+        }
+        form.setFieldsValue({ status: currentStatus });
+    }, [open, currentStatus, loadError, form]);
 
     useEffect(() => {
         const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
@@ -134,35 +144,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
             // Emit the update to the backend
             console.log(inputMessage);
             socketClientHelper.socket.emit("sim-input", inputMessage);
-
-            // Optimistically reflect the change in the local graph so that reopening
-            // this modal (or reading the device elsewhere) shows the new state, rather
-            // than waiting for the next simulation output to echo it back.
-            const applyLocalUpdate = (attrs) => {
-                const nextAttributes = {
-                    ...attrs.attributes,
-                    [config.statusSource]:
-                        deviceType === "switch"
-                            ? newStatus === "OPEN"
-                                ? "True"
-                                : "False"
-                            : newValue,
-                    status: newStatus,
-                };
-                const next = { ...attrs, attributes: nextAttributes };
-                if (deviceType === "switch") {
-                    next.switchColor = newStatus === "OPEN" ? "#4aff4a" : "#ff0000";
-                }
-                return next;
-            };
-
-            if (deviceType === "switch") {
-                graphHelper.graph.updateEdgeAttributes(object, applyLocalUpdate);
-            } else {
-                graphHelper.graph.updateNodeAttributes(object, applyLocalUpdate);
-            }
-            graphHelper.sigmaInstance?.refresh();
-            setCurrentStatus(newStatus);
 
             message.success(`Status update request sent to backend`);
             close();

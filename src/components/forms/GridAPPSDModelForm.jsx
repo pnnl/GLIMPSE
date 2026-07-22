@@ -57,8 +57,6 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
 
                 setRegionNames(Array.from(regionNamesSet));
                 setModelInfo(res.data.models);
-                // Update simulation state to idle since model info is available
-                socketClientHelper.setSimulationState("idle");
             } catch (e) {
                 console.error(e);
             } finally {

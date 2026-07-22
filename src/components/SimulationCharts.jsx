@@ -148,24 +148,20 @@ const SimulationCharts = () => {
         itemStyle: { color },
     });
 
-    // Always embed the current accumulated data so a re-render (e.g. dark mode
-    // toggle) never sends empty series that would wipe the live chart lines.
-    const v = vd.current;
-    const l = ld.current;
-
+    // The render options carry styling only — no `data` keys. With
+    // notMerge={false}, echarts merges the new option and keeps the series
+    // data it already has, so a re-render (e.g. dark mode toggle) never wipes
+    // the live chart lines. The accumulated buffers themselves are re-applied
+    // imperatively in the effect below.
     const voltageOption = {
         backgroundColor: bg,
         textStyle: { color: text },
         grid: sharedGrid,
         tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
         legend: { ...legendBase, data: ["Min", "Avg", "Max"] },
-        xAxis: { ...xAxisBase, data: [...v.timestamps] },
+        xAxis: xAxisBase,
         yAxis: yAxisBase("V"),
-        series: [
-            { ...line("Min", "#5470c6"), data: [...v.min] },
-            { ...line("Avg", "#91cc75"), data: [...v.avg] },
-            { ...line("Max", "#ee6666"), data: [...v.max] },
-        ],
+        series: [line("Min", "#5470c6"), line("Avg", "#91cc75"), line("Max", "#ee6666")],
     };
 
     const loadOption = {
@@ -174,17 +170,47 @@ const SimulationCharts = () => {
         grid: sharedGrid,
         tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
         legend: { ...legendBase, data: ["Load P", "Load Q", "Bat P", "Bat Q", "Sol P", "Sol Q"] },
-        xAxis: { ...xAxisBase, data: [...l.timestamps] },
+        xAxis: xAxisBase,
         yAxis: yAxisBase("kVA"),
         series: [
-            { ...line("Load P", "#5470c6"), data: [...l.loadP] },
-            { ...line("Load Q", "#5470c6", true), data: [...l.loadQ] },
-            { ...line("Bat P", "#91cc75"), data: [...l.batP] },
-            { ...line("Bat Q", "#91cc75", true), data: [...l.batQ] },
-            { ...line("Sol P", "#fac858"), data: [...l.solP] },
-            { ...line("Sol Q", "#fac858", true), data: [...l.solQ] },
+            line("Load P", "#5470c6"),
+            line("Load Q", "#5470c6", true),
+            line("Bat P", "#91cc75"),
+            line("Bat Q", "#91cc75", true),
+            line("Sol P", "#fac858"),
+            line("Sol Q", "#fac858", true),
         ],
     };
+
+    // After every commit, push the accumulated buffers back into the charts.
+    // Renders are rare here (theme/layout changes) — streaming updates flow
+    // through processOutput without re-rendering this component.
+    //
+    // Skipped while a buffer is empty: on first mount echarts-for-react hasn't
+    // applied the base option yet (its init is async), and a data-only merge
+    // against that bare chart crashes echarts ("Unknown series undefined") —
+    // and with nothing accumulated there is nothing to restore anyway.
+    useEffect(() => {
+        const v = vd.current;
+        const l = ld.current;
+        if (v.timestamps.length === 0 && l.timestamps.length === 0) return;
+
+        voltageChartRef.current?.getEchartsInstance()?.setOption({
+            xAxis: { data: [...v.timestamps] },
+            series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
+        });
+        loadChartRef.current?.getEchartsInstance()?.setOption({
+            xAxis: { data: [...l.timestamps] },
+            series: [
+                { data: [...l.loadP] },
+                { data: [...l.loadQ] },
+                { data: [...l.batP] },
+                { data: [...l.batQ] },
+                { data: [...l.solP] },
+                { data: [...l.solQ] },
+            ],
+        });
+    }, []);
 
     return (
         <div className="sim-charts" style={{ backgroundColor: bg }}>

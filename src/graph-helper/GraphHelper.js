@@ -1,10 +1,10 @@
 import { MultiUndirectedGraph, MultiGraph } from "graphology";
 import louvain from "graphology-communities-louvain";
-import forceAtlas2 from "graphology-layout-forceatlas2";
 import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
 import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
+import { cleanPhase, formatVoltageLines } from "../utils/live-measurements";
 
 class GraphHelper {
     // private
@@ -42,6 +42,14 @@ class GraphHelper {
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
     hasGeoCoords = false; // true when node x/y hold real longitude/latitude (enables map background)
 
+    // Ephemeral per-tick simulation measurements — voltage on bus nodes (PNV)
+    // and power flow on edges (VA) — surfaced as a read-only overlay during a
+    // run. Never written into a model's own `attributes`; cleared by reset()
+    // when the simulation ends. Keyed by graph node/edge id:
+    //   nodes: id -> { voltage: { <phase>: { magnitude, angle } } }
+    //   edges: id -> { power:   { <phase>: { real, imag, magnitude, angle } } }
+    liveMeasurements = { nodes: new Map(), edges: new Map() };
+
     // Edge focus-pulse tuning. DURATION is how long the attention pulse plays
     // before settling into a steady emphasis; PERIOD is one grow/shrink cycle.
     FOCUS_PULSE_DURATION = 2600; // ms
@@ -61,6 +69,10 @@ class GraphHelper {
             edges: {},
         };
     }
+
+    setIsCIM = (value) => {
+        this.isCIM = Boolean(value);
+    };
 
     setThemeObject = (jsonTheme = null) => {
         if (this.themeName === "custom-theme") {
@@ -228,6 +240,18 @@ class GraphHelper {
     };
 
     reset = () => {
+        // Drop the live-simulation overlay and restore each node's base hover
+        // label (the voltage lines added during the run are removed here).
+        for (const nodeId of this.liveMeasurements.nodes.keys()) {
+            if (!this.graph.hasNode(nodeId)) continue;
+            this.graph.updateNodeAttributes(nodeId, (node) => {
+                node.attributesLabel = this.getTitle(node.attributes);
+                return node;
+            });
+        }
+        this.liveMeasurements.nodes.clear();
+        this.liveMeasurements.edges.clear();
+
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
         this.#highlightedAreas.length = 0;
@@ -240,7 +264,6 @@ class GraphHelper {
         // show any hidden edges and nodes
         this.graph.updateEachEdgeAttributes((id, edge) => ({
             ...edge,
-            size: this.#theme.edgeOptions[edge.group].size,
             type: edge.type === "animated" ? "straight" : edge.type,
             hidden: false,
             zIndex: 0,
@@ -470,7 +493,7 @@ class GraphHelper {
             if (count > 0) currentEdgeTypes.push(type);
         });
 
-        let x_increment = null;
+        let x_increment;
         if (currentNodeTypes.length === 5) x_increment = 800 / 5;
         else if (currentNodeTypes.length === 2) x_increment = 400;
         else x_increment = 900 / 6;
@@ -719,10 +742,10 @@ class GraphHelper {
     };
 
     updateSwitches = (simOutput) => {
-        const { timestamp, switches } = simOutput;
+        const { switches } = simOutput;
 
         switches.forEach((sw) => {
-            const { equipment_mrid: switchID, open, value } = sw;
+            const { equipment_mrid: switchID, value } = sw;
 
             if (!this.graph.hasEdge(switchID)) {
                 console.warn(`Switch with ID ${switchID} not found in the graph.`);
@@ -775,7 +798,7 @@ class GraphHelper {
     };
 
     handleSimulationOutput = (output) => {
-        const { timestamp, Analog, Discrete } = output;
+        const { Analog, Discrete } = output;
 
         // Real part of the complex power below this (in VA) is treated as zero so
         // we don't pick a flow direction off of numerical noise.
@@ -799,13 +822,29 @@ class GraphHelper {
             }
 
             const angleRad = (measurement.angle * Math.PI) / 180;
+            const real = measurement.magnitude * Math.cos(angleRad);
+            const imag = measurement.magnitude * Math.sin(angleRad);
+
+            // Per-phase power overlay for the tabular / attribute display. Kept
+            // separate from the aggregated flow-direction sum below.
+            const edgeLive = this.liveMeasurements.edges.get(measurement.equipment_mrid) || {
+                power: {},
+            };
+            edgeLive.power[cleanPhase(measurement.phases)] = {
+                real,
+                imag,
+                magnitude: measurement.magnitude,
+                angle: measurement.angle,
+            };
+            this.liveMeasurements.edges.set(measurement.equipment_mrid, edgeLive);
+
             const sum = edgePowerSums.get(measurement.equipment_mrid) || {
                 real: 0,
                 imag: 0,
                 normalLimit: measurement.normal_limit?.Normal,
             };
-            sum.real += measurement.magnitude * Math.cos(angleRad);
-            sum.imag += measurement.magnitude * Math.sin(angleRad);
+            sum.real += real;
+            sum.imag += imag;
             if (sum.normalLimit == null && measurement.normal_limit) {
                 sum.normalLimit = measurement.normal_limit.Normal;
             }
@@ -831,14 +870,6 @@ class GraphHelper {
                 } else {
                     flowDirection = 0; // both parts within the threshold -> no flow
                 }
-
-                const prevFlowDirection = edgeAttrs.flowDirection;
-                const edgeName = edgeAttrs.attributes?.name ?? edgeID;
-                console.log(
-                    `[flow] ${edgeName}: VA sum real=${sum.real.toExponential(3)} ` +
-                        `imag=${sum.imag.toExponential(3)} -> flowDirection ${prevFlowDirection} => ${flowDirection}` +
-                        (prevFlowDirection !== flowDirection ? " (CHANGED)" : " (unchanged)"),
-                );
 
                 if (flowDirection === 0) {
                     edgeAttrs.color = "rgba(145, 145, 145, 0.7)";
@@ -898,6 +929,50 @@ class GraphHelper {
                 });
             }
         }
+
+        // ── Live bus-voltage overlay (PNV) ───────────────────────────────────
+        // PNV magnitude/angle describe the phase voltage at the measurement's
+        // terminal; attribute it to the bus (ConnectivityNode) it sits on, or to
+        // the equipment itself when that equipment is a graph node (e.g. a load).
+        const nodesWithNewVoltage = new Set();
+        for (const measurement of Analog) {
+            if (measurement.measurement_type !== "PNV") continue;
+
+            let nodeId = null;
+            if (
+                measurement.connectivity_node_mrid &&
+                this.graph.hasNode(measurement.connectivity_node_mrid)
+            ) {
+                nodeId = measurement.connectivity_node_mrid;
+            } else if (this.graph.hasNode(measurement.equipment_mrid)) {
+                nodeId = measurement.equipment_mrid;
+            }
+            if (!nodeId) continue;
+
+            const nodeLive = this.liveMeasurements.nodes.get(nodeId) || { voltage: {} };
+            nodeLive.voltage[cleanPhase(measurement.phases)] = {
+                magnitude: measurement.magnitude,
+                angle: measurement.angle,
+            };
+            this.liveMeasurements.nodes.set(nodeId, nodeLive);
+            nodesWithNewVoltage.add(nodeId);
+        }
+
+        // Fold live voltage into each affected node's hover label. Rebuilt from
+        // the base attributes each tick (never appended cumulatively), so the
+        // model's own attributes stay untouched and the label can't drift.
+        for (const nodeId of nodesWithNewVoltage) {
+            const lines = formatVoltageLines(this.liveMeasurements.nodes.get(nodeId)?.voltage);
+            this.graph.updateNodeAttributes(nodeId, (node) => {
+                const base = this.getTitle(node.attributes);
+                node.attributesLabel = lines.length
+                    ? `${base}\nVoltage (live):\n  ${lines.join("\n  ")}`
+                    : base;
+                return node;
+            });
+        }
+
+        this.sigmaInstance.refresh();
     };
 
     newNodeWithEdge = (newNodeData) => {

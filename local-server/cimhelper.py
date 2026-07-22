@@ -853,7 +853,16 @@ class CIMHelper:
                     entry["conducting_equipment_mrid"] = str(equipment.mRID) if equipment.mRID else ""
                     entry["conducting_equipment_name"] = equipment.name if equipment.name else ""
                     entry["conducting_equipment_type"] = equipment.__class__.__name__
-                elif measurement.PowerSystemResource:
+
+                # Record the bus (ConnectivityNode) the measurement's terminal sits
+                # on. Voltage (PNV) is keyed to conducting equipment, but the value
+                # belongs to the bus node — the frontend uses this to attribute live
+                # voltage to the corresponding graph node.
+                if measurement.Terminal and measurement.Terminal.ConnectivityNode:
+                    cn = measurement.Terminal.ConnectivityNode
+                    entry["connectivity_node_mrid"] = str(cn.mRID) if cn.mRID else ""
+
+                if measurement.PowerSystemResource and "conducting_equipment_mrid" not in entry:
                     psr = measurement.PowerSystemResource
                     entry["conducting_equipment_mrid"] = str(psr.mRID) if psr.mRID else ""
                     entry["conducting_equipment_name"] = psr.name if psr.name else ""

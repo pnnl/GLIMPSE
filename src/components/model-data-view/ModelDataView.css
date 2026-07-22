@@ -119,24 +119,9 @@
     background-color: #fafafa;
 }
 
-.object-table-row-even:hover > td,
-.object-table-row-odd:hover > td {
-    background-color: rgba(51, 51, 51, 0.08) !important;
-}
-
-/* ─── Fixed column: explicit backgrounds prevent bleed-through on horizontal scroll ─── */
-
-.object-table-row-even td.ant-table-cell-fix-left {
-    background-color: #ffffff !important;
-}
-
-.object-table-row-odd td.ant-table-cell-fix-left {
-    background-color: #fafafa !important;
-}
-
-.object-table-row-even:hover td.ant-table-cell-fix-left,
-.object-table-row-odd:hover td.ant-table-cell-fix-left {
-    background-color: rgba(51, 51, 51, 0.08) !important;
+/* Live simulation measurement rows, pinned atop the Edit Object attributes. */
+.attributes-live-row > td {
+    background-color: rgba(22, 119, 255, 0.08) !important;
 }
 
 /* ─── Dark mode overrides ─── */
@@ -153,20 +138,35 @@
     background-color: #2a2a2a;
 }
 
-.dark-mode .object-table-row-even:hover > td,
-.dark-mode .object-table-row-odd:hover > td {
+.dark-mode .attributes-live-row > td {
+    background-color: rgba(22, 119, 255, 0.18) !important;
+}
+
+.dark-mode
+    .object-table-row-even:hover
+    > td:not(.ant-table-cell-fix-left):not(.ant-table-cell-fix-right),
+.dark-mode
+    .object-table-row-odd:hover
+    > td:not(.ant-table-cell-fix-left):not(.ant-table-cell-fix-right) {
     background-color: rgba(255, 255, 255, 0.06) !important;
 }
 
-.dark-mode .object-table-row-even td.ant-table-cell-fix-left {
+.dark-mode .object-table-row-even td.ant-table-cell-fix-left,
+.dark-mode .object-table-row-even td.ant-table-cell-fix-right {
     background-color: #1f1f1f !important;
 }
 
-.dark-mode .object-table-row-odd td.ant-table-cell-fix-left {
+.dark-mode .object-table-row-odd td.ant-table-cell-fix-left,
+.dark-mode .object-table-row-odd td.ant-table-cell-fix-right {
     background-color: #2a2a2a !important;
 }
 
 .dark-mode .object-table-row-even:hover td.ant-table-cell-fix-left,
-.dark-mode .object-table-row-odd:hover td.ant-table-cell-fix-left {
-    background-color: rgba(255, 255, 255, 0.06) !important;
+.dark-mode .object-table-row-even:hover td.ant-table-cell-fix-right {
+    background-color: #2c2c2c !important;
+}
+
+.dark-mode .object-table-row-odd:hover td.ant-table-cell-fix-left,
+.dark-mode .object-table-row-odd:hover td.ant-table-cell-fix-right {
+    background-color: #373737 !important;
 }

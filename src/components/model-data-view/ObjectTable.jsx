@@ -1,10 +1,53 @@
 import React from "react";
-import { Table, Typography } from "antd";
+import { Table, Typography, Button } from "antd";
+import { ControlOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
+import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
 
-const { Link } = Typography;
+const { Link, Text } = Typography;
 
-const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
+// Renders a stack of per-phase live-measurement lines (or a dash when the row
+// has no measurement yet this tick).
+const LiveLines = ({ lines }) => {
+    if (!lines || lines.length === 0) return <Text type="secondary">-</Text>;
+    return (
+        <div style={{ lineHeight: 1.3 }}>
+            {lines.map((line, i) => (
+                <div key={i} style={{ whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                    {line}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+/**
+ * Detects whether a table row is a device that can be controlled during a live
+ * GridAPPS-D simulation. Switches (open/close) and regulators (tap positions)
+ * are edges; capacitors (open/close) are nodes. Mirrors the double-click
+ * detection in GraphEvents so the tabular view and the graph stay in sync.
+ */
+const getControlType = (record, elementType) => {
+    const group = record.group;
+    const classType = record.attributes?.class_type;
+    if (elementType === "edge") {
+        if (group === "regulator" || classType === "regulator") return "regulator";
+        if (group === "switch") return "switch";
+    } else if (elementType === "node") {
+        if (group === "capacitor") return "capacitor";
+    }
+    return null;
+};
+
+const ObjectTable = ({
+    data,
+    columns,
+    onEditObject,
+    onControlObject,
+    isCIM,
+    elementType,
+    simActive = false,
+}) => {
     const handleObjectClick = (record) => {
         if (isCIM) {
             onEditObject({
@@ -118,9 +161,73 @@ const ObjectTable = ({ data, columns, onEditObject, isCIM }) => {
         };
     });
 
+    // Trailing fixed-right columns, kept visible while the attribute columns
+    // scroll: a live-measurement column (during a simulation) and the device
+    // control column (CIM/GridAPPS-D models only).
+    const trailingColumns = [];
+
+    // Live voltage (nodes) / power flow (edges) from the simulation overlay.
+    // Read-only and ephemeral — the model's own attributes are never touched.
+    if (simActive) {
+        trailingColumns.push(
+            elementType === "node"
+                ? {
+                      title: "voltage (live)",
+                      key: "__voltage",
+                      fixed: "right",
+                      width: 150,
+                      render: (_, record) => (
+                          <LiveLines
+                              lines={formatVoltageLines(
+                                  graphHelper.liveMeasurements.nodes.get(record.id)?.voltage,
+                              )}
+                          />
+                      ),
+                  }
+                : {
+                      title: "power flow (live)",
+                      key: "__power",
+                      fixed: "right",
+                      width: 190,
+                      render: (_, record) => (
+                          <LiveLines
+                              lines={formatPowerLines(
+                                  graphHelper.liveMeasurements.edges.get(record.id)?.power,
+                              )}
+                          />
+                      ),
+                  },
+        );
+    }
+
+    if (isCIM && onControlObject) {
+        trailingColumns.push({
+            title: "control",
+            key: "__control",
+            fixed: "right",
+            width: 120,
+            render: (_, record) => {
+                const controlType = getControlType(record, elementType);
+                if (!controlType) return null;
+                return (
+                    <Button
+                        size="small"
+                        icon={<ControlOutlined />}
+                        onClick={() => onControlObject(record, controlType)}
+                    >
+                        Control
+                    </Button>
+                );
+            },
+        });
+    }
+
+    const columnsWithActions =
+        trailingColumns.length > 0 ? [...tableColumns, ...trailingColumns] : tableColumns;
+
     return (
         <Table
-            columns={tableColumns}
+            columns={columnsWithActions}
             dataSource={data}
             rowKey="id"
             size="small"

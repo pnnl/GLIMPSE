@@ -18,6 +18,9 @@ export const GraphProvider = ({ children }) => {
     );
 };
 
+// Keeping the hook beside its provider is the standard context pattern; the
+// only cost is full-reload (instead of fast-refresh) HMR for this one file.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useGraph = () => {
     const context = useContext(GraphContext);
     if (!context) {

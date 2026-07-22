@@ -35,34 +35,47 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
-    const [controlMode, setControlMode] = useState(CONTROL_MODE.MANUAL);
-    const [phaseValues, setPhaseValues] = useState({});
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
+
+    // Mirrors the "controlMode" form field (set below on open, changed by the
+    // Select) so the phase inputs can switch between the two layouts.
+    const controlMode = Form.useWatch("controlMode", form) ?? CONTROL_MODE.MANUAL;
+
+    // The regulator's per-phase tap positions, read straight off the graph
+    // while the modal is open. Derived (not state): the save path updates the
+    // graph optimistically and then closes, so a reopen re-reads fresh values.
+    const { phaseValues, loadError } = useMemo(() => {
+        if (!open || !object) return { phaseValues: {}, loadError: null };
+        try {
+            const edge = graphHelper.graph.getEdgeAttributes(object);
+            return { phaseValues: extractPhaseValues(edge.attributes), loadError: null };
+        } catch (error) {
+            return { phaseValues: {}, loadError: error };
+        }
+    }, [open, object]);
 
     // Sorted phase keys so the form always renders A, B, C in a stable order.
     const phases = useMemo(() => Object.keys(phaseValues).sort((a, b) => a.localeCompare(b)), [phaseValues]);
 
-    // Load the regulator's current per-phase tap positions when the modal opens.
+    // Push the regulator's current values into the antd form (an external
+    // store) when the modal opens.
     useEffect(() => {
-        if (!open || !object) return;
-        try {
-            const edge = graphHelper.graph.getEdgeAttributes(object);
-            const values = extractPhaseValues(edge.attributes);
-            setPhaseValues(values);
-            setControlMode(CONTROL_MODE.MANUAL);
+        if (!open) return;
 
-            const initial = { controlMode: CONTROL_MODE.MANUAL };
-            for (const [phase, v] of Object.entries(values)) {
-                initial[`tap_${phase}`] = v.step;
-                initial[`lineDropR_${phase}`] = v.lineDropR;
-                initial[`lineDropX_${phase}`] = v.lineDropX;
-            }
-            form.setFieldsValue(initial);
-        } catch (error) {
-            console.error("Error loading regulator state:", error);
+        if (loadError) {
+            console.error("Error loading regulator state:", loadError);
             message.error("Failed to load regulator tap positions");
+            return;
         }
-    }, [open, object, form]);
+
+        const initial = { controlMode: CONTROL_MODE.MANUAL };
+        for (const [phase, v] of Object.entries(phaseValues)) {
+            initial[`tap_${phase}`] = v.step;
+            initial[`lineDropR_${phase}`] = v.lineDropR;
+            initial[`lineDropX_${phase}`] = v.lineDropX;
+        }
+        form.setFieldsValue(initial);
+    }, [open, phaseValues, loadError, form]);
 
     useEffect(() => {
         const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
@@ -168,13 +181,6 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                     return { ...attrs, attributes: nextAttributes };
                 });
                 graphHelper.sigmaInstance?.refresh();
-                setPhaseValues((prev) => {
-                    const next = { ...prev };
-                    for (const [phase, step] of Object.entries(localUpdates)) {
-                        next[phase] = { ...next[phase], step };
-                    }
-                    return next;
-                });
             }
 
             message.success("Tap update request sent to backend");
@@ -237,7 +243,6 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                             <Form.Item label="Control mode" name="controlMode">
                                 <Select
                                     options={controlModeOptions}
-                                    onChange={setControlMode}
                                     style={{ width: "100%" }}
                                     // Keep the dropdown inside the themed modal body.
                                     getPopupContainer={(trigger) => trigger.parentElement}

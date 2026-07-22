@@ -6,6 +6,17 @@ import MermaidDiagram from "./MermaidDiagram";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL } from "../../config";
+import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
+
+// Split a formatted "A 2401.3 V" / "A 12.30 kW, 4.50 kVAR" line into a
+// { attrKey, value } row keyed by measurement kind + phase for the table.
+const toLiveRows = (kind, lines) =>
+    lines.map((line) => {
+        const spaceIdx = line.indexOf(" ");
+        const phase = spaceIdx === -1 ? line : line.slice(0, spaceIdx);
+        const value = spaceIdx === -1 ? "" : line.slice(spaceIdx + 1);
+        return { attrKey: `${kind} ${phase}`, value };
+    });
 
 const READ_ONLY_ATTRIBUTES = new Set([
     "name",
@@ -44,101 +55,94 @@ const invalidateCache = (feederId, mRID) => {
     objectCache.delete(key);
 };
 
-const EditObject = ({ object, onNavigate }) => {
+const EditObject = ({ object, onNavigate, simActive = false }) => {
     const { newGraphUpdate } = useGraph();
-    const [objectToEdit, setObjectToEdit] = useState(null);
-    const [mermaidContent, setMermaidContent] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [saving, setSaving] = useState(false);
     const isCIM = graphHelper.isCIM;
+
+    // The parent remounts this component (via key) for each object viewed, so
+    // the initializers below run per object: non-CIM objects and cached CIM
+    // objects resolve synchronously; everything else starts empty and is
+    // filled by the fetch effect.
+    const [objectToEdit, setObjectToEdit] = useState(() => {
+        if (!object) return null;
+        if (isCIM) return getCachedObject(object.feederId, object.mRID)?.objectData ?? null;
+
+        const { type, id } = object;
+        const attrs =
+            type === "edge"
+                ? graphHelper.graph.getEdgeAttributes(id)
+                : graphHelper.graph.getNodeAttributes(id);
+        return { id, elementType: type, attributes: { ...attrs.attributes } };
+    });
+    const [mermaidContent, setMermaidContent] = useState(() => {
+        if (!object || !isCIM) return null;
+        return getCachedObject(object.feederId, object.mRID)?.mermaidData ?? null;
+    });
+    const [loading, setLoading] = useState(
+        () => Boolean(object) && isCIM && !getCachedObject(object.feederId, object.mRID),
+    );
+    const [saving, setSaving] = useState(false);
 
     // Track the current request to avoid race conditions
     const requestRef = useRef(0);
 
     useEffect(() => {
-        if (!object) {
-            setObjectToEdit(null);
-            setMermaidContent(null);
+        if (!object || !isCIM) return;
+
+        const { feederId, mRID } = object;
+
+        if (!feederId || !mRID) {
+            console.error("EditObject: Missing feederId or mRID", object);
             return;
         }
 
+        // Cache hits were already resolved synchronously by the state
+        // initializers (or by a completed fetch for this same object).
+        if (getCachedObject(feederId, mRID)) return;
+
         const currentRequest = ++requestRef.current;
 
-        if (isCIM) {
-            const { feederId, mRID } = object;
+        const fetchCIMData = async () => {
+            try {
+                const [objRes, mermaidRes] = await Promise.all([
+                    axios.post(`${API_BASE_URL}/api/cim/objects`, {
+                        feeder_id: feederId,
+                        mRID: mRID,
+                    }),
+                    axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
+                        feeder_id: feederId,
+                        mRID: mRID,
+                    }),
+                ]);
 
-            if (!feederId || !mRID) {
-                console.error("EditObject: Missing feederId or mRID", object);
-                return;
-            }
-
-            // Check cache first
-            const cached = getCachedObject(feederId, mRID);
-            if (cached) {
+                // Guard against stale responses
                 if (currentRequest !== requestRef.current) return;
-                setObjectToEdit(cached.objectData);
-                setMermaidContent(cached.mermaidData);
-                return;
-            }
 
-            setLoading(true);
+                const objectData = {
+                    ...objRes.data.object,
+                    // Ensure feederId is always stored with the object
+                    _feederId: feederId,
+                    _mRID: mRID,
+                };
+                const mermaidData = mermaidRes.data.mermaid;
 
-            const fetchCIMData = async () => {
-                try {
-                    const [objRes, mermaidRes] = await Promise.all([
-                        axios.post(`${API_BASE_URL}/api/cim/objects`, {
-                            feeder_id: feederId,
-                            mRID: mRID,
-                        }),
-                        axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
-                            feeder_id: feederId,
-                            mRID: mRID,
-                        }),
-                    ]);
+                // Cache the result
+                setCachedObject(feederId, mRID, { objectData, mermaidData });
 
-                    // Guard against stale responses
-                    if (currentRequest !== requestRef.current) return;
-
-                    const objectData = {
-                        ...objRes.data.object,
-                        // Ensure feederId is always stored with the object
-                        _feederId: feederId,
-                        _mRID: mRID,
-                    };
-                    const mermaidData = mermaidRes.data.mermaid;
-
-                    // Cache the result
-                    setCachedObject(feederId, mRID, { objectData, mermaidData });
-
-                    setObjectToEdit(objectData);
-                    setMermaidContent(mermaidData);
-                } catch (error) {
-                    if (currentRequest !== requestRef.current) return;
-                    console.error("Failed to fetch CIM object:", error);
-                    message.error("Failed to load object data");
-                } finally {
-                    if (currentRequest === requestRef.current) {
-                        setLoading(false);
-                    }
+                setObjectToEdit(objectData);
+                setMermaidContent(mermaidData);
+            } catch (error) {
+                if (currentRequest !== requestRef.current) return;
+                console.error("Failed to fetch CIM object:", error);
+                message.error("Failed to load object data");
+            } finally {
+                if (currentRequest === requestRef.current) {
+                    setLoading(false);
                 }
-            };
+            }
+        };
 
-            fetchCIMData();
-        } else {
-            // Non-CIM: read directly from graph
-            const { type, id } = object;
-            const attrs =
-                type === "edge"
-                    ? graphHelper.graph.getEdgeAttributes(id)
-                    : graphHelper.graph.getNodeAttributes(id);
-
-            setObjectToEdit({
-                id,
-                elementType: type,
-                attributes: { ...attrs.attributes },
-            });
-            setMermaidContent(null);
-        }
+        fetchCIMData();
     }, [object, isCIM]);
 
     const handleChange = useCallback((key, value) => {
@@ -208,7 +212,7 @@ const EditObject = ({ object, onNavigate }) => {
     if (loading) {
         return (
             <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-                <Spin size="large" tip="Loading object..." />
+                <Spin size="large" description="Loading object..." />
             </div>
         );
     }
@@ -220,6 +224,25 @@ const EditObject = ({ object, onNavigate }) => {
         objectToEdit._feederId || objectToEdit.attributes?.feeder_id || object?.feederId;
 
     const heading = objectToEdit.attributes?.name ?? objectToEdit.id ?? String(object?.mRID || object);
+
+    // Live simulation values for the object currently being viewed. Recomputed
+    // every render (the parent re-renders per sim frame) and shown as read-only
+    // rows above the object's own attributes — the model data is never altered.
+    const graphId = object?.mRID ?? object?.id;
+    let liveRows = [];
+    if (simActive && graphId) {
+        if (graphHelper.graph.hasNode(graphId)) {
+            liveRows = toLiveRows(
+                "voltage",
+                formatVoltageLines(graphHelper.liveMeasurements.nodes.get(graphId)?.voltage),
+            );
+        } else if (graphHelper.graph.hasEdge(graphId)) {
+            liveRows = toLiveRows(
+                "power",
+                formatPowerLines(graphHelper.liveMeasurements.edges.get(graphId)?.power),
+            );
+        }
+    }
 
     const tabItems = [
         {
@@ -235,6 +258,7 @@ const EditObject = ({ object, onNavigate }) => {
                     onSave={handleSave}
                     feederId={currentFeederId}
                     saving={saving}
+                    liveRows={liveRows}
                 />
             ),
         },

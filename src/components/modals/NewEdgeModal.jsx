@@ -31,27 +31,30 @@ const NewEdgeModal = ({ open, close }) => {
         }
     };
 
-    const handleValuesChange = (changedValue, _) => {
+    const handleValuesChange = (changedValue) => {
         setFormFields((prev) => ({ ...prev, ...changedValue }));
     };
 
+    // The graph is a module singleton (mutations don't re-render this modal),
+    // so `open` is the recompute signal: options are rebuilt each time the
+    // modal opens and stay stable while it's up.
     const nodeIDs = useMemo(() => {
         // return nothing if there are no nodes in the graph
-        if (graphHelper.graph.order === 0) return [];
+        if (!open || graphHelper.graph.order === 0) return [];
 
         return graphHelper.graph.mapNodes((node, attrs) => ({
             label: attrs.attributes.name ?? node,
             value: node,
         }));
-    }, [graphHelper.graph]);
+    }, [open]);
 
     const edgeTypes = useMemo(() => {
-        if (graphHelper.graph.order === 0) return [];
+        if (!open || graphHelper.graph.order === 0) return [];
         return graphHelper.edgeTypes.map((type) => ({
             label: type,
             value: type,
         }));
-    }, [graphHelper.graph]);
+    }, [open]);
 
     const footer = [
         <Button

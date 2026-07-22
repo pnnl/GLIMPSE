@@ -57,7 +57,7 @@ export default class RegulatorProgram extends EdgeProgram {
         array[startIndex++] = iconSize;
         array[startIndex++] = curvature;
         array[startIndex++] = color;
-        array[startIndex++] = edgeIndex;
+        array[startIndex] = edgeIndex;
     }
 
     setUniforms(params, { gl, uniformLocations }) {

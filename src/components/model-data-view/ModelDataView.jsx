@@ -6,7 +6,10 @@ import { useGraph } from "../../contexts/GraphContext";
 import ObjectTypesPane from "./ObjectTypesPane";
 import ObjectTable from "./ObjectTable";
 import EditObject from "./EditObject";
-import "./ObjectStudio.css";
+import UpdateDeviceModal from "../modals/UpdateDeviceModal";
+import UpdateRegulatorModal from "../modals/UpdateRegulatorModal";
+import { useSimLiveTick } from "../../hooks/useSimLiveTick";
+import "./ModelDataView.css";
 
 /**
  * Resolves the feeder ID for a given mRID by checking the graph first,
@@ -45,6 +48,15 @@ const ObjectStudio = () => {
     const [objectToEdit, setObjectToEdit] = useState(null);
     const [navigationHistory, setNavigationHistory] = useState([]);
 
+    // Live device-control modal state (GridAPPS-D / CIM only). `type` is one of
+    // "switch" | "capacitor" | "regulator"; `object` is the graph node/edge key.
+    const [controlContext, setControlContext] = useState({ open: false, object: null, type: null });
+
+    // Drives re-render as simulation frames arrive so the live voltage/power
+    // columns (and the Edit Object attributes) reflect the latest measurements.
+    // `simActive` gates the live UI to the running/paused simulation lifecycle.
+    const { simActive } = useSimLiveTick();
+
     // Derive graph data
     const { nodes, edges, nodeColumns, edgeColumns, nodeTypes, edgeTypes } = useMemo(() => {
         const graph = graphHelper.graph;
@@ -79,6 +91,10 @@ const ObjectStudio = () => {
             nodeTypes: Array.from(nTypes).sort(),
             edgeTypes: Array.from(eTypes).sort(),
         };
+        // graphUpdateTrigger is the app-wide invalidation counter for the
+        // module-singleton graph (bumped by newGraphUpdate after mutations) —
+        // it's intentionally a dep even though it isn't read in the callback.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [graphUpdateTrigger]);
 
     const filteredNodes = useMemo(() => {
@@ -171,6 +187,20 @@ const ObjectStudio = () => {
     );
 
     /**
+     * Open the appropriate live-control modal for a device row. Switches and
+     * capacitors use the open/close modal; regulators use the tap-changer modal.
+     * The record's graph key (record.id) is what the modals read/mutate.
+     */
+    const handleControlObject = useCallback((record, controlType) => {
+        setControlContext({ open: true, object: record.id, type: controlType });
+    }, []);
+
+    const closeControlModal = useCallback(
+        () => setControlContext({ open: false, object: null, type: null }),
+        [],
+    );
+
+    /**
      * Go back in navigation history
      */
     const handleGoBack = useCallback(() => {
@@ -191,7 +221,10 @@ const ObjectStudio = () => {
                         data={filteredEdges}
                         columns={edgeColumns}
                         onEditObject={handleEditObject}
+                        onControlObject={handleControlObject}
                         isCIM={graphHelper.isCIM}
+                        elementType="edge"
+                        simActive={simActive}
                     />
                 </div>
             ),
@@ -205,7 +238,10 @@ const ObjectStudio = () => {
                         data={filteredNodes}
                         columns={nodeColumns}
                         onEditObject={handleEditObject}
+                        onControlObject={handleControlObject}
                         isCIM={graphHelper.isCIM}
+                        elementType="node"
+                        simActive={simActive}
                     />
                 </div>
             ),
@@ -222,13 +258,24 @@ const ObjectStudio = () => {
                                     type="link"
                                     icon={<ArrowLeftOutlined />}
                                     onClick={handleGoBack}
-                                    style={{ flexShrink: 0, alignSelf: "flex-start", marginBottom: "0.5rem" }}
+                                    style={{
+                                        flexShrink: 0,
+                                        alignSelf: "flex-start",
+                                        marginBottom: "0.5rem",
+                                    }}
                                 >
                                     Back ({navigationHistory.length})
                                 </Button>
                             )}
                             <div style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
-                                <EditObject object={objectToEdit} onNavigate={handleNavigate} />
+                                {/* Keyed per object so EditObject remounts (and its
+                                    state initializers re-run) on every navigation. */}
+                                <EditObject
+                                    key={`${objectToEdit.feederId ?? ""}::${objectToEdit.mRID ?? objectToEdit.id}`}
+                                    object={objectToEdit}
+                                    onNavigate={handleNavigate}
+                                    simActive={simActive}
+                                />
                             </div>
                         </div>
                     ) : (
@@ -248,7 +295,7 @@ const ObjectStudio = () => {
                     Back to Graph
                 </Button>
                 <Typography.Title level={4} style={{ margin: 0 }}>
-                    Object Studio
+                    Model Data View
                 </Typography.Title>
             </div>
             <Splitter className="object-studio-body">
@@ -274,6 +321,21 @@ const ObjectStudio = () => {
                     />
                 </Splitter.Panel>
             </Splitter>
+
+            {/* Live device-control modals — reused from the graph view. They read
+                the current device state off the graph and emit sim-input updates,
+                with Save gated to a running GridAPPS-D simulation. */}
+            <UpdateDeviceModal
+                open={controlContext.open && controlContext.type !== "regulator"}
+                object={controlContext.object}
+                deviceType={controlContext.type}
+                close={closeControlModal}
+            />
+            <UpdateRegulatorModal
+                open={controlContext.open && controlContext.type === "regulator"}
+                object={controlContext.object}
+                close={closeControlModal}
+            />
         </div>
     );
 };

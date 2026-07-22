@@ -3,13 +3,17 @@ import "../styles/VisToolbar.css";
 import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
-import { IoPlay, IoAddCircle, IoStop, IoPause } from "react-icons/io5";
+import { IoPlay, IoAddCircle, IoStop, IoPause, IoSettingsSharp } from "react-icons/io5";
 import { MdShowChart } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
+import SimulationConfigForm from "./forms/SimulationConfigForm";
+import StartSimulationModal, { HIDE_START_SIM_WARNING_KEY } from "./modals/StartSimulationModal";
 import { useGraph } from "../contexts/GraphContext";
 
 const VisToolbar = ({ onToggleCharts, activePanel }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
+    const [simConfigOpen, setSimConfigOpen] = useState(false);
+    const [startWarningOpen, setStartWarningOpen] = useState(false);
     const { darkMode } = useGraph();
 
     useEffect(() => {
@@ -69,8 +73,21 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
         graphHelper.sigmaInstance.refresh();
     };
 
+    const startSimulation = () => {
+        socketClientHelper
+            .startSimulation(graphHelper.selectedGridappsdModels)
+            .catch((err) => console.error("Failed to start simulation:", err));
+    };
+
+    // Warn before running with an untouched (default) configuration, unless
+    // the user opted out of the warning.
     const handleStartSimulation = () => {
-        socketClientHelper.startSimulation(graphHelper.selectedGridappsdModels);
+        const warningDismissed = localStorage.getItem(HIDE_START_SIM_WARNING_KEY) === "true";
+        if (!socketClientHelper.simulationConfigCustomized && !warningDismissed) {
+            setStartWarningOpen(true);
+            return;
+        }
+        startSimulation();
     };
 
     const handleStopSimulation = async () => {
@@ -90,6 +107,16 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
             >
                 {simulationState !== "inactive" && (
                     <Space.Compact block>
+                        <Tooltip title="Simulation Configuration" placement="bottom">
+                            <Button
+                                size="medium"
+                                icon={<IoSettingsSharp />}
+                                disabled={
+                                    simulationState === "running" || simulationState === "paused"
+                                }
+                                onClick={() => setSimConfigOpen(true)}
+                            />
+                        </Tooltip>
                         {(simulationState === "idle" || simulationState === "stopped") && (
                             <Tooltip title={"Start Simulation"} placement="bottom">
                                 <Button
@@ -176,6 +203,19 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                     Reset
                 </Button>
             </Space>
+            <SimulationConfigForm open={simConfigOpen} onClose={() => setSimConfigOpen(false)} />
+            <StartSimulationModal
+                open={startWarningOpen}
+                onCancel={() => setStartWarningOpen(false)}
+                onProceed={() => {
+                    setStartWarningOpen(false);
+                    startSimulation();
+                }}
+                onReviewConfig={() => {
+                    setStartWarningOpen(false);
+                    setSimConfigOpen(true);
+                }}
+            />
         </div>
     );
 };

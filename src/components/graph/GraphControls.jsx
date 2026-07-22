@@ -30,7 +30,7 @@ const MAP_TILES = {
 const GraphControls = () => {
     const { darkMode } = useGraph();
     const sigma = useSigma();
-    const { zoomIn, zoomOut, reset } = useCamera();
+    const { zoomIn, zoomOut } = useCamera();
     const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
 
     // Map background (only for graphs whose x/y are real lon/lat). Binding the

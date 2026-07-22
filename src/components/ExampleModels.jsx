@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { List, Button, Tag, Alert } from "antd";
+import { Flex, Card, Button, Tag, Alert, Empty, Typography } from "antd";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
+import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
 
 // Bundled sample models the backend ships with (see EXAMPLE_MODELS in
@@ -47,9 +48,13 @@ const ExampleModels = ({ closeModal }) => {
                 window.dispatchEvent(new CustomEvent("graph-cleared"));
             }
 
-            graphHelper.isCIM = Boolean(response.isCIM);
+            graphHelper.setIsCIM(response.isCIM);
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
+
+            // Example models aren't driveable via GridAPPS-D, so hide the
+            // simulation controls/log even if a GridAPPS-D model was loaded before.
+            socketClientHelper.setSimulationState("inactive");
 
             window.dispatchEvent(new CustomEvent("graph-loaded"));
             newGraphUpdate();
@@ -64,32 +69,33 @@ const ExampleModels = ({ closeModal }) => {
 
     return (
         <>
-            <List
-                itemLayout="horizontal"
-                dataSource={examples}
-                locale={{ emptyText: "No example models are available in this installation." }}
-                renderItem={(example) => (
-                    <List.Item
-                        actions={[
-                            <Button
-                                key="load"
-                                type="primary"
-                                loading={loadingId === example.id}
-                                disabled={loadingId !== null && loadingId !== example.id}
-                                onClick={() => loadExample(example)}
-                            >
-                                Load
-                            </Button>,
-                        ]}
-                    >
-                        <List.Item.Meta
-                            title={example.name}
-                            description={example.description}
-                        />
-                        <Tag>{example.format.toUpperCase()}</Tag>
-                    </List.Item>
-                )}
-            />
+            {examples.length === 0 ? (
+                <Empty description="No example models are available in this installation." />
+            ) : (
+                <Flex vertical gap="small">
+                    {examples.map((example) => (
+                        <Card key={example.id} size="small">
+                            <Flex align="center" justify="space-between" gap="middle">
+                                <Flex vertical gap={2} flex={1}>
+                                    <Typography.Text strong>{example.name}</Typography.Text>
+                                    <Typography.Text type="secondary">
+                                        {example.description}
+                                    </Typography.Text>
+                                </Flex>
+                                <Tag>{example.format.toUpperCase()}</Tag>
+                                <Button
+                                    type="primary"
+                                    loading={loadingId === example.id}
+                                    disabled={loadingId !== null && loadingId !== example.id}
+                                    onClick={() => loadExample(example)}
+                                >
+                                    Load
+                                </Button>
+                            </Flex>
+                        </Card>
+                    ))}
+                </Flex>
+            )}
             {error && <Alert type="error" message={error} showIcon style={{ marginTop: 8 }} />}
         </>
     );
