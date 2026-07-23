@@ -42,10 +42,8 @@ nsis:
 mac:
     category: "public.app-category.utilities"
     target:
-        - target: "dmg"
-          arch:
-              - "universal"
-    # Required for modern macOS:
+        - target: "tar.gz"
+          arch: "arm64"
     hardenedRuntime: true
     gatekeeperAssess: false
     entitlements: "build/entitlements.mac.plist"
