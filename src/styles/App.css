@@ -1,19 +1,23 @@
+/* Sized by height, not width: the GridAPPS-D and GLIMPSE logos have different
+   aspect ratios, and the header co-brands them side by side. */
 .nav-logo {
-   height: auto;
-   width: 12rem;
+    height: 2.75rem;
+    width: auto;
+    max-width: 12rem;
+    object-fit: contain;
 }
 
 .nav-btn:hover {
-   color: #FFFFFF;
+    color: #ffffff;
 }
 
 .ant-layout {
-   height: 100vh;
-   overflow: hidden;
+    height: 100vh;
+    overflow: hidden;
 }
 
 .ant-layout-content {
-   flex: 1;
-   overflow: hidden;
-   padding: 0 !important;
+    flex: 1;
+    overflow: hidden;
+    padding: 0 !important;
 }

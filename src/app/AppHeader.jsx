@@ -2,18 +2,26 @@ import { useState, useEffect, useMemo } from "react";
 import { Button, Flex, Dropdown, Select, Switch } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
+import gridappsdLogo from "../../public/GridAPPS-D_Logo.webp";
 import "../styles/AppHeader.css";
+
 import graphHelper from "../graph-helper/GraphHelper";
 import axios from "axios";
 
 import { useGraph } from "../contexts/GraphContext";
 import { API_BASE_URL } from "../config";
+import Typography from "antd/es/typography/Typography";
+
+const { Text } = Typography;
 
 const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
     const [searchValue, setSearchValue] = useState(null);
+    // Which tab of the load modal the current model came from. Only a model
+    // pulled from the GridAPPS-D platform gets the co-branded header.
+    const [isGridappsdModel, setIsGridappsdModel] = useState(false);
     const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
 
     const menuItems = [
@@ -54,14 +62,16 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
 
     // Listen for graph load/clear events emitted by the Graph component
     useEffect(() => {
-        const handleGraphLoaded = () => {
+        const handleGraphLoaded = (e) => {
             setGraphLoaded(true);
             setSearchValue(null);
+            setIsGridappsdModel(e?.detail?.source === "gridappsd");
         };
 
         const handleGraphCleared = () => {
             setGraphLoaded(false);
             setSearchValue(null);
+            setIsGridappsdModel(false);
         };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
@@ -170,10 +180,16 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 >
                     <Button size="large" type="text" icon={<GiHamburgerMenu size="1.5rem" />} />
                 </Dropdown>
+                {isGridappsdModel && (
+                    <>
+                        <img className="nav-logo" src={gridappsdLogo} alt="GridAPPS-D LOGO" />
+                        <Text italic>Powered by</Text>
+                    </>
+                )}
                 <img className="nav-logo" src="./GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
                 {graphLoaded && (
                     <Select
-                        style={{ width: "30rem", marginLeft: "auto" }}
+                        style={{ width: "24rem", marginLeft: "auto" }}
                         size="middle"
                         showSearch
                         value={searchValue}
