@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { Modal, Form, Select, Button, Divider, message, Spin, theme } from "antd";
+import { Modal, Form, Select, Button, Divider, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { v4 as uuidv4 } from "uuid";
@@ -71,7 +71,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
 
         if (loadError) {
             console.error("Error loading device status:", loadError);
-            message.error("Failed to load device status");
             return;
         }
         form.setFieldsValue({ status: currentStatus });
@@ -95,7 +94,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
 
             // Check if simulation is running
             if (socketClientHelper.simulationState !== "running") {
-                message.error("Simulation is not running. Cannot update status.");
                 setLoading(false);
                 return;
             }
@@ -145,11 +143,9 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
             console.log(inputMessage);
             socketClientHelper.socket.emit("sim-input", inputMessage);
 
-            message.success(`Status update request sent to backend`);
             close();
         } catch (error) {
             console.error("Save failed:", error);
-            message.error("Failed to send status update. Please try again.");
         } finally {
             setLoading(false);
         }
