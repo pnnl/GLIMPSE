@@ -4,6 +4,10 @@
 //
 // input types: "text" | "number" (numeric string, precision kept) | "switch"
 // (boolean) | "select" (options) | "datetime" (epoch seconds) | "json"
+//
+// Optional per-field keys: `rules` (extra antd validation rules, appended to the
+// required rule) and `disabledWhen(context)` (locks the input based on the
+// render context the form passes to renderFields).
 
 // Add config field keys here (e.g. "duration", "use_houses", "encoding") to
 // render that field greyed-out in the form. Values still submit with their
@@ -16,6 +20,108 @@ const YES_NO_OPTIONS = [
     { value: "y", label: "Yes (y)" },
     { value: "n", label: "No (n)" },
 ];
+
+// Timing rules for simulation_config. GridAPPS-D only accepts runs whose
+// duration, publish_period and interval line up, so the form enforces:
+//
+//   1. interval must divide publish_period evenly.
+//   2. interval is pinned to 1 s while run_realtime is on (the input is locked
+//      rather than validated — there is nothing else valid to type).
+//   3. with run_realtime off, interval and publish_period must each be a
+//      factor or a multiple of 60 s.
+//   4. interval must divide duration evenly.
+
+const DURATION_MIN = 1;
+const PUBLISH_PERIOD_MIN = 3;
+const INTERVAL_MIN = 1;
+
+// The interval GridAPPS-D requires when the run follows the wall clock (rule 2).
+export const REALTIME_INTERVAL = 1;
+
+// These four constrain each other, so an edit to any one of them can invalidate
+// another; SimulationConfigForm revalidates the group as a whole on change.
+export const TIMING_FIELD_KEYS = ["duration", "publish_period", "interval", "run_realtime"];
+export const VALIDATED_TIMING_FIELDS = ["duration", "publish_period", "interval"];
+
+const simulationConfigPath = (key) => ["simulation_config", key];
+
+// The number inputs run in stringMode, so values arrive as strings. null means
+// "not a usable number", which keeps the cross-field checks quiet while a
+// related field is still being typed into.
+const toWholeSeconds = (value, min) => {
+    const seconds = Number(value);
+    return Number.isInteger(seconds) && seconds >= min ? seconds : null;
+};
+
+const divides = (factor, total) => total % factor === 0;
+
+const isFactorOrMultipleOf60 = (seconds) => 60 % seconds === 0 || seconds % 60 === 0;
+
+const reject = (message) => Promise.reject(new Error(message));
+
+const SIXTY_HINT = "a factor or a multiple of 60 s (e.g. 5, 15, 30, 60, 120)";
+
+const durationRule = {
+    validator: (_, value) =>
+        toWholeSeconds(value, DURATION_MIN) === null
+            ? reject(`Duration must be a whole number of seconds (${DURATION_MIN} or more)`)
+            : Promise.resolve(),
+};
+
+const publishPeriodRule = ({ getFieldValue }) => ({
+    validator: (_, value) => {
+        const publishPeriod = toWholeSeconds(value, PUBLISH_PERIOD_MIN);
+        if (publishPeriod === null) {
+            return reject(
+                `Publish period must be a whole number of seconds (${PUBLISH_PERIOD_MIN} or more)`,
+            );
+        }
+        // Rule 3 — only applies when the run is not following the wall clock.
+        if (!getFieldValue(simulationConfigPath("run_realtime")) && !isFactorOrMultipleOf60(publishPeriod)) {
+            return reject(`Publish period must be ${SIXTY_HINT}`);
+        }
+        return Promise.resolve();
+    },
+});
+
+const intervalRule = ({ getFieldValue }) => ({
+    validator: (_, value) => {
+        const interval = toWholeSeconds(value, INTERVAL_MIN);
+        if (interval === null) {
+            return reject(`Interval must be a whole number of seconds (${INTERVAL_MIN} or more)`);
+        }
+
+        // Rule 2 — an interval of 1 satisfies rules 1, 3 and 4 by definition, so
+        // this is the only check that matters in real time.
+        if (getFieldValue(simulationConfigPath("run_realtime"))) {
+            return interval === REALTIME_INTERVAL
+                ? Promise.resolve()
+                : reject(`Interval must be ${REALTIME_INTERVAL} s while Run in Real Time is on`);
+        }
+
+        // Rule 3
+        if (!isFactorOrMultipleOf60(interval)) {
+            return reject(`Interval must be ${SIXTY_HINT}`);
+        }
+
+        // Rule 1
+        const publishPeriod = toWholeSeconds(
+            getFieldValue(simulationConfigPath("publish_period")),
+            PUBLISH_PERIOD_MIN,
+        );
+        if (publishPeriod !== null && !divides(interval, publishPeriod)) {
+            return reject(`Interval must divide the publish period (${publishPeriod} s) evenly`);
+        }
+
+        // Rule 4
+        const duration = toWholeSeconds(getFieldValue(simulationConfigPath("duration")), DURATION_MIN);
+        if (duration !== null && !divides(interval, duration)) {
+            return reject(`Interval must divide the duration (${duration} s) evenly`);
+        }
+
+        return Promise.resolve();
+    },
+});
 
 // gridappsdConfiguration.simulation_config — one per simulation, shared by
 // every feeder in the run.
@@ -35,22 +141,30 @@ export const SIMULATION_CONFIG_FIELDS = [
         key: "duration",
         label: "Duration (s)",
         input: "number",
-        min: "1",
+        min: String(DURATION_MIN),
         step: "1",
+        rules: [durationRule],
+        tooltip: "How long the simulation runs. Must be an exact multiple of the interval.",
     },
     {
-        key: "timestep_frequency",
-        label: "Timestep Frequency (ms)",
+        key: "publish_period",
+        label: "Publish Period (s)",
         input: "number",
-        min: "1",
+        min: String(PUBLISH_PERIOD_MIN),
         step: "1",
+        rules: [publishPeriodRule],
+        tooltip: `How often results are published. Must be an exact multiple of the interval, and — outside real time — ${SIXTY_HINT}.`,
     },
     {
-        key: "timestep_increment",
-        label: "Timestep Increment (ms)",
+        key: "interval",
+        label: "Interval (s)",
         input: "number",
-        min: "1",
+        min: String(INTERVAL_MIN),
         step: "1",
+        rules: [intervalRule],
+        // Rule 2: nothing but 1 is valid in real time, so the input is locked.
+        disabledWhen: ({ runRealtime }) => Boolean(runRealtime),
+        tooltip: `Simulation time step. Must divide both the publish period and the duration evenly, and — outside real time — be ${SIXTY_HINT}. Locked to ${REALTIME_INTERVAL} s while Run in Real Time is on.`,
     },
     {
         key: "run_realtime",

@@ -2,7 +2,7 @@
     "name": "glimpse",
     "productName": "GLIMPSE",
     "description": "GLIMPSE",
-    "version": "0.8.0",
+    "version": "0.8.2",
     "author": {
         "name": "Armando Mendoza Sanchez",
         "email": "mendozasanchez166@pnnl.gov"
@@ -24,7 +24,6 @@
         "dist:linux": "npm run build && npm run build:server && electron-builder --linux"
     },
     "dependencies": {
-        "@ant-design/icons": "^6.3.2",
         "@react-sigma/core": "^5.0.6",
         "@react-sigma/layout-circlepack": "^5.0.6",
         "@react-sigma/layout-core": "^5.0.6",
@@ -63,7 +62,7 @@
         "concurrently": "^9.2.1",
         "cross-env": "^10.1.0",
         "electron": "^42.4.0",
-        "electron-builder": "^26.15.2",
+        "electron-builder": "^27.0.0-alpha.6",
         "eslint": "^10.6.0",
         "eslint-plugin-react-hooks": "^7.1.1",
         "eslint-plugin-react-refresh": "^0.5.3",
