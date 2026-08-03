@@ -116,7 +116,9 @@ const LoadModelModal = ({ onMount }) => {
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
             newGraphUpdate();
-            window.dispatchEvent(new CustomEvent("graph-loaded"));
+            window.dispatchEvent(
+                new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }),
+            );
             // Only a model loaded through GridAPPS-D gets the simulation
             // lifecycle controls and log panel — flip the sim state to idle so
             // they mount (VisToolbar / GraphLayout gate on sim state).

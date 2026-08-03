@@ -1106,7 +1106,8 @@ class GraphHelper {
         this.setThemeObject(themeData);
         this.setGraphData(fileData);
 
-        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-loaded"));
+        if (typeof window !== "undefined")
+            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "socket" } }));
     };
 
     /**

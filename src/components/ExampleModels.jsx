@@ -56,7 +56,9 @@ const ExampleModels = ({ closeModal }) => {
             // simulation controls/log even if a GridAPPS-D model was loaded before.
             socketClientHelper.setSimulationState("inactive");
 
-            window.dispatchEvent(new CustomEvent("graph-loaded"));
+            window.dispatchEvent(
+                new CustomEvent("graph-loaded", { detail: { source: "example-model" } }),
+            );
             newGraphUpdate();
             closeModal();
         } catch (e) {

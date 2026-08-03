@@ -110,13 +110,21 @@ const GraphLayout = () => {
                             borderLeft: chartsActive ? `1px solid ${border}` : "none",
                         }}
                     >
+                        {/* Collapsed, the wrapper above is 0-wide but this stays a
+                            real 30vw box (clipped by its overflow:hidden). Charts
+                            mounted into a 0-width parent make echarts warn at init
+                            ("Can't get DOM width or height") and render blank until
+                            something resizes them. */}
                         <div
                             style={{
                                 visibility: chartsActive ? "visible" : "hidden",
                                 display: "flex",
                                 flexDirection: "column",
                                 position: "absolute",
-                                inset: 0,
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                width: chartsActive ? "100%" : "30vw",
                                 overflowY: "auto",
                             }}
                         >

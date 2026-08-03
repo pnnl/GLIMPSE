@@ -5,14 +5,11 @@ import sys
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = []
-# CIM-Builder is an optional install (see README); skip it when absent
-try:
-    datas += collect_data_files("cimbuilder", include_py_files=True)
-except Exception:
-    pass
 datas += collect_data_files("cimgraph", include_py_files=True)
+
 # JSON validation schemas loaded at runtime relative to jsonhelper.py
 datas += [("schemas", "schemas")]
+
 # Example models served by /api/examples — destination paths must mirror the
 # EXAMPLE_MODELS registry in server.py ("<models dir>/CIM/...", "<models dir>/3000/...").
 datas += [
@@ -21,14 +18,15 @@ datas += [
     ("../models/3000/3000_model.glm", "models/3000"),
 ]
 
-# hiddenimports = ['engineio.async_drivers.gevent', 'engineio.async_drivers.gevent_uwsgi']
-
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    # engineio loads its async driver dynamically (importlib), so PyInstaller's
+    # static analysis misses it. Without this the packaged server crashes at
+    # startup with "ValueError: Invalid async_mode specified".
+    hiddenimports=['engineio.async_drivers.gevent'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
