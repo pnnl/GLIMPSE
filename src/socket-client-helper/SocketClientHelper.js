@@ -35,8 +35,8 @@ export const DEFAULT_GRIDAPPSD_CONFIGURATION = {
     simulation_config: {
         start_time: 1774673298,
         duration: "120",
-        timestep_frequency: "1000",
-        timestep_increment: "1000",
+        interval: 1,
+        publish_period: 3,
         run_realtime: true,
         simulation_name: "",
     },

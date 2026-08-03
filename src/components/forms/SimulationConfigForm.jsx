@@ -23,8 +23,11 @@ import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import {
     ADVANCED_CONFIG_FIELDS,
     MODEL_CREATION_CONFIG_FIELDS,
+    REALTIME_INTERVAL,
     SIMULATION_CONFIG_FIELDS,
     SIMULATOR_CONFIG_FIELDS,
+    TIMING_FIELD_KEYS,
+    VALIDATED_TIMING_FIELDS,
     isFieldDisabled,
 } from "./simulationConfigFields";
 
@@ -32,8 +35,10 @@ import {
 // active light/dark theme instead of the document-body default.
 const popupInParent = (trigger) => trigger.parentElement;
 
-const renderInput = (field) => {
-    const disabled = isFieldDisabled(field.key);
+// `context` carries the live form state a field needs to decide whether it is
+// locked (currently just { runRealtime }).
+const renderInput = (field, context) => {
+    const disabled = isFieldDisabled(field.key) || Boolean(field.disabledWhen?.(context));
 
     switch (field.input) {
         case "number":
@@ -91,12 +96,12 @@ const fieldRules = (field) => {
             },
         ];
     }
-    return [{ required: true, message: `${field.label} is required` }];
+    return [{ required: true, message: `${field.label} is required` }, ...(field.rules ?? [])];
 };
 
 // One antd Form.Item per field definition; namePrefix locates the field's
 // section inside the config object (e.g. ["simulation_config"]).
-const renderFields = (fields, namePrefix) =>
+const renderFields = (fields, namePrefix, context = {}) =>
     fields.map((field) => (
         <Col span={field.input === "datetime" || field.input === "json" ? 24 : 12} key={field.key}>
             <Form.Item
@@ -105,8 +110,11 @@ const renderFields = (fields, namePrefix) =>
                 tooltip={field.tooltip}
                 valuePropName={field.input === "switch" ? "checked" : "value"}
                 rules={fieldRules(field)}
+                // Custom rules assume a usable value, so stop at the first
+                // failure instead of stacking "required" on top of them.
+                validateFirst={Boolean(field.rules)}
             >
-                {renderInput(field)}
+                {renderInput(field, context)}
             </Form.Item>
         </Col>
     ));
@@ -147,12 +155,21 @@ const SimulationConfigForm = ({ open, onClose }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const models = graphHelper.selectedGridappsdModels ?? [];
+    // Drives the interval field's locked state; the switch is elsewhere in the
+    // form, so a watch is needed to re-render on toggle.
+    const runRealtime = Form.useWatch(["simulation_config", "run_realtime"], form);
 
     // Flatten a full gridappsd config object into form values.
     const toFormValues = (config) => ({
         simulation_config: {
             ...config.simulation_config,
             start_time: dayjs.unix(Number(config.simulation_config.start_time) || dayjs().unix()),
+            // A stored config could predate the real-time rule; the interval
+            // field is locked, so it has to open with a value the user could
+            // not otherwise correct.
+            interval: config.simulation_config.run_realtime
+                ? REALTIME_INTERVAL
+                : config.simulation_config.interval,
         },
         power_system_configs: config.power_system_configs,
         ...Object.fromEntries(
@@ -160,10 +177,29 @@ const SimulationConfigForm = ({ open, onClose }) => {
         ),
     });
 
+    // duration/publish_period/interval/run_realtime validate against each other,
+    // and antd's `dependencies` only cascades to fields the user has already
+    // touched — so revalidate the whole timing group on any change to it.
+    const handleValuesChange = (changedValues) => {
+        const changedTiming = changedValues.simulation_config;
+        if (!changedTiming || !TIMING_FIELD_KEYS.some((key) => key in changedTiming)) return;
+
+        if (changedTiming.run_realtime === true) {
+            form.setFieldValue(["simulation_config", "interval"], REALTIME_INTERVAL);
+        }
+        form.validateFields(
+            VALIDATED_TIMING_FIELDS.map((key) => ["simulation_config", key]),
+        ).catch(() => {
+            // Rejects with the field errors it just rendered; nothing to do.
+        });
+    };
+
     // Rebuild from the stored config each time the drawer opens, so unsaved
-    // edits from a cancelled visit are discarded.
+    // edits from a cancelled visit are discarded. The reset drops their
+    // validation errors too — every value is re-set on the next line.
     useEffect(() => {
         if (open) {
+            form.resetFields();
             form.setFieldsValue(toFormValues(socketClientHelper.buildGridappsdConfig(models)));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -287,8 +323,16 @@ const SimulationConfigForm = ({ open, onClose }) => {
                     description="Load one or more models through “Load w/ GridAPPS-D” to configure per-feeder settings. The simulation settings below still apply."
                 />
             )}
-            <Form form={form} layout="vertical" autoComplete="off" size="small">
-                <Row gutter={12}>{renderFields(SIMULATION_CONFIG_FIELDS, ["simulation_config"])}</Row>
+            <Form
+                form={form}
+                layout="vertical"
+                autoComplete="off"
+                size="small"
+                onValuesChange={handleValuesChange}
+            >
+                <Row gutter={12}>
+                    {renderFields(SIMULATION_CONFIG_FIELDS, ["simulation_config"], { runRealtime })}
+                </Row>
                 <Collapse
                     // Remount when the feeder selection changes so the first
                     // panel's default-expanded state is recomputed.
