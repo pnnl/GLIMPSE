@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
-import { Button, Flex, Dropdown, Select, Switch } from "antd";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
+import ShortcutsModal from "../components/modals/ShortcutsModal";
 import gridappsdLogo from "../../public/GridAPPS-D_Logo.webp";
 import "../styles/AppHeader.css";
 
@@ -10,6 +11,8 @@ import axios from "axios";
 
 import { useGraph } from "../contexts/GraphContext";
 import { API_BASE_URL } from "../config";
+import { notify, reportError } from "../utils/notify";
+import { useShortcut } from "../hooks/useShortcut";
 import Typography from "antd/es/typography/Typography";
 
 const { Text } = Typography;
@@ -18,18 +21,46 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
+    const [showShortcuts, setShowShortcuts] = useState(false);
     const [searchValue, setSearchValue] = useState(null);
+    const [exporting, setExporting] = useState(false);
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     // Which tab of the load modal the current model came from. Only a model
     // pulled from the GridAPPS-D platform gets the co-branded header.
     const [isGridappsdModel, setIsGridappsdModel] = useState(false);
     const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
+    const searchRef = useRef(null);
+
+    // Export writes back through the saved GLM file data, which only exists for
+    // GLM/JSON uploads — a CIM or GridAPPS-D model has nothing to write into.
+    const canExport = graphLoaded && !graphHelper.isCIM;
 
     const menuItems = [
-        { key: "export-model", label: "Export Model", disabled: false },
+        {
+            key: "export-model",
+            // The reason is rendered inline rather than in a Tooltip: a disabled
+            // antd menu item doesn't reliably receive hover, so a tooltip on it
+            // would never appear.
+            label: (
+                <Flex vertical gap={0}>
+                    <span>Export Model</span>
+                    {!canExport && (
+                        <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.3 }}>
+                            {!graphLoaded
+                                ? "Load a model first"
+                                : "GLM and JSON models only"}
+                        </Text>
+                    )}
+                </Flex>
+            ),
+            disabled: !canExport,
+        },
         { type: "divider" },
-        { key: "graph-metrics", label: "Metrics", disabled: false },
+        { key: "graph-metrics", label: "Metrics", disabled: !graphLoaded },
         { type: "divider" },
-        { key: "object-studio", label: "Model Data View", disabled: false },
+        { key: "object-studio", label: "Model Data View", disabled: !graphLoaded },
+        { type: "divider" },
+        { key: "shortcuts", label: "Keyboard Shortcuts" },
         { type: "divider" },
         {
             key: "themes",
@@ -74,26 +105,38 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             setIsGridappsdModel(false);
         };
 
+        const handleDirtyChange = (e) => setHasUnsavedChanges(Boolean(e?.detail?.dirty));
+
         window.addEventListener("graph-loaded", handleGraphLoaded);
         window.addEventListener("graph-cleared", handleGraphCleared);
+        window.addEventListener("graph-dirty-change", handleDirtyChange);
         graphHelper.themeName = selectedTheme;
 
         return () => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
+            window.removeEventListener("graph-dirty-change", handleDirtyChange);
         };
     }, [selectedTheme]);
 
+    // One option per node + edge — 20k+ on the larger feeders. The graph key and
+    // element type are kept as fields on the option (Select passes the whole
+    // option to onSelect), which avoids a JSON.stringify/parse round trip per
+    // entry every time the graph changes.
     const searchOptions = useMemo(() => {
         if (!graphLoaded) return [];
 
-        const edgeOptions = graphHelper.graph.mapEdges((id, attrs) => ({
-            label: attrs.attributes.name ?? id,
-            value: JSON.stringify({ id: id, type: "edge" }),
-        }));
         const nodeOptions = graphHelper.graph.mapNodes((id, attrs) => ({
-            label: attrs.attributes.name ?? id,
-            value: JSON.stringify({ id: id, type: "node" }),
+            value: `node:${id}`,
+            label: attrs.attributes?.name ?? id,
+            objectId: id,
+            objectType: "node",
+        }));
+        const edgeOptions = graphHelper.graph.mapEdges((id, attrs) => ({
+            value: `edge:${id}`,
+            label: attrs.attributes?.name ?? id,
+            objectId: id,
+            objectType: "edge",
         }));
 
         return [...nodeOptions, ...edgeOptions];
@@ -108,9 +151,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         const exportData = graphHelper.export();
 
         if (!exportData || Object.keys(exportData).length === 0) {
-            console.warn("No data to export.");
+            notify.warning(
+                "There is nothing to export — this model has no GLM source data to write back into.",
+            );
             return;
         }
+
+        setExporting(true);
 
         try {
             const response = await axios.post(
@@ -136,8 +183,23 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             // Cleanup
             link.remove();
             window.URL.revokeObjectURL(url);
+
+            // Edits are now on disk, so drop the unsaved-changes warning.
+            graphHelper.clearDirty();
+            notify.success("Model exported as exported_model.zip");
         } catch (error) {
-            console.error("Export failed:", error);
+            // An error response to a responseType:"blob" request arrives as a
+            // Blob, so the JSON body has to be read back out before reporting.
+            if (error.response?.data instanceof Blob) {
+                try {
+                    error.response.data = JSON.parse(await error.response.data.text());
+                } catch {
+                    // not JSON — reportError falls back to the axios message
+                }
+            }
+            reportError("Export failed", error);
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -160,12 +222,23 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             case "object-studio":
                 setView(view === "object-studio" ? "graph" : "object-studio");
                 break;
+            case "shortcuts":
+                setShowShortcuts(true);
+                break;
             case "dark-mode":
                 setDarkMode(!darkMode);
                 break;
             case "export-theme":
         }
     };
+
+    const focusSearch = useCallback(() => searchRef.current?.focus(), []);
+
+    useShortcut("/", focusSearch, { enabled: graphLoaded });
+    useShortcut("d", () => setDarkMode((v) => !v));
+    useShortcut("?", () => setShowShortcuts(true));
+    // Allowed while typing so it also gets the user out of the search box.
+    useShortcut("escape", () => searchRef.current?.blur(), { allowInInput: true });
 
     return (
         <>
@@ -178,7 +251,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         onClick: handleMenuClick,
                     }}
                 >
-                    <Button size="large" type="text" icon={<GiHamburgerMenu size="1.5rem" />} />
+                    <Button
+                        size="large"
+                        type="text"
+                        aria-label="Main menu"
+                        loading={exporting}
+                        icon={<GiHamburgerMenu size="1.5rem" />}
+                    />
                 </Dropdown>
                 {isGridappsdModel && (
                     <>
@@ -187,16 +266,25 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                     </>
                 )}
                 <img className="nav-logo" src="./GLIMPSE_logo.png" alt="GLIMPSE LOGO" />
+                {hasUnsavedChanges && (
+                    <Tooltip title="This model has edits that only exist in the browser. Export it to keep them.">
+                        <Tag color="warning" style={{ marginLeft: "1rem" }}>
+                            Unsaved changes
+                        </Tag>
+                    </Tooltip>
+                )}
                 {graphLoaded && (
                     <Select
+                        ref={searchRef}
                         style={{ width: "24rem", marginLeft: "auto" }}
                         size="middle"
                         showSearch
+                        aria-label="Search the model by object ID or name"
                         value={searchValue}
                         options={searchOptions}
-                        placeholder="Search by ID or Name"
-                        onSelect={(val) => {
-                            graphHelper.focus(JSON.parse(val));
+                        placeholder="Search by ID or Name  ( / )"
+                        onSelect={(_val, option) => {
+                            graphHelper.focus({ id: option.objectId, type: option.objectType });
                             setSearchValue(null);
                         }}
                         onChange={(val) => setSearchValue(val)}
@@ -225,6 +313,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 </Flex>
             </div>
             <MetricsModal open={showMetrics} close={() => setShowMetrics(false)} />
+            <ShortcutsModal open={showShortcuts} close={() => setShowShortcuts(false)} />
         </>
     );
 };

@@ -1,6 +1,6 @@
 import { createPortal } from "react-dom";
 import { useState, useEffect } from "react";
-import { Modal, Tabs, Button, Divider } from "antd";
+import { Modal, Tabs, Button, Alert } from "antd";
 import axios from "axios";
 import FileUpload from "../FileUpload";
 import ExampleModels from "../ExampleModels";
@@ -9,6 +9,7 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL } from "../../config";
+import { confirmDiscardChanges, errorText } from "../../utils/notify";
 
 const LoadModelModal = ({ onMount }) => {
     const [open, setOpen] = useState(true);
@@ -16,6 +17,7 @@ const LoadModelModal = ({ onMount }) => {
     const [loadProgress, setLoadProgress] = useState(null);
     const [selectedGridappsdModels, setSelectedGridappsdModels] = useState(null);
     const [gridappsdAvailable, setGridappsdAvailable] = useState(false);
+    const [error, setError] = useState(null);
     const { newGraphUpdate } = useGraph();
 
     // Stage-by-stage progress emitted by the backend while it pulls a CIM
@@ -90,6 +92,11 @@ const LoadModelModal = ({ onMount }) => {
     const close = () => setOpen(false);
 
     const handleLoad = async () => {
+        setError(null);
+
+        // Loading replaces the whole graph — don't silently drop edits.
+        if (!(await confirmDiscardChanges("Loading a model"))) return;
+
         setLoading(true);
 
         try {
@@ -119,13 +126,20 @@ const LoadModelModal = ({ onMount }) => {
             window.dispatchEvent(
                 new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }),
             );
-            // Only a model loaded through GridAPPS-D gets the simulation
-            // lifecycle controls and log panel — flip the sim state to idle so
-            // they mount (VisToolbar / GraphLayout gate on sim state).
+            // Drop any previous run first (stops it, clears its id and logs), then
+            // flip to idle: only a model loaded through GridAPPS-D gets the
+            // simulation lifecycle controls and log panel, and they gate on this
+            // state (VisToolbar / GraphLayout).
+            socketClientHelper.detachSimulation();
             socketClientHelper.setSimulationState("idle");
             setOpen(false);
         } catch (e) {
-            console.log(e);
+            // Inline (not a toast): a CIM pull can take minutes, and the user is
+            // still looking at this modal when it fails.
+            console.error("GridAPPS-D model load failed:", e);
+            setError(
+                errorText(e, "The server could not build a graph from the selected model(s)."),
+            );
         } finally {
             setLoading(false);
             setLoadProgress(null);
@@ -152,6 +166,16 @@ const LoadModelModal = ({ onMount }) => {
             onCancel={close}
             open={open}
         >
+            {error && (
+                <Alert
+                    type="error"
+                    showIcon
+                    title="Could not load model"
+                    description={error}
+                    closable={{ onClose: () => setError(null) }}
+                    style={{ marginBottom: "1rem" }}
+                />
+            )}
             <Tabs type="card" items={ITEMS} />
         </Modal>,
         document.getElementById("portal"),

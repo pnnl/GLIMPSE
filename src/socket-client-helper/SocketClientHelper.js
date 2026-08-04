@@ -99,6 +99,9 @@ class SocketClientHelper {
         "sim-output": [],
         "sim-log": [],
         "sim-log-clear": [],
+        // Fired once when a fresh run is started (not on pause/resume, which
+        // also report "running"). Charts key their history reset off this.
+        "sim-run-start": [],
         "sim-state-change": [],
         "connection-change": [],
         "model-load-progress": [],
@@ -147,7 +150,12 @@ class SocketClientHelper {
 
         // Simulation events
         this.socket.on("sim-output", (output) => {
-            // console.log(output);
+            // Frames can still arrive after we've detached: stopping is
+            // asynchronous, and the backend may already have output queued.
+            // Applying them would decode measurements against a model they don't
+            // belong to and repopulate the live overlay we just cleared.
+            if (this.simulationState === "inactive") return;
+
             this.#emit("sim-output", output);
             graphHelper.handleSimulationOutput(output);
         });
@@ -360,8 +368,11 @@ class SocketClientHelper {
                 return;
             }
 
-            // Fresh run — drop logs from any previous simulation.
+            // Fresh run — drop logs and chart history from any previous run.
+            // Emitted before the start round-trip so the charts are already
+            // empty when the first frame lands.
             this.clearSimulationLogs();
+            this.#emit("sim-run-start");
 
             const gridappsdConfig = this.buildGridappsdConfig(models);
 
@@ -443,8 +454,35 @@ class SocketClientHelper {
     };
 
     setSimulationState = (state) => {
+        // "inactive" means nothing on screen belongs to a simulation any more, so
+        // the id has to go with it — the badge reads simulationID on this event,
+        // and would otherwise keep showing the previous run's id indefinitely.
+        if (state === "inactive") this.simulationID = null;
+
         this.simulationState = state;
         this.#emit("sim-state-change", state);
+    };
+
+    /**
+     * Detach the UI from any simulation. Called when a new model is loaded: the
+     * run no longer corresponds to what's on screen.
+     *
+     * A live run is stopped first — otherwise the backend keeps streaming
+     * sim-output frames that get decoded against an unrelated graph, which both
+     * wastes work and repopulates the live-measurement overlay for a model that
+     * isn't being simulated.
+     */
+    detachSimulation = () => {
+        const wasLive = this.simulationState === "running" || this.simulationState === "paused";
+
+        if (wasLive && this.simulationID) {
+            // Best effort: we tear the UI down regardless of the ack, since the
+            // model it belonged to is already gone.
+            this.socket.emit("stop-simulation", this.simulationID);
+        }
+
+        this.clearSimulationLogs();
+        this.setSimulationState("inactive");
     };
 
     // Simulation Logs

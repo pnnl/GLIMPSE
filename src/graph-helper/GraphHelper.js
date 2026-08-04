@@ -4,7 +4,22 @@ import iwanthue from "iwanthue";
 import circlepack from "graphology-layout/circlepack";
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
 import { DEFAULT_EDGE_CURVATURE, indexParallelEdgesIndex } from "@sigma/edge-curve";
-import { cleanPhase, formatVoltageLines } from "../utils/live-measurements";
+import { cleanPhase } from "../utils/live-measurements";
+import { buildHoverAttributes } from "../utils/hover-attributes";
+import {
+    SEVERITY,
+    dotSpeedForLoading,
+    edgeWidthForLoading,
+    formatAmps,
+    formatPercent,
+    formatPu,
+    formatVA,
+    formatWatts,
+    isViolation,
+    resolveBaseVoltage,
+    summarizeEdgeLoading,
+    summarizeNodeVoltage,
+} from "../utils/electrical";
 
 class GraphHelper {
     // private
@@ -23,6 +38,16 @@ class GraphHelper {
     #now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
     #ROTATE_ANGLE = Math.PI / 12; // 15 degrees in radians
+
+    // Set whenever the user edits the model (attributes, new/deleted objects).
+    // Edits live only in this graph — nothing is written back until Export — so
+    // the UI uses this to warn before a load or a window close discards them.
+    #dirty = false;
+
+    // When on, the Sigma reducers recolor nodes by per-unit voltage and edges by
+    // percent loading instead of by their theme group. See getNodeSeverity /
+    // getEdgeSeverity and the reducers in GraphRenderer.
+    #violationMode = false;
 
     // public
     sigmaInstance = null;
@@ -72,6 +97,204 @@ class GraphHelper {
 
     setIsCIM = (value) => {
         this.isCIM = Boolean(value);
+    };
+
+    // ── Unsaved-edit tracking ───────────────────────────────────────────────
+    // Model edits only exist in this graph until the user exports, so the app
+    // warns before anything discards them (loading another model, closing the
+    // window). The event lets the header show an indicator without polling.
+
+    #setDirty = (value) => {
+        if (this.#dirty === value) return;
+        this.#dirty = value;
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("graph-dirty-change", { detail: { dirty: value } }));
+        }
+    };
+
+    /** Call after any user edit to the model. */
+    markDirty = () => this.#setDirty(true);
+
+    /** Call once edits have been persisted (exported) or discarded. */
+    clearDirty = () => this.#setDirty(false);
+
+    hasUnsavedChanges = () => this.#dirty;
+
+    // ── Violation highlighting ──────────────────────────────────────────────
+    // Recolors the graph by electrical condition rather than by object type:
+    // nodes by per-unit voltage against ANSI C84.1, edges by apparent power
+    // against their normal rating. Both read the live simulation overlay, so
+    // the mode is only meaningful while measurements are arriving.
+
+    setViolationMode = (value) => {
+        const next = Boolean(value);
+        if (this.#violationMode === next) return;
+        this.#violationMode = next;
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(
+                new CustomEvent("graph-violation-mode-change", { detail: { enabled: next } }),
+            );
+        }
+        this.sigmaInstance?.refresh();
+    };
+
+    toggleViolationMode = () => this.setViolationMode(!this.#violationMode);
+
+    isViolationMode = () => this.#violationMode;
+
+    /**
+     * Voltage summary for a node, or null when it has no measurement (or no
+     * resolvable base voltage). See utils/electrical.summarizeNodeVoltage.
+     */
+    getNodeVoltageSummary = (nodeId) => {
+        if (!this.graph.hasNode(nodeId)) return null;
+        const live = this.liveMeasurements.nodes.get(nodeId);
+        if (!live) return null;
+        return summarizeNodeVoltage(this.graph.getNodeAttribute(nodeId, "attributes"), live);
+    };
+
+    /**
+     * Per-phase voltages to convert an edge's power into current. Prefers a
+     * measured PNV at either endpoint; falls back to an endpoint's resolved base
+     * voltage, which is close enough for a loading percentage (within a few
+     * percent) and much better than reporting nothing.
+     *
+     * @returns {Object|null} { <phase>: volts }
+     */
+    #edgeReferenceVoltages = (edgeId) => {
+        const endpoints = this.graph.extremities(edgeId);
+
+        for (const nodeId of endpoints) {
+            const measured = this.liveMeasurements.nodes.get(nodeId)?.voltage;
+            if (measured && Object.keys(measured).length > 0) {
+                return Object.fromEntries(
+                    Object.entries(measured).map(([phase, v]) => [phase, Number(v.magnitude)]),
+                );
+            }
+        }
+
+        // No PNV on either end — fall back to a nameplate/inferred base, applied
+        // to every phase the edge carries power on.
+        for (const nodeId of endpoints) {
+            const attributes = this.graph.getNodeAttribute(nodeId, "attributes");
+            const resolved = resolveBaseVoltage(attributes);
+            if (!resolved) continue;
+
+            const phases = Object.keys(this.liveMeasurements.edges.get(edgeId)?.power ?? {});
+            if (phases.length === 0) return null;
+            return Object.fromEntries(phases.map((phase) => [phase, resolved.base]));
+        }
+
+        return null;
+    };
+
+    /** Loading summary for an edge, or null when it has no power measurement. */
+    getEdgeLoadingSummary = (edgeId) => {
+        if (!this.graph.hasEdge(edgeId)) return null;
+        const live = this.liveMeasurements.edges.get(edgeId);
+        if (!live) return null;
+        return summarizeEdgeLoading(live, this.#edgeReferenceVoltages(edgeId));
+    };
+
+    /** Severity object (see electrical.SEVERITY) driving violation-mode color. */
+    getNodeSeverity = (nodeId) => this.getNodeVoltageSummary(nodeId)?.worst.severity ?? SEVERITY.unknown;
+
+    getEdgeSeverity = (edgeId) => this.getEdgeLoadingSummary(edgeId)?.severity ?? SEVERITY.unknown;
+
+    /**
+     * Counts for the violation legend, so the user can see at a glance whether
+     * anything is wrong without hunting across the canvas.
+     * @returns {{ nodes: Object<string, number>, edges: Object<string, number>, total: number }}
+     */
+    getViolationCounts = () => {
+        const nodes = {};
+        const edges = {};
+        let total = 0;
+
+        for (const nodeId of this.liveMeasurements.nodes.keys()) {
+            const severity = this.getNodeSeverity(nodeId);
+            nodes[severity.level] = (nodes[severity.level] ?? 0) + 1;
+            if (isViolation(severity)) total++;
+        }
+
+        for (const edgeId of this.liveMeasurements.edges.keys()) {
+            const severity = this.getEdgeSeverity(edgeId);
+            edges[severity.level] = (edges[severity.level] ?? 0) + 1;
+            if (isViolation(severity)) total++;
+        }
+
+        return { nodes, edges, total };
+    };
+
+    // ── Hover "vitals" ──────────────────────────────────────────────────────
+    // The colored block that leads the hover card. Built fresh from the live
+    // overlay each time it changes, so it never drifts from the measurements.
+
+    /**
+     * @returns {Array<{ text: string, color?: string }>} lines, or [] when the
+     *   object has no live electrical data.
+     */
+    buildNodeVitals = (nodeId) => {
+        const summary = this.getNodeVoltageSummary(nodeId);
+        if (!summary) {
+            // Still show raw volts when there's a measurement but no usable base.
+            const live = this.liveMeasurements.nodes.get(nodeId);
+            if (!live?.voltage) return [];
+            return Object.entries(live.voltage).map(([phase, v]) => ({
+                text: `${phase}  ${Number(v.magnitude).toFixed(1)} V`,
+            }));
+        }
+
+        const lines = summary.phases.map(({ phase, magnitude, pu, severity }) => ({
+            text: `${phase}  ${formatPu(pu)} p.u.  (${Number(magnitude).toFixed(0)} V)`,
+            color: severity.color,
+        }));
+
+        const base = `${summary.base.toFixed(0)} V`;
+        lines.push({
+            text:
+                summary.baseSource === "inferred"
+                    ? `base ${base} (inferred)`
+                    : `base ${base}`,
+        });
+
+        if (isViolation(summary.worst.severity)) {
+            lines.unshift({
+                text: `⚠ ${summary.worst.severity.label} on phase ${summary.worst.phase}`,
+                color: summary.worst.severity.color,
+            });
+        }
+
+        return lines;
+    };
+
+    /** @returns {Array<{ text: string, color?: string }>} */
+    buildEdgeVitals = (edgeId) => {
+        const summary = this.getEdgeLoadingSummary(edgeId);
+        if (!summary) return [];
+
+        const lines = [];
+
+        if (summary.worst) {
+            // The rating is per conductor, so the worst phase is what matters.
+            lines.push({
+                text: `Loading  ${formatPercent(summary.ratio)}  (${formatAmps(summary.worst.amps)} of ${formatAmps(summary.normalLimit)} on ${summary.worst.phase})`,
+                color: summary.severity.color,
+            });
+        } else {
+            lines.push({ text: `Flow  ${formatVA(summary.apparent)}` });
+        }
+
+        const live = this.liveMeasurements.edges.get(edgeId);
+        let real = 0;
+        let imag = 0;
+        for (const phase of Object.values(live?.power ?? {})) {
+            if (Number.isFinite(phase.real)) real += phase.real;
+            if (Number.isFinite(phase.imag)) imag += phase.imag;
+        }
+        lines.push({ text: `P ${formatWatts(real, "W")}   Q ${formatWatts(imag, "VAr")}` });
+
+        return lines;
     };
 
     setThemeObject = (jsonTheme = null) => {
@@ -241,16 +464,17 @@ class GraphHelper {
 
     reset = () => {
         // Drop the live-simulation overlay and restore each node's base hover
-        // label (the voltage lines added during the run are removed here).
-        for (const nodeId of this.liveMeasurements.nodes.keys()) {
-            if (!this.graph.hasNode(nodeId)) continue;
-            this.graph.updateNodeAttributes(nodeId, (node) => {
-                node.attributesLabel = this.getTitle(node.attributes);
-                return node;
-            });
-        }
+        // card (the vitals block added during the run is removed here).
+        const measuredNodes = [...this.liveMeasurements.nodes.keys()];
         this.liveMeasurements.nodes.clear();
         this.liveMeasurements.edges.clear();
+        for (const nodeId of measuredNodes) {
+            // Cleared first, so this rebuilds with empty vitals.
+            this.refreshNodeHover(nodeId);
+        }
+
+        // Condition coloring is meaningless without measurements.
+        this.setViolationMode(false);
 
         this.#highlightedEdgeTypes.length = 0;
         this.#highlightedGroups.length = 0;
@@ -261,15 +485,21 @@ class GraphHelper {
         this.focusIndex = -1;
         this.clearEdgeFocus();
 
-        // show any hidden edges and nodes
-        this.graph.updateEachEdgeAttributes((id, edge) => ({
-            ...edge,
-            type: edge.type === "animated" ? "straight" : edge.type,
-            hidden: false,
-            zIndex: 0,
-            color: this.#theme.edgeOptions[edge.group].color,
-            size: this.#theme.edgeOptions[edge.group].size,
-        }));
+        // show any hidden edges and nodes. An edge whose group isn't in the
+        // theme (added over the socket API, or from an unrecognized objectType)
+        // keeps the color/size it already has rather than throwing and leaving
+        // the rest of the reset half-applied.
+        this.graph.updateEachEdgeAttributes((id, edge) => {
+            const themed = this.#theme.edgeOptions?.[edge.group];
+            return {
+                ...edge,
+                type: edge.type === "animated" ? "straight" : edge.type,
+                hidden: false,
+                zIndex: 0,
+                color: themed?.color ?? edge.color,
+                size: themed?.size ?? edge.size,
+            };
+        });
 
         this.graph.updateEachNodeAttributes((id, node) => ({
             ...node,
@@ -285,6 +515,16 @@ class GraphHelper {
     clearGraphData = () => {
         this.resetObjectTypeCounts();
         this.isCIM = false;
+        // Whatever was edited is being discarded here; callers are responsible
+        // for confirming with the user first (see confirmDiscardChanges).
+        this.clearDirty();
+
+        // The live overlay belongs to the model being replaced. Without this it
+        // survived into the next model, where stale mRID collisions could show
+        // voltages and loading for objects that were never measured.
+        this.liveMeasurements.nodes.clear();
+        this.liveMeasurements.edges.clear();
+        this.setViolationMode(false);
 
         // Clear highlighted arrays and state
         this.#highlightedEdgeTypes.length = 0;
@@ -449,6 +689,33 @@ class GraphHelper {
         }
 
         this.sigmaInstance.refresh();
+    };
+
+    /**
+     * The three fields drawHover reads. Assign onto a node's attributes to give
+     * it a hover card: a colored vitals block, a filtered attribute list, and
+     * the count of attributes not shown.
+     *
+     * @param {Object} attributes - the node's model attributes
+     * @param {Array} [vitals] - from buildNodeVitals; omitted outside a sim
+     */
+    buildHoverPayload = (attributes, vitals = []) => {
+        const { lines, hidden } = buildHoverAttributes(attributes);
+        return {
+            hoverVitals: vitals,
+            attributesLabel: lines.join("\n"),
+            attributesHidden: hidden,
+        };
+    };
+
+    /** Recompute and store a live node's hover card in place. */
+    refreshNodeHover = (nodeId) => {
+        if (!this.graph.hasNode(nodeId)) return;
+        const vitals = this.buildNodeVitals(nodeId);
+        this.graph.updateNodeAttributes(nodeId, (node) => ({
+            ...node,
+            ...this.buildHoverPayload(node.attributes, vitals),
+        }));
     };
 
     /**
@@ -791,7 +1058,12 @@ class GraphHelper {
                     },
                 };
 
-                newNode["attributesLabel"] = this.getTitle(newNode.attributes);
+                // Keep the live vitals block — this update only changes the
+                // capacitor's section count, not its voltage measurements.
+                Object.assign(
+                    newNode,
+                    this.buildHoverPayload(newNode.attributes, this.buildNodeVitals(capID)),
+                );
                 return newNode;
             });
         });
@@ -804,11 +1076,52 @@ class GraphHelper {
         // we don't pick a flow direction off of numerical noise.
         const FLOW_THRESHOLD = 1e-6;
 
+        // ── Live bus-voltage overlay (PNV) ───────────────────────────────────
+        // PNV magnitude/angle describe the phase voltage at the measurement's
+        // terminal; attribute it to the bus (ConnectivityNode) it sits on, or to
+        // the equipment itself when that equipment is a graph node (e.g. a load).
+        //
+        // Processed BEFORE the VA block below: edge loading is a current ratio
+        // (I = S / V), so the voltages have to be in the overlay before any edge
+        // is evaluated — otherwise the first tick of every run has no loading.
+        const nodesWithNewVoltage = new Set();
+        for (const measurement of Analog) {
+            if (measurement.measurement_type !== "PNV") continue;
+
+            let nodeId = null;
+            if (
+                measurement.connectivity_node_mrid &&
+                this.graph.hasNode(measurement.connectivity_node_mrid)
+            ) {
+                nodeId = measurement.connectivity_node_mrid;
+            } else if (this.graph.hasNode(measurement.equipment_mrid)) {
+                nodeId = measurement.equipment_mrid;
+            }
+            if (!nodeId) continue;
+
+            const nodeLive = this.liveMeasurements.nodes.get(nodeId) || { voltage: {} };
+            nodeLive.voltage[cleanPhase(measurement.phases)] = {
+                magnitude: measurement.magnitude,
+                angle: measurement.angle,
+            };
+            this.liveMeasurements.nodes.set(nodeId, nodeLive);
+            nodesWithNewVoltage.add(nodeId);
+        }
+
+        // Rebuild each affected node's hover card so the vitals block reflects
+        // this tick. Rebuilt from the base attributes every time (never appended
+        // cumulatively), so the model's own attributes stay untouched.
+        for (const nodeId of nodesWithNewVoltage) {
+            this.refreshNodeHover(nodeId);
+        }
+
+        // ── Power flow on edges (VA) ─────────────────────────────────────────
         // On a one-line diagram a single edge carries several VA measurements
         // (one per phase). The true power flow is the complex sum of all of them,
         // so aggregate by edge before deciding direction. magnitude/angle describe
         // the polar form of each complex VA measurement (angle is in degrees).
         const edgePowerSums = new Map(); // equipment_mrid -> { real, imag, normalLimit }
+        const edgesTouched = new Set(); // edges with at least one VA reading this tick
 
         for (let measurement of Analog) {
             // Only VA (power) measurements determine flow; skip PNV/Pos/etc.
@@ -825,8 +1138,7 @@ class GraphHelper {
             const real = measurement.magnitude * Math.cos(angleRad);
             const imag = measurement.magnitude * Math.sin(angleRad);
 
-            // Per-phase power overlay for the tabular / attribute display. Kept
-            // separate from the aggregated flow-direction sum below.
+            // Per-phase power overlay for the tabular / attribute display.
             const edgeLive = this.liveMeasurements.edges.get(measurement.equipment_mrid) || {
                 power: {},
             };
@@ -836,19 +1148,32 @@ class GraphHelper {
                 magnitude: measurement.magnitude,
                 angle: measurement.angle,
             };
+            // The element's continuous rating, kept on the overlay so percent
+            // loading can be computed anywhere (hover card, tables, violation
+            // mode) and not just here.
+            if (edgeLive.normalLimit == null && measurement.normal_limit) {
+                edgeLive.normalLimit = measurement.normal_limit.Normal;
+            }
             this.liveMeasurements.edges.set(measurement.equipment_mrid, edgeLive);
 
-            const sum = edgePowerSums.get(measurement.equipment_mrid) || {
-                real: 0,
-                imag: 0,
-                normalLimit: measurement.normal_limit?.Normal,
-            };
-            sum.real += real;
-            sum.imag += imag;
-            if (sum.normalLimit == null && measurement.normal_limit) {
-                sum.normalLimit = measurement.normal_limit.Normal;
+            edgesTouched.add(measurement.equipment_mrid);
+        }
+
+        // Aggregate each touched edge from its full persisted per-phase map
+        // rather than from this tick's messages alone: a tick may carry only a
+        // subset of an edge's phases, which would understate the total.
+        for (const edgeID of edgesTouched) {
+            const edgeLive = this.liveMeasurements.edges.get(edgeID);
+            let real = 0;
+            let imag = 0;
+            for (const phase of Object.values(edgeLive.power)) {
+                if (Number.isFinite(phase.real)) real += phase.real;
+                if (Number.isFinite(phase.imag)) imag += phase.imag;
             }
-            edgePowerSums.set(measurement.equipment_mrid, sum);
+
+            // Complex sum -> apparent power, the quantity a rating is stated in.
+            edgeLive.apparent = Math.hypot(real, imag);
+            edgePowerSums.set(edgeID, { real, imag, normalLimit: edgeLive.normalLimit });
         }
 
         for (const [edgeID, sum] of edgePowerSums) {
@@ -884,18 +1209,14 @@ class GraphHelper {
                 // it had no flow on a previous tick.
                 edgeAttrs.color = this.#theme.edgeOptions[edgeAttrs.group]?.color ?? edgeAttrs.color;
 
-                if (sum.normalLimit) {
-                    const powerFlow = Math.hypot(sum.real, sum.imag) / sum.normalLimit;
-                    edgeAttrs.size = Math.max(0.15, Math.log(powerFlow + 1) * 0.5);
-                    // Dots travel faster the more power the line carries. dotSpeed is
-                    // in cycles/sec; clamp to a band so low flow still creeps and
-                    // high flow doesn't blur into a solid line.
-                    const DOT_SPEED_MIN = 0.1;
-                    const DOT_SPEED_MAX = 1.0;
-                    edgeAttrs.dotSpeed = Math.min(
-                        DOT_SPEED_MAX,
-                        Math.max(DOT_SPEED_MIN, Math.log(powerFlow + 1) * 0.6),
-                    );
+                // Line thickness and dot speed track how hard the conductor is
+                // working, using the same current ratio as the loading readout.
+                // The mapping is calibrated in utils/electrical (and pinned by
+                // tests) so it stays within a visible range.
+                const loading = this.getEdgeLoadingSummary(edgeID)?.ratio;
+                if (loading != null) {
+                    edgeAttrs.size = edgeWidthForLoading(loading);
+                    edgeAttrs.dotSpeed = dotSpeedForLoading(loading);
                 }
 
                 return edgeAttrs;
@@ -922,7 +1243,7 @@ class GraphHelper {
                 this.graph.updateNodeAttributes(measurement.equipment_mrid, (node) => {
                     if (node.group === "capacitor") {
                         node.attributes.sections = measurement.value;
-                        node["attributesLabel"] = this.getTitle(node.attributes);
+                        Object.assign(node, this.buildHoverPayload(node.attributes, this.buildNodeVitals(measurement.equipment_mrid)));
                     }
 
                     return node;
@@ -930,49 +1251,7 @@ class GraphHelper {
             }
         }
 
-        // ── Live bus-voltage overlay (PNV) ───────────────────────────────────
-        // PNV magnitude/angle describe the phase voltage at the measurement's
-        // terminal; attribute it to the bus (ConnectivityNode) it sits on, or to
-        // the equipment itself when that equipment is a graph node (e.g. a load).
-        const nodesWithNewVoltage = new Set();
-        for (const measurement of Analog) {
-            if (measurement.measurement_type !== "PNV") continue;
-
-            let nodeId = null;
-            if (
-                measurement.connectivity_node_mrid &&
-                this.graph.hasNode(measurement.connectivity_node_mrid)
-            ) {
-                nodeId = measurement.connectivity_node_mrid;
-            } else if (this.graph.hasNode(measurement.equipment_mrid)) {
-                nodeId = measurement.equipment_mrid;
-            }
-            if (!nodeId) continue;
-
-            const nodeLive = this.liveMeasurements.nodes.get(nodeId) || { voltage: {} };
-            nodeLive.voltage[cleanPhase(measurement.phases)] = {
-                magnitude: measurement.magnitude,
-                angle: measurement.angle,
-            };
-            this.liveMeasurements.nodes.set(nodeId, nodeLive);
-            nodesWithNewVoltage.add(nodeId);
-        }
-
-        // Fold live voltage into each affected node's hover label. Rebuilt from
-        // the base attributes each tick (never appended cumulatively), so the
-        // model's own attributes stay untouched and the label can't drift.
-        for (const nodeId of nodesWithNewVoltage) {
-            const lines = formatVoltageLines(this.liveMeasurements.nodes.get(nodeId)?.voltage);
-            this.graph.updateNodeAttributes(nodeId, (node) => {
-                const base = this.getTitle(node.attributes);
-                node.attributesLabel = lines.length
-                    ? `${base}\nVoltage (live):\n  ${lines.join("\n  ")}`
-                    : base;
-                return node;
-            });
-        }
-
-        this.sigmaInstance.refresh();
+        this.sigmaInstance?.refresh();
     };
 
     newNodeWithEdge = (newNodeData) => {
@@ -1037,6 +1316,7 @@ class GraphHelper {
 
         this.graph.addNode(nodeID, newNode);
         this.graph.addEdgeWithKey(`${nodeID}-${connectTo}`, nodeID, connectTo, newEdge);
+        this.markDirty();
     };
 
     newEdge = (newEdgeData) => {
@@ -1079,6 +1359,7 @@ class GraphHelper {
         }
 
         this.graph.addEdgeWithKey(edgeID, fromNode, toNode, newEdge);
+        this.markDirty();
     };
 
     // ============================================================================
@@ -1204,7 +1485,7 @@ class GraphHelper {
             fixed: false,
             ...this.#theme.groups[objectType],
         };
-        node.attributesLabel = this.getTitle(attributes);
+        Object.assign(node, this.buildHoverPayload(attributes));
 
         this.objectTypeCount.nodes[objectType] = (this.objectTypeCount.nodes[objectType] ?? 0) + 1;
 
@@ -1250,7 +1531,9 @@ class GraphHelper {
         }
 
         if (!(objectType in this.#theme.edgeOptions)) {
-            this.#theme.edgeOptions[objectType] = { color: this.getRandomColor(), width: 2 };
+            // `size` (not `width`) — that's the key every consumer of the theme
+            // reads, and what PowerGrid.theme.json uses.
+            this.#theme.edgeOptions[objectType] = { color: this.getRandomColor(), size: 2 };
         }
         if (!this.edgeTypes.includes(objectType)) this.edgeTypes.push(objectType);
 
@@ -1417,7 +1700,7 @@ class GraphHelper {
                         if (node.y !== undefined && node.y < this.#boundsCoords.minY)
                             this.#boundsCoords.minY = node.y;
 
-                        node.attributesLabel = this.getTitle(attributes);
+                        Object.assign(node, this.buildHoverPayload(attributes));
 
                         if (objectType in this.objectTypeCount.nodes)
                             this.objectTypeCount.nodes[objectType]++;
@@ -1438,7 +1721,7 @@ class GraphHelper {
                         ...this.#theme.groups[objectType],
                     };
 
-                    node["attributesLabel"] = this.getTitle(attributes);
+                    Object.assign(node, this.buildHoverPayload(attributes));
 
                     if (objectType in this.objectTypeCount.nodes)
                         this.objectTypeCount.nodes[objectType]++;
@@ -1473,7 +1756,7 @@ class GraphHelper {
                         this.objectTypeCount.nodes[objectType]++;
                     else this.objectTypeCount.nodes[objectType] = 1;
 
-                    node["attributesLabel"] = this.getTitle(attributes);
+                    Object.assign(node, this.buildHoverPayload(attributes));
                     newGraph.addNode(nodeID, node);
                 }
             }
@@ -1542,7 +1825,10 @@ class GraphHelper {
                         elementType: "edge",
                         group: "parentChild",
                         type: "straight",
-                        size: this.#theme.edgeOptions.parentChild.width,
+                        // Spread the theme entry so these pick up `color` too —
+                        // without it parent-child edges fell back to sigma's
+                        // default and only got their theme color after a Reset.
+                        ...this.#theme.edgeOptions.parentChild,
                         length: "length" in attributes ? parseFloat(attributes.length) : null,
                         attributes: { to: parent, from: nodeID, id: edgeID },
                     });
@@ -1608,12 +1894,11 @@ class GraphHelper {
                     const edgeTo = attributes.to;
                     const edgeID = attributes.id ?? `${edgeFrom}->${edgeTo}`;
 
-                    console.log("Processing edge:", edgeID, "of type:", objectType);
-
                     if (!(objectType in this.#theme.edgeOptions))
                         this.#theme.edgeOptions[objectType] = {
                             color: this.getRandomColor(),
-                            width: 2,
+                            // `size`, not `width` — see the note in addEdge.
+                            size: 2,
                         };
 
                     if (objectType in this.objectTypeCount.edges)
@@ -1627,7 +1912,7 @@ class GraphHelper {
                         group: objectType,
                         type: "straight",
                         length: attributes.length ?? null,
-                        size: this.#theme.edgeOptions[objectType].size,
+                        ...this.#theme.edgeOptions[objectType],
                         attributes: attributes,
                     });
                 }
@@ -1713,6 +1998,9 @@ class GraphHelper {
         // create the legend graph object
         this.setLegendData();
         this.graph = newGraph;
+
+        // A freshly loaded model matches its source file — nothing to save yet.
+        this.clearDirty();
     };
 }
 

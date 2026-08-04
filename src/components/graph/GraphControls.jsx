@@ -9,6 +9,7 @@ import { MdFilterCenterFocus, MdFullscreen, MdFullscreenExit, MdOutlineMap } fro
 import { IoPlay, IoStop } from "react-icons/io5";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
+import { useShortcut } from "../../hooks/useShortcut";
 import "../../styles/GraphControls.css";
 
 // Tile sources for the map background: OSM standard in light mode, CARTO's
@@ -176,6 +177,10 @@ const GraphControls = () => {
         sigma.getCamera().animate({ x: centerX, y: centerY, ratio }, { duration: 500 });
     };
 
+    useShortcut("f", center);
+    useShortcut("l", toggleLayout, { enabled: !mapShown });
+    useShortcut("m", toggleMap, { enabled: graphHelper.hasGeoCoords });
+
     return (
         <Space.Compact
             orientation="vertical"
@@ -183,16 +188,22 @@ const GraphControls = () => {
             style={{ backgroundColor: darkMode ? "#1f1f1f" : "#ffffff" }}
         >
             <Tooltip title="Zoom In" placement="right">
-                <Button icon={<BiZoomIn />} onClick={() => zoomIn()} />
+                <Button aria-label="Zoom in" icon={<BiZoomIn />} onClick={() => zoomIn()} />
             </Tooltip>
             <Tooltip title="Zoom Out" placement="right">
-                <Button icon={<BiZoomOut />} onClick={() => zoomOut()} />
+                <Button aria-label="Zoom out" icon={<BiZoomOut />} onClick={() => zoomOut()} />
             </Tooltip>
-            <Tooltip title="Center & Fit" placement="right">
-                <Button icon={<MdFilterCenterFocus />} onClick={center} />
+            <Tooltip title="Center & Fit (F)" placement="right">
+                <Button
+                    aria-label="Center and fit the graph"
+                    icon={<MdFilterCenterFocus />}
+                    onClick={center}
+                />
             </Tooltip>
             <Tooltip title={isFullScreen ? "Exit Full Screen" : "Full Screen"} placement="right">
                 <Button
+                    aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+                    aria-pressed={isFullScreen}
                     icon={isFullScreen ? <MdFullscreenExit /> : <MdFullscreen />}
                     onClick={toggleFullScreen}
                 />
@@ -202,13 +213,15 @@ const GraphControls = () => {
                     !graphHelper.hasGeoCoords
                         ? "Map requires a graph with latitude/longitude coordinates"
                         : mapShown
-                          ? "Hide Map"
-                          : "Show Map"
+                          ? "Hide Map (M)"
+                          : "Show Map (M)"
                 }
                 placement="right"
             >
                 <Button
                     type={mapShown ? "primary" : "default"}
+                    aria-label={mapShown ? "Hide map background" : "Show map background"}
+                    aria-pressed={mapShown}
                     disabled={!graphHelper.hasGeoCoords}
                     icon={<MdOutlineMap />}
                     onClick={toggleMap}
@@ -219,13 +232,15 @@ const GraphControls = () => {
                     mapShown
                         ? "Layout is disabled while the map is shown"
                         : isRunning
-                          ? "Stop Layout"
-                          : "Start Layout"
+                          ? "Stop Layout (L)"
+                          : "Start Layout (L)"
                 }
                 placement="right"
             >
                 <Button
                     type={isRunning ? "primary" : "default"}
+                    aria-label={isRunning ? "Stop the force layout" : "Start the force layout"}
+                    aria-pressed={isRunning}
                     disabled={mapShown}
                     icon={isRunning ? <IoStop /> : <IoPlay />}
                     onClick={toggleLayout}

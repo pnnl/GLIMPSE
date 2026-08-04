@@ -9,6 +9,9 @@
 }
 
 .sim-charts__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;

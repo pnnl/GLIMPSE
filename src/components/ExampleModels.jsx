@@ -5,6 +5,7 @@ import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
+import { confirmDiscardChanges, errorText, reportError } from "../utils/notify";
 
 // Bundled sample models the backend ships with (see EXAMPLE_MODELS in
 // local-server/server.py). Parsing happens server-side, so loading one goes
@@ -23,7 +24,9 @@ const ExampleModels = ({ closeModal }) => {
             .then(({ data }) => {
                 if (!cancelled) setExamples(data.examples ?? []);
             })
-            .catch((e) => console.error("Failed to fetch example models:", e));
+            .catch((e) => {
+                if (!cancelled) reportError("Could not list example models", e);
+            });
 
         return () => {
             cancelled = true;
@@ -31,8 +34,12 @@ const ExampleModels = ({ closeModal }) => {
     }, []);
 
     const loadExample = async (example) => {
-        setLoadingId(example.id);
         setError(null);
+
+        // Loading replaces the whole graph — don't silently drop edits.
+        if (!(await confirmDiscardChanges("Loading a model"))) return;
+
+        setLoadingId(example.id);
 
         try {
             const { data: response } = await axios.post(
@@ -52,9 +59,10 @@ const ExampleModels = ({ closeModal }) => {
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
 
-            // Example models aren't driveable via GridAPPS-D, so hide the
-            // simulation controls/log even if a GridAPPS-D model was loaded before.
-            socketClientHelper.setSimulationState("inactive");
+            // Example models aren't driveable via GridAPPS-D, so detach from any
+            // previous run: hides the controls/log/charts/id badge and stops a
+            // simulation that would otherwise stream into this graph.
+            socketClientHelper.detachSimulation();
 
             window.dispatchEvent(
                 new CustomEvent("graph-loaded", { detail: { source: "example-model" } }),
@@ -62,8 +70,8 @@ const ExampleModels = ({ closeModal }) => {
             newGraphUpdate();
             closeModal();
         } catch (e) {
-            console.error(e);
-            setError(e.message);
+            console.error("Example model load failed:", e);
+            setError(errorText(e, "The server could not load this example model."));
         } finally {
             setLoadingId(null);
         }
@@ -98,7 +106,16 @@ const ExampleModels = ({ closeModal }) => {
                     ))}
                 </Flex>
             )}
-            {error && <Alert type="error" message={error} showIcon style={{ marginTop: 8 }} />}
+            {error && (
+                <Alert
+                    type="error"
+                    title="Could not load example"
+                    description={error}
+                    showIcon
+                    closable={{ onClose: () => setError(null) }}
+                    style={{ marginTop: 8 }}
+                />
+            )}
         </>
     );
 };

@@ -25,8 +25,43 @@ import DistributionAreaSelector from "../DistributionAreaSelector";
 import GraphControls from "./GraphControls";
 import SimulationIdBadge from "../SimulationIdBadge";
 import LegendPanel from "../legend/LegendPanel";
+import ViolationLegend from "../legend/ViolationLegend";
+import { isViolation } from "../../utils/electrical";
 
 const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
+
+// Violation mode recolors by electrical condition instead of object type.
+// Violating objects are also enlarged so they're findable without hunting: on a
+// 9500-node feeder a color change alone is easy to miss when zoomed out.
+const VIOLATION_NODE_SCALE = 2.2;
+const VIOLATION_EDGE_SCALE = 2.5;
+
+const violationNodeAttrs = (attrs, severity) => ({
+    ...attrs,
+    color: severity.color,
+    borderColor: severity.color,
+    // Drop the pictogram: the type-specific icon competes with the condition
+    // color, which is the only thing this mode is meant to communicate.
+    type: "node",
+    image: "",
+    size: isViolation(severity) ? attrs.size * VIOLATION_NODE_SCALE : attrs.size,
+    zIndex: isViolation(severity) ? 10 : 0,
+});
+
+const violationEdgeAttrs = (attrs, severity) => {
+    const violating = isViolation(severity);
+    const base = {
+        ...attrs,
+        color: severity.color,
+        size: violating ? attrs.size * VIOLATION_EDGE_SCALE : attrs.size,
+        zIndex: violating ? 10 : 0,
+    };
+    // Keep icon edges drawing their symbol, but in the condition color.
+    if (attrs.iconType === "switch") return { ...base, switchColor: severity.color };
+    if (attrs.iconType === "regulator") return { ...base, regulatorColor: severity.color };
+    if (attrs.iconType === "transformer") return { ...base, transformerColor: severity.color };
+    return base;
+};
 
 // Grey out a node (used when it falls outside the highlighted groups/areas).
 const dimNodeAttrs = (attrs) => ({
@@ -102,8 +137,14 @@ const GraphRenderer = () => {
         return createEdgeCompoundProgram([EdgeCurveProgram, TransformerProgram]);
     }, []);
 
-    const customNodeReducer = useCallback((_n, attrs) => {
+    const customNodeReducer = useCallback((nodeId, attrs) => {
         if (graphHelper.graph.order === 0) return attrs;
+
+        // Condition coloring replaces type coloring outright — mixing the two
+        // would leave the user unsure which scale a color belongs to.
+        if (graphHelper.isViolationMode()) {
+            return violationNodeAttrs(attrs, graphHelper.getNodeSeverity(nodeId));
+        }
 
         // Distribution-area highlighting takes precedence: grey out any node that
         // is not in a selected area. Members keep their styling (the colored
@@ -134,6 +175,12 @@ const GraphRenderer = () => {
             // never dim it, whatever the area/group highlight state is.
             const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
             if (focusStyle) return focusStyle;
+
+            // Condition coloring replaces type coloring outright (see the node
+            // reducer). The flow-animation type is left alone so dots still move.
+            if (graphHelper.isViolationMode()) {
+                return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
+            }
 
             // Distribution-area highlighting takes precedence: grey out any edge that
             // is not in a selected area.
@@ -244,6 +291,7 @@ const GraphRenderer = () => {
                 <DistributionAreaSelector />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-right"}>
+                <ViolationLegend />
                 <LegendPanel />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>

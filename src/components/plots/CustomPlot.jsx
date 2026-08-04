@@ -2,9 +2,14 @@ import { useEffect, useRef, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
+import {
+    TIMELINE_GRID_BOTTOM,
+    timelineDataZoom,
+    trimHistory,
+    useChartTimeline,
+} from "../../hooks/useChartTimeline";
+import LiveButton from "./LiveButton";
 import { MEASUREMENT_TYPE } from "./plotConstants";
-
-const MAX_POINTS = 20;
 
 // Series color palette (same hues the default charts use).
 const PALETTE = ["#5470c6", "#91cc75", "#ee6666", "#fac858", "#73c0de", "#3ba272", "#fc8452", "#9a60b4"];
@@ -44,8 +49,23 @@ const CustomPlot = ({ plot, onRemove }) => {
     const { darkMode } = useGraph();
     const chartRef = useRef(null);
 
-    // Rolling buffers: shared x (timestamps) + one y array per component/phase.
+    // History buffers: shared x (timestamps) + one y array per component/phase.
+    // Retained for the whole run so it can be scrolled back through.
     const data = useRef({ timestamps: [], series: plot.components.map(() => []) });
+
+    const clearBuffers = useCallback(() => {
+        data.current = { timestamps: [], series: plot.components.map(() => []) };
+        chartRef.current?.getEchartsInstance()?.setOption({
+            xAxis: { data: [] },
+            series: plot.components.map(() => ({ data: [] })),
+        });
+    }, [plot]);
+
+    const { syncWindow, isFollowing, resumeFollowing } = useChartTimeline(
+        chartRef,
+        useCallback(() => data.current.timestamps.length, []),
+        clearBuffers,
+    );
 
     const processOutput = useCallback(
         (output) => {
@@ -61,7 +81,7 @@ const CustomPlot = ({ plot, onRemove }) => {
 
             const d = data.current;
             d.timestamps.push(ts);
-            if (d.timestamps.length > MAX_POINTS) d.timestamps.shift();
+            trimHistory(d.timestamps);
 
             plot.components.forEach((component, i) => {
                 const value = extractValue(plot, byMrid.get(component.id));
@@ -72,15 +92,16 @@ const CustomPlot = ({ plot, onRemove }) => {
                     ? arr.length > 0 ? arr[arr.length - 1] : null
                     : parseFloat(Number(value).toFixed(3));
                 arr.push(next);
-                if (arr.length > MAX_POINTS) arr.shift();
+                trimHistory(arr);
             });
 
             chartRef.current?.getEchartsInstance()?.setOption({
                 xAxis: { data: [...d.timestamps] },
                 series: d.series.map((arr) => ({ data: [...arr] })),
             });
+            syncWindow();
         },
-        [plot],
+        [plot, syncWindow],
     );
 
     useEffect(() => {
@@ -100,7 +121,8 @@ const CustomPlot = ({ plot, onRemove }) => {
     const option = {
         backgroundColor: bg,
         textStyle: { color: text },
-        grid: { left: 52, right: 10, top: 38, bottom: 42 },
+        // Extra bottom room for the zoom slider.
+        grid: { left: 52, right: 10, top: 38, bottom: TIMELINE_GRID_BOTTOM },
         tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
         legend: {
             top: 4,
@@ -123,6 +145,7 @@ const CustomPlot = ({ plot, onRemove }) => {
             axisLabel: { color: text, fontSize: 8 },
             splitLine: { lineStyle: { color: gridLine } },
         },
+        dataZoom: timelineDataZoom(darkMode ? "#8ab4f8" : "#5470c6"),
         series: plot.components.map((c, i) => ({
             name: c.displayName,
             type: "line",
@@ -138,6 +161,7 @@ const CustomPlot = ({ plot, onRemove }) => {
         <div className="custom-plot">
             <div className="custom-plot__header" style={{ color: text }}>
                 <span className="custom-plot__title">{plot.name}</span>
+                <LiveButton following={isFollowing} onResume={resumeFollowing} />
                 <button
                     className="custom-plot__remove"
                     style={{ color: text }}
@@ -150,7 +174,7 @@ const CustomPlot = ({ plot, onRemove }) => {
             <ReactECharts
                 ref={chartRef}
                 option={option}
-                style={{ height: "220px" }}
+                style={{ height: "240px" }}
                 notMerge={false}
                 lazyUpdate
             />
