@@ -135,18 +135,9 @@
             "size": 2,
             "color": "#BBBBBB"
         },
-        "mapping": {
-            "size": 1,
-            "color": "#DDDDDD"
-        },
         "communication": {
             "size": 2,
-            "color": "#CC79A7",
-            "dashArray": "4,2"
-        },
-        "microgrid_connection": {
-            "size": 1,
-            "color": "#009E73"
+            "color": "#CC79A7"
         },
         "line": {
             "size": 1,

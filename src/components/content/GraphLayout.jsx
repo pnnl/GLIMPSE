@@ -26,18 +26,29 @@ const GraphLayout = () => {
     // Only the charts panel shares the flex row and shrinks the graph (to keep the
     // full topology visible next to live gridappsd charts). With it closed the graph
     // is always full width.
-    const chartsActive = activePanel === "charts";
+    //
+    // Gated on simActive as well as the panel state: the charts column only
+    // renders during a run, so without this the graph stayed shrunk to 70% next
+    // to 30% of nothing after a simulation ended or a new model was loaded.
+    const chartsActive = simActive && activePanel === "charts";
 
-    // Track CIM model status and auto-switch panels when model type changes
+    // Track the simulation lifecycle so the toolbar/charts/log panels mount and
+    // unmount with it. Empty deps: the subscription is stable for the lifetime
+    // of the component — without them it re-registered on every render.
     useEffect(() => {
         const unsubSimState = socketClientHelper.on("sim-state-change", (simulationState) => {
             setSimState(simulationState);
+
+            // Charts belong to a run. Collapse the panel when one ends so the
+            // toolbar button doesn't come back pressed on the next run with the
+            // panel actually closed.
+            if (simulationState === "inactive") setActivePanel(null);
         });
 
         return () => {
             unsubSimState();
         };
-    });
+    }, []);
 
     // External scripts can push a graph over the socket "load-graph" event.
     // graphHelper has already rebuilt its graph by the time this fires; we just

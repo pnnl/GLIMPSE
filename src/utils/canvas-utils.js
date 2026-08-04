@@ -71,16 +71,25 @@ export function drawRoundRect(ctx, x, y, width, height, radius) {
 // ============================================================================
 // drawHover — Renders the tooltip card when the user hovers over a node.
 // ============================================================================
-// The card shows up to THREE text sections stacked vertically:
-//   1. Object type label (group name) — top, smaller font
-//   2. ID label (node label / name)   — middle, larger font
-//   3. Attributes label               — bottom, smaller font, multi-line
+// The card is stacked vertically, most-important-first:
+//   1. Object type label (group name)  — top, smaller font
+//   2. ID label (node label / name)    — larger font
+//   3. Vitals block                    — live electrical readings, per-line
+//                                        color by severity, separated by a rule
+//   4. Attributes                      — the model's own fields, dimmed
+//   5. "+N more attributes" hint       — when the list was truncated
+//
+// The vitals block is what makes this readable during a simulation: per-unit
+// voltage and percent loading sit at the top in their severity color, instead
+// of being buried in an alphabetical dump of CIM identifiers.
 //
 // DATA CONTRACT (properties read from `data`):
-//   data.label           – primary display name (string)
-//   data.group           – object type / category (string, optional)
-//   data.attributesLabel – extra info, supports "\n" for multiple lines (string, optional)
-//   data.x, data.y       – node center in canvas coords
+//   data.label            – primary display name (string)
+//   data.group            – object type / category (string, optional)
+//   data.hoverVitals      – [{ text, color? }] live readings (array, optional)
+//   data.attributesLabel  – model attributes, "\n" separated (string, optional)
+//   data.attributesHidden – count of attributes not shown (number, optional)
+//   data.x, data.y        – node center in canvas coords
 //   data.size             – node rendered radius
 //   data.color            – node color (used for attributes text)
 //
@@ -101,7 +110,10 @@ export function drawHover(context, data, settings) {
     // ── Extract text content ──
     const idLabel = data.label;
     const objectTypeLabel = data.group; // may be undefined/null
+    const vitals = Array.isArray(data.hoverVitals) ? data.hoverVitals : [];
     const attributesLines = data.attributesLabel ? String(data.attributesLabel).split(/\r?\n/) : [];
+    const hiddenCount = Number(data.attributesHidden) || 0;
+    const moreLine = hiddenCount > 0 ? `+${hiddenCount} more — see Model Data View` : null;
 
     // ── Measure text widths to size the background card ──
     context.font = `${weight} ${idLabelSize}px ${font}`;
@@ -110,13 +122,19 @@ export function drawHover(context, data, settings) {
     context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
     const objectTypeLabelWidth = objectTypeLabel ? context.measureText(objectTypeLabel).width : 0;
 
-    let attributesMaxWidth = 0;
-    for (const line of attributesLines) {
-        const w = context.measureText(line).width;
-        if (w > attributesMaxWidth) attributesMaxWidth = w;
-    }
+    let bodyMaxWidth = 0;
+    const measure = (text) => {
+        const w = context.measureText(text).width;
+        if (w > bodyMaxWidth) bodyMaxWidth = w;
+    };
+    // Vitals are drawn in a slightly heavier weight, so measure them that way.
+    context.font = `bold ${objectTypeLabelSize}px ${font}`;
+    for (const v of vitals) measure(v.text);
+    context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
+    for (const line of attributesLines) measure(line);
+    if (moreLine) measure(moreLine);
 
-    const textWidth = Math.max(idLabelWidth, objectTypeLabelWidth, attributesMaxWidth);
+    const textWidth = Math.max(idLabelWidth, objectTypeLabelWidth, bodyMaxWidth);
 
     // ── Compute card dimensions ──
     // Tweak these formulas to adjust card sizing relative to the node.
@@ -127,17 +145,21 @@ export function drawHover(context, data, settings) {
     const idLabelHeight = Math.round(idLabelSize); // height reserved for the id text
     const objectTypeLabelHeight = objectTypeLabel ? Math.round(objectTypeLabelSize / 2 + 9) : 0;
 
-    // Line height for multi-line attributes
+    // Line height for multi-line body text
     // ➤ To increase line spacing, increase the "+ 4" value below.
     const lineHeight = Math.round(objectTypeLabelSize + 4);
 
-    const attributesBlockHeight =
-        attributesLines.length > 0
-            ? attributesLines.length * lineHeight
+    // Gap taken by the separator rule drawn between vitals and attributes.
+    const separatorHeight = vitals.length > 0 && attributesLines.length > 0 ? lineHeight / 2 : 0;
+
+    const bodyLineCount = vitals.length + attributesLines.length + (moreLine ? 1 : 0);
+    const bodyBlockHeight =
+        bodyLineCount > 0
+            ? bodyLineCount * lineHeight + separatorHeight
             : Math.round(objectTypeLabelSize / 2 + 9);
 
     const cardHeight =
-        attributesBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
+        bodyBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
 
     // ── Draw background card with shadow ──
     context.beginPath();
@@ -180,15 +202,49 @@ export function drawHover(context, data, settings) {
         context.fillText(objectTypeLabel, textStartX, data.y - (2 * idLabelSize) / 3 - 2);
     }
 
-    // ── Draw attributes lines (stacked below the ID label) ──
+    let cursorY = data.y + idLabelSize / 3 + 3 + objectTypeLabelSize;
+
+    // ── Vitals block (live electrical readings) ──
+    // Bold and severity-colored so a violation reads at a glance.
+    if (vitals.length > 0) {
+        context.font = `bold ${objectTypeLabelSize}px ${font}`;
+        for (const vital of vitals) {
+            context.fillStyle = vital.color ?? TEXT_COLOR();
+            context.fillText(vital.text, textStartX, cursorY);
+            cursorY += lineHeight;
+        }
+
+        // Rule separating live readings from the static model attributes.
+        if (attributesLines.length > 0) {
+            const ruleY = Math.round(cursorY - lineHeight / 2) + 0.5;
+            context.beginPath();
+            context.strokeStyle = TEXT_COLOR();
+            context.globalAlpha = 0.18;
+            context.lineWidth = 1;
+            context.moveTo(textStartX, ruleY);
+            context.lineTo(x + cardWidth - 6, ruleY);
+            context.stroke();
+            context.globalAlpha = 1;
+            cursorY += separatorHeight;
+        }
+    }
+
+    // ── Draw attributes lines ──
     // Uses the node's own color so it visually ties to the node.
     // ➤ To use a fixed color instead, replace `data.color` with a constant.
     context.fillStyle = data.color;
     context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
+    for (const line of attributesLines) {
+        context.fillText(line, textStartX, cursorY);
+        cursorY += lineHeight;
+    }
 
-    const attributesStartY = data.y + idLabelSize / 3 + 3 + objectTypeLabelSize;
-    for (let i = 0; i < attributesLines.length; i++) {
-        context.fillText(attributesLines[i], textStartX, attributesStartY + i * lineHeight);
+    // ── Truncation hint ──
+    if (moreLine) {
+        context.fillStyle = TEXT_COLOR();
+        context.globalAlpha = 0.55;
+        context.fillText(moreLine, textStartX, cursorY);
+        context.globalAlpha = 1;
     }
 }
 

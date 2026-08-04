@@ -3,8 +3,31 @@ import { Table, Typography, Button } from "antd";
 import { ControlOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
+import { formatAmps, formatPercent, formatPu, formatVA, isViolation } from "../../utils/electrical";
 
 const { Link, Text } = Typography;
+
+// A per-unit voltage or percent-loading cell, colored by severity so a table
+// sorted by loading reads like a violation report.
+const SeverityValue = ({ value, severity, sub }) => {
+    if (value == null) return <Text type="secondary">-</Text>;
+    return (
+        <div style={{ lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>
+            <span
+                style={{
+                    color: severity?.color,
+                    fontWeight: isViolation(severity) ? 600 : 400,
+                    whiteSpace: "nowrap",
+                }}
+            >
+                {value}
+            </span>
+            {sub && (
+                <div style={{ fontSize: 11, opacity: 0.65, whiteSpace: "nowrap" }}>{sub}</div>
+            )}
+        </div>
+    );
+};
 
 // Renders a stack of per-phase live-measurement lines (or a dash when the row
 // has no measurement yet this tick).
@@ -165,6 +188,71 @@ const ObjectTable = ({
     // scroll: a live-measurement column (during a simulation) and the device
     // control column (CIM/GridAPPS-D models only).
     const trailingColumns = [];
+
+    // Condition columns: worst-phase p.u. voltage for nodes, percent loading for
+    // edges. Sortable, so "show me the worst 25 buses" is one click. Placed
+    // before the raw measurement column since it's the summarizing number.
+    if (simActive) {
+        trailingColumns.push(
+            elementType === "node"
+                ? {
+                      title: "V (p.u.)",
+                      key: "__pu",
+                      fixed: "right",
+                      width: 110,
+                      // Ascending puts the deepest undervoltage first.
+                      sorter: (a, b) => {
+                          const pa = graphHelper.getNodeVoltageSummary(a.id)?.worst.pu ?? Infinity;
+                          const pb = graphHelper.getNodeVoltageSummary(b.id)?.worst.pu ?? Infinity;
+                          return pa - pb;
+                      },
+                      render: (_, record) => {
+                          const summary = graphHelper.getNodeVoltageSummary(record.id);
+                          if (!summary) return <Text type="secondary">-</Text>;
+                          return (
+                              <SeverityValue
+                                  value={formatPu(summary.worst.pu)}
+                                  severity={summary.worst.severity}
+                                  sub={`worst: ${summary.worst.phase}`}
+                              />
+                          );
+                      },
+                  }
+                : {
+                      title: "loading",
+                      key: "__loading",
+                      fixed: "right",
+                      width: 120,
+                      // Descending puts the most heavily loaded first.
+                      sorter: (a, b) => {
+                          const ra = graphHelper.getEdgeLoadingSummary(a.id)?.ratio ?? -1;
+                          const rb = graphHelper.getEdgeLoadingSummary(b.id)?.ratio ?? -1;
+                          return ra - rb;
+                      },
+                      render: (_, record) => {
+                          const summary = graphHelper.getEdgeLoadingSummary(record.id);
+                          if (!summary) return <Text type="secondary">-</Text>;
+                          if (summary.worst == null) {
+                              // Measured, but no ampere rating (or no voltage to
+                              // convert power into current) — show the flow only.
+                              return (
+                                  <SeverityValue
+                                      value={formatVA(summary.apparent)}
+                                      sub={summary.normalLimit == null ? "no rating" : "no base voltage"}
+                                  />
+                              );
+                          }
+                          return (
+                              <SeverityValue
+                                  value={formatPercent(summary.ratio)}
+                                  severity={summary.severity}
+                                  sub={`${formatAmps(summary.worst.amps)} / ${formatAmps(summary.normalLimit)}`}
+                              />
+                          );
+                      },
+                  },
+        );
+    }
 
     // Live voltage (nodes) / power flow (edges) from the simulation overlay.
     // Read-only and ephemeral — the model's own attributes are never touched.

@@ -59,16 +59,15 @@ const GraphContextMenu = ({
 
     if (!context.open) return null;
 
+    // Go through the helper rather than graph.dropNode/dropEdge directly: it
+    // also decrements objectTypeCount and rebuilds the legend, which a raw drop
+    // left stale (the legend kept counting objects that no longer existed).
     const deleteNode = (nodeID) => {
-        console.log(`Deleting node with ID: ${nodeID}`);
-        graphHelper.graph.dropNode(nodeID);
-        graphHelper.sigmaInstance.refresh();
+        if (graphHelper.deleteNode(nodeID)) graphHelper.markDirty();
     };
 
     const deleteEdge = (edgeID) => {
-        console.log(`Deleting edge with ID: ${edgeID}`);
-        graphHelper.graph.dropEdge(edgeID);
-        graphHelper.sigmaInstance.refresh();
+        if (graphHelper.deleteEdge(edgeID)) graphHelper.markDirty();
     };
 
     const handleImageSave = () => {

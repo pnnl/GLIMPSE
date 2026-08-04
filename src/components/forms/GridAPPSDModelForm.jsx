@@ -3,6 +3,7 @@ import { Form, Button, Select, Spin } from "antd";
 import axios from "axios";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../../config";
+import { notify, reportError } from "../../utils/notify";
 
 // initialConnected: pass true when the caller has already verified the broker
 // is reachable (LoadModelModal only shows this tab after a status check) — it
@@ -18,21 +19,20 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
         setLoading(true);
 
         try {
-            console.log("Attempting to connect to GridAPPSD...");
             const res = await axios.get(`${API_BASE_URL}/api/gridappsd/status`);
 
-            console.log(res.status);
-            console.log(res.data);
-
             if ("connected" in res.data && !res.data.connected) {
-                console.warn(res.data.message);
+                notify.warning(
+                    res.data.message ??
+                        "The GridAPPS-D broker is not reachable. Check that it is running on port 61613.",
+                );
                 setLoading(false);
             } else if ("connected" in res.data && res.data.connected) {
                 setConnected(res.data.connected);
             }
         } catch (e) {
-            console.error("Error connecting to GridAPPSD:", e.message);
-            console.error("Full error:", e);
+            reportError("Could not reach GridAPPS-D", e);
+            setLoading(false);
         }
     };
 
@@ -43,7 +43,7 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
                 const res = await modelInfoRequest;
 
                 if (res.data.error || res.status === 500) {
-                    console.log(res.data.error);
+                    reportError("Could not list GridAPPS-D models", res.data.error);
                     setConnected(false);
                     return;
                 }
@@ -58,7 +58,8 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
                 setRegionNames(Array.from(regionNamesSet));
                 setModelInfo(res.data.models);
             } catch (e) {
-                console.error(e);
+                reportError("Could not list GridAPPS-D models", e);
+                setConnected(false);
             } finally {
                 setLoading(false);
             }
@@ -69,14 +70,16 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
         }
     }, [connected]);
 
+    // Empty deps: the subscription is stable for the lifetime of the component.
+    // Without them this re-subscribed on every render.
     useEffect(() => {
         const unSub = socketClientHelper.on("error", (err) => {
-            console.warn(err.message);
+            notify.error(err.message ?? "GridAPPS-D reported an error.");
             setLoading(false);
         });
 
         return () => unSub();
-    });
+    }, []);
 
     return (
         <Form>

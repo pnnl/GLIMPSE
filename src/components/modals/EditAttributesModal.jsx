@@ -111,16 +111,15 @@ const EditAttributesModal = ({ close, context }) => {
             // Update the graph with new attribute values
             if (object.type === "node") {
                 graphHelper.graph.setNodeAttribute(object.id, "attributes", merged);
-                graphHelper.graph.setNodeAttribute(
-                    object.id,
-                    "attributesLabel",
-                    graphHelper.getTitle(merged),
-                );
+                // Rebuild the hover card so it reflects the edited attributes
+                // (and keeps any live vitals block).
+                graphHelper.refreshNodeHover(object.id);
             } else if (object.type === "edge") {
                 graphHelper.graph.setEdgeAttribute(object.id, "attributes", merged);
             }
 
-            graphHelper.sigmaInstance.refresh();
+            graphHelper.markDirty();
+            graphHelper.sigmaInstance?.refresh();
             message.success("Attributes updated successfully");
             setHasChanges(false);
             close();

@@ -7,6 +7,21 @@ import NewObjectModal from "../modals/NewObjectModal";
 import NewEdgeModal from "../modals/NewEdgeModal";
 import UpdateDeviceModal from "../modals/UpdateDeviceModal";
 import UpdateRegulatorModal from "../modals/UpdateRegulatorModal";
+import { useShortcut } from "../../hooks/useShortcut";
+import { formatPercent } from "../../utils/electrical";
+
+// Edges have no hover card (sigma only draws one for nodes), so their live
+// loading rides along on the hover label — the one place it can surface on the
+// canvas itself. Falls back to just the name outside a simulation.
+const edgeHoverLabel = (edgeId) => {
+    const attrs = graphHelper.graph.getEdgeAttributes(edgeId);
+    const name = attrs.attributes?.name ?? edgeId;
+
+    const loading = graphHelper.getEdgeLoadingSummary(edgeId);
+    if (loading?.ratio == null) return name;
+
+    return `${name} · ${formatPercent(loading.ratio)} loaded`;
+};
 
 const GraphEvents = () => {
     const [context, setContext] = useState({ open: false, x: 0, y: 0 });
@@ -187,8 +202,10 @@ const GraphEvents = () => {
                     y: payload.event.original.pageY,
                 });
 
+                // Stage the target for the editor without opening it — the
+                // context menu's "Edit Attributes" item calls openAttributesModal.
                 setAttributesEditorContext({
-                    ...EditAttributesModal,
+                    open: false,
                     object: { type: "edge", id: payload.edge },
                 });
             },
@@ -205,7 +222,7 @@ const GraphEvents = () => {
                 });
 
                 setAttributesEditorContext({
-                    ...EditAttributesModal,
+                    open: false,
                     object: { type: "node", id: e.node },
                 });
             },
@@ -223,8 +240,7 @@ const GraphEvents = () => {
                 if (graphHelper.graph.edges(e.node).length > 10) return;
 
                 graphHelper.graph.edges(e.node).forEach((edgeId) => {
-                    const attrs = graphHelper.graph.getEdgeAttributes(edgeId);
-                    graphHelper.graph.setEdgeAttribute(edgeId, "label", attrs.attributes.name ?? edgeId);
+                    graphHelper.graph.setEdgeAttribute(edgeId, "label", edgeHoverLabel(edgeId));
                 });
             },
             leaveNode: (e) => {
@@ -233,8 +249,7 @@ const GraphEvents = () => {
                 });
             },
             enterEdge: (e) => {
-                const edge = graphHelper.graph.getEdgeAttributes(e.edge);
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", edge.attributes.name ?? e.edge);
+                graphHelper.graph.setEdgeAttribute(e.edge, "label", edgeHoverLabel(e.edge));
             },
             leaveEdge: (e) => {
                 graphHelper.graph.setEdgeAttribute(e.edge, "label", "");
@@ -245,6 +260,10 @@ const GraphEvents = () => {
     const handleClose = () => {
         setContext({ open: false, x: 0, y: 0 });
     };
+
+    // The context menu is a bare portal, not an antd overlay, so it has no
+    // built-in dismiss key of its own.
+    useShortcut("escape", handleClose, { enabled: context.open });
 
     const closeAttributesEditor = () => {
         setAttributesEditorContext({ open: false, object: null });

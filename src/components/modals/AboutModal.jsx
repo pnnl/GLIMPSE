@@ -19,14 +19,14 @@ const AboutModal = ({ onMount }) => {
         <Modal
             centered
             open={open}
-            title={"About"}
+            title={"ABOUT"}
             cancelButtonProps={{ disabled: true, style: { display: "none" } }}
             onCancel={close}
             onOk={close}
             width={750}
         >
             <div className="about-title">
-                <h3>GLIMPSE v0.8.2</h3>
+                <h3>GLIMPSE v0.8.3</h3>
                 <h4>(Grid Layout Interface for Model Preview and System Exploration)</h4>
             </div>
             <div className="description">
@@ -36,18 +36,6 @@ const AboutModal = ({ onMount }) => {
                     GLIMPSE also aims to support a variety of different network representations and
                     layouts.
                 </p>
-            </div>
-            <div className="features-list">
-                <h3>User Manual</h3>
-                <ul>
-                    <li>
-                        You can find a GLIMPSE{"'"}s User Manual{" "}
-                        <a href="https://github.com/pnnl/GLIMPSE/blob/master/Docs/User_Manual.pdf">
-                            here
-                        </a>{" "}
-                        for more information on how to use the tool.
-                    </li>
-                </ul>
             </div>
             <div className="citation-wrapper">
                 <h3>Please Cite As</h3>

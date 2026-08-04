@@ -1,23 +1,19 @@
 .about-banner {
-   display: flex;
-   width: 100%;
-   padding: 4px;
-}
-
-.features-list>ul {
-   padding: 0 0 0 40px;
+    display: flex;
+    width: 100%;
+    padding: 4px;
 }
 
 .description {
-   padding: 1rem 2rem;
-   text-align: center;
-   font-weight: bold;
+    padding: 1rem 2rem;
+    text-align: center;
+    font-weight: bold;
 }
 
 .about-title {
-   text-align: center;
+    text-align: center;
 }
 
 .citation-wrapper {
-   margin-top: 1rem;
+    margin-top: 1rem;
 }

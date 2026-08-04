@@ -1,6 +1,6 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import "../styles/App.css";
-import { ConfigProvider, Layout, theme } from "antd";
+import { App as AntApp, ConfigProvider, Layout, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
 import AboutModal from "../components/modals/AboutModal";
 import GraphLayout from "../components/content/GraphLayout";
@@ -8,9 +8,42 @@ import AppHeader from "./AppHeader";
 import LoadModelModal from "../components/modals/LoadModelModal";
 import { GraphProvider, useGraph } from "../contexts/GraphContext";
 import ModelDataView from "../components/model-data-view/ModelDataView";
+import graphHelper from "../graph-helper/GraphHelper";
+import { registerNotifier } from "../utils/notify";
+
+// Hands antd's context-aware message/modal instances to utils/notify so every
+// caller — including non-React modules — gets feedback that follows the active
+// light/dark theme. Renders nothing.
+const NotificationBridge = () => {
+    const staticApi = AntApp.useApp();
+
+    useEffect(() => {
+        registerNotifier(staticApi);
+    }, [staticApi]);
+
+    return null;
+};
+
+// Native "leave site?" prompt when the model has edits that only exist in
+// memory. The browser shows its own generic wording; the string is required to
+// trigger it but is not displayed by modern browsers.
+const useUnsavedChangesGuard = () => {
+    useEffect(() => {
+        const onBeforeUnload = (e) => {
+            if (!graphHelper.hasUnsavedChanges()) return;
+            e.preventDefault();
+            e.returnValue = "";
+        };
+
+        window.addEventListener("beforeunload", onBeforeUnload);
+        return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    }, []);
+};
 
 const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
     const { view, darkMode } = useGraph();
+
+    useUnsavedChangesGuard();
 
     return (
         <ConfigProvider
@@ -77,31 +110,37 @@ const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
                 },
             }}
         >
-            <Layout style={{ backgroundColor: darkMode ? "#141414" : "#FFFFFF" }}>
-                <AppHeader onAboutClick={openAboutModalRef} openModelLoader={openLoadModelModalRef} />
-                <LoadModelModal
-                    onMount={(setter) => {
-                        openLoadModelModalRef.current = setter;
-                    }}
-                />
-                <Content style={{ position: "relative" }}>
-                    <div
-                        style={
-                            view === "graph"
-                                ? { width: "100%", height: "100%" }
-                                : {
-                                      position: "absolute",
-                                      inset: 0,
-                                      visibility: "hidden",
-                                      pointerEvents: "none",
-                                  }
-                        }
-                    >
-                        <GraphLayout />
-                    </div>
-                    {view === "object-studio" && <ModelDataView />}
-                </Content>
-            </Layout>
+            <AntApp>
+                <NotificationBridge />
+                <Layout style={{ backgroundColor: darkMode ? "#141414" : "#FFFFFF" }}>
+                    <AppHeader
+                        onAboutClick={openAboutModalRef}
+                        openModelLoader={openLoadModelModalRef}
+                    />
+                    <LoadModelModal
+                        onMount={(setter) => {
+                            openLoadModelModalRef.current = setter;
+                        }}
+                    />
+                    <Content style={{ position: "relative" }}>
+                        <div
+                            style={
+                                view === "graph"
+                                    ? { width: "100%", height: "100%" }
+                                    : {
+                                          position: "absolute",
+                                          inset: 0,
+                                          visibility: "hidden",
+                                          pointerEvents: "none",
+                                      }
+                            }
+                        >
+                            <GraphLayout />
+                        </div>
+                        {view === "object-studio" && <ModelDataView />}
+                    </Content>
+                </Layout>
+            </AntApp>
         </ConfigProvider>
     );
 };

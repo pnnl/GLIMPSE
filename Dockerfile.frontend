@@ -12,7 +12,7 @@ COPY package.json ./
 RUN npm install
 
 # Copy only what Vite needs to build, then produce dist/
-COPY vite.config.js index.html ./
+COPY vite.config.mjs index.html ./
 COPY src ./src
 COPY public ./public
 RUN npm run build
