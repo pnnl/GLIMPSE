@@ -3,7 +3,6 @@ import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import MetricsModal from "../components/modals/MetricsModal";
 import ShortcutsModal from "../components/modals/ShortcutsModal";
-import gridappsdLogo from "../../public/GridAPPS-D_Logo.webp";
 import "../styles/AppHeader.css";
 
 import graphHelper from "../graph-helper/GraphHelper";
@@ -261,7 +260,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 </Dropdown>
                 {isGridappsdModel && (
                     <>
-                        <img className="nav-logo" src={gridappsdLogo} alt="GridAPPS-D LOGO" />
+                        <img className="nav-logo" src="./GridAPPS-D_Logo.webp" alt="GridAPPS-D LOGO" />
                         <Text italic>Powered by</Text>
                     </>
                 )}
