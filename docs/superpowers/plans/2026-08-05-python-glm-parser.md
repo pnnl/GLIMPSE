@@ -407,9 +407,22 @@ def test_a_bare_dollar_sign_is_not_dropped():
     assert kinds("$;") == [("word", "$"), ("semi", ";")]
 
 
+def test_unterminated_substitution_stays_on_its_own_line():
+    # With `[^}]*` an unterminated `${` runs to the next `}` ANYWHERE in the
+    # file, swallowing a brace that closes an unrelated block. Measured: the
+    # loose form silently drops `object other` entirely.
+    source = "object node {\n  name ${A\n}\nobject other {\n  name val;\n}"
+    lex = Lexer(source)
+    texts = []
+    while lex.peek().kind != EOF:
+        texts.append(lex.next().text)
+    # no token may span the newline that follows `${A`
+    assert not any("\n" in t for t in texts)
+
+
 def test_lexer_covers_every_non_whitespace_character():
     # Whitespace is intentionally skipped; nothing else may be.
-    for source in ("prefix${A}suffix;", "a$b;", "$;", "x ${A}${B} y;"):
+    for source in ("prefix${A}suffix;", "a$b;", "$;", "$", "x ${A}${B} y;"):
         lex = Lexer(source)
         covered = []
         while lex.peek().kind != EOF:
@@ -469,9 +482,14 @@ from .errors import GlmParseError
 #
 #   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
 #      It excludes `$` so it stops cleanly at the start of a substitution.
-#   2. `\$\{[^}]*\}` -- a `${VSOURCE}` substitution, kept as ONE token. Without
-#      this the braces lex as lbrace/rbrace, and that stray rbrace silently
-#      closes the enclosing block early, corrupting every attribute after it.
+#   2. `\$\{[^}\s;]*\}` -- a `${VSOURCE}` substitution, kept as ONE token.
+#      Without this the braces lex as lbrace/rbrace, and that stray rbrace
+#      silently closes the enclosing block early, corrupting every attribute
+#      after it. The `\s;` exclusion bounds the match to one line: with a plain
+#      `[^}]*`, an unterminated `${` runs on until the next `}` ANYWHERE in the
+#      file -- swallowing a brace that closes an unrelated block. Measured on
+#      `object node {\n name ${A\n}\nobject other {...}`: the loose form
+#      silently drops `object other` entirely (1 object parsed instead of 2).
 #   3. `\$` -- a bare dollar sign not starting a substitution. Without this
 #      branch nothing matches a lone `$` and finditer skips it silently, so
 #      `a$b` tokenizes as `a`,`b` and a value of just `$` vanishes entirely.
@@ -483,12 +501,21 @@ from .errors import GlmParseError
 _TOKEN_RE = re.compile(
     r"""
       (?<!:)//[^\n]*                              # line comment (discarded)
+                                                  # the (?<!:) guard is
+                                                  # defense-in-depth only: it is
+                                                  # currently unreachable, since
+                                                  # the word branch admits `:`
+                                                  # and `/` and so swallows
+                                                  # `http://host/x` whole before
+                                                  # this alternative is ever
+                                                  # tried at the `//`. Keep it
+                                                  # in case that class narrows.
     | \#[ \t]*(?P<hash>set|define|include)\b
     | \b(?P<kw>clock|module|object|class|schedule)\b
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>[^\s{}$;]+|\$\{[^}]*\}|\$)         # value, substitution, bare $
+    | (?P<word>[^\s{}$;]+|\$\{[^}\s;]*\}|\$)      # value, substitution, bare $
     """,
     re.VERBOSE,
 )
@@ -552,7 +579,7 @@ class Lexer:
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 19 passed
+Expected: 20 passed
 
 - [ ] **Step 5: Commit**
 
@@ -935,7 +962,7 @@ Note: `_object` and `_schedule` are referenced here but land in Tasks 4 and 5. T
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 35 passed
+Expected: 36 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1074,7 +1101,7 @@ The `word` token pattern is `[^\s{};]+`, so `node:12` and `node.sub` already arr
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 41 passed
+Expected: 42 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1206,7 +1233,7 @@ In `local-server/glmparser/parser.py`, insert this method immediately after `_ob
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 45 passed
+Expected: 46 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1445,7 +1472,7 @@ def dumps(data):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 54 passed
+Expected: 55 passed
 
 - [ ] **Step 5: Commit**
 
