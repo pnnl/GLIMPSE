@@ -1834,7 +1834,7 @@ def test_glmhelper_parses_through_the_new_module(tmp_path):
 
 def test_glmhelper_rejects_oversized_files(tmp_path):
     big = tmp_path / "big.glm"
-    big.write_text("// pad\n" * 400_000)  # > 5 MB
+    big.write_text("// pad\n" * 800_000)  # 5.34 MB, over the 5 MB cap
     with pytest.raises(ValueError, match="too large"):
         GLMHelper().parse_glm([str(big)])
 
