@@ -196,3 +196,156 @@ def test_lexer_error_carries_position():
     lex.next()
     err = lex.error("boom")
     assert err.line == 1
+
+
+from glmparser.parser import Parser
+
+
+def parse(source):
+    return Parser(source).parse()
+
+
+def test_empty_source_yields_the_full_ast_skeleton():
+    ast = parse("")
+    assert ast == {
+        "clock": {},
+        "includes": [],
+        "objects": [],
+        "modules": [],
+        "classes": [],
+        "directives": [],
+        "definitions": [],
+        "schedules": [],
+    }
+
+
+def test_clock_block_parses_to_a_flat_dict():
+    ast = parse("clock {\n  timezone PST+8PDT;\n  starttime '2000-01-01 0:00:00';\n};")
+    assert ast["clock"] == {
+        "timezone": "PST+8PDT",
+        "starttime": "2000-01-01 0:00:00",
+    }
+
+
+def test_module_with_no_attributes():
+    assert parse("module powerflow;")["modules"] == [
+        {"name": "powerflow", "attributes": {}}
+    ]
+
+
+def test_module_with_attributes():
+    ast = parse("module powerflow {\n  solver_method NR;\n  lu_solver KLU;\n};")
+    assert ast["modules"] == [
+        {
+            "name": "powerflow",
+            "attributes": {"solver_method": "NR", "lu_solver": "KLU"},
+        }
+    ]
+
+
+def test_class_blocks_reach_the_ast():
+    # REGRESSION: the Nim parser collected classes then never emitted them.
+    ast = parse("class thermostat {\n  double setpoint;\n};")
+    assert ast["classes"] == [
+        {"name": "thermostat", "attributes": {"double": "setpoint"}}
+    ]
+
+
+def test_set_and_define_directives_are_newline_terminated():
+    # REGRESSION: running these to the next `;` makes them swallow later lines.
+    ast = parse("#set relax_naming_rules=1\n#set profiler=1\n\nmodule tape;\n")
+    assert ast["directives"] == [
+        {"name": "relax_naming_rules", "value": "1"},
+        {"name": "profiler", "value": "1"},
+    ]
+    assert ast["modules"] == [{"name": "tape", "attributes": {}}]
+
+
+def test_define_directive():
+    ast = parse('#define VSOURCE=69715.045\n#include "Rotating_Machines.glm";\n')
+    assert ast["definitions"] == [{"name": "VSOURCE", "value": "69715.045"}]
+    assert ast["includes"] == [{"value": "Rotating_Machines.glm"}]
+
+
+def test_include_strips_quotes_and_semicolon():
+    ast = parse('#include "Inverters.glm";\n#include "Recorders.glm";\n')
+    assert ast["includes"] == [
+        {"value": "Inverters.glm"},
+        {"value": "Recorders.glm"},
+    ]
+
+
+def test_directive_value_stops_before_a_trailing_comment():
+    # Slicing raw source to the newline drags the comment into the value.
+    ast = parse(
+        "#set deltamode_timestep=100000000\t\t//100 ms\n"
+        "#set deltamode_iteration_limit=10\t//Iteration limit\n"
+    )
+    assert ast["directives"] == [
+        {"name": "deltamode_timestep", "value": "100000000"},
+        {"name": "deltamode_iteration_limit", "value": "10"},
+    ]
+
+
+def test_substitution_inside_an_attribute_value_does_not_close_the_block():
+    # The `}` in `${VSOURCE}` must not terminate the enclosing block.
+    ast = parse(
+        "module powerflow {\n"
+        "  positive_sequence_voltage ${VSOURCE};\n"
+        "  solver_method NR;\n"
+        "};"
+    )
+    assert ast["modules"][0]["attributes"] == {
+        "positive_sequence_voltage": "${VSOURCE}",
+        "solver_method": "NR",
+    }
+
+
+def test_multi_word_and_substitution_values_are_preserved_exactly():
+    ast = parse(
+        "module m {\n"
+        "  positive_sequence_voltage ${VSOURCE};\n"
+        "  rating .winter.emergency 200.00;\n"
+        "};"
+    )
+    assert ast["modules"][0]["attributes"]["positive_sequence_voltage"] == "${VSOURCE}"
+    assert ast["modules"][0]["attributes"]["rating"] == ".winter.emergency 200.00"
+
+
+def test_dotted_attribute_keys_stay_distinct():
+    # REGRESSION: the Nim parser collapsed all four into one mangled `rating`.
+    ast = parse(
+        "module m {\n"
+        "  rating.summer.continuous 200.00;\n"
+        "  rating.summer.emergency 210.00;\n"
+        "  rating.winter.continuous 220.00;\n"
+        "  rating.winter.emergency 230.00;\n"
+        "};"
+    )
+    assert ast["modules"][0]["attributes"] == {
+        "rating.summer.continuous": "200.00",
+        "rating.summer.emergency": "210.00",
+        "rating.winter.continuous": "220.00",
+        "rating.winter.emergency": "230.00",
+    }
+
+
+def test_duplicate_keys_collapse_last_wins():
+    ast = parse("module m {\n  phases A;\n  phases B;\n};")
+    assert ast["modules"][0]["attributes"] == {"phases": "B"}
+
+
+def test_comments_are_ignored():
+    ast = parse("// leading comment\nmodule tape; // trailing\n")
+    assert ast["modules"] == [{"name": "tape", "attributes": {}}]
+
+
+def test_unknown_top_level_token_raises_with_line_number():
+    with pytest.raises(GlmParseError) as excinfo:
+        parse("module tape;\ngarbage\n")
+    assert excinfo.value.line == 2
+
+
+def test_unterminated_block_raises():
+    with pytest.raises(GlmParseError):
+        parse("module powerflow {\n  solver_method NR;\n")
