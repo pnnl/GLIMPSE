@@ -1124,7 +1124,7 @@ The `word` token pattern is `[^\s{};]+`, so `node:12` and `node.sub` already arr
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 50 passed
+Expected: 46 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1256,7 +1256,7 @@ In `local-server/glmparser/parser.py`, insert this method immediately after `_ob
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 46 passed
+Expected: 50 passed
 
 - [ ] **Step 5: Commit**
 
