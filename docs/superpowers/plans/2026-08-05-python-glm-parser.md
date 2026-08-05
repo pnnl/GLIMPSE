@@ -400,6 +400,23 @@ def test_substitution_adjacent_to_text_still_covers_the_source():
     assert [k for k, _ in kinds("prefix${A}suffix;")] == ["word", "word", "word", "semi"]
 
 
+def test_a_bare_dollar_sign_is_not_dropped():
+    # Excluding `$` from the value branch without a bare-`$` fallback makes
+    # finditer skip it silently: `a$b;` would cover only `ab;`.
+    assert kinds("a$b;") == [("word", "a"), ("word", "$"), ("word", "b"), ("semi", ";")]
+    assert kinds("$;") == [("word", "$"), ("semi", ";")]
+
+
+def test_lexer_covers_every_non_whitespace_character():
+    # Whitespace is intentionally skipped; nothing else may be.
+    for source in ("prefix${A}suffix;", "a$b;", "$;", "x ${A}${B} y;"):
+        lex = Lexer(source)
+        covered = []
+        while lex.peek().kind != EOF:
+            covered.append(lex.next().text)
+        assert "".join(covered) == "".join(source.split()), source
+
+
 def test_urls_are_not_mistaken_for_comments():
     # `//` after a colon is part of a URL, not a comment. lexer.nim:218 does the
     # same check.
@@ -448,11 +465,21 @@ from .errors import GlmParseError
 # `(?<!:)` keeps `http://host/path` from being read as a comment. The Nim lexer
 # special-cased this the same way (lexer.nim:218).
 #
-# The `word` group leads with `\$\{[^}]*\}` so a `${VSOURCE}` substitution stays
-# one token. Without it the braces lex as lbrace/rbrace and the rbrace silently
-# closes the enclosing block early, corrupting every attribute after it. The
-# alternation is deliberately two cheap branches rather than a per-character
-# loop; the loop form costs ~25% throughput.
+# The `word` group has three branches, in this order, and all three are needed:
+#
+#   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
+#      It excludes `$` so it stops cleanly at the start of a substitution.
+#   2. `\$\{[^}]*\}` -- a `${VSOURCE}` substitution, kept as ONE token. Without
+#      this the braces lex as lbrace/rbrace, and that stray rbrace silently
+#      closes the enclosing block early, corrupting every attribute after it.
+#   3. `\$` -- a bare dollar sign not starting a substitution. Without this
+#      branch nothing matches a lone `$` and finditer skips it silently, so
+#      `a$b` tokenizes as `a`,`b` and a value of just `$` vanishes entirely.
+#
+# Branch 1 must come first: it is the hot path, and putting it first costs
+# nothing on `$` positions while keeping ordinary scanning at full speed. A
+# single per-character alternation `(?:\$\{[^}]*\}|[^\s{};])+` also works but
+# costs ~25% throughput.
 _TOKEN_RE = re.compile(
     r"""
       (?<!:)//[^\n]*                              # line comment (discarded)
@@ -461,7 +488,7 @@ _TOKEN_RE = re.compile(
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>\$\{[^}]*\}|[^\s{};]+)             # substitution, or identifier/value
+    | (?P<word>[^\s{}$;]+|\$\{[^}]*\}|\$)         # value, substitution, bare $
     """,
     re.VERBOSE,
 )
@@ -525,7 +552,7 @@ class Lexer:
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 17 passed
+Expected: 19 passed
 
 - [ ] **Step 5: Commit**
 
@@ -908,7 +935,7 @@ Note: `_object` and `_schedule` are referenced here but land in Tasks 4 and 5. T
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 33 passed
+Expected: 35 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1047,7 +1074,7 @@ The `word` token pattern is `[^\s{};]+`, so `node:12` and `node.sub` already arr
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 39 passed
+Expected: 41 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1179,7 +1206,7 @@ In `local-server/glmparser/parser.py`, insert this method immediately after `_ob
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 43 passed
+Expected: 45 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1418,7 +1445,7 @@ def dumps(data):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 52 passed
+Expected: 54 passed
 
 - [ ] **Step 5: Commit**
 
