@@ -159,9 +159,22 @@ def test_a_bare_dollar_sign_is_not_dropped():
     assert kinds("$;") == [("word", "$"), ("semi", ";")]
 
 
+def test_unterminated_substitution_stays_on_its_own_line():
+    # With `[^}]*` an unterminated `${` runs to the next `}` ANYWHERE in the
+    # file, swallowing a brace that closes an unrelated block. Measured: the
+    # loose form silently drops `object other` entirely.
+    source = "object node {\n  name ${A\n}\nobject other {\n  name val;\n}"
+    lex = Lexer(source)
+    texts = []
+    while lex.peek().kind != EOF:
+        texts.append(lex.next().text)
+    # no token may span the newline that follows `${A`
+    assert not any("\n" in t for t in texts)
+
+
 def test_lexer_covers_every_non_whitespace_character():
     # Whitespace is intentionally skipped; nothing else may be.
-    for source in ("prefix${A}suffix;", "a$b;", "$;", "x ${A}${B} y;"):
+    for source in ("prefix${A}suffix;", "a$b;", "$;", "$", "x ${A}${B} y;"):
         lex = Lexer(source)
         covered = []
         while lex.peek().kind != EOF:
