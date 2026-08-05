@@ -31,6 +31,24 @@ def test_error_without_offset_is_plain_message():
     assert err.line is None
 
 
+def test_offset_at_eof_clamps_to_the_last_real_line():
+    # The lexer's EOF token carries start == len(source), and unterminated
+    # blocks raise on it. Without clamping this is an IndexError, not a
+    # GlmParseError -- which breaks the unterminated-block/schedule tests.
+    source = "module powerflow {\n  solver_method NR;\n"
+    err = GlmParseError("Unexpected end of file inside block", source, len(source))
+    assert err.line == 2
+    assert err.column == len("  solver_method NR;")
+    assert "Unexpected end of file inside block" in str(err)
+
+
+def test_offset_at_eof_without_trailing_newline():
+    source = "module powerflow {"
+    err = GlmParseError("boom", source, len(source))
+    assert err.line == 1
+    assert err.column == len(source)
+
+
 def test_caret_prefix_preserves_tabs_for_alignment():
     source = "object node {\n\t\tbad!\n}\n"
     err = GlmParseError("nope", source, source.index("bad!"))

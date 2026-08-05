@@ -20,6 +20,20 @@ class GlmParseError(Exception):
             self.line = source.count("\n", 0, offset) + 1
             self.column = offset - (source.rfind("\n", 0, offset) + 1)
 
+            # An offset at EOF on newline-terminated source lands one line past
+            # the last real line, because splitlines() yields no phantom
+            # trailing entry. Clamp to the end of the last real line -- exactly
+            # where an "unexpected end of file" belongs.
+            #
+            # This is the common path, not an edge case: the lexer's EOF token
+            # carries start == len(source), and both `Unexpected end of file
+            # inside block` and `... inside schedule` are raised on it. Without
+            # the clamp those raise IndexError instead of GlmParseError.
+            lines = source.splitlines()
+            if self.line > len(lines):
+                self.line = len(lines)
+                self.column = len(lines[-1])
+
         super().__init__(self._render())
 
     def _render(self):
