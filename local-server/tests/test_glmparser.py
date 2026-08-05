@@ -152,6 +152,23 @@ def test_substitution_adjacent_to_text_still_covers_the_source():
     assert [k for k, _ in kinds("prefix${A}suffix;")] == ["word", "word", "word", "semi"]
 
 
+def test_a_bare_dollar_sign_is_not_dropped():
+    # Excluding `$` from the value branch without a bare-`$` fallback makes
+    # finditer skip it silently: `a$b;` would cover only `ab;`.
+    assert kinds("a$b;") == [("word", "a"), ("word", "$"), ("word", "b"), ("semi", ";")]
+    assert kinds("$;") == [("word", "$"), ("semi", ";")]
+
+
+def test_lexer_covers_every_non_whitespace_character():
+    # Whitespace is intentionally skipped; nothing else may be.
+    for source in ("prefix${A}suffix;", "a$b;", "$;", "x ${A}${B} y;"):
+        lex = Lexer(source)
+        covered = []
+        while lex.peek().kind != EOF:
+            covered.append(lex.next().text)
+        assert "".join(covered) == "".join(source.split()), source
+
+
 def test_urls_are_not_mistaken_for_comments():
     # `//` after a colon is part of a URL, not a comment. lexer.nim:218 does the
     # same check.

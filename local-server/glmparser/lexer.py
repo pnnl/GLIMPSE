@@ -9,19 +9,21 @@ import re
 
 from .errors import GlmParseError
 
-# Order matters. Comments come first so `//` never lexes as two `word` tokens,
-# and keywords precede `word` so the catch-all does not swallow them.
+# The `word` group has three branches, in this order, and all three are needed:
 #
-# Two subtleties, both load-bearing -- see the tests that pin them:
+#   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
+#      It excludes `$` so it stops cleanly at the start of a substitution.
+#   2. `\$\{[^}]*\}` -- a `${VSOURCE}` substitution, kept as ONE token. Without
+#      this the braces lex as lbrace/rbrace, and that stray rbrace silently
+#      closes the enclosing block early, corrupting every attribute after it.
+#   3. `\$` -- a bare dollar sign not starting a substitution. Without this
+#      branch nothing matches a lone `$` and finditer skips it silently, so
+#      `a$b` tokenizes as `a`,`b` and a value of just `$` vanishes entirely.
 #
-# `(?<!:)` keeps `http://host/path` from being read as a comment. The Nim lexer
-# special-cased this the same way (lexer.nim:218).
-#
-# The `word` group leads with `\$\{[^}]*\}` so a `${VSOURCE}` substitution stays
-# one token. Without it the braces lex as lbrace/rbrace and the rbrace silently
-# closes the enclosing block early, corrupting every attribute after it. The
-# alternation is deliberately two cheap branches rather than a per-character
-# loop; the loop form costs ~25% throughput.
+# Branch 1 must come first: it is the hot path, and putting it first costs
+# nothing on `$` positions while keeping ordinary scanning at full speed. A
+# single per-character alternation `(?:\$\{[^}]*\}|[^\s{};])+` also works but
+# costs ~25% throughput.
 _TOKEN_RE = re.compile(
     r"""
       (?<!:)//[^\n]*                              # line comment (discarded)
@@ -30,7 +32,7 @@ _TOKEN_RE = re.compile(
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>\$\{[^}]*\}|[^\s{}$;]+)            # substitution, or identifier/value
+    | (?P<word>[^\s{}$;]+|\$\{[^}]*\}|\$)         # value, substitution, bare $
     """,
     re.VERBOSE,
 )
