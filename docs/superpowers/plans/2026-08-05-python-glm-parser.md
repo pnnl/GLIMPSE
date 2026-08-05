@@ -144,6 +144,24 @@ def test_error_without_offset_is_plain_message():
     assert err.line is None
 
 
+def test_offset_at_eof_clamps_to_the_last_real_line():
+    # The lexer's EOF token carries start == len(source), and unterminated
+    # blocks raise on it. Without clamping this is an IndexError, not a
+    # GlmParseError -- which breaks the unterminated-block/schedule tests.
+    source = "module powerflow {\n  solver_method NR;\n"
+    err = GlmParseError("Unexpected end of file inside block", source, len(source))
+    assert err.line == 2
+    assert err.column == len("  solver_method NR;")
+    assert "Unexpected end of file inside block" in str(err)
+
+
+def test_offset_at_eof_without_trailing_newline():
+    source = "module powerflow {"
+    err = GlmParseError("boom", source, len(source))
+    assert err.line == 1
+    assert err.column == len(source)
+
+
 def test_caret_prefix_preserves_tabs_for_alignment():
     source = "object node {\n\t\tbad!\n}\n"
     err = GlmParseError("nope", source, source.index("bad!"))
@@ -209,6 +227,20 @@ class GlmParseError(Exception):
             self.line = source.count("\n", 0, offset) + 1
             self.column = offset - (source.rfind("\n", 0, offset) + 1)
 
+            # An offset at EOF on newline-terminated source lands one line past
+            # the last real line, because splitlines() yields no phantom
+            # trailing entry. Clamp to the end of the last real line -- exactly
+            # where an "unexpected end of file" belongs.
+            #
+            # This is the common path, not an edge case: the lexer's EOF token
+            # carries start == len(source), and both `Unexpected end of file
+            # inside block` and `... inside schedule` are raised on it. Without
+            # the clamp those raise IndexError instead of GlmParseError.
+            lines = source.splitlines()
+            if self.line > len(lines):
+                self.line = len(lines)
+                self.column = len(lines[-1])
+
         super().__init__(self._render())
 
     def _render(self):
@@ -243,7 +275,7 @@ class GlmParseError(Exception):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 4 passed
+Expected: 6 passed
 
 - [ ] **Step 8: Commit**
 
@@ -493,7 +525,7 @@ class Lexer:
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 15 passed
+Expected: 17 passed
 
 - [ ] **Step 5: Commit**
 
@@ -876,7 +908,7 @@ Note: `_object` and `_schedule` are referenced here but land in Tasks 4 and 5. T
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 31 passed
+Expected: 33 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1015,7 +1047,7 @@ The `word` token pattern is `[^\s{};]+`, so `node:12` and `node.sub` already arr
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 37 passed
+Expected: 39 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1147,7 +1179,7 @@ In `local-server/glmparser/parser.py`, insert this method immediately after `_ob
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 41 passed
+Expected: 43 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1386,7 +1418,7 @@ def dumps(data):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 50 passed
+Expected: 52 passed
 
 - [ ] **Step 5: Commit**
 
