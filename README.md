@@ -261,6 +261,28 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
 
+## Running Tests
+
+The `.glm` parser ([`local-server/glmparser/`](local-server/glmparser/)) has a `pytest` suite —
+111 tests covering the parser/writer directly plus golden-file comparisons and full round-trip
+checks against all 17 sample models in [`models/`](models/). It runs from `local-server/`:
+
+```bash
+cd local-server
+uv sync --group dev      # pytest is a dev dependency, not in requirements-server.txt
+.venv/bin/python -m pytest
+```
+
+or, from the repo root:
+
+```bash
+npm run test:server
+```
+
+This is separate from [`socket-testing/`](socket-testing/), which exercises the SocketIO event API
+described below and requires a running backend (`npm run dev:backend`) rather than being a pytest
+suite.
+
 ## Socket Events API
 
 GLIMPSE exposes a [SocketIO](https://socket.io/) event API so external scripts can
