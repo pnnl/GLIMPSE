@@ -726,6 +726,10 @@ def test_dump_accepts_a_path(tmp_path):
     glmparser.dump(glmparser.loads(SAMPLE), path)
     assert "module powerflow {" in path.read_text()
 
+    as_str = tmp_path / "out2.glm"
+    glmparser.dump(glmparser.loads(SAMPLE), str(as_str))
+    assert "module powerflow {" in as_str.read_text()
+
 
 def test_dump_accepts_an_open_file_object():
     # glmhelper.py:33 passes an open file, so this form must work
@@ -755,14 +759,17 @@ ALL_MODELS = sorted(MODELS.rglob("*.glm"))
     "path", ALL_MODELS, ids=lambda p: str(p.relative_to(MODELS))
 )
 def test_every_sample_model_round_trips_stably(path):
+    # Full equality, including every object's attributes -- which is where
+    # essentially all real GLM content lives (voltages, phases, impedances,
+    # ratings). A structural comparison would miss a regression that mangled,
+    # dropped, or reordered attribute values.
+    #
+    # uuid4 hoisted names do NOT make this flaky. They are regenerated only
+    # when the same SOURCE TEXT is parsed twice; this cycle parses the source
+    # once and then re-parses the writer's output, and the writer emits hoisted
+    # children as ordinary top-level objects carrying their generated name as a
+    # literal, so nothing re-hoists. Verified: holds for all 17 models (none of
+    # which trigger hoisting at all) and for a synthetic model that does.
     first = glmparser.load(path)
     second = glmparser.loads(glmparser.dumps(first))
-    # uuid4 hoisted names are regenerated on each parse, so compare structure
-    assert len(first["objects"]) == len(second["objects"])
-    assert [o["name"] for o in first["objects"]] == [
-        o["name"] for o in second["objects"]
-    ]
-    assert first["modules"] == second["modules"]
-    assert first["includes"] == second["includes"]
-    assert first["directives"] == second["directives"]
-    assert first["definitions"] == second["definitions"]
+    assert first == second
