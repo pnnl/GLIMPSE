@@ -456,3 +456,49 @@ def test_deeply_nested_objects_recurse():
 def test_object_missing_opening_brace_raises():
     with pytest.raises(GlmParseError):
         parse("object node\n  name n1;\n};")
+
+
+def test_flat_schedule():
+    ast = parse(
+        "schedule office_lights {\n"
+        "  * 9-17 * * 1-5 1.0;\n"
+        "  * 18-8 * * 1-5 0.1;\n"
+        "};"
+    )
+    assert ast["schedules"] == [
+        {
+            "name": "office_lights",
+            "values": ["* 9-17 * * 1-5 1.0", "* 18-8 * * 1-5 0.1"],
+            "children": [],
+        }
+    ]
+
+
+def test_schedule_with_sub_blocks():
+    ast = parse(
+        "schedule s {\n"
+        "  {\n"
+        "    * 9-17 * * 1-5 1.0;\n"
+        "    * 18-8 * * 1-5 0.1;\n"
+        "  }\n"
+        "  {\n"
+        "    * * * * 6-0 0.5;\n"
+        "  }\n"
+        "};"
+    )
+    assert ast["schedules"][0]["name"] == "s"
+    assert ast["schedules"][0]["values"] == []
+    assert ast["schedules"][0]["children"] == [
+        ["* 9-17 * * 1-5 1.0", "* 18-8 * * 1-5 0.1"],
+        ["* * * * 6-0 0.5"],
+    ]
+
+
+def test_schedule_value_without_trailing_semicolon_still_terminates():
+    ast = parse("schedule s {\n  * * * * * 1.0\n};")
+    assert ast["schedules"][0]["values"] == ["* * * * * 1.0"]
+
+
+def test_unterminated_schedule_raises():
+    with pytest.raises(GlmParseError):
+        parse("schedule s {\n  * * * * * 1.0;\n")

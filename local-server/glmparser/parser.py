@@ -136,6 +136,46 @@ class Parser:
         attributes = self._attributes(children)
         return {"name": name, "attributes": attributes, "children": children}
 
+    def _schedule(self):
+        """`schedule <name> { ... };` with optional `{ ... }` sub-blocks.
+
+        Values are opaque cron-ish strings; nothing here interprets them.
+        """
+        name = self._expect("word").text
+        self._expect("lbrace")
+        values = []
+        groups = []
+
+        while True:
+            token = self.lex.peek()
+
+            if token.kind == "rbrace":
+                self.lex.next()
+                break
+            if token.kind == EOF:
+                raise self.lex.error("Unexpected end of file inside schedule", token)
+            if token.kind == "semi":
+                self.lex.next()
+                continue
+
+            if token.kind == "lbrace":
+                self.lex.next()
+                group = []
+                while self.lex.peek().kind not in ("rbrace", EOF):
+                    if self.lex.peek().kind == "semi":
+                        self.lex.next()
+                        continue
+                    group.append(self._value_to_semicolon())
+                self._expect("rbrace")
+                groups.append(group)
+                continue
+
+            values.append(self._value_to_semicolon())
+
+        if self.lex.peek().kind == "semi":
+            self.lex.next()
+        return {"name": name, "values": values, "children": groups}
+
     def _named_block(self):
         """`module powerflow;` or `module powerflow { ... };`. Also `class`."""
         name = self._expect("word").text
