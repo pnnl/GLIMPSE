@@ -70,18 +70,15 @@ This stops and removes the containers and network. Built images remain cached fo
 
 This section will walk you through installing dependencies and building GLIMPSE. Here's what you'll do:
 
-1. ✅ Install Node.js (and optionally Nim)
+1. ✅ Install Node.js
 2. ✅ Clone the repository and install Node dependencies
 3. ✅ Create and activate a Python environment
-4. ✅ Install Python dependencies and plugins
+4. ✅ Install Python dependencies
 5. ✅ Start the development server
 
 #### Prerequisites
 
 1. **[Node.js](https://nodejs.org/en)** — Required for all users
-2. **[Nim](https://nim-lang.org/install.html)** — Only needed if:
-    - You're on Apple silicon (M chips), OR
-    - You plan to export modified GLM files
 
 ### Step 1: Clone the Repository
 
@@ -154,64 +151,8 @@ If you used VENV or Conda, install requirements:
 pip install -r requirements.txt
 ```
 
-### Step 4: Install GLM Parser
-
-#### Standard Installation (Windows, Linux, Intel/AMD Mac)
-
-**With PIP:**
-
-```bash
-pip install glm
-```
-
-**With UV:**
-
-```bash
-uv pip install glm
-```
-
-#### Special Instructions for Apple Silicon (M Chips)
-
-You'll need to build the GLM parser from source using Nim.
-
-Clone the glm parser repository i forked:
-
-```bash
-cd GLIMPSE/local-server/
-```
-
-```bash
-git clone https://github.com/itsMando/glm.git
-```
-
-```bash
-cd glm
-```
-
-Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
-
-```bash
-nimble -v
-```
-
-```bash
-nimble release
-nimble package
-```
-
-Install the python binary distributable from `dist/` folder:
-
-**With PIP:**
-
-```bash
-pip install dist/*.whl
-```
-
-**With UV:**
-
-```bash
-uv pip install dist/*.whl
-```
+The `.glm` parser ([`glmparser`](local-server/glmparser/)) is pure Python and ships as part of
+`local-server/` — no separate install or build step is needed.
 
 ## Start GLIMPSE
 
