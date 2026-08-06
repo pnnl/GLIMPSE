@@ -623,6 +623,28 @@ def test_ordinary_values_survive_round_trip():
         assert roundtrip_attributes({"k": value}) == {"k": value}, value
 
 
+def test_unrepresentable_values_raise_instead_of_corrupting():
+    # GLM has no escape mechanism, so these cannot round-trip. Writing them
+    # anyway produces a model that silently reads back as different data, so
+    # the writer refuses. No value in any of the 17 sample models hits this.
+    for value in ('has "quote"', 'a;b said "x"', "newline\nand;semicolon"):
+        with pytest.raises(ValueError, match="Cannot export attribute"):
+            write_glm(
+                {"objects": [{"name": "n", "attributes": {"k": value}, "children": []}]}
+            )
+
+
+def test_unrepresentable_value_names_the_offending_attribute():
+    with pytest.raises(ValueError, match="'bad_attr'"):
+        write_glm(
+            {
+                "objects": [
+                    {"name": "n", "attributes": {"bad_attr": 'x"y'}, "children": []}
+                ]
+            }
+        )
+
+
 def test_written_output_reparses_to_the_same_ast():
     ast = parse(
         "clock {\n  timezone PST+8PDT;\n};\n"

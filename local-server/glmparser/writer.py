@@ -9,17 +9,47 @@ invisible only because it never emitted includes at all.
 _INDENT = "\t"
 
 
-def _quote_if_needed(value):
+def _unrepresentable(text):
+    """Return a reason if this value cannot survive a GLM round-trip, else None.
+
+    GLM has no escape mechanism. The lexer's quoted-string branch stops at the
+    first `"` or newline, so a value carrying either one alongside a `;` cannot
+    be written and read back faithfully -- it comes back truncated, with a junk
+    attribute fabricated from the tail.
+
+    Refuse loudly rather than emit a model file that silently reads back as
+    different data: server.py wraps export in `except Exception` and puts the
+    message in the HTTP error body, so the user sees a real error instead of a
+    quietly corrupted GridLAB-D model.
+
+    No value in any of the 17 sample models contains `;`, `"`, or a newline, so
+    this path is defensive rather than routine.
+    """
+    if '"' in text:
+        return "contains a double quote, which GLM cannot escape"
+    if "\n" in text and ";" in text:
+        return "contains both a newline and a semicolon"
+    return None
+
+
+def _quote_if_needed(value, key):
     text = str(value)
+    reason = _unrepresentable(text)
+    if reason is not None:
+        raise ValueError(
+            f"Cannot export attribute {key!r}: its value {reason}. "
+            f"Writing it would silently corrupt the model on reload."
+        )
     if ";" in text or "\n" in text:
-        return '"' + text.replace('"', '\\"') + '"'
+        return '"' + text + '"'
     return text
 
 
 def _attributes(attributes, depth):
     pad = _INDENT * depth
     return "".join(
-        f"{pad}{key} {_quote_if_needed(value)};\n" for key, value in attributes.items()
+        f"{pad}{key} {_quote_if_needed(value, key)};\n"
+        for key, value in attributes.items()
     )
 
 

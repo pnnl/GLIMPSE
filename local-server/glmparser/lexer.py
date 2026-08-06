@@ -20,6 +20,13 @@ from .errors import GlmParseError
 #      truncated AND a junk attribute fabricated, silently. Must precede the
 #      ordinary-value branch so the whole quoted run is taken first.
 #      An unterminated quote falls through to branch 1, matching prior behavior.
+#
+#      This is NOT full string support: `[^"\n]` excludes newline (so an
+#      unterminated quote cannot swallow the rest of the file, the same failure
+#      the `${...}` bound prevents) and there is no backslash-escape handling,
+#      because GLM has no escape mechanism to honor. Values carrying a `"`, or
+#      both a newline and a `;`, therefore cannot round-trip -- writer.py
+#      refuses to emit those rather than corrupting them silently.
 #   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
 #      It excludes `$` so it stops cleanly at the start of a substitution.
 #   2. `\$\{[^}\s;]*\}` -- a `${VSOURCE}` substitution, kept as ONE token.
