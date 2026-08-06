@@ -12,23 +12,28 @@ _INDENT = "\t"
 def _unrepresentable(text):
     """Return a reason if this value cannot survive a GLM round-trip, else None.
 
-    GLM has no escape mechanism. The lexer's quoted-string branch stops at the
-    first `"` or newline, so a value carrying either one alongside a `;` cannot
-    be written and read back faithfully -- it comes back truncated, with a junk
-    attribute fabricated from the tail.
+    Derived from measured behavior, not guessed. Three ways a value breaks:
 
-    Refuse loudly rather than emit a model file that silently reads back as
-    different data: server.py wraps export in `except Exception` and puts the
-    message in the HTTP error body, so the user sees a real error instead of a
-    quietly corrupted GridLAB-D model.
+    - It starts or ends with a quote character. `_value_to_semicolon` strips
+      leading/trailing `'` and `"` off every value, so those characters do not
+      come back.
+    - It needs quoting (contains `;` or a newline) but itself contains a `"`.
+      The lexer's quoted-string branch ends at the first inner `"`, so the
+      quoted form is mis-lexed.
+    - It contains both a `;` and a newline. The quoted-string branch excludes
+      newline (that bound is what stops an unterminated quote swallowing the
+      rest of the file), so no quoting strategy covers this.
 
-    No value in any of the 17 sample models contains `;`, `"`, or a newline, so
-    this path is defensive rather than routine.
+    An interior `"` with no `;` or newline is fine: `3"x5` round-trips exactly.
+    Refusing it would make a model with an inch mark permanently un-exportable.
     """
-    if '"' in text:
-        return "contains a double quote, which GLM cannot escape"
-    if "\n" in text and ";" in text:
-        return "contains both a newline and a semicolon"
+    if text[:1] in ('"', "'") or text[-1:] in ('"', "'"):
+        return "starts or ends with a quote character, which the reader strips"
+    if ";" in text or "\n" in text:
+        if '"' in text:
+            return "needs quoting but contains a double quote"
+        if ";" in text and "\n" in text:
+            return "contains both a newline and a semicolon"
     return None
 
 
@@ -72,12 +77,18 @@ def _object(obj, depth):
 
 
 def _schedule(schedule):
-    body = "".join(f"{_INDENT}{value};\n" for value in schedule.get("values") or [])
+    name = schedule["name"]
+    body = "".join(
+        f"{_INDENT}{_quote_if_needed(value, name)};\n"
+        for value in schedule.get("values") or []
+    )
     for group in schedule.get("children") or []:
         body += f"{_INDENT}{{\n"
-        body += "".join(f"{_INDENT * 2}{value};\n" for value in group)
+        body += "".join(
+            f"{_INDENT * 2}{_quote_if_needed(value, name)};\n" for value in group
+        )
         body += f"{_INDENT}}}\n"
-    return f"schedule {schedule['name']} {{\n{body}}};\n\n"
+    return f"schedule {name} {{\n{body}}};\n\n"
 
 
 def dumps(data):

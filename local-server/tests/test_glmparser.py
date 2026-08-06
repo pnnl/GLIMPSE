@@ -363,6 +363,20 @@ def test_directive_as_last_line_without_trailing_newline():
     assert ast["definitions"] == [{"name": "VSOURCE", "value": "69715.045"}]
 
 
+def test_empty_directive_does_not_swallow_the_next_statement():
+    # Anchoring the line bound to the next token instead of the directive
+    # keyword made `module tape;` vanish into the directive's value.
+    ast = parse("#set\nmodule tape;\nmodule powerflow;\n")
+    assert ast["directives"] == [{"name": "", "value": ""}]
+    assert [m["name"] for m in ast["modules"]] == ["tape", "powerflow"]
+
+
+def test_empty_include_does_not_swallow_the_next_statement():
+    ast = parse("#include\nmodule tape;\n")
+    assert ast["includes"] == [{"value": ""}]
+    assert [m["name"] for m in ast["modules"]] == ["tape"]
+
+
 def test_empty_block():
     ast = parse("module m { };")
     assert ast["modules"] == [{"name": "m", "attributes": {}}]
@@ -635,14 +649,25 @@ def test_unrepresentable_values_raise_instead_of_corrupting():
 
 
 def test_unrepresentable_value_names_the_offending_attribute():
+    # Ends with a quote character, so it still raises under the new predicate
+    # (an interior quote alone, like `x"y`, is representable -- see
+    # test_interior_quote_without_semicolon_is_representable).
     with pytest.raises(ValueError, match="'bad_attr'"):
         write_glm(
             {
                 "objects": [
-                    {"name": "n", "attributes": {"bad_attr": 'x"y'}, "children": []}
+                    {"name": "n", "attributes": {"bad_attr": 'x"y"'}, "children": []}
                 ]
             }
         )
+
+
+def test_interior_quote_without_semicolon_is_representable():
+    # `3"x5` round-trips exactly; rejecting it would make a model containing an
+    # inch mark permanently un-exportable.
+    assert roundtrip_attributes({"size": '3"x5'}) == {"size": '3"x5'}
+    assert roundtrip_attributes({"k": "a\"b"}) == {"k": "a\"b"}
+    assert roundtrip_attributes({"k": "it's"}) == {"k": "it's"}
 
 
 def test_written_output_reparses_to_the_same_ast():
@@ -753,6 +778,7 @@ def test_round_trip_preserves_includes():
 
 
 ALL_MODELS = sorted(MODELS.rglob("*.glm"))
+assert len(ALL_MODELS) == 17, f"expected 17 sample models, found {len(ALL_MODELS)}: {ALL_MODELS}"
 
 
 @pytest.mark.parametrize(

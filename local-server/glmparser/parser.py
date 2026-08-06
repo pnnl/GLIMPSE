@@ -58,22 +58,24 @@ class Parser:
             self.lex.next()
         return self.source[start:end].strip("'\" \t\n")
 
-    def _value_to_eol(self):
+    def _value_to_eol(self, hash_token):
         """`#set`/`#define`/`#include` run to end of line, not to a `;`.
 
-        Conflating this with `_value_to_semicolon` makes a directive swallow
-        every line beneath it until the next semicolon appears.
+        The line bound is computed from the DIRECTIVE token's own end, not from
+        the next token's start: when nothing follows the keyword on that line,
+        anchoring to the next token finds the end of the FOLLOWING line and
+        silently swallows that statement into this directive's value.
 
-        The slice ends at the last *token* consumed rather than at the newline.
-        That matters: slicing to the newline drags in a trailing `//` comment,
-        because the lexer discards comments but raw source still contains them.
-        `#set deltamode_timestep=100000000\t//100 ms` would otherwise yield the
-        value `100000000\t\t//100 ms`.
+        The slice ends at the last token consumed rather than at the newline,
+        because slicing to the newline drags in a trailing `//` comment -- the
+        lexer discards comments but the raw source still contains them.
         """
-        start = self.lex.peek().start
-        newline = self.source.find("\n", start)
+        newline = self.source.find("\n", hash_token.end)
         if newline == -1:
             newline = len(self.source)
+        start = self.lex.peek().start
+        if start > newline:            # nothing on this line after the keyword
+            return ""
         end = start
         while self.lex.peek().kind != EOF and self.lex.peek().start < newline:
             end = self.lex.next().end
@@ -184,11 +186,11 @@ class Parser:
             return {"name": name, "attributes": {}}
         return {"name": name, "attributes": self._attributes()}
 
-    def _directive(self, which):
+    def _directive(self, which, hash_token):
         if which == "include":
-            self.ast["includes"].append({"value": self._value_to_eol()})
+            self.ast["includes"].append({"value": self._value_to_eol(hash_token)})
             return
-        body = self._value_to_eol()
+        body = self._value_to_eol(hash_token)
         name, _, value = body.partition("=")
         entry = {"name": name.strip(), "value": value.strip().strip("'\" ")}
         self.ast["directives" if which == "set" else "definitions"].append(entry)
@@ -216,7 +218,7 @@ class Parser:
                 elif token.text == "class":
                     self.ast["classes"].append(self._named_block())
             elif token.kind == "hash":
-                self._directive(token.text)
+                self._directive(token.text, token)
             else:
                 raise self.lex.error(f"Unexpected token {token.text!r}", token)
 
