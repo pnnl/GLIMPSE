@@ -502,3 +502,103 @@ def test_schedule_value_without_trailing_semicolon_still_terminates():
 def test_unterminated_schedule_raises():
     with pytest.raises(GlmParseError):
         parse("schedule s {\n  * * * * * 1.0;\n")
+
+
+from glmparser.writer import dumps as write_glm
+
+
+def test_writes_clock_and_object():
+    text = write_glm(
+        {
+            "clock": {"timezone": "PST+8PDT"},
+            "objects": [
+                {"name": "node", "attributes": {"name": "n1"}, "children": []}
+            ],
+        }
+    )
+    assert "clock {" in text
+    assert "\ttimezone PST+8PDT;" in text
+    assert "object node {" in text
+    assert "\tname n1;" in text
+
+
+def test_set_and_define_carry_no_semicolon():
+    text = write_glm(
+        {
+            "directives": [{"name": "profiler", "value": "1"}],
+            "definitions": [{"name": "VSOURCE", "value": "69715.045"}],
+        }
+    )
+    assert "#set profiler=1\n" in text
+    assert "#set profiler=1;" not in text
+    assert "#define VSOURCE=69715.045\n" in text
+    assert "#define VSOURCE=69715.045;" not in text
+
+
+def test_include_is_quoted_and_semicolon_terminated():
+    # REGRESSION: the Nim writer dropped includes entirely, so exported models
+    # lost their #include lines. It also would have dropped the quotes.
+    text = write_glm({"includes": [{"value": "Inverters.glm"}]})
+    assert '#include "Inverters.glm";\n' in text
+
+
+def test_module_without_attributes_uses_short_form():
+    text = write_glm({"modules": [{"name": "tape", "attributes": {}}]})
+    assert "module tape;\n" in text
+    assert "module tape {" not in text
+
+
+def test_classes_are_written():
+    text = write_glm(
+        {"classes": [{"name": "thermostat", "attributes": {"double": "setpoint"}}]}
+    )
+    assert "class thermostat {" in text
+    assert "\tdouble setpoint;" in text
+
+
+def test_nested_children_are_indented_inside_the_parent():
+    text = write_glm(
+        {
+            "objects": [
+                {
+                    "name": "house",
+                    "attributes": {"name": "h1"},
+                    "children": [
+                        {
+                            "name": "ZIPload",
+                            "attributes": {"name": "z1"},
+                            "children": [],
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+    assert "\tobject ZIPload {" in text
+    assert "\t\tname z1;" in text
+
+
+def test_schedule_with_sub_blocks_round_trips_shape():
+    text = write_glm(
+        {
+            "schedules": [
+                {"name": "s", "values": ["* * * * * 1.0"], "children": [["* * * * 6-0 0.5"]]}
+            ]
+        }
+    )
+    assert "schedule s {" in text
+    assert "\t* * * * * 1.0;" in text
+    assert "\t{\n" in text
+    assert "\t\t* * * * 6-0 0.5;" in text
+
+
+def test_values_containing_semicolons_are_quoted():
+    text = write_glm(
+        {"objects": [{"name": "n", "attributes": {"weird": "a;b"}, "children": []}]}
+    )
+    assert '\tweird "a;b";' in text
+
+
+def test_missing_keys_are_tolerated():
+    # the frontend may post back a dict lacking sections it never touched
+    assert write_glm({}) == ""
