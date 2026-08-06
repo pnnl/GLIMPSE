@@ -806,3 +806,35 @@ def test_model_matches_golden(path):
     slug = str(path.relative_to(MODELS).with_suffix("")).replace("/", "__")
     expected = json.loads((GOLDEN / f"{slug}.json").read_text())
     assert normalize_uuids(glmparser.load(path)) == expected
+
+
+from glmhelper import GLMHelper
+
+
+def test_glmhelper_parses_through_the_new_module(tmp_path):
+    source = tmp_path / "tiny.glm"
+    source.write_text(SAMPLE)
+    result = GLMHelper().parse_glm([str(source)])
+    assert "tiny.json" in result
+    assert result["tiny.json"]["modules"][0]["name"] == "powerflow"
+
+
+def test_glmhelper_rejects_oversized_files(tmp_path):
+    big = tmp_path / "big.glm"
+    big.write_text("// pad\n" * 800_000)  # 5.34 MB, over the 5 MB cap
+    with pytest.raises(ValueError, match="too large"):
+        GLMHelper().parse_glm([str(big)])
+
+
+def test_glmhelper_exports_a_zip(tmp_path):
+    helper = GLMHelper()
+    data = {"tiny.json": glmparser.loads(SAMPLE)}
+    buffer = helper.json_to_glm(data, str(tmp_path))
+
+    import zipfile
+
+    with zipfile.ZipFile(buffer) as archive:
+        assert archive.namelist() == ["tiny.glm"]
+        text = archive.read("tiny.glm").decode()
+    assert "module powerflow {" in text
+    assert '#include "Inverters.glm";' in text
