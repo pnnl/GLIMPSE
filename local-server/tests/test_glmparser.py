@@ -662,3 +662,107 @@ def test_written_output_reparses_to_the_same_ast():
 def test_missing_keys_are_tolerated():
     # the frontend may post back a dict lacking sections it never touched
     assert write_glm({}) == ""
+
+
+import io
+from pathlib import Path
+
+import glmparser
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+MODELS = REPO_ROOT / "models"
+
+SAMPLE = """clock {
+  timezone PST+8PDT;
+};
+
+#set profiler=1
+
+#define VSOURCE=69715.045
+
+#include "Inverters.glm";
+
+module powerflow {
+  solver_method NR;
+};
+
+module tape;
+
+object node {
+  name n1;
+  phases ABC;
+  object ZIPload {
+    name z1;
+  };
+};
+"""
+
+
+def test_loads_and_dumps_are_exported():
+    assert callable(glmparser.load)
+    assert callable(glmparser.loads)
+    assert callable(glmparser.dump)
+    assert callable(glmparser.dumps)
+    assert glmparser.version() == "1.0.0"
+    assert glmparser.GlmParseError is not None
+
+
+def test_load_accepts_a_path(tmp_path):
+    path = tmp_path / "m.glm"
+    path.write_text(SAMPLE)
+    assert glmparser.load(path)["modules"][0]["name"] == "powerflow"
+    assert glmparser.load(str(path))["modules"][0]["name"] == "powerflow"
+
+
+def test_load_accepts_an_open_file_object(tmp_path):
+    path = tmp_path / "m.glm"
+    path.write_text(SAMPLE)
+    with open(path) as handle:
+        assert glmparser.load(handle)["modules"][0]["name"] == "powerflow"
+
+
+def test_dump_accepts_a_path(tmp_path):
+    path = tmp_path / "out.glm"
+    glmparser.dump(glmparser.loads(SAMPLE), path)
+    assert "module powerflow {" in path.read_text()
+
+
+def test_dump_accepts_an_open_file_object():
+    # glmhelper.py:33 passes an open file, so this form must work
+    buffer = io.StringIO()
+    glmparser.dump(glmparser.loads(SAMPLE), buffer)
+    assert "module powerflow {" in buffer.getvalue()
+
+
+def test_round_trip_is_stable():
+    first = glmparser.loads(SAMPLE)
+    text = glmparser.dumps(first)
+    second = glmparser.loads(text)
+    assert first == second
+
+
+def test_round_trip_preserves_includes():
+    # REGRESSION: the Nim round-trip silently dropped every #include.
+    first = glmparser.loads(SAMPLE)
+    second = glmparser.loads(glmparser.dumps(first))
+    assert second["includes"] == [{"value": "Inverters.glm"}]
+
+
+ALL_MODELS = sorted(MODELS.rglob("*.glm"))
+
+
+@pytest.mark.parametrize(
+    "path", ALL_MODELS, ids=lambda p: str(p.relative_to(MODELS))
+)
+def test_every_sample_model_round_trips_stably(path):
+    first = glmparser.load(path)
+    second = glmparser.loads(glmparser.dumps(first))
+    # uuid4 hoisted names are regenerated on each parse, so compare structure
+    assert len(first["objects"]) == len(second["objects"])
+    assert [o["name"] for o in first["objects"]] == [
+        o["name"] for o in second["objects"]
+    ]
+    assert first["modules"] == second["modules"]
+    assert first["includes"] == second["includes"]
+    assert first["directives"] == second["directives"]
+    assert first["definitions"] == second["definitions"]
