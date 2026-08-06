@@ -16,7 +16,17 @@ The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigm
 
 ### Option 1: Pre-Built Installers (Easiest)
 
-[Releases](https://github.com/pnnl/GLIMPSE/releases/)
+> [!WARNING]
+>
+> **For MacOS installer**
+>
+> GLIMPSE app is not signed and will not run after installation. Run the following command to remove the application from "quarintine"
+>
+> ```bash
+> sudo xattr -r -d com.apple.quarantine /Applications/GLIMPSE.app
+> ```
+
+**[Releases](https://github.com/pnnl/GLIMPSE/releases/)** <-----
 
 ### Option 2: Docker
 
