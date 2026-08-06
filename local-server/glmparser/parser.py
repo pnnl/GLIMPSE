@@ -129,6 +129,13 @@ class Parser:
             self.lex.next()
         return attrs
 
+    def _object(self):
+        """`object <type> { ... };` -- the type may carry `.` or `:` suffixes."""
+        name = self._expect("word").text
+        children = []
+        attributes = self._attributes(children)
+        return {"name": name, "attributes": attributes, "children": children}
+
     def _named_block(self):
         """`module powerflow;` or `module powerflow { ... };`. Also `class`."""
         name = self._expect("word").text

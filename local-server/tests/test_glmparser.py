@@ -372,3 +372,87 @@ def test_unknown_top_level_token_raises_with_line_number():
 def test_unterminated_block_raises():
     with pytest.raises(GlmParseError):
         parse("module powerflow {\n  solver_method NR;\n")
+
+
+import re
+
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
+
+def test_simple_object():
+    ast = parse("object node {\n  name n1;\n  phases ABC;\n};")
+    assert ast["objects"] == [
+        {
+            "name": "node",
+            "attributes": {"name": "n1", "phases": "ABC"},
+            "children": [],
+        }
+    ]
+
+
+def test_object_type_may_carry_a_colon_id():
+    ast = parse("object node:12 {\n  name n1;\n};")
+    assert ast["objects"][0]["name"] == "node:12"
+
+
+def test_bare_nested_object_becomes_a_child():
+    ast = parse(
+        "object house {\n"
+        "  name h1;\n"
+        "  object ZIPload {\n"
+        "    name z1;\n"
+        "  };\n"
+        "};"
+    )
+    assert len(ast["objects"]) == 1
+    parent = ast["objects"][0]
+    assert parent["attributes"] == {"name": "h1"}
+    assert parent["children"] == [
+        {"name": "ZIPload", "attributes": {"name": "z1"}, "children": []}
+    ]
+
+
+def test_anonymous_object_is_hoisted_and_referenced_by_generated_name():
+    ast = parse(
+        "object overhead_line {\n"
+        "  name line1;\n"
+        "  configuration object line_configuration {\n"
+        "    name lc1;\n"
+        "  };\n"
+        "};"
+    )
+    # parent stays at index 0 only after the hoisted child is appended
+    parent = next(o for o in ast["objects"] if o["name"] == "overhead_line")
+    hoisted = next(o for o in ast["objects"] if o["name"] == "line_configuration")
+
+    assert len(ast["objects"]) == 2
+    assert parent["children"] == []
+
+    generated = parent["attributes"]["configuration"]
+    assert UUID_RE.match(generated)
+    # the generated name is what links parent to hoisted child
+    assert hoisted["attributes"]["name"] == generated
+
+
+def test_deeply_nested_objects_recurse():
+    ast = parse(
+        "object a {\n"
+        "  name a1;\n"
+        "  object b {\n"
+        "    name b1;\n"
+        "    object c {\n"
+        "      name c1;\n"
+        "    };\n"
+        "  };\n"
+        "};"
+    )
+    a = ast["objects"][0]
+    b = a["children"][0]
+    c = b["children"][0]
+    assert (a["name"], b["name"], c["name"]) == ("a", "b", "c")
+    assert c["attributes"] == {"name": "c1"}
+
+
+def test_object_missing_opening_brace_raises():
+    with pytest.raises(GlmParseError):
+        parse("object node\n  name n1;\n};")
