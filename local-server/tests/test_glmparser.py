@@ -340,6 +340,29 @@ def test_comments_are_ignored():
     assert ast["modules"] == [{"name": "tape", "attributes": {}}]
 
 
+def test_value_missing_semicolon_before_closing_brace():
+    # `_value_to_semicolon` tolerates rbrace as a terminator so a final
+    # attribute without its `;` does not run away and eat the block.
+    ast = parse("module m {\n  solver_method NR\n};")
+    assert ast["modules"] == [{"name": "m", "attributes": {"solver_method": "NR"}}]
+
+
+def test_directive_without_equals_does_not_crash():
+    ast = parse("#set profiler\n")
+    assert ast["directives"] == [{"name": "profiler", "value": ""}]
+
+
+def test_directive_as_last_line_without_trailing_newline():
+    # `_value_to_eol` must handle find("\n") returning -1.
+    ast = parse("#define VSOURCE=69715.045")
+    assert ast["definitions"] == [{"name": "VSOURCE", "value": "69715.045"}]
+
+
+def test_empty_block():
+    ast = parse("module m { };")
+    assert ast["modules"] == [{"name": "m", "attributes": {}}]
+
+
 def test_unknown_top_level_token_raises_with_line_number():
     with pytest.raises(GlmParseError) as excinfo:
         parse("module tape;\ngarbage\n")
