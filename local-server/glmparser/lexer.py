@@ -9,8 +9,17 @@ import re
 
 from .errors import GlmParseError
 
-# The `word` group has three branches, in this order, and all three are needed:
+# The `word` group has five branches, in this order, and all five are needed:
 #
+#   0. `"[^"\n]*"` and `'[^'\n]*'` -- a quoted string, consumed WHOLE, including
+#      any `;` inside it. GLM genuinely uses quoted values (`starttime
+#      '2000-01-01 0:00:00';`). Without these branches a `;` inside quotes still
+#      lexes as a `semi` and terminates the value, so the writer's defensive
+#      quoting protects nothing: exporting `{"weird": "a;b"}` writes
+#      `weird "a;b";` and reads back as `{'weird': 'a', 'b"': ''}` -- the value
+#      truncated AND a junk attribute fabricated, silently. Must precede the
+#      ordinary-value branch so the whole quoted run is taken first.
+#      An unterminated quote falls through to branch 1, matching prior behavior.
 #   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
 #      It excludes `$` so it stops cleanly at the start of a substitution.
 #   2. `\$\{[^}\s;]*\}` -- a `${VSOURCE}` substitution, kept as ONE token.
@@ -25,7 +34,8 @@ from .errors import GlmParseError
 #      branch nothing matches a lone `$` and finditer skips it silently, so
 #      `a$b` tokenizes as `a`,`b` and a value of just `$` vanishes entirely.
 #
-# Branch 1 must come first: it is the hot path, and putting it first costs
+# Branch 0 must come first: quoted strings must be consumed WHOLE. Branch 1 must
+# come before branches 2-3 since it is the hot path, and putting it early costs
 # nothing on `$` positions while keeping ordinary scanning at full speed. A
 # single per-character alternation `(?:\$\{[^}]*\}|[^\s{};])+` also works but
 # costs ~25% throughput.
@@ -46,7 +56,7 @@ _TOKEN_RE = re.compile(
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>[^\s{}$;]+|\$\{[^}\s;]*\}|\$)      # value, substitution, bare $
+    | (?P<word>"[^"\n]*"|'[^'\n]*'|[^\s{}$;]+|\$\{[^}\s;]*\}|\$)      # quoted string, value, substitution, bare $
     """,
     re.VERBOSE,
 )
