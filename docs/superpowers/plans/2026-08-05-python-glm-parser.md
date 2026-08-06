@@ -478,7 +478,17 @@ from .errors import GlmParseError
 # `(?<!:)` keeps `http://host/path` from being read as a comment. The Nim lexer
 # special-cased this the same way (lexer.nim:218).
 #
-# The `word` group has three branches, in this order, and all three are needed:
+# The `word` group has five branches, in this order, and all five are needed:
+#
+#   0. `"[^"\n]*"` and `'[^'\n]*'` -- a quoted string, consumed WHOLE, including
+#      any `;` inside it. GLM genuinely uses quoted values (`starttime
+#      '2000-01-01 0:00:00';`). Without these branches a `;` inside quotes still
+#      lexes as a `semi` and terminates the value, so the writer's defensive
+#      quoting protects nothing: exporting `{"weird": "a;b"}` writes
+#      `weird "a;b";` and reads back as `{'weird': 'a', 'b"': ''}` -- the value
+#      truncated AND a junk attribute fabricated, silently. Must precede the
+#      ordinary-value branch so the whole quoted run is taken first.
+#      An unterminated quote falls through to branch 1, matching prior behavior.
 #
 #   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
 #      It excludes `$` so it stops cleanly at the start of a substitution.
@@ -515,7 +525,7 @@ _TOKEN_RE = re.compile(
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>[^\s{}$;]+|\$\{[^}\s;]*\}|\$)      # value, substitution, bare $
+    | (?P<word>"[^"\n]*"|'[^'\n]*'|[^\s{}$;]+|\$\{[^}\s;]*\}|\$)
     """,
     re.VERBOSE,
 )
@@ -579,7 +589,7 @@ class Lexer:
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 20 passed
+Expected: 21 passed
 
 - [ ] **Step 5: Commit**
 
@@ -985,7 +995,7 @@ Note: `_object` and `_schedule` are referenced here but land in Tasks 4 and 5. T
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 40 passed
+Expected: 41 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1124,7 +1134,7 @@ The `word` token pattern is `[^\s{};]+`, so `node:12` and `node.sub` already arr
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 46 passed
+Expected: 47 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1256,7 +1266,7 @@ In `local-server/glmparser/parser.py`, insert this method immediately after `_ob
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 50 passed
+Expected: 51 passed
 
 - [ ] **Step 5: Commit**
 
@@ -1370,11 +1380,44 @@ def test_schedule_with_sub_blocks_round_trips_shape():
     assert "\t\t* * * * 6-0 0.5;" in text
 
 
-def test_values_containing_semicolons_are_quoted():
+def roundtrip_attributes(attributes):
+    """Write one object, parse it back, return its attributes.
+
+    Substring assertions on writer output cannot catch malformation -- they pass
+    happily on text this project's own parser rejects or misreads. Anything
+    claiming a value survives export must go through the parser.
+    """
     text = write_glm(
-        {"objects": [{"name": "n", "attributes": {"weird": "a;b"}, "children": []}]}
+        {"objects": [{"name": "n", "attributes": attributes, "children": []}]}
     )
-    assert '\tweird "a;b";' in text
+    return parse(text)["objects"][0]["attributes"]
+
+
+def test_values_containing_semicolons_survive_round_trip():
+    # Quoting only works because the lexer consumes a quoted string whole.
+    # Without that, this reads back as {'weird': 'a', 'b"': ''}.
+    assert roundtrip_attributes({"weird": "a;b"}) == {"weird": "a;b"}
+    assert roundtrip_attributes({"k": "a;b;c"}) == {"k": "a;b;c"}
+    assert roundtrip_attributes({"k": "trailingsemi;"}) == {"k": "trailingsemi;"}
+
+
+def test_ordinary_values_survive_round_trip():
+    for value in ("NR", "1.0 + 2.0j", "${VSOURCE}", "a\nb", "200.00"):
+        assert roundtrip_attributes({"k": value}) == {"k": value}, value
+
+
+def test_written_output_reparses_to_the_same_ast():
+    ast = parse(
+        "clock {\n  timezone PST+8PDT;\n};\n"
+        "#set profiler=1\n"
+        '#include "Inverters.glm";\n'
+        "module powerflow {\n  solver_method NR;\n};\n"
+        "module tape;\n"
+        "class thermostat {\n  double setpoint;\n};\n"
+        "schedule s {\n  * * * * * 1.0;\n  {\n    * 9-17 * * 1-5 0.5;\n  }\n};\n"
+        "object node {\n  name n1;\n  object ZIPload {\n    name z1;\n  };\n};\n"
+    )
+    assert parse(write_glm(ast)) == ast
 
 
 def test_missing_keys_are_tolerated():
@@ -1495,7 +1538,7 @@ def dumps(data):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 59 passed
+Expected: 62 passed
 
 - [ ] **Step 5: Commit**
 
