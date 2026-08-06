@@ -1,4 +1,5 @@
-import glm
+from glmparser import dump as glm_dump
+from glmparser import load as glm_load
 import os
 import zipfile
 import io
@@ -20,7 +21,7 @@ class GLMHelper:
                     f"Maximum allowed size is {self.max_file_size_mb} MB."
                 )
 
-            result = glm.load(glm_path)
+            result = glm_load(glm_path)
             glm_dicts[filename.split(".")[0] + ".json"] = result
 
         return glm_dicts
@@ -30,7 +31,7 @@ class GLMHelper:
             glm_filename = filename if filename.endswith(".glm") else filename.replace(".json", ".glm")
             filepath = os.path.join(tmpdir, glm_filename)
             with open(filepath, "w") as glm_file:
-                glm.dump(data[filename], glm_file)
+                glm_dump(data[filename], glm_file)
 
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { Splitter, Tabs, Button, Typography } from "antd";
+import React, { useState, useMemo, useCallback, useRef } from "react";
+import { Splitter, Tabs, Button, Typography, Select, Flex } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
@@ -10,6 +10,25 @@ import UpdateDeviceModal from "../modals/UpdateDeviceModal";
 import UpdateRegulatorModal from "../modals/UpdateRegulatorModal";
 import { useSimLiveTick } from "../../hooks/useSimLiveTick";
 import "./ModelDataView.css";
+
+// Structural glue rather than real model objects, so they get no table row.
+// `parentChild` is always synthetic — the graph builder makes one per object
+// that names a `parent`. `line` is only synthetic in a CIM model, where it ties
+// a piece of equipment to its connectivity node; a JSON model may use "line" as
+// a real edge type (models/demo_examples/levelExample.json is entirely line
+// edges), so it's hidden only when the loaded model is CIM.
+const hiddenEdgeGroups = (isCIM) =>
+    isCIM ? new Set(["parentChild", "line"]) : new Set(["parentChild"]);
+
+// `type` stays the fixed-left row label; `name` and `mRID` are the identifiers
+// people scan for, so they lead the scrollable attribute columns. Anything not
+// present in the model's attributes is dropped.
+const LEADING_COLUMNS = ["type", "name", "mRID"];
+
+const orderColumns = (colSet) => [
+    ...LEADING_COLUMNS.filter((col) => colSet.has(col)),
+    ...Array.from(colSet).filter((col) => !LEADING_COLUMNS.includes(col)),
+];
 
 /**
  * Resolves the feeder ID for a given mRID by checking the graph first,
@@ -52,6 +71,13 @@ const ObjectStudio = () => {
     // "switch" | "capacitor" | "regulator"; `object` is the graph node/edge key.
     const [controlContext, setControlContext] = useState({ open: false, object: null, type: null });
 
+    // Search state. The tables publish a `jumpToRow` handle through these refs;
+    // both tab panes are force-rendered so the handle for the tab the user
+    // *isn't* on is still live when a search picks something from it.
+    const [searchValue, setSearchValue] = useState(null);
+    const edgeTableRef = useRef(null);
+    const nodeTableRef = useRef(null);
+
     // Drives re-render as simulation frames arrive so the live voltage/power
     // columns (and the Edit Object attributes) reflect the latest measurements.
     // `simActive` gates the live UI to the running/paused simulation lifecycle.
@@ -60,6 +86,7 @@ const ObjectStudio = () => {
     // Derive graph data
     const { nodes, edges, nodeColumns, edgeColumns, nodeTypes, edgeTypes } = useMemo(() => {
         const graph = graphHelper.graph;
+        const hiddenGroups = hiddenEdgeGroups(graphHelper.isCIM);
         const nodeColSet = new Set(["type"]);
         const edgeColSet = new Set(["type"]);
         const nTypes = new Set();
@@ -76,6 +103,7 @@ const ObjectStudio = () => {
         });
 
         graph.forEachEdge((id, attrs, source, target) => {
+            if (hiddenGroups.has(attrs.group)) return;
             eTypes.add(attrs.group);
             if (attrs.attributes) {
                 Object.keys(attrs.attributes).forEach((k) => edgeColSet.add(k));
@@ -86,8 +114,8 @@ const ObjectStudio = () => {
         return {
             nodes: nodeList,
             edges: edgeList,
-            nodeColumns: Array.from(nodeColSet),
-            edgeColumns: Array.from(edgeColSet),
+            nodeColumns: orderColumns(nodeColSet),
+            edgeColumns: orderColumns(edgeColSet),
             nodeTypes: Array.from(nTypes).sort(),
             edgeTypes: Array.from(eTypes).sort(),
         };
@@ -106,6 +134,37 @@ const ObjectStudio = () => {
         if (!filterTypes || !filterTypes.edges) return edges;
         return edges.filter((e) => filterTypes.edges.includes(e.group));
     }, [edges, filterTypes]);
+
+    // One option per visible row. Built from the *filtered* lists rather than
+    // the whole model so a hit is always a row the table can actually scroll
+    // to — narrowing the Object Types filter narrows the search with it.
+    // Falls back to the graph key when there's no name (CIM writes name: "").
+    const searchOptions = useMemo(() => {
+        const toOption = (record, objectType) => ({
+            value: `${objectType}:${record.id}`,
+            label: record.attributes?.name || String(record.id),
+            objectId: record.id,
+            objectType,
+            group: record.group,
+        });
+
+        return [
+            ...filteredEdges.map((edge) => toOption(edge, "edge")),
+            ...filteredNodes.map((node) => toOption(node, "node")),
+        ];
+    }, [filteredEdges, filteredNodes]);
+
+    /**
+     * Reveals a searched-for object: switches to its tab, then asks that table
+     * to page to the row and highlight it. Both tables are always mounted, so
+     * the handle is available even for the tab that isn't showing.
+     */
+    const handleSearchSelect = useCallback((_value, option) => {
+        const isNode = option.objectType === "node";
+        setActiveTab(isNode ? "nodes" : "edges");
+        (isNode ? nodeTableRef : edgeTableRef).current?.jumpToRow(option.objectId);
+        setSearchValue(null);
+    }, []);
 
     /**
      * Central navigation handler — called from ObjectTable or EditObject.
@@ -215,6 +274,9 @@ const ObjectStudio = () => {
         {
             key: "edges",
             label: `Edges (${filteredEdges.length})`,
+            // Mounted even while hidden so a search landing on the other tab
+            // still finds a live jumpToRow handle.
+            forceRender: true,
             children: (
                 <div className="object-studio-tab-content">
                     <ObjectTable
@@ -225,6 +287,7 @@ const ObjectStudio = () => {
                         isCIM={graphHelper.isCIM}
                         elementType="edge"
                         simActive={simActive}
+                        jumpRef={edgeTableRef}
                     />
                 </div>
             ),
@@ -232,6 +295,7 @@ const ObjectStudio = () => {
         {
             key: "nodes",
             label: `Nodes (${filteredNodes.length})`,
+            forceRender: true,
             children: (
                 <div className="object-studio-tab-content">
                     <ObjectTable
@@ -242,6 +306,7 @@ const ObjectStudio = () => {
                         isCIM={graphHelper.isCIM}
                         elementType="node"
                         simActive={simActive}
+                        jumpRef={nodeTableRef}
                     />
                 </div>
             ),
@@ -297,6 +362,40 @@ const ObjectStudio = () => {
                 <Typography.Title level={4} style={{ margin: 0 }}>
                     Model Data View
                 </Typography.Title>
+                <Select
+                    style={{ width: "24rem", marginLeft: "auto" }}
+                    size="middle"
+                    showSearch
+                    allowClear
+                    aria-label="Find an object in the tables by name or ID"
+                    value={searchValue}
+                    options={searchOptions}
+                    placeholder="Find by Name or ID"
+                    onSelect={handleSearchSelect}
+                    onChange={(val) => setSearchValue(val)}
+                    filterOption={(input, option) =>
+                        (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                    }
+                    optionRender={(option) => (
+                        <Flex justify="space-between" align="center" gap="0.75rem">
+                            <span
+                                style={{
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                }}
+                            >
+                                {option.data.label}
+                            </span>
+                            <Typography.Text
+                                type="secondary"
+                                style={{ fontSize: 11, flexShrink: 0, whiteSpace: "nowrap" }}
+                            >
+                                {option.data.objectType} · {option.data.group}
+                            </Typography.Text>
+                        </Flex>
+                    )}
+                />
             </div>
             <Splitter className="object-studio-body">
                 <Splitter.Panel

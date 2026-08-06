@@ -12,6 +12,7 @@ lerna-debug.log*
 **/__pycache__
 package-lock.json
 **/glm
+local-server/tests
 **/.venv
 **/.env
 *.lock

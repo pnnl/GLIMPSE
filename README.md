@@ -16,7 +16,17 @@ The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigm
 
 ### Option 1: Pre-Built Installers (Easiest)
 
-[Releases](https://github.com/pnnl/GLIMPSE/releases/)
+> [!WARNING]
+>
+> **For MacOS installer**
+>
+> GLIMPSE app is not signed and will not run after installation. Run the following command to remove the application from "quarintine"
+>
+> ```bash
+> sudo xattr -r -d com.apple.quarantine /Applications/GLIMPSE.app
+> ```
+
+**[Releases](https://github.com/pnnl/GLIMPSE/releases/)** <-----
 
 ### Option 2: Docker
 
@@ -70,18 +80,15 @@ This stops and removes the containers and network. Built images remain cached fo
 
 This section will walk you through installing dependencies and building GLIMPSE. Here's what you'll do:
 
-1. ✅ Install Node.js (and optionally Nim)
+1. ✅ Install Node.js
 2. ✅ Clone the repository and install Node dependencies
 3. ✅ Create and activate a Python environment
-4. ✅ Install Python dependencies and plugins
+4. ✅ Install Python dependencies
 5. ✅ Start the development server
 
 #### Prerequisites
 
 1. **[Node.js](https://nodejs.org/en)** — Required for all users
-2. **[Nim](https://nim-lang.org/install.html)** — Only needed if:
-    - You're on Apple silicon (M chips), OR
-    - You plan to export modified GLM files
 
 ### Step 1: Clone the Repository
 
@@ -154,64 +161,8 @@ If you used VENV or Conda, install requirements:
 pip install -r requirements.txt
 ```
 
-### Step 4: Install GLM Parser
-
-#### Standard Installation (Windows, Linux, Intel/AMD Mac)
-
-**With PIP:**
-
-```bash
-pip install glm
-```
-
-**With UV:**
-
-```bash
-uv pip install glm
-```
-
-#### Special Instructions for Apple Silicon (M Chips)
-
-You'll need to build the GLM parser from source using Nim.
-
-Clone the glm parser repository i forked:
-
-```bash
-cd GLIMPSE/local-server/
-```
-
-```bash
-git clone https://github.com/itsMando/glm.git
-```
-
-```bash
-cd glm
-```
-
-Build the parser (ensure [Nim](https://nim-lang.org/) is installed and in your PATH):
-
-```bash
-nimble -v
-```
-
-```bash
-nimble release
-nimble package
-```
-
-Install the python binary distributable from `dist/` folder:
-
-**With PIP:**
-
-```bash
-pip install dist/*.whl
-```
-
-**With UV:**
-
-```bash
-uv pip install dist/*.whl
-```
+The `.glm` parser ([`glmparser`](local-server/glmparser/)) is pure Python and ships as part of
+`local-server/` — no separate install or build step is needed.
 
 ## Start GLIMPSE
 
@@ -319,6 +270,28 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
+
+## Running Tests
+
+The `.glm` parser ([`local-server/glmparser/`](local-server/glmparser/)) has a `pytest` suite —
+111 tests covering the parser/writer directly plus golden-file comparisons and full round-trip
+checks against all 17 sample models in [`models/`](models/). It runs from `local-server/`:
+
+```bash
+cd local-server
+uv sync --group dev      # pytest is a dev dependency, not in requirements-server.txt
+.venv/bin/python -m pytest
+```
+
+or, from the repo root:
+
+```bash
+npm run test:server
+```
+
+This is separate from [`socket-testing/`](socket-testing/), which exercises the SocketIO event API
+described below and requires a running backend (`npm run dev:backend`) rather than being a pytest
+suite.
 
 ## Socket Events API
 

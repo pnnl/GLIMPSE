@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Table, Typography, Button } from "antd";
 import { ControlOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -22,9 +22,7 @@ const SeverityValue = ({ value, severity, sub }) => {
             >
                 {value}
             </span>
-            {sub && (
-                <div style={{ fontSize: 11, opacity: 0.65, whiteSpace: "nowrap" }}>{sub}</div>
-            )}
+            {sub && <div style={{ fontSize: 11, opacity: 0.65, whiteSpace: "nowrap" }}>{sub}</div>}
         </div>
     );
 };
@@ -70,7 +68,19 @@ const ObjectTable = ({
     isCIM,
     elementType,
     simActive = false,
+    jumpRef,
 }) => {
+    // Pagination is controlled so a search jump can page straight to the row it
+    // landed on. antd would otherwise own this state and there'd be no way in.
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25);
+    const [highlightedId, setHighlightedId] = useState(null);
+    // The active column sort, mirrored out of antd's onChange. Needed because
+    // the row's page number depends on the order the table is *showing*, not
+    // the order of `data`.
+    const sorterRef = useRef({ columnKey: null, order: null });
+    const containerRef = useRef(null);
+
     const handleObjectClick = (record) => {
         if (isCIM) {
             onEditObject({
@@ -213,7 +223,7 @@ const ObjectTable = ({
                               <SeverityValue
                                   value={formatPu(summary.worst.pu)}
                                   severity={summary.worst.severity}
-                                  sub={`worst: ${summary.worst.phase}`}
+                                  sub={`violation: ${summary.worst.phase}`}
                               />
                           );
                       },
@@ -313,24 +323,94 @@ const ObjectTable = ({
     const columnsWithActions =
         trailingColumns.length > 0 ? [...tableColumns, ...trailingColumns] : tableColumns;
 
+    // Position of a row in the order the table is currently displaying, which
+    // is `data` re-sorted by the active column sorter (antd negates the
+    // comparator for a descending sort, so this matches what's on screen).
+    // Computed on demand rather than memoized — it only runs on a search jump.
+    const findRowIndex = (id) => {
+        const { columnKey, order } = sorterRef.current;
+        const sorter = order && columnsWithActions.find((col) => col.key === columnKey)?.sorter;
+        if (!sorter) return data.findIndex((row) => row.id === id);
+
+        const direction = order === "descend" ? -1 : 1;
+        return [...data]
+            .sort((a, b) => direction * sorter(a, b))
+            .findIndex((row) => row.id === id);
+    };
+
+    // Clamped rather than reset: narrowing the type filter can shrink the data
+    // out from under the current page, and clamping keeps the user near where
+    // they were instead of throwing them back to page 1.
+    const currentPage = Math.min(page, Math.max(1, Math.ceil(data.length / pageSize)));
+
+    // Pages to the row for `id` and marks it. Returns false when the row isn't
+    // in this table's current data, so the caller can say so.
+    const jumpToRow = (id) => {
+        const index = findRowIndex(id);
+        if (index === -1) return false;
+
+        setPage(Math.floor(index / pageSize) + 1);
+        setHighlightedId(id);
+        return true;
+    };
+
+    // Published to the parent so the search box can drive the jump from its own
+    // event handler. Rewritten after every render (no dep array) to keep the
+    // closure's view of `data`, `pageSize`, and the sorter current.
+    useEffect(() => {
+        if (!jumpRef) return;
+        jumpRef.current = { jumpToRow };
+        return () => {
+            jumpRef.current = null;
+        };
+    });
+
+    // Scroll the marked row into view once the page holding it has rendered.
+    useEffect(() => {
+        if (highlightedId == null) return;
+
+        const frame = requestAnimationFrame(() => {
+            const rows = containerRef.current?.querySelectorAll("tbody tr[data-row-key]") ?? [];
+            const row = Array.from(rows).find((el) => el.dataset.rowKey === String(highlightedId));
+            row?.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+
+        return () => cancelAnimationFrame(frame);
+    }, [highlightedId, currentPage]);
+
     return (
-        <Table
-            columns={columnsWithActions}
-            dataSource={data}
-            rowKey="id"
-            size="small"
-            sticky
-            rowClassName={(_, index) =>
-                index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd"
-            }
-            pagination={{
-                defaultPageSize: 25,
-                pageSizeOptions: [25, 50, 100],
-                showSizeChanger: true,
-                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
-            }}
-            scroll={{ x: "max-content", y: "calc(100vh - 15.5rem)" }}
-        />
+        <div ref={containerRef} style={{ height: "100%" }}>
+            <Table
+                columns={columnsWithActions}
+                dataSource={data}
+                rowKey="id"
+                size="small"
+                sticky
+                rowClassName={(record, index) => {
+                    const stripe =
+                        index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd";
+                    return record.id === highlightedId
+                        ? `${stripe} object-table-row-highlight`
+                        : stripe;
+                }}
+                pagination={{
+                    current: currentPage,
+                    pageSize,
+                    pageSizeOptions: [25, 50, 100],
+                    showSizeChanger: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+                }}
+                onChange={(nextPagination, _filters, sorter) => {
+                    setPage(nextPagination.current);
+                    setPageSize(nextPagination.pageSize);
+                    sorterRef.current = {
+                        columnKey: sorter?.columnKey ?? null,
+                        order: sorter?.order ?? null,
+                    };
+                }}
+                scroll={{ x: "max-content", y: "calc(100vh - 15.5rem)" }}
+            />
+        </div>
     );
 };
 
