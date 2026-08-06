@@ -490,6 +490,13 @@ from .errors import GlmParseError
 #      ordinary-value branch so the whole quoted run is taken first.
 #      An unterminated quote falls through to branch 1, matching prior behavior.
 #
+#      This is NOT full string support: `[^"\n]` excludes newline (so an
+#      unterminated quote cannot swallow the rest of the file, the same failure
+#      the `${...}` bound prevents) and there is no backslash-escape handling,
+#      because GLM has no escape mechanism to honor. Values carrying a `"`, or
+#      both a newline and a `;`, therefore cannot round-trip -- writer.py
+#      refuses to emit those rather than corrupting them silently.
+#
 #   1. `[^\s{}$;]+` -- the fast common path for ordinary identifiers and values.
 #      It excludes `$` so it stops cleanly at the start of a substitution.
 #   2. `\$\{[^}\s;]*\}` -- a `${VSOURCE}` substitution, kept as ONE token.
@@ -1406,6 +1413,28 @@ def test_ordinary_values_survive_round_trip():
         assert roundtrip_attributes({"k": value}) == {"k": value}, value
 
 
+def test_unrepresentable_values_raise_instead_of_corrupting():
+    # GLM has no escape mechanism, so these cannot round-trip. Writing them
+    # anyway produces a model that silently reads back as different data, so
+    # the writer refuses. No value in any of the 17 sample models hits this.
+    for value in ('has "quote"', 'a;b said "x"', "newline\nand;semicolon"):
+        with pytest.raises(ValueError, match="Cannot export attribute"):
+            write_glm(
+                {"objects": [{"name": "n", "attributes": {"k": value}, "children": []}]}
+            )
+
+
+def test_unrepresentable_value_names_the_offending_attribute():
+    with pytest.raises(ValueError, match="'bad_attr'"):
+        write_glm(
+            {
+                "objects": [
+                    {"name": "n", "attributes": {"bad_attr": 'x"y'}, "children": []}
+                ]
+            }
+        )
+
+
 def test_written_output_reparses_to_the_same_ast():
     ast = parse(
         "clock {\n  timezone PST+8PDT;\n};\n"
@@ -1449,17 +1478,47 @@ invisible only because it never emitted includes at all.
 _INDENT = "\t"
 
 
-def _quote_if_needed(value):
+def _unrepresentable(text):
+    """Return a reason if this value cannot survive a GLM round-trip, else None.
+
+    GLM has no escape mechanism. The lexer's quoted-string branch stops at the
+    first `"` or newline, so a value carrying either one alongside a `;` cannot
+    be written and read back faithfully -- it comes back truncated, with a junk
+    attribute fabricated from the tail.
+
+    Refuse loudly rather than emit a model file that silently reads back as
+    different data: server.py wraps export in `except Exception` and puts the
+    message in the HTTP error body, so the user sees a real error instead of a
+    quietly corrupted GridLAB-D model.
+
+    No value in any of the 17 sample models contains `;`, `"`, or a newline, so
+    this path is defensive rather than routine.
+    """
+    if '"' in text:
+        return "contains a double quote, which GLM cannot escape"
+    if "\n" in text and ";" in text:
+        return "contains both a newline and a semicolon"
+    return None
+
+
+def _quote_if_needed(value, key):
     text = str(value)
+    reason = _unrepresentable(text)
+    if reason is not None:
+        raise ValueError(
+            f"Cannot export attribute {key!r}: its value {reason}. "
+            f"Writing it would silently corrupt the model on reload."
+        )
     if ";" in text or "\n" in text:
-        return '"' + text.replace('"', '\\"') + '"'
+        return '"' + text + '"'
     return text
 
 
 def _attributes(attributes, depth):
     pad = _INDENT * depth
     return "".join(
-        f"{pad}{key} {_quote_if_needed(value)};\n" for key, value in attributes.items()
+        f"{pad}{key} {_quote_if_needed(value, key)};\n"
+        for key, value in attributes.items()
     )
 
 
@@ -1538,7 +1597,7 @@ def dumps(data):
 cd local-server && .venv/bin/python -m pytest tests/test_glmparser.py -v
 ```
 
-Expected: 62 passed
+Expected: 64 passed
 
 - [ ] **Step 5: Commit**
 
