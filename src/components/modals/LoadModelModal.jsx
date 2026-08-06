@@ -120,6 +120,10 @@ const LoadModelModal = ({ onMount }) => {
             // Close modal after data is set
             console.log(response);
             graphHelper.setIsCIM(true);
+            // Fallback feeder for objects that carry no feeder_id of their own.
+            // With several feeders selected the first one wins; per-object
+            // feeder_id still takes precedence (see resolveFeederIdFromGraph).
+            graphHelper.currentFeederID = selectedGridappsdModels[0]?.modelId ?? null;
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
             newGraphUpdate();

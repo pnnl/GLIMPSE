@@ -58,14 +58,14 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
         };
     }, []);
 
-    // Keep the newest line in view while expanded (only when already near the
-    // bottom, so a user scrolled up to read history isn't yanked back down).
+    // Keep the newest line in view while expanded. Newest renders at the top, so
+    // that means pinning to scrollTop 0 — and only when already near the top, so
+    // a user scrolled down to read history isn't yanked back up.
     useEffect(() => {
         if (!expanded) return;
         const el = bodyRef.current;
         if (!el) return;
-        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-        if (nearBottom) el.scrollTop = el.scrollHeight;
+        if (el.scrollTop < 60) el.scrollTop = 0;
     }, [logs, expanded]);
 
     return (
@@ -115,28 +115,39 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
                             style={{ margin: "16px 0" }}
                         />
                     ) : (
-                        logs.map((log, i) => {
-                            const level = levelOf(log);
-                            return (
-                                <div key={i} className="sim-log__row">
-                                    <span className="sim-log__time">{timeOf(log)}</span>
-                                    <Tag color={LEVEL_COLOR[level] ?? "default"} className="sim-log__level">
-                                        {level}
-                                    </Tag>
-                                    {log.processStatus && (
+                        // Newest first, so the tail of a long simulation is the
+                        // first thing on screen. `logs` itself stays in arrival
+                        // order (that's the socket buffer's order), which keeps
+                        // the arrival index usable as a stable key — reversing
+                        // the array alone would re-key every row on each log.
+                        logs
+                            .map((log, i) => ({ log, i }))
+                            .reverse()
+                            .map(({ log, i }) => {
+                                const level = levelOf(log);
+                                return (
+                                    <div key={i} className="sim-log__row">
+                                        <span className="sim-log__time">{timeOf(log)}</span>
                                         <Tag
-                                            color={STATUS_COLOR[log.processStatus] ?? "default"}
-                                            className="sim-log__status"
+                                            color={LEVEL_COLOR[level] ?? "default"}
+                                            className="sim-log__level"
                                         >
-                                            {log.processStatus}
+                                            {level}
                                         </Tag>
-                                    )}
-                                    <span className="sim-log__message">
-                                        {log.logMessage ?? JSON.stringify(log)}
-                                    </span>
-                                </div>
-                            );
-                        })
+                                        {log.processStatus && (
+                                            <Tag
+                                                color={STATUS_COLOR[log.processStatus] ?? "default"}
+                                                className="sim-log__status"
+                                            >
+                                                {log.processStatus}
+                                            </Tag>
+                                        )}
+                                        <span className="sim-log__message">
+                                            {log.logMessage ?? JSON.stringify(log)}
+                                        </span>
+                                    </div>
+                                );
+                            })
                     )}
                 </div>
             )}

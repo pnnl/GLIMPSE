@@ -46,18 +46,20 @@ from .errors import GlmParseError
 # nothing on `$` positions while keeping ordinary scanning at full speed. A
 # single per-character alternation `(?:\$\{[^}]*\}|[^\s{};])+` also works but
 # costs ~25% throughput.
+
+# line comment (discarded)
+# the (?<!:) guard is
+# defense-in-depth only: it is
+# currently unreachable, since
+# the word branch admits `:`
+# and `/` and so swallows
+# `http://host/x` whole before
+# this alternative is ever
+# tried at the `//`. Keep it
+# in case that class narrows.
 _TOKEN_RE = re.compile(
     r"""
-      (?<!:)//[^\n]*                              # line comment (discarded)
-                                                  # the (?<!:) guard is
-                                                  # defense-in-depth only: it is
-                                                  # currently unreachable, since
-                                                  # the word branch admits `:`
-                                                  # and `/` and so swallows
-                                                  # `http://host/x` whole before
-                                                  # this alternative is ever
-                                                  # tried at the `//`. Keep it
-                                                  # in case that class narrows.
+    (?<!:)//[^\n]*                              
     | \#[ \t]*(?P<hash>set|define|include)\b
     | \b(?P<kw>clock|module|object|class|schedule)\b
     | (?P<lbrace>\{)

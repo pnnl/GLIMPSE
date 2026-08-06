@@ -1,12 +1,4 @@
-"""Pure-Python GridLAB-D .glm parser.
-
-Drop-in replacement for the Nim-backed `glm` pip package. The public surface is
-`load`/`loads`/`dump`/`dumps`/`version`, matching what glmhelper.py calls.
-
-Both `load` and `dump` accept either a filesystem path or an already-open file
-object, because both forms are in use: glmhelper.py:23 passes a path to `load`,
-glmhelper.py:33 passes an open file to `dump`.
-"""
+# Pure-Python GridLAB-D .glm parser.
 import os
 
 from .errors import GlmParseError
