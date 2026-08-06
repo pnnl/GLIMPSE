@@ -66,6 +66,19 @@ def _named_block(keyword, entry):
     return f"{keyword} {name} {{\n{_attributes(attributes, 1)}}};\n\n"
 
 
+def _class(entry):
+    """Classes carry an ordered `properties` list, not an `attributes` dict."""
+    name = entry["name"]
+    properties = entry.get("properties") or []
+    if not properties:
+        return f"class {name};\n\n"
+    body = "".join(
+        f"{_INDENT}{p['type']} {_quote_if_needed(p['name'], name)};\n"
+        for p in properties
+    )
+    return f"class {name} {{\n{body}}};\n\n"
+
+
 def _object(obj, depth):
     pad = _INDENT * depth
     body = _attributes(obj.get("attributes") or {}, depth + 1)
@@ -125,7 +138,7 @@ def dumps(data):
         out.append(_named_block("module", module))
 
     for klass in data.get("classes") or []:
-        out.append(_named_block("class", klass))
+        out.append(_class(klass))
 
     for obj in data.get("objects") or []:
         out.append(_object(obj, 0))

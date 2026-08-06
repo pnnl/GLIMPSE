@@ -125,7 +125,7 @@ Two terminator rules, which differ and must not be conflated:
   "includes":    [{"value": str}],
   "objects":     [{"name": str, "attributes": {str: str}, "children": [...]}],
   "modules":     [{"name": str, "attributes": {str: str}}],
-  "classes":     [{"name": str, "attributes": {str: str}}],   # NEW
+  "classes":     [{"name": str, "properties": [{"type": str, "name": str}]}],   # NEW
   "directives":  [{"name": str, "value": str}],
   "definitions": [{"name": str, "value": str}],
   "schedules":   [{"name": str, "values": [str], "children": [[str]]}],
@@ -135,6 +135,11 @@ Two terminator rules, which differ and must not be conflated:
 `classes` is the only added key. `GraphHelper.js:1673` iterates `file.objects`
 and carries every other key through opaquely, so the addition is inert on the
 frontend.
+
+A class body is an ordered `properties` list rather than a dict keyed by
+property name or type: a GridLAB-D class legitimately repeats property types
+(`double power_factor; double heatgain_fraction;`), and keying by type would
+collapse same-typed properties, silently dropping all but the last.
 
 `clock` is always present, `{}` when the model has none — matching
 `ast.nim:238-243`.

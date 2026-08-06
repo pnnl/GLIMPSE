@@ -1,10 +1,13 @@
 {
  "classes": [
   {
-   "attributes": {
-    "double": "value"
-   },
-   "name": "player"
+   "name": "player",
+   "properties": [
+    {
+     "name": "value",
+     "type": "double"
+    }
+   ]
   }
  ],
  "clock": {

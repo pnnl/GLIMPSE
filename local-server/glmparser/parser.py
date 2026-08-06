@@ -178,6 +178,40 @@ class Parser:
             self.lex.next()
         return {"name": name, "values": values, "children": groups}
 
+    def _class_block(self):
+        """`class name { <type> <property>; ... };`
+
+        A class body is a LIST, not a dict. Its entries are `<type> <name>`
+        declarations and the same type recurs constantly in a normal class
+        (`double a; double b;`). Keying by type silently dropped all but the
+        last -- the shape module/object bodies use does not fit here.
+        """
+        name = self._expect("word").text
+        if self.lex.peek().kind == "semi":
+            self.lex.next()
+            return {"name": name, "properties": []}
+
+        self._expect("lbrace")
+        properties = []
+        while True:
+            token = self.lex.peek()
+            if token.kind == "rbrace":
+                self.lex.next()
+                break
+            if token.kind == EOF:
+                raise self.lex.error("Unexpected end of file inside class", token)
+            if token.kind == "semi":
+                self.lex.next()
+                continue
+            property_type = self.lex.next().text
+            properties.append(
+                {"type": property_type, "name": self._value_to_semicolon()}
+            )
+
+        if self.lex.peek().kind == "semi":
+            self.lex.next()
+        return {"name": name, "properties": properties}
+
     def _named_block(self):
         """`module powerflow;` or `module powerflow { ... };`. Also `class`."""
         name = self._expect("word").text
@@ -216,7 +250,7 @@ class Parser:
                 elif token.text == "module":
                     self.ast["modules"].append(self._named_block())
                 elif token.text == "class":
-                    self.ast["classes"].append(self._named_block())
+                    self.ast["classes"].append(self._class_block())
             elif token.kind == "hash":
                 self._directive(token.text, token)
             else:

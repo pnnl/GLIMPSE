@@ -252,8 +252,42 @@ def test_class_blocks_reach_the_ast():
     # REGRESSION: the Nim parser collected classes then never emitted them.
     ast = parse("class thermostat {\n  double setpoint;\n};")
     assert ast["classes"] == [
-        {"name": "thermostat", "attributes": {"double": "setpoint"}}
+        {"name": "thermostat", "properties": [{"type": "double", "name": "setpoint"}]}
     ]
+
+
+def test_class_keeps_every_property_sharing_a_type():
+    # REGRESSION: a dict keyed by property type collapsed same-typed properties,
+    # silently dropping all but the last. Multiple `double`s is the normal shape
+    # of a GridLAB-D class.
+    ast = parse(
+        "class residential_enduse {\n"
+        "  double power_factor;\n"
+        "  double heatgain_fraction;\n"
+        "  char32 name;\n"
+        "};"
+    )
+    assert ast["classes"] == [
+        {
+            "name": "residential_enduse",
+            "properties": [
+                {"type": "double", "name": "power_factor"},
+                {"type": "double", "name": "heatgain_fraction"},
+                {"type": "char32", "name": "name"},
+            ],
+        }
+    ]
+
+
+def test_class_round_trips_with_repeated_types():
+    source = (
+        "class residential_enduse {\n"
+        "  double power_factor;\n"
+        "  double heatgain_fraction;\n"
+        "};"
+    )
+    ast = parse(source)
+    assert parse(write_glm(ast)) == ast
 
 
 def test_set_and_define_directives_are_newline_terminated():
@@ -569,7 +603,14 @@ def test_module_without_attributes_uses_short_form():
 
 def test_classes_are_written():
     text = write_glm(
-        {"classes": [{"name": "thermostat", "attributes": {"double": "setpoint"}}]}
+        {
+            "classes": [
+                {
+                    "name": "thermostat",
+                    "properties": [{"type": "double", "name": "setpoint"}],
+                }
+            ]
+        }
     )
     assert "class thermostat {" in text
     assert "\tdouble setpoint;" in text
