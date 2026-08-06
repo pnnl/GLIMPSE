@@ -773,3 +773,36 @@ def test_every_sample_model_round_trips_stably(path):
     first = glmparser.load(path)
     second = glmparser.loads(glmparser.dumps(first))
     assert first == second
+
+
+import json
+
+GOLDEN = Path(__file__).resolve().parent / "golden"
+
+
+def normalize_uuids(node):
+    """Hoisted-object names are uuid4 and differ every run; blank them out.
+
+    Reuses UUID_RE, defined alongside the hoisting tests above.
+    """
+    if isinstance(node, dict):
+        return {
+            k: (
+                "<uuid>"
+                if isinstance(v, str) and UUID_RE.match(v)
+                else normalize_uuids(v)
+            )
+            for k, v in node.items()
+        }
+    if isinstance(node, list):
+        return [normalize_uuids(x) for x in node]
+    return node
+
+
+@pytest.mark.parametrize(
+    "path", ALL_MODELS, ids=lambda p: str(p.relative_to(MODELS))
+)
+def test_model_matches_golden(path):
+    slug = str(path.relative_to(MODELS).with_suffix("")).replace("/", "__")
+    expected = json.loads((GOLDEN / f"{slug}.json").read_text())
+    assert normalize_uuids(glmparser.load(path)) == expected

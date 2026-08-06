@@ -1,0 +1,155 @@
+{
+ "classes": [
+  {
+   "attributes": {
+    "double": "value"
+   },
+   "name": "player"
+  }
+ ],
+ "clock": {
+  "starttime": "2023-05-03 17:48:47",
+  "stoptime": "2023-05-03 17:50:47",
+  "timezone": "UTC0"
+ },
+ "definitions": [
+  {
+   "name": "VSOURCE",
+   "value": "66395.28095680696"
+  }
+ ],
+ "directives": [
+  {
+   "name": "maximum_synctime",
+   "value": "3600"
+  },
+  {
+   "name": "suppress_repeat_messages",
+   "value": "1"
+  },
+  {
+   "name": "relax_naming_rules",
+   "value": "1"
+  },
+  {
+   "name": "profiler",
+   "value": "1"
+  },
+  {
+   "name": "minimum_timestep",
+   "value": "0.1"
+  }
+ ],
+ "includes": [
+  {
+   "value": "model_schedules.glm"
+  },
+  {
+   "value": "model_base.glm"
+  }
+ ],
+ "modules": [
+  {
+   "attributes": {},
+   "name": "connection"
+  },
+  {
+   "attributes": {},
+   "name": "generators"
+  },
+  {
+   "attributes": {},
+   "name": "tape"
+  },
+  {
+   "attributes": {
+    "report_event_log": "false"
+   },
+   "name": "reliability"
+  },
+  {
+   "attributes": {
+    "line_capacitance": "TRUE",
+    "solver_method": "NR"
+   },
+   "name": "powerflow"
+  },
+  {
+   "attributes": {},
+   "name": "climate"
+  },
+  {
+   "attributes": {},
+   "name": "reliability"
+  }
+ ],
+ "objects": [
+  {
+   "attributes": {
+    "configure": "model_outputs.json",
+    "message_type": "JSON",
+    "name": "1344825712",
+    "publish_period": "3"
+   },
+   "children": [],
+   "name": "helics_msg"
+  },
+  {
+   "attributes": {
+    "file": "1344825712.csv",
+    "interval": "1",
+    "parent": "1344825712",
+    "property": "message_type"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "check_mode": "ONCHANGE",
+    "eventgen_object": "external_event_handler",
+    "grid_association": "TRUE",
+    "name": "fault_check_object",
+    "output_filename": "fault_check_output.txt",
+    "strictly_radial": "FALSE"
+   },
+   "children": [],
+   "name": "fault_check"
+  },
+  {
+   "attributes": {
+    "name": "external_event_handler",
+    "use_external_faults": "TRUE"
+   },
+   "children": [],
+   "name": "eventgen"
+  },
+  {
+   "attributes": {
+    "filename": "model_weather.csv",
+    "name": "CSVREADER"
+   },
+   "children": [],
+   "name": "csv_reader"
+  },
+  {
+   "attributes": {
+    "name": "Weather Data",
+    "reader": "CSVREADER",
+    "tmyfile": "model_weather.csv"
+   },
+   "children": [],
+   "name": "climate"
+  },
+  {
+   "attributes": {
+    "file": "ieeezipload.player",
+    "loop": "0",
+    "name": "ieeezipload"
+   },
+   "children": [],
+   "name": "player"
+  }
+ ],
+ "schedules": []
+}

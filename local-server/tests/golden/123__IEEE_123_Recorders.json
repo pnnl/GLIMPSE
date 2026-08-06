@@ -1,0 +1,468 @@
+{
+ "classes": [],
+ "clock": {},
+ "definitions": [],
+ "directives": [],
+ "includes": [],
+ "modules": [],
+ "objects": [
+  {
+   "attributes": {
+    "file": "trigger.player",
+    "flags": "DELTAMODE",
+    "name": "recorder_trigger",
+    "parent": "node_150",
+    "property": "nominal_voltage"
+   },
+   "children": [],
+   "name": "player"
+  },
+  {
+   "attributes": {
+    "file": "pow/Voltage_151.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "limit": "10000000",
+    "name": "recorder_V_node_151",
+    "parent": "node_151",
+    "property": "voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen_1_Speed.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen_1",
+    "parent": "Gen1",
+    "property": "rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen_2_Speed.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen_2",
+    "parent": "Gen2",
+    "property": "rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen_3_Speed.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen_3",
+    "parent": "Gen3",
+    "property": "rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen_4_Speed.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen_4",
+    "parent": "Gen4",
+    "property": "rotor_speed,rotor_angle,flux1d,flux2q,EpRotated,VintRotated,Eint_A,Eint_B,Eint_C,Irotated,pwr_electric.real,pwr_electric.imag,pwr_mech,torque_mech,torque_elec"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "inverter/Inverter_#1_MG1.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_INV_1",
+    "parent": "trip_shad_inv1",
+    "property": "VA_Out.real,VA_Out.imag,V_In,VA_Out,Pref,Qref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "inverter/Inv_1_load_42.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_test_Vinv1",
+    "parent": "load_42",
+    "property": "voltage_A, voltage_B, voltage_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "inverter/Inverter_#2_MG1.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_INV_2",
+    "parent": "trip_shad_inv2",
+    "property": "VA_Out.real,VA_Out.imag,Pref,Qref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "inverter/Inverter_#3_MG2.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_INV_3",
+    "parent": "trip_shad_inv3",
+    "property": "VA_Out.real,VA_Out.imag,Pref,Qref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "inverter/Inverter_#4_MG2.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_INV_4",
+    "parent": "trip_shad_inv4",
+    "property": "VA_Out.real,VA_Out.imag,V_In,VA_Out,Pref,Qref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/MG_1_GFA_status.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_MG_1_freq",
+    "parent": "node_150",
+    "property": "GFA_status,measured_frequency"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/MG_2_GFA_status.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_MG_2_freq",
+    "parent": "load_50",
+    "property": "GFA_status,measured_frequency"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/MG_3_GFA_status.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_MG_3_freq",
+    "parent": "load_100",
+    "property": "GFA_status,measured_frequency"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/MG_3_node_76_freq.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_MG3_76_freq",
+    "parent": "load_76",
+    "property": "GFA_status,measured_frequency"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/microgrid_switch0.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_microgrid_switch0",
+    "parent": "microgrid_switch0",
+    "property": "phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/microgrid_switch1.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_microgrid_switch1",
+    "parent": "microgrid_switch1",
+    "property": "phase_A_state,phase_B_state,phase_C_state,current_in_A, current_in_B, current_in_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/microgrid_switch2.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_microgrid_switch2",
+    "parent": "microgrid_switch2",
+    "property": "status,phase_A_state,phase_B_state,phase_C_state,current_out_A"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/microgrid_switch3.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_microgrid_switch3",
+    "parent": "microgrid_switch3",
+    "property": "status,phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/switch_450-451.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_switch_450-451",
+    "parent": "switch_450-451",
+    "property": "status,phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/Switch_151_300.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_microgrid_switch4",
+    "parent": "microgrid_switch4",
+    "property": "status,current_out_A,current_out_B,current_out_C,power_out_A,power_out_B,power_out_C,phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/switch_76-761.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_switch_76-761",
+    "parent": "switch_76-761",
+    "property": "current_out_A,current_out_B,current_out_C, phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/switch_100-101.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_switch_100-101",
+    "parent": "switch_100-101",
+    "property": "current_out_A,current_out_B,current_out_C, phase_A_state,phase_B_state,phase_C_state"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "pow/node150_Power.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_node150_Pref",
+    "parent": "node_150",
+    "property": "voltage_A.real,voltage_A.imag,voltage_B.real,voltage_B.imag,voltage_C.real,voltage_C.imag"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "switch/node150_switch_Current.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_node150_switch",
+    "parent": "switch_1491-149",
+    "property": "current_out_A.real, current_out_B.real, current_out_C.real"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen2_Pref.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen2_Pref",
+    "parent": "Gen2",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen3_Pref.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen3_Pref",
+    "parent": "Gen3",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "gen/Gen4_Pref.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_Gen4_Pref",
+    "parent": "Gen4",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "Gen2_Pref.player",
+    "flags": "DELTAMODE",
+    "name": "Player_Gen2_Pref",
+    "parent": "Gen2",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "player"
+  },
+  {
+   "attributes": {
+    "file": "Gen3_Pref.player",
+    "flags": "DELTAMODE",
+    "name": "Player_Gen3_Pref",
+    "parent": "Gen3",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "player"
+  },
+  {
+   "attributes": {
+    "file": "Gen4_Pref.player",
+    "flags": "DELTAMODE",
+    "name": "Player_Gen4_Pref",
+    "parent": "Gen4",
+    "property": "Pref"
+   },
+   "children": [],
+   "name": "player"
+  },
+  {
+   "attributes": {
+    "file": "load/Load_100_Voltage.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_test_V",
+    "parent": "load_100",
+    "property": "voltage_A, voltage_B, voltage_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "load/Load_76_Voltage.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_load_76",
+    "parent": "load_76",
+    "property": "voltage_A, voltage_B, voltage_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "load/Load_1001_Voltage.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_test_V1",
+    "parent": "node_101",
+    "property": "voltage_A, voltage_B, voltage_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "oh/OH_line_100-450_Current.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_test_C",
+    "parent": "OH_line_100-450",
+    "property": "current_out_A, current_out_B, current_out_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "oh/OH_line_76-77_Current.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_OH_line_76-77",
+    "parent": "OH_line_76-77",
+    "property": "current_out_A, current_out_B, current_out_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "file": "regulator_4.csv",
+    "flags": "DELTAMODE",
+    "interval": "1",
+    "name": "recorder_regulator_41",
+    "parent": "regulator_4",
+    "property": "current_in_A, current_in_B, current_in_C"
+   },
+   "children": [],
+   "name": "recorder"
+  },
+  {
+   "attributes": {
+    "filename": "pow/output_current.csv",
+    "mode": "POLAR"
+   },
+   "children": [],
+   "name": "currdump"
+  },
+  {
+   "attributes": {
+    "filename": "pow/output_voltage.csv",
+    "mode": "POLAR"
+   },
+   "children": [],
+   "name": "voltdump"
+  }
+ ],
+ "schedules": []
+}
