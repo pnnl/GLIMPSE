@@ -25,6 +25,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 # Runtime env injection (writes env.js + patches CSP from $API_URL on startup).
 COPY docker/40-glimpse-env.sh /docker-entrypoint.d/40-glimpse-env.sh
-RUN chmod +x /docker-entrypoint.d/40-glimpse-env.sh
+# Strip CRs in case of a Windows checkout — a "#!/bin/sh\r" shebang fails at
+# startup with a confusing "not found".
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-glimpse-env.sh \
+    && chmod +x /docker-entrypoint.d/40-glimpse-env.sh
 
 EXPOSE 80
