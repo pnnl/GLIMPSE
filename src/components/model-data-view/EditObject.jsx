@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Tabs, Spin, message } from "antd";
+import { Tabs, Spin } from "antd";
 import axios from "axios";
 import AttributesTable from "./AttributesTable";
 import MermaidDiagram from "./MermaidDiagram";
@@ -7,6 +7,7 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL } from "../../config";
 import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
+import { notify } from "../../utils/notify";
 
 // Split a formatted "A 2401.3 V" / "A 12.30 kW, 4.50 kVAR" line into a
 // { attrKey, value } row keyed by measurement kind + phase for the table.
@@ -134,7 +135,7 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
             } catch (error) {
                 if (currentRequest !== requestRef.current) return;
                 console.error("Failed to fetch CIM object:", error);
-                message.error("Failed to load object data");
+                notify.error("Failed to load object data");
             } finally {
                 if (currentRequest === requestRef.current) {
                     setLoading(false);
@@ -180,9 +181,9 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
 
                 const failures = results.filter((r) => r.status === "rejected");
                 if (failures.length > 0) {
-                    message.warning(`${failures.length} attribute(s) failed to save`);
+                    notify.warning(`${failures.length} attribute(s) failed to save`);
                 } else {
-                    message.success("Object saved successfully");
+                    notify.success("Object saved successfully");
                 }
 
                 // Invalidate cache so next fetch gets fresh data
@@ -199,11 +200,11 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                     });
                 }
                 newGraphUpdate();
-                message.success("Object saved");
+                notify.success("Object saved");
             }
         } catch (error) {
             console.error("Save failed:", error);
-            message.error("Failed to save object");
+            notify.error("Failed to save object");
         } finally {
             setSaving(false);
         }

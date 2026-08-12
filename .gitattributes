@@ -1,0 +1,4 @@
+# Keep shell scripts LF even on Windows checkouts. A CRLF shebang makes the
+# kernel look for an interpreter named "/bin/sh\r", which fails at container
+# start with a misleading "not found" (see docker/40-glimpse-env.sh).
+*.sh text eol=lf

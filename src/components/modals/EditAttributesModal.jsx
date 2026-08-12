@@ -1,8 +1,9 @@
 import ReactDOM from "react-dom";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, Form, Input, Button, Divider, message, Spin, Empty, theme } from "antd";
+import { Modal, Form, Input, Button, Divider, Spin, Empty, theme } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
+import { notify } from "../../utils/notify";
 
 // Read-only attributes that shouldn't be edited
 const READ_ONLY_ATTRIBUTES = [
@@ -81,7 +82,7 @@ const EditAttributesModal = ({ close, context }) => {
 
         if (loadError) {
             console.error("Error loading attributes:", loadError);
-            message.error("Failed to load attributes");
+            notify.error("Failed to load attributes");
             return;
         }
         form.setFieldsValue(attributes);
@@ -94,7 +95,7 @@ const EditAttributesModal = ({ close, context }) => {
 
     const handleSave = async () => {
         if (!hasChanges) {
-            message.info("No changes to save");
+            notify.info("No changes to save");
             close();
             return;
         }
@@ -120,12 +121,12 @@ const EditAttributesModal = ({ close, context }) => {
 
             graphHelper.markDirty();
             graphHelper.sigmaInstance?.refresh();
-            message.success("Attributes updated successfully");
+            notify.success("Attributes updated successfully");
             setHasChanges(false);
             close();
         } catch (error) {
             console.error("Save failed:", error);
-            message.error("Failed to save attributes. Please check your input.");
+            notify.error("Failed to save attributes. Please check your input.");
         } finally {
             setLoading(false);
         }
@@ -133,7 +134,7 @@ const EditAttributesModal = ({ close, context }) => {
 
     const handleCancel = () => {
         if (hasChanges) {
-            Modal.confirm({
+            notify.confirm({
                 title: "Discard Changes?",
                 content: "You have unsaved changes. Are you sure you want to discard them?",
                 okText: "Discard",

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { Menu } from "antd";
 import { downloadAsImage } from "@sigma/export-image";
+import { useGraph } from "../../contexts/GraphContext";
 import graphHelper from "../../graph-helper/GraphHelper";
 import NewObjectModal from "../modals/NewObjectModal";
 
@@ -39,6 +40,7 @@ const GraphContextMenu = ({
 }) => {
     const menuRef = useRef(null);
     const [position, setPosition] = useState({ x: context.x, y: context.y });
+    const { darkMode } = useGraph();
 
     useEffect(() => {
         if (!context.open || !menuRef.current) return;
@@ -71,8 +73,10 @@ const GraphContextMenu = ({
     };
 
     const handleImageSave = () => {
+        // Match the canvas background of the active theme — node labels are drawn
+        // white in dark mode, so a fixed white background exported them invisible.
         downloadAsImage(graphHelper.sigmaInstance, {
-            backgroundColor: "#FFFFFF",
+            backgroundColor: darkMode ? "#1D1D1D" : "#FFFFFF",
             fileName: "GLIMPSE-snapshot",
             format: "png",
             layers: ["edges", "nodes", "labels"],

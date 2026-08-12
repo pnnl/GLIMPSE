@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
-import { Modal, Form, Select, InputNumber, Button, Divider, Space, Tag, message, Spin, theme } from "antd";
+import { Modal, Form, Select, InputNumber, Button, Divider, Space, Tag, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { v4 as uuidv4 } from "uuid";
+import { notify } from "../../utils/notify";
 
 // Control modes mirror the legacy gridappsd-viz RegulatorControlMenu.
 const CONTROL_MODE = {
@@ -64,7 +65,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
 
         if (loadError) {
             console.error("Error loading regulator state:", loadError);
-            message.error("Failed to load regulator tap positions");
+            notify.error("Failed to load regulator tap positions");
             return;
         }
 
@@ -92,7 +93,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
             const values = await form.validateFields();
 
             if (socketClientHelper.simulationState !== "running") {
-                message.error("Simulation is not running. Cannot update tap positions.");
+                notify.error("Simulation is not running. Cannot update tap positions.");
                 setLoading(false);
                 return;
             }
@@ -149,7 +150,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
             }
 
             if (forwardDifferences.length === 0) {
-                message.info("No changes to apply.");
+                notify.info("No changes to apply.");
                 setLoading(false);
                 return;
             }
@@ -183,11 +184,11 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                 graphHelper.sigmaInstance?.refresh();
             }
 
-            message.success("Tap update request sent to backend");
+            notify.success("Tap update request sent to backend");
             close();
         } catch (error) {
             console.error("Save failed:", error);
-            message.error("Failed to send tap update. Please try again.");
+            notify.error("Failed to send tap update. Please try again.");
         } finally {
             setLoading(false);
         }

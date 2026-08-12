@@ -14,7 +14,6 @@ import {
     Select,
     Switch,
     Tooltip,
-    message,
     theme,
 } from "antd";
 import dayjs from "dayjs";
@@ -30,6 +29,7 @@ import {
     VALIDATED_TIMING_FIELDS,
     isFieldDisabled,
 } from "./simulationConfigFields";
+import { notify } from "../../utils/notify";
 
 // Renders inside a themed container (the drawer body) so popups follow the
 // active light/dark theme instead of the document-body default.
@@ -207,7 +207,7 @@ const SimulationConfigForm = ({ open, onClose }) => {
 
     const handleReset = () => {
         form.setFieldsValue(toFormValues(socketClientHelper.buildDefaultGridappsdConfig(models)));
-        message.info("Form reset to default values — Apply to save them.");
+        notify.info("Form reset to default values — Apply to save them.");
     };
 
     const handleApply = async () => {
@@ -215,7 +215,7 @@ const SimulationConfigForm = ({ open, onClose }) => {
         try {
             values = await form.validateFields();
         } catch {
-            message.error("Fix the highlighted fields before applying.");
+            notify.error("Fix the highlighted fields before applying.");
             return;
         }
 
@@ -255,7 +255,7 @@ const SimulationConfigForm = ({ open, onClose }) => {
             advancedConfig,
             powerSystemConfigsByModelId,
         });
-        message.success("Simulation configuration saved.");
+        notify.success("Simulation configuration saved.");
         onClose();
     };
 

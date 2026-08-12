@@ -1,14 +1,3 @@
-// Turns the unified "GLIMPSE objects format" into a graphology graph.
-//
-//   { "<filename>": { objects: [ { objectType, elementType, attributes }, ... ] } }
-//
-// An object becomes a node or an edge by looking its `objectType` up in the
-// theme (see theme.js); objects whose type the theme doesn't know fall back to
-// the explicit `elementType` field that the JSON/NetworkX parsers emit.
-//
-// Two passes are required: every node has to exist before any edge can
-// reference it as an endpoint.
-
 import { MultiUndirectedGraph } from "graphology";
 import louvain from "graphology-communities-louvain";
 import circlepack from "graphology-layout/circlepack";
