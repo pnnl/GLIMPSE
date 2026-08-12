@@ -15,6 +15,7 @@ const MAX_GRID_SIDE = 128;
 
 const DEFAULT_OPTIONS = {
     radius: 0.02, // framed-graph units — see the shader header
+    zoomExponent: 0, // 0 keeps the halo glued to the graph, 1 holds a fixed pixel width
     fill: "#cccccc80",
     border: null, // { color, width } — width in CSS pixels
 };
@@ -44,11 +45,12 @@ const createDataTexture = (gl) => {
  * @param {{source: string, target: string}[]} segments - node key pairs; source
  *   === target draws a disc around a single node. Positions are read live from
  *   the renderer on every process, so the shape follows layout/drag changes.
- * @param {{radius?: number, fill?: string, border?: {color: string, width: number}}} [options]
+ * @param {{radius?: number, zoomExponent?: number, fill?: string,
+ *   border?: {color: string, width: number}}} [options]
  * @returns {typeof WebGLLayerProgram} a program class for `bindWebGLLayer`
  */
 export default function createAreaContourProgram(segments, options) {
-    const { radius, fill, border } = { ...DEFAULT_OPTIONS, ...(options || {}) };
+    const { radius, zoomExponent, fill, border } = { ...DEFAULT_OPTIONS, ...(options || {}) };
     const segmentRows = Math.max(1, Math.ceil(segments.length / SEGMENT_TEXTURE_WIDTH));
 
     // How far past a segment its influence reaches: the halo plus slack for the
@@ -207,12 +209,14 @@ export default function createAreaContourProgram(segments, options) {
                     "u_fillColor",
                     ...(border ? ["u_borderColor"] : []),
                 ],
-                // u_borderWidth is a camera uniform because it is given in CSS
-                // pixels and so depends on the (mutable) device pixel ratio.
+                // u_zoomModifier tracks the camera; u_borderWidth is here rather
+                // than in the data because it is given in CSS pixels and so
+                // depends on the (mutable) device pixel ratio.
                 CAMERA_UNIFORMS: [
                     "u_invMatrix",
                     "u_width",
                     "u_height",
+                    "u_zoomModifier",
                     ...(border ? ["u_borderWidth"] : []),
                 ],
             };
@@ -242,10 +246,19 @@ export default function createAreaContourProgram(segments, options) {
             gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, gl.FLOAT, data);
         }
 
-        setCameraUniforms({ invMatrix, pixelRatio }, { gl, uniformLocations }) {
+        setCameraUniforms({ invMatrix, pixelRatio, zoomRatio }, { gl, uniformLocations }) {
             gl.uniform1f(uniformLocations.u_width, gl.canvas.width);
             gl.uniform1f(uniformLocations.u_height, gl.canvas.height);
             gl.uniformMatrix3fv(uniformLocations.u_invMatrix, false, invMatrix);
+
+            // Capped at 1 so the drawn halo never outgrows the radius the bounds
+            // and the grid were built for — zooming out past the whole model
+            // would otherwise clip it at the cell edges.
+            gl.uniform1f(
+                uniformLocations.u_zoomModifier,
+                Math.min(1, Math.pow(zoomRatio, zoomExponent)),
+            );
+
             if (border) gl.uniform1f(uniformLocations.u_borderWidth, border.width * pixelRatio);
         }
 

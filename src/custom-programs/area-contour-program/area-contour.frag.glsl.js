@@ -36,6 +36,7 @@ uniform sampler2D u_indices;  // segment index per texel, in cell order
 uniform vec2 u_gridSize;      // grid columns, rows
 uniform vec4 u_bounds;        // (minX, minY, maxX, maxY) the grid spans
 uniform float u_radius;       // halo thickness, framed-graph units
+uniform float u_zoomModifier; // scales the radius with zoom; <= 1, see the program
 uniform vec4 u_fillColor;
 ${hasBorder ? "uniform vec4 u_borderColor;\nuniform float u_borderWidth; // device pixels" : ""}
 
@@ -72,9 +73,14 @@ void main() {
   float feather = pixel;
   ${hasBorder ? "float border = u_borderWidth * pixel;" : "float border = 0.0;"}
 
+  // The drawn radius tightens as you zoom in, matching how node sizes respond,
+  // so magnified detail isn't buried under the halo. Never larger than u_radius,
+  // which is what the bounds above and the grid below were built for.
+  float radius = u_radius * u_zoomModifier;
+
   // Closer than this and the fragment is solidly in the fill: the exact distance
   // stops changing the output, so we can stop looking.
-  float solid = u_radius - border - 2.0 * feather;
+  float solid = radius - border - 2.0 * feather;
 
   vec2 cell = (position - u_bounds.xy) / (u_bounds.zw - u_bounds.xy) * u_gridSize;
   ivec2 cellCoords = clamp(ivec2(cell), ivec2(0), ivec2(u_gridSize) - 1);
@@ -92,13 +98,13 @@ void main() {
     if (nearest < solid) break;
   }
 
-  float alpha = 1.0 - smoothstep(u_radius - feather, u_radius + feather, nearest);
+  float alpha = 1.0 - smoothstep(radius - feather, radius + feather, nearest);
   if (alpha <= 0.0) discard;
 
   vec4 color = u_fillColor;
 ${
     hasBorder
-        ? "  color = mix(u_fillColor, u_borderColor, smoothstep(u_radius - border - feather, u_radius - border + feather, nearest));"
+        ? "  color = mix(u_fillColor, u_borderColor, smoothstep(radius - border - feather, radius - border + feather, nearest));"
         : ""
 }
 

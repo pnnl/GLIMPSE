@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { TreeSelect, message } from "antd";
+import { TreeSelect } from "antd";
 import { useSigma } from "@react-sigma/core";
 import { bindWebGLLayer } from "@sigma/layer-webgl";
 import iwanthue from "iwanthue";
+import { useGraph } from "../contexts/GraphContext";
+import { notify } from "../utils/notify";
 import graphHelper from "../graph-helper/GraphHelper";
 import { buildAreaContourGeometry, computeContourRadius } from "../graph-helper/area-contour";
+import { graphSizeZoomExponent } from "../graph-helper/zoom-scaling";
 import createAreaContourProgram from "../custom-programs/area-contour-program/AreaContourProgram";
 
 // Each highlighted area is a separate full-canvas WebGL contour layer, so GPU
@@ -39,6 +42,7 @@ const DistributionAreaSelector = () => {
     const [legend, setLegend] = useState([]); // [{ id, name, color }] mirrors colorMapRef for rendering
     const colorMapRef = useRef({}); // areaId -> color; stable across renders
     const sigma = useSigma();
+    const { darkMode } = useGraph();
 
     // areaId -> display name, rebuilt whenever the tree changes
     const nameById = useMemo(() => {
@@ -90,8 +94,11 @@ const DistributionAreaSelector = () => {
         sigma.setMaxListeners(areasToRender.length + 10);
 
         // One halo thickness for the whole model, so areas shown together read as
-        // the same kind of thing however densely each one is wired.
+        // the same kind of thing however densely each one is wired. It tightens
+        // as you zoom in on the same curve node sizes follow, which is what keeps
+        // the halo off the detail you zoomed in to see on a large feeder.
         const radius = computeContourRadius(graphHelper.graph, sigma);
+        const zoomExponent = graphSizeZoomExponent(graphHelper.graph.order);
 
         // Build one WebGL contour layer per selected area
         let minX = Infinity;
@@ -118,6 +125,7 @@ const DistributionAreaSelector = () => {
                     sigma,
                     createAreaContourProgram(segments, {
                         radius,
+                        zoomExponent,
                         fill: `${color}${FILL_ALPHA}`,
                         border: { color: `${color}${BORDER_ALPHA}`, width: BORDER_WIDTH },
                     }),
@@ -153,7 +161,7 @@ const DistributionAreaSelector = () => {
     const handleChange = (values) => {
         const next = values ?? [];
         if (next.length > MAX_HIGHLIGHT_AREAS) {
-            message.warning(
+            notify.warning(
                 `Only ${MAX_HIGHLIGHT_AREAS} distribution areas can be highlighted at once. ` +
                     `Showing the first ${MAX_HIGHLIGHT_AREAS} of ${next.length}.`,
             );
@@ -166,7 +174,7 @@ const DistributionAreaSelector = () => {
         const newAreaIds = capped.filter((id) => !colorMapRef.current[id]);
         if (newAreaIds.length > 0) {
             const colors = iwanthue(newAreaIds.length, {
-                colorSpace: [0, 360, 40, 70, 15, 85],
+                colorSpace: [0, 360, 20, 100, 15, 80],
             });
 
             newAreaIds.forEach((id, i) => {
@@ -185,6 +193,12 @@ const DistributionAreaSelector = () => {
     };
 
     if (treeData.length === 0) return null;
+
+    // Same palette the graph legend panels use, so both float over the canvas
+    // as the same kind of surface in either theme.
+    const c = darkMode
+        ? { bg: "rgba(31,31,31,0.92)", text: "#e0e0e0", border: "#3a3a3a" }
+        : { bg: "rgba(255,255,255,0.92)", text: "#1f1f1f", border: "#e0e0e0" };
 
     return (
         <>
@@ -209,10 +223,14 @@ const DistributionAreaSelector = () => {
                         marginTop: 8,
                         width: 240,
                         padding: "8px 10px",
-                        background: "rgba(255,255,255,0.9)",
+                        background: c.bg,
+                        color: c.text,
+                        border: `1px solid ${c.border}`,
                         borderRadius: 6,
                         fontSize: 12,
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+                        boxShadow: darkMode
+                            ? "0 1px 4px rgba(0,0,0,0.5)"
+                            : "0 1px 4px rgba(0,0,0,0.15)",
                     }}
                 >
                     {legend.map(({ id, name, color }) => (

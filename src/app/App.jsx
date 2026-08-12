@@ -40,7 +40,7 @@ const useUnsavedChangesGuard = () => {
     }, []);
 };
 
-const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
+const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRef }) => {
     const { view, darkMode } = useGraph();
 
     useUnsavedChangesGuard();
@@ -51,6 +51,17 @@ const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
                 algorithm: darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
                 token: {
                     colorPrimary: "#333333",
+                    // antd derives `controlItemBgActive` (the selected-item background in
+                    // Select/TreeSelect/Cascader/DatePicker) from colorPrimary. Our primary is
+                    // near-black, so the generated "lightest primary" tint came out dark grey —
+                    // a selected dropdown option rendered as a dark bar in light mode. Pin it to
+                    // the same subtle tint the Menu overrides below already use.
+                    controlItemBgActive: darkMode
+                        ? "rgba(69,171,72,0.2)"
+                        : "rgba(51,51,51,0.12)",
+                    controlItemBgActiveHover: darkMode
+                        ? "rgba(69,171,72,0.28)"
+                        : "rgba(51,51,51,0.18)",
                 },
                 components: {
                     Upload: {
@@ -140,6 +151,9 @@ const AppContent = ({ openAboutModalRef, openLoadModelModalRef }) => {
                         {view === "object-studio" && <ModelDataView />}
                     </Content>
                 </Layout>
+                {/* Must stay inside ConfigProvider — a modal rendered outside it
+                    gets antd's default (light) algorithm regardless of darkMode. */}
+                <AboutModal onMount={onAboutModalMount} />
             </AntApp>
         </ConfigProvider>
     );
@@ -156,10 +170,10 @@ function App() {
     return (
         <GraphProvider>
             <AppContent
+                onAboutModalMount={handleAboutModalMount}
                 openAboutModalRef={openAboutModalRef}
                 openLoadModelModalRef={openLoadModelModalRef}
             />
-            <AboutModal onMount={handleAboutModalMount} />
         </GraphProvider>
     );
 }

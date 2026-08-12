@@ -1,8 +1,9 @@
 import React, { useMemo, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { Modal, Form, Select, Input, Radio, Button, Divider, Empty, Spin, message, theme } from "antd";
+import { Modal, Form, Select, Input, Radio, Button, Divider, Empty, Spin, theme } from "antd";
 import { v4 as uuidv4 } from "uuid";
 import { MEASUREMENT_TYPE } from "./plotConstants";
+import { notify } from "../../utils/notify";
 
 // The three plottable measurement types, mirroring the legacy PlotModelCreator.
 const TYPE_OPTIONS = [
@@ -49,7 +50,7 @@ const PlotCreatorModal = ({ open, close, catalog, loading = false, onCreate }) =
             const values = await form.validateFields();
             const entry = catalog?.[values.measurementType]?.[values.component];
             if (!entry) {
-                message.error("Selected component is no longer available.");
+                notify.error("Selected component is no longer available.");
                 return;
             }
 
@@ -71,7 +72,7 @@ const PlotCreatorModal = ({ open, close, catalog, loading = false, onCreate }) =
         } catch (error) {
             if (error?.errorFields) return; // validation errors are surfaced inline
             console.error("Failed to create plot:", error);
-            message.error("Failed to create plot.");
+            notify.error("Failed to create plot.");
         }
     };
 

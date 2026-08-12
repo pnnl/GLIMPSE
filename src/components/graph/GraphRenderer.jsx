@@ -6,6 +6,7 @@ import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
+import { sizeRatioExponent } from "../../graph-helper/zoom-scaling";
 import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
 import { useGraph } from "../../contexts/GraphContext";
@@ -205,10 +206,9 @@ const GraphRenderer = () => {
         [darkMode],
     );
 
-    const sizeRatioFunc = (ratio) => {
-        const exponent = graphHelper.graph.order > 1000 ? 0.2 : 0.6;
-        return Math.pow(ratio, exponent);
-    };
+    // Read the order per call rather than per render: the graph can be swapped
+    // under a Sigma instance whose settings object is deliberately stable.
+    const sizeRatioFunc = (ratio) => Math.pow(ratio, sizeRatioExponent(graphHelper.graph.order));
 
     // Memoized so its identity is stable across re-renders. Passing a fresh
     // settings object makes react-sigma tear down and rebuild the Sigma instance

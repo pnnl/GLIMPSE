@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Button, message } from "antd";
+import { Button } from "antd";
 import axios from "axios";
 import { API_BASE_URL } from "../../config";
 import { useGraph } from "../../contexts/GraphContext";
 import CustomPlot from "./CustomPlot";
 import PlotCreatorModal from "./PlotCreatorModal";
 import "../../styles/CustomPlots.css";
+import { notify } from "../../utils/notify";
 
 // Fold one measurement descriptor into the catalog, grouped as
 // catalog[measurementType][equipmentName] = { equipmentType, phases: { <phase>: mRID } }.
@@ -46,7 +47,7 @@ const CustomSimulationCharts = () => {
             setCatalog(buildCatalog(data?.measurements));
         } catch (error) {
             console.error("Failed to load measurements:", error);
-            message.error("Failed to load device measurements from the backend.");
+            notify.error("Failed to load device measurements from the backend.");
             setCatalog({});
         } finally {
             setLoadingCatalog(false);
