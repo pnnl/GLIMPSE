@@ -272,6 +272,56 @@ Ignored by the frontend if the edge doesn't exist.
 
 ---
 
+### `agents-update`
+
+Report which GridAPPS-D distributed agents are running, and where.
+
+Unlike the events above, this doesn't touch the graph. GLIMPSE builds its agent
+roster from the loaded model itself (`GET /api/gridappsd/agents`), which says
+which agents *should* exist for it; this event is how something outside GLIMPSE
+reports which of them are actually up.
+
+Agents are tied to the visualization by `message_bus_id`, which is the mRID of
+the distribution area the agent operates — the same id GLIMPSE stamps on every
+node and edge as `feeder_area_id` / `switch_area_id` / `secondary_area_id`. Use
+the literal `"system"` for the coordinating agent, which has no area of its own.
+
+**Emit payload:**
+
+```json
+{
+  "model": "_C1C3E687-6FFD-C753-582B-632A27E28507",
+  "agents": [
+    { "agent_id": "coordinating-1", "message_bus_id": "system", "status": "online" },
+    { "agent_id": "switch-agent-3",
+      "message_bus_id": "_1B1F2E85-...",
+      "status": "offline" }
+  ]
+}
+```
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `model` | no | Model mRID or filename. When present the server caches the roster, so a client that connects later still gets current status. |
+| `agents[].agent_id` | yes | Identity used to match against the existing roster. |
+| `agents[].message_bus_id` | yes | Area mRID, or `"system"`. |
+| `agents[].status` | no | `"online"` / `"offline"` / `"unknown"` (default). |
+| `agents[].agent_type` | no | `"coordinating"` or `"distributed"`. |
+| `agents[].level` | no | `"system"` / `"feeder"` / `"switch"` / `"secondary"`. |
+| `agents[].area_name` | no | Falls back to the name from the loaded model. |
+| `agents[].devices` | no | `[{ mrid, name, type, phases }]` — the field devices on that bus. |
+
+**Merge behavior:** a payload carrying only ids and statuses is merged into the
+existing roster, so a liveness ping can't discard the areas and device lists a
+model load established. A payload that also carries `buses` replaces the roster
+wholesale. Agents naming an area that isn't in the loaded model are kept — they
+appear in the panel and the agents view, just without an on-graph marker.
+
+**Ack:** `{ "status": "ok", "agentCount": <n> }`, or `{ "error": ... }` when the
+payload isn't an object with an `agents` list.
+
+---
+
 ## Data model reference
 
 ### GLIMPSE object format
@@ -422,6 +472,7 @@ socket.emit("update", {
 | `add-edge` | `{ objectType, elementType: "edge", attributes: { id?, from, to, ... } }` | `{ status }` |
 | `delete-node` | node id (string) | `{ status }` |
 | `delete-edge` | edge id (string) | `{ status }` |
+| `agents-update` | `{ model?, agents: [{ agent_id, message_bus_id, status, ... }] }` | `{ status, agentCount }` |
 
 All acks return `{ "error": "<message>" }` instead on failure. In `update`, any of
 `color` / `size` / `hidden` may be `null` to leave that property unchanged.

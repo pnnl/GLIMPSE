@@ -1,4 +1,5 @@
 import { MultiUndirectedGraph } from "graphology";
+import { emptyRoster, mergeRoster, normalizeRoster } from "./agents";
 import { assignParallelEdgeCurvatures as assignCurvatures } from "./edge-curvature";
 import { EdgeFocus } from "./edge-focus";
 import { createEdge, createNode, hoverPayload } from "./element-factory";
@@ -62,6 +63,11 @@ class GraphHelper {
 
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
     hasGeoCoords = false; // true when node x/y hold real longitude/latitude (enables map background)
+
+    // The GridAPPS-D distributed-agent roster for the loaded model. Agents are
+    // keyed to distribution areas by mRID, so they ride on the same area ids the
+    // graph already carries — see graph-helper/agents.js.
+    agents = emptyRoster();
 
     // Ephemeral per-tick simulation measurements — voltage on bus nodes (PNV)
     // and power flow on edges (VA) — surfaced as a read-only overlay during a
@@ -492,7 +498,23 @@ class GraphHelper {
         this.communitiesArray = [];
         this.communityColorPallet = {};
         this.distributionAreas = {};
+        this.agents = emptyRoster();
         this.currentFeederID = null;
+    };
+
+    /** Replaces the agent roster wholesale — the response from /api/gridappsd/agents. */
+    setAgentData = (payload) => {
+        this.agents = normalizeRoster(payload);
+    };
+
+    /**
+     * Folds an `agents-update` broadcast into the roster. A status-only payload
+     * updates liveness in place rather than replacing the roster, so a ping from
+     * an external script can't blank out the areas and devices the REST load
+     * established.
+     */
+    applyAgentUpdate = (payload) => {
+        this.agents = mergeRoster(this.agents, payload);
     };
 
     /**

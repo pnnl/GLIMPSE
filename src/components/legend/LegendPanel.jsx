@@ -99,7 +99,9 @@ const LegendPanel = () => {
     const sigma = useSigma();
     const { darkMode } = useGraph();
 
-    const [expanded, setExpanded] = useState(true);
+    // Collapsed on load so the corner starts quiet: this and the agent panel
+    // share it, and neither is the first thing to read on a fresh model.
+    const [expanded, setExpanded] = useState(false);
     // Initialized straight from the graph — it's already loaded when this
     // mounts inside the SigmaContainer; load/clear events keep it in sync.
     const [data, setData] = useState(() => graphHelper.getLegendData());

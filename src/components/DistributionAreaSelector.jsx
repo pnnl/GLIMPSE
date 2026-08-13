@@ -1,27 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { TreeSelect } from "antd";
-import { useSigma } from "@react-sigma/core";
-import { bindWebGLLayer } from "@sigma/layer-webgl";
-import iwanthue from "iwanthue";
 import { useGraph } from "../contexts/GraphContext";
-import { notify } from "../utils/notify";
 import graphHelper from "../graph-helper/GraphHelper";
-import { buildAreaContourGeometry, computeContourRadius } from "../graph-helper/area-contour";
-import { graphSizeZoomExponent } from "../graph-helper/zoom-scaling";
-import createAreaContourProgram from "../custom-programs/area-contour-program/AreaContourProgram";
-
-// Each highlighted area is a separate full-canvas WebGL contour layer, so GPU
-// memory/draw cost scales linearly with the selection. Cap how many can render
-// at once to avoid exhausting the WebGL context (which crashes the canvas) on
-// large models with hundreds of distribution areas.
-const MAX_HIGHLIGHT_AREAS = 10;
-
-// The fill sits under the edges, so it stays light enough to read the network
-// through it and to tell two overlapping areas apart; the outline is what
-// actually delineates the area. Alphas are appended to the area's hex color.
-const FILL_ALPHA = "66"; // 40%
-const BORDER_ALPHA = "E6"; // 90%
-const BORDER_WIDTH = 1.5; // css pixels
+import useAreaHighlight from "../hooks/useAreaHighlight";
+import { FILL_ALPHA, BORDER_ALPHA } from "./graph/AreaHighlightLayers";
 
 const buildTreeData = (areas) =>
     Object.entries(areas).map(([type, areaList]) => ({
@@ -38,11 +20,13 @@ const DistributionAreaSelector = () => {
         const current = graphHelper.distributionAreas;
         return Object.keys(current).length > 0 ? buildTreeData(current) : [];
     });
-    const [selectedAreas, setSelectedAreas] = useState([]);
-    const [legend, setLegend] = useState([]); // [{ id, name, color }] mirrors colorMapRef for rendering
-    const colorMapRef = useRef({}); // areaId -> color; stable across renders
-    const sigma = useSigma();
     const { darkMode } = useGraph();
+
+    // The selection, its colors and the WebGL contour layers all live outside
+    // this component — the agent markers drive the same highlight, so there is
+    // one shared controller and AreaHighlightLayers does the drawing.
+    const areaHighlight = useAreaHighlight();
+    const { selection, colors } = areaHighlight;
 
     // areaId -> display name, rebuilt whenever the tree changes
     const nameById = useMemo(() => {
@@ -58,14 +42,15 @@ const DistributionAreaSelector = () => {
     // Listen for graph load/clear events
     useEffect(() => {
         const handleGraphLoaded = () => {
+            // The selection outlives a remount, so a new model would otherwise
+            // inherit area ids belonging to the previous one.
+            areaHighlight.clear();
             setTreeData(buildTreeData(graphHelper.distributionAreas));
         };
 
         const handleGraphCleared = () => {
             setTreeData([]);
-            setSelectedAreas([]);
-            setLegend([]);
-            colorMapRef.current = {};
+            areaHighlight.clear();
         };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
@@ -75,122 +60,7 @@ const DistributionAreaSelector = () => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
         };
-    }, []);
-
-    // Create / destroy WebGL contour layers whenever the selection or sigma instance changes
-    useEffect(() => {
-        if (!sigma || selectedAreas.length === 0) {
-            return;
-        }
-
-        // Hard cap the rendered set so we never exceed the WebGL layer budget,
-        // even if the selection was set programmatically. Colors were assigned
-        // by the selection handler before the selection state landed here.
-        const areasToRender = selectedAreas
-            .slice(0, MAX_HIGHLIGHT_AREAS)
-            .filter((id) => colorMapRef.current[id]);
-
-        // Raise the listener cap so sigma doesn't warn on many simultaneous layers
-        sigma.setMaxListeners(areasToRender.length + 10);
-
-        // One halo thickness for the whole model, so areas shown together read as
-        // the same kind of thing however densely each one is wired. It tightens
-        // as you zoom in on the same curve node sizes follow, which is what keeps
-        // the halo off the detail you zoomed in to see on a large feeder.
-        const radius = computeContourRadius(graphHelper.graph, sigma);
-        const zoomExponent = graphSizeZoomExponent(graphHelper.graph.order);
-
-        // Build one WebGL contour layer per selected area
-        let minX = Infinity;
-        let maxX = -Infinity;
-        let minY = Infinity;
-        let maxY = -Infinity;
-
-        const cleanups = areasToRender.flatMap((areaId) => {
-            const geometry = buildAreaContourGeometry(graphHelper.graph, sigma, areaId);
-
-            if (!geometry) return [];
-
-            const { segments, bounds } = geometry;
-            minX = Math.min(minX, bounds.minX);
-            maxX = Math.max(maxX, bounds.maxX);
-            minY = Math.min(minY, bounds.minY);
-            maxY = Math.max(maxY, bounds.maxY);
-
-            const color = colorMapRef.current[areaId];
-
-            try {
-                const cleanup = bindWebGLLayer(
-                    `dist-area-${areaId}`,
-                    sigma,
-                    createAreaContourProgram(segments, {
-                        radius,
-                        zoomExponent,
-                        fill: `${color}${FILL_ALPHA}`,
-                        border: { color: `${color}${BORDER_ALPHA}`, width: BORDER_WIDTH },
-                    }),
-                );
-                return [cleanup];
-            } catch (err) {
-                console.error(`[WebGL] Failed to create layer for area ${areaId}:`, err);
-                return [];
-            }
-        });
-
-        // Camera: animate to the highlighted areas, halo included
-        if (minX < Infinity) {
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const spread = Math.max(maxX - minX, maxY - minY) + 2 * radius;
-            const ratio = Math.min(5, Math.max(0.05, spread * 1.15));
-            sigma.getCamera().animate({ x: centerX, y: centerY, ratio }, { duration: 800 });
-        }
-
-        return () => cleanups.forEach((fn) => fn());
-    }, [selectedAreas, sigma]);
-
-    // Drive the reducer grey-out: push the (capped) selection into graphHelper and
-    // refresh so non-member nodes/edges dim. An empty selection clears it (shows all).
-    useEffect(() => {
-        graphHelper.setHighlightedAreas(selectedAreas.slice(0, MAX_HIGHLIGHT_AREAS));
-        if (sigma) sigma.refresh();
-    }, [selectedAreas, sigma]);
-
-    // Cap the selection so we never spin up more WebGL layers than the GPU can
-    // handle; warn the user when their selection is truncated.
-    const handleChange = (values) => {
-        const next = values ?? [];
-        if (next.length > MAX_HIGHLIGHT_AREAS) {
-            notify.warning(
-                `Only ${MAX_HIGHLIGHT_AREAS} distribution areas can be highlighted at once. ` +
-                    `Showing the first ${MAX_HIGHLIGHT_AREAS} of ${next.length}.`,
-            );
-        }
-        const capped = next.slice(0, MAX_HIGHLIGHT_AREAS);
-
-        // Assign a stable color to each newly selected area and drop colors of
-        // deselected ones. Done here (event time) so the layer effect and the
-        // legend always find their colors ready.
-        const newAreaIds = capped.filter((id) => !colorMapRef.current[id]);
-        if (newAreaIds.length > 0) {
-            const colors = iwanthue(newAreaIds.length, {
-                colorSpace: [0, 360, 20, 100, 15, 80],
-            });
-
-            newAreaIds.forEach((id, i) => {
-                colorMapRef.current[id] = colors[i];
-            });
-        }
-
-        Object.keys(colorMapRef.current).forEach((id) => {
-            if (!capped.includes(id)) delete colorMapRef.current[id];
-        });
-
-        setLegend(
-            capped.map((id) => ({ id, name: nameById[id] ?? id, color: colorMapRef.current[id] })),
-        );
-        setSelectedAreas(capped);
-    };
+    }, [areaHighlight]);
 
     if (treeData.length === 0) return null;
 
@@ -204,7 +74,7 @@ const DistributionAreaSelector = () => {
         <>
             <TreeSelect
                 style={{ width: 240 }}
-                value={selectedAreas}
+                value={selection}
                 styles={{ popup: { root: { maxHeight: 400, overflow: "auto" } } }}
                 treeData={treeData}
                 placeholder="Filter by Distribution Area"
@@ -214,10 +84,10 @@ const DistributionAreaSelector = () => {
                 showCheckedStrategy={TreeSelect.SHOW_CHILD}
                 treeNodeFilterProp="title"
                 maxTagCount="responsive"
-                onChange={handleChange}
+                onChange={(values) => areaHighlight.select(values ?? [])}
             />
 
-            {legend.length > 0 && (
+            {selection.length > 0 && (
                 <div
                     style={{
                         marginTop: 8,
@@ -233,7 +103,7 @@ const DistributionAreaSelector = () => {
                             : "0 1px 4px rgba(0,0,0,0.15)",
                     }}
                 >
-                    {legend.map(({ id, name, color }) => (
+                    {selection.map((id) => (
                         <div
                             key={id}
                             style={{ display: "flex", alignItems: "center", gap: 8, padding: "2px 0" }}
@@ -245,8 +115,8 @@ const DistributionAreaSelector = () => {
                                     borderRadius: 3,
                                     flexShrink: 0,
                                     // mirror the layer: light fill, solid outline
-                                    background: `${color}${FILL_ALPHA}`,
-                                    border: `1px solid ${color}${BORDER_ALPHA}`,
+                                    background: `${colors[id]}${FILL_ALPHA}`,
+                                    border: `1px solid ${colors[id]}${BORDER_ALPHA}`,
                                 }}
                             />
                             <span
@@ -256,7 +126,7 @@ const DistributionAreaSelector = () => {
                                     whiteSpace: "nowrap",
                                 }}
                             >
-                                {name}
+                                {nameById[id] ?? id}
                             </span>
                         </div>
                     ))}

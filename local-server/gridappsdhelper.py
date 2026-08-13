@@ -38,7 +38,9 @@ class GridAPPSDHelper:
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
         self.current_limit_map = {}
-        self.distribution_area_map = {}
+        # model mRID -> last agent roster pushed over the "agents-update" socket
+        # event, so a client that connects mid-session still sees live status.
+        self.agent_roster_cache = {}
 
         self._available: bool = False
 

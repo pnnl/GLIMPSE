@@ -15,6 +15,7 @@ from flask_socketio import SocketIO
 from werkzeug.utils import secure_filename
 import shutil
 
+import agenthelper
 from cimhelper import CIMHelper
 from glmhelper import GLMHelper
 from jsonhelper import JSONHelper
@@ -703,6 +704,47 @@ def get_models():
         return json.dumps(error_body(e, tb)), 500
 
 
+@app.route("/api/gridappsd/agents", methods=["GET"])
+def get_agents():
+    """
+    The distributed-agent roster for a loaded model, grouped by distribution area.
+
+    Reads only state retained from the model load (no SPARQL, no broker round
+    trip), so it stays fast enough to call inline right after a model loads.
+    `source` selects where the roster comes from — see agenthelper.
+    """
+    model_id = request.args.get("model") or ""
+    source = request.args.get("source") or "derived"
+
+    try:
+        # Default to the single loaded model, which is the common case; a
+        # multi-model load has to name which one it wants.
+        if not model_id:
+            loaded = list(cim_helper.area_maps.keys())
+            if len(loaded) != 1:
+                return jsonify({
+                    "error": "A 'model' query parameter is required when zero or "
+                             "several models are loaded.",
+                    "loaded": loaded,
+                }), 400
+            model_id = loaded[0]
+
+        if model_id not in cim_helper.area_maps:
+            return jsonify({"error": f"Model {model_id} is not loaded."}), 404
+
+        return jsonify(agenthelper.build_agent_model(
+            area_map=cim_helper.area_maps.get(model_id, {}),
+            object_index=cim_helper.object_index.get(model_id, {}),
+            model_id=model_id,
+            source=source,
+            gridappsd_helper=gridappsd_helper,
+        )), 200
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify(error_body(e, tb)), 500
+
+
 @app.route("/api/gridappsd/model-info", methods=["GET"])
 def get_gridappsd_models():
     try:
@@ -834,6 +876,27 @@ def delete_edge(edge_id):
         return {"error": "delete-edge requires an edge id."}
     socketio.emit("delete-edge", edge_id)
     return {"status": "ok"}
+
+
+@socketio.on("agents-update")
+def agents_update(payload):
+    """
+    Push a distributed-agent roster (or a status change to one) to every client.
+
+    This is how live agent status reaches the UI: the roster served by
+    /api/gridappsd/agents describes which agents *should* exist for a model, and
+    an external script or service publishes here to say which are actually up.
+    Cached per model so a client that connects later still gets current status.
+    """
+    if not isinstance(payload, dict) or not isinstance(payload.get("agents"), list):
+        return {"error": "agents-update requires an object with an 'agents' list."}
+
+    model_id = payload.get("model")
+    if model_id:
+        gridappsd_helper.agent_roster_cache[model_id] = payload
+
+    socketio.emit("agents-update", payload)
+    return {"status": "ok", "agentCount": len(payload["agents"])}
 
 
 # ================================================================================================

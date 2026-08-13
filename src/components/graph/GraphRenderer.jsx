@@ -23,6 +23,8 @@ import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSqua
 import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
 import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
+import AgentPanel from "../agents/AgentPanel";
+import AreaHighlightLayers from "./AreaHighlightLayers";
 import GraphControls from "./GraphControls";
 import SimulationIdBadge from "../SimulationIdBadge";
 import LegendPanel from "../legend/LegendPanel";
@@ -287,12 +289,16 @@ const GraphRenderer = () => {
             <Graph />
             <GraphEvents />
             <AnimatedEdgeTicker />
+            {/* Renders nothing; owns the distribution-area contour layers for
+                every consumer of the shared selection (area tree, agents). */}
+            <AreaHighlightLayers />
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-left"}>
                 <DistributionAreaSelector />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-right"}>
                 <ViolationLegend />
                 <LegendPanel />
+                <AgentPanel />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
                 <GraphControls />

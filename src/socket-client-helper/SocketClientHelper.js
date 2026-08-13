@@ -111,6 +111,9 @@ class SocketClientHelper {
         "add-edge": [],
         "delete-node": [],
         "delete-edge": [],
+        // Live distributed-agent roster / status, pushed by an external script
+        // or service. See graph-helper/agents.js.
+        "agents-update": [],
         error: [],
     };
 
@@ -230,6 +233,14 @@ class SocketClientHelper {
         this.socket.on("delete-edge", (id) => {
             graphHelper.deleteEdge(id);
             this.#emit("delete-edge", id);
+        });
+
+        // Distributed-agent roster or liveness report. Merged rather than
+        // replaced, so a status-only ping can't discard the areas and devices
+        // the REST roster established.
+        this.socket.on("agents-update", (data) => {
+            graphHelper.applyAgentUpdate(data);
+            this.#emit("agents-update", data);
         });
     }
 

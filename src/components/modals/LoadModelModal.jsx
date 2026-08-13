@@ -10,6 +10,7 @@ import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL } from "../../config";
 import { confirmDiscardChanges, errorText } from "../../utils/notify";
+import { loadAgentRoster } from "../../utils/agent-api";
 
 const LoadModelModal = ({ onMount }) => {
     const [open, setOpen] = useState(true);
@@ -126,6 +127,9 @@ const LoadModelModal = ({ onMount }) => {
             graphHelper.currentFeederID = selectedGridappsdModels[0]?.modelId ?? null;
             graphHelper.setThemeObject(response.themeData ?? null);
             graphHelper.setGraphData(response.data ?? response);
+            // Before graph-loaded, so the agent panel and views are populated by
+            // the time they resync on that event.
+            await loadAgentRoster(graphHelper.currentFeederID);
             newGraphUpdate();
             window.dispatchEvent(
                 new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }),

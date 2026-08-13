@@ -7,6 +7,7 @@ import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
+import { loadAgentRoster } from "../utils/agent-api";
 
 const { Dragger } = Upload;
 
@@ -122,7 +123,16 @@ const FileUpload = ({ closeModal }) => {
 
             graphHelper.isCIM = endpoint === "api/upload/cim";
             graphHelper.setThemeObject(response.themeData ?? null);
-            graphHelper.setGraphData(response.data ?? response);
+            const modelData = response.data ?? response;
+            graphHelper.setGraphData(modelData);
+
+            // Only a CIM model has distribution areas, and the backend keys an
+            // uploaded parse by filename rather than by mRID. Awaited before
+            // graph-loaded so the agent panel and views resync with a roster
+            // already in place.
+            if (graphHelper.isCIM) {
+                await loadAgentRoster(Object.keys(modelData)[0]);
+            }
 
             // A file-uploaded model isn't driveable via GridAPPS-D, so detach
             // from any previous run: hides the controls/log/charts/id badge and

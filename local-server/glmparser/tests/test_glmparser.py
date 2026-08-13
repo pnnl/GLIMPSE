@@ -735,7 +735,8 @@ from pathlib import Path
 
 import glmparser
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# tests -> glmparser -> local-server -> repo root
+REPO_ROOT = Path(__file__).resolve().parents[3]
 MODELS = REPO_ROOT / "models"
 
 SAMPLE = """clock {

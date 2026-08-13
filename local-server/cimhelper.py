@@ -111,6 +111,10 @@ class CIMHelper:
     def __init__(self) -> None:
         self.active_measurement_map: dict = {"Discrete": {}, "Analog": {}}
         self.FEEDERS: dict[str, FeederModel] = {}
+        # feeder_id -> { member mRID: ancestry record } (see _build_*_area_map)
+        self.area_maps: dict[str, dict] = {}
+        # feeder_id -> { mRID: {"name", "objectType", "elementType"} }
+        self.object_index: dict[str, dict] = {}
 
     def classify_line(self, line: object) -> str:
         UNDERGROUND_INFO = (
@@ -170,6 +174,11 @@ class CIMHelper:
         # Reset once per load request (not per model) so a multi-model load
         # keeps every FeederModel available for object lookups and exports.
         self.FEEDERS = {}
+        # Distribution-area ancestry and a light object index, kept per feeder so
+        # the agents endpoint can rebuild the area hierarchy after the load
+        # without re-running any SPARQL. See _parse_model.
+        self.area_maps = {}
+        self.object_index = {}
         if model_IDs is not None:
             gjs = {id: {"objects": []} for id in model_IDs}
 
@@ -316,6 +325,10 @@ class CIMHelper:
             area_map = self._build_topology_area_map(topology_json, feeder_id)
         else:
             area_map = self._build_distribution_area_map(feeder_id)
+
+        # Kept for the lifetime of the load so /api/gridappsd/agents can rebuild
+        # the area hierarchy without re-querying Blazegraph.
+        self.area_maps[feeder_id] = area_map
 
         for node in self.FEEDERS[feeder_id].graph.get(cim.ConnectivityNode, {}).values():
             new_node = {
@@ -564,6 +577,25 @@ class CIMHelper:
         # Build measurement map: measurement MRID -> equipment info
         # This is used to map simulation output measurements to CIM objects
         self._build_measurement_map(feeder_id)
+
+        # One pass over what we just emitted, so the agents endpoint can name and
+        # classify an area's members without touching the CIM graph again. Built
+        # from the objects rather than at each emission site so it can't drift.
+        self.object_index[feeder_id] = {
+            obj["attributes"]["id"]: {
+                "name": obj["attributes"].get("name", ""),
+                "objectType": obj["objectType"],
+                "elementType": obj["elementType"],
+                # A regulator is a "transformer" objectType that carries
+                # class_type "regulator", so the agent roster needs both to tell
+                # an LTC from a plain transformer.
+                "class_type": obj["attributes"].get("class_type", ""),
+                # Only some CIM classes carry phases through _add_attributes.
+                "phases": str(obj["attributes"].get("phases", "")),
+            }
+            for obj in objects
+            if obj.get("attributes", {}).get("id")
+        }
 
         return objects
 

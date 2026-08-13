@@ -24,4 +24,6 @@ dev = ["pytest>=8.0"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"]
+# Both suites, named explicitly: "tests" alone would collect the server tests and
+# silently skip the parser's, which live inside the glmparser package.
+testpaths = ["tests", "glmparser/tests"]

@@ -59,6 +59,8 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         { type: "divider" },
         { key: "object-studio", label: "Model Data View", disabled: !graphLoaded },
         { type: "divider" },
+        { key: "agents", label: "Agents View", disabled: !graphLoaded },
+        { type: "divider" },
         { key: "shortcuts", label: "Keyboard Shortcuts" },
         { type: "divider" },
         {
@@ -220,6 +222,9 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 break;
             case "object-studio":
                 setView(view === "object-studio" ? "graph" : "object-studio");
+                break;
+            case "agents":
+                setView(view === "agents" ? "graph" : "agents");
                 break;
             case "shortcuts":
                 setShowShortcuts(true);

@@ -4,7 +4,7 @@ const GraphContext = createContext();
 
 export const GraphProvider = ({ children }) => {
     const [graphUpdateTrigger, setGraphUpdateTrigger] = useState(0);
-    const [view, setView] = useState("graph"); // "graph" or "object-studio"
+    const [view, setView] = useState("graph"); // "graph", "object-studio" or "agents"
     const [darkMode, setDarkMode] = useState(false);
 
     const newGraphUpdate = useCallback(() => {

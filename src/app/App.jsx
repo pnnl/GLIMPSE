@@ -8,6 +8,7 @@ import AppHeader from "./AppHeader";
 import LoadModelModal from "../components/modals/LoadModelModal";
 import { GraphProvider, useGraph } from "../contexts/GraphContext";
 import ModelDataView from "../components/model-data-view/ModelDataView";
+import AgentsView from "../components/agents/AgentsView";
 import graphHelper from "../graph-helper/GraphHelper";
 import { registerNotifier } from "../utils/notify";
 
@@ -149,6 +150,7 @@ const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRe
                             <GraphLayout />
                         </div>
                         {view === "object-studio" && <ModelDataView />}
+                        {view === "agents" && <AgentsView />}
                     </Content>
                 </Layout>
                 {/* Must stay inside ConfigProvider — a modal rendered outside it
