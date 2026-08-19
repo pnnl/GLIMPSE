@@ -18,14 +18,23 @@ import {
 } from "./measurements";
 import { applyCapacitorStates, applySimulationOutput, applySwitchStates } from "./simulation";
 import * as socketApi from "./socket-api";
-import { edgeTypesOf, emptyTypeCounts, nodeTypesOf, resolveTheme } from "./theme";
+import {
+    edgeTypesOf,
+    emptyTypeCounts,
+    flattenTheme,
+    nodeTypesOf,
+    resolveTheme,
+    themeSourceFor,
+} from "./theme";
 
 const newGraph = () => new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
 
 class GraphHelper {
     // private
     #boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-    #theme = {};
+    #theme = {};        // colors already flattened for the active mode
+    #themeSource = null; // as authored, so a mode switch can re-flatten it
+    #darkMode = false;
     #hasFixedNodes = false;
     #highlights = new HighlightState();
     #edgeFocus = new EdgeFocus();
@@ -89,7 +98,8 @@ class GraphHelper {
     // ── Theme ───────────────────────────────────────────────────────────────
 
     setThemeObject = (jsonTheme = null) => {
-        const theme = resolveTheme(this.themeName, jsonTheme);
+        const theme = resolveTheme(this.themeName, jsonTheme, this.#darkMode);
+        this.#themeSource = themeSourceFor(this.themeName, jsonTheme);
 
         if (!theme) {
             // The custom theme was selected but no theme file came with the
@@ -108,6 +118,56 @@ class GraphHelper {
     /** Guards the socket entry points, which can fire before any model is loaded. */
     #ensureTheme = () => {
         if (!this.#theme?.groups || !this.#theme?.edgeOptions) this.setThemeObject();
+    };
+
+    /**
+     * Switches the theme between its light and dark colors.
+     *
+     * Theme colors are baked into node/edge attributes when the graph is built,
+     * so re-flattening the theme is not enough on its own — every element that
+     * still carries its themed color has to be repainted. Elements the renderer
+     * is currently coloring by something other than type (violation mode, flow
+     * animation) are left alone: those reducers re-derive their color each frame
+     * anyway, and the reset path restores from the theme.
+     *
+     * @param {boolean} darkMode
+     * @returns {boolean} whether anything changed
+     */
+    setDarkMode = (darkMode) => {
+        const next = Boolean(darkMode);
+        if (next === this.#darkMode) return false;
+        this.#darkMode = next;
+
+        if (!this.#themeSource) return false;
+
+        // Types minted at load time for objects the theme didn't know about
+        // (see ensureNodeGroup/ensureEdgeOption) only exist on the flattened
+        // copy, so carry them across rather than losing them on every toggle.
+        const reflowed = flattenTheme(this.#themeSource, next);
+        for (const section of ["groups", "edgeOptions"]) {
+            for (const [type, attrs] of Object.entries(this.#theme[section] ?? {})) {
+                if (!(type in reflowed[section])) reflowed[section][type] = attrs;
+            }
+        }
+        this.#theme = reflowed;
+
+        this.graph.updateEachNodeAttributes((id, node) => {
+            const themed = this.#theme.groups?.[node.group];
+            if (!themed) return node;
+            return {
+                ...node,
+                color: themed.color ?? node.color,
+                borderColor: themed.borderColor ?? node.borderColor,
+            };
+        });
+
+        this.graph.updateEachEdgeAttributes((id, edge) => {
+            const themed = this.#theme.edgeOptions?.[edge.group];
+            if (!themed) return edge;
+            return { ...edge, color: themed.color ?? edge.color };
+        });
+
+        return true;
     };
 
     // ── Unsaved-edit tracking ───────────────────────────────────────────────

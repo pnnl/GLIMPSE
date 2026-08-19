@@ -47,6 +47,22 @@ const GraphEvents = () => {
     const rafRef = useRef(null);
     const pendingPosRef = useRef(null);
 
+    // Pin the camera to the graph's own bounds on the first render so sigma stops
+    // autoscaling as nodes move. Deliberately its own effect: a raw sigma.on has
+    // no automatic cleanup (unlike registerEvents), so living in the drag effect
+    // below re-added a listener on every draggedNode change and stacked them
+    // until sigma's emitter warned about a leak.
+    useEffect(() => {
+        const pinBBoxOnce = () => {
+            if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+        };
+
+        sigma.on("afterRender", pinBBoxOnce);
+        return () => {
+            sigma.off("afterRender", pinBBoxOnce);
+        };
+    }, [sigma]);
+
     useEffect(() => {
         const handleUp = () => {
             if (draggedNode) {
@@ -69,10 +85,6 @@ const GraphEvents = () => {
 
             setDraggedNode(null);
         };
-
-        sigma.on("afterRender", () => {
-            if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
-        });
 
         registerEvents({
             clickNode: (e) => console.log(graphHelper.graph.getNodeAttributes(e.node)),

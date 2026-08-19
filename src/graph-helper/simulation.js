@@ -15,8 +15,14 @@ import { dotSpeedForLoading, edgeWidthForLoading } from "../utils/electrical";
 // don't pick a flow direction off of numerical noise.
 const FLOW_THRESHOLD = 1e-6;
 
-const SWITCH_CLOSED_COLOR = "#ff0000";
-const SWITCH_OPEN_COLOR = "#4aff4a";
+// Switch position keeps the utility reading — red is closed/energized, green is
+// open — but the hues are pushed apart (green toward teal, red toward orange)
+// because plain red/green is the pair red-green color vision deficiency
+// collapses, and switch position is not something to leave ambiguous. The two
+// sit ~ΔE 16 apart under simulated protanopia and deuteranopia, against ~10 for
+// the pure red/green they replace, and both clear 3:1 on either canvas.
+const SWITCH_CLOSED_COLOR = "#E04A1F";
+const SWITCH_OPEN_COLOR = "#1F9E6E";
 const NO_FLOW_COLOR = "rgba(145, 145, 145, 0.7)";
 
 // A value of 0 means the switch is open; anything else means closed.

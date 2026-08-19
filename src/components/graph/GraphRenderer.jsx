@@ -29,7 +29,8 @@ import GraphControls from "./GraphControls";
 import SimulationIdBadge from "../SimulationIdBadge";
 import LegendPanel from "../legend/LegendPanel";
 import ViolationLegend from "../legend/ViolationLegend";
-import { isViolation } from "../../utils/electrical";
+import areaHighlight from "../../graph-helper/area-highlight";
+import { isViolation, setSeverityDarkMode } from "../../utils/electrical";
 
 const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
 
@@ -91,6 +92,11 @@ const GraphRenderer = () => {
 
     useEffect(() => {
         setCanvasDarkMode(darkMode);
+        setSeverityDarkMode(darkMode);
+        // Repaints every element that is still carrying its themed color, which
+        // is what makes the theme's light/dark color pairs take effect.
+        graphHelper.setDarkMode(darkMode);
+        areaHighlight.setDarkMode(darkMode);
         if (graphHelper.sigmaInstance) graphHelper.sigmaInstance.refresh();
     }, [darkMode]);
 
@@ -172,41 +178,36 @@ const GraphRenderer = () => {
         return { ...attrs, size: attrs.size * 2 };
     }, []);
 
-    const customEdgeReducer = useCallback(
-        (edgeId, attrs) => {
-            // Searched/focused edge always wins: pulse it and keep it on top —
-            // never dim it, whatever the area/group highlight state is.
-            const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
-            if (focusStyle) return focusStyle;
+    const customEdgeReducer = useCallback((edgeId, attrs) => {
+        // Searched/focused edge always wins: pulse it and keep it on top —
+        // never dim it, whatever the area/group highlight state is.
+        const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
+        if (focusStyle) return focusStyle;
 
-            // Condition coloring replaces type coloring outright (see the node
-            // reducer). The flow-animation type is left alone so dots still move.
-            if (graphHelper.isViolationMode()) {
-                return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
-            }
+        // Condition coloring replaces type coloring outright (see the node
+        // reducer). The flow-animation type is left alone so dots still move.
+        if (graphHelper.isViolationMode()) {
+            return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
+        }
 
-            // Distribution-area highlighting takes precedence: grey out any edge that
-            // is not in a selected area.
-            if (graphHelper.getHighlightedAreas().length > 0) {
-                return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
-            }
+        // Distribution-area highlighting takes precedence: grey out any edge that
+        // is not in a selected area.
+        if (graphHelper.getHighlightedAreas().length > 0) {
+            return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
+        }
 
-            if (
-                graphHelper.getHighlightedEdgeTypes().length === 0 &&
-                graphHelper.getHighlightedGroups().length === 0
-            ) {
-                if (darkMode && attrs.group === "overhead_line") attrs.color = "#bfc0c0";
-                return attrs;
-            }
+        if (
+            graphHelper.getHighlightedEdgeTypes().length === 0 &&
+            graphHelper.getHighlightedGroups().length === 0
+        ) {
+            return attrs;
+        }
 
-            if (!graphHelper.isHighlighted(attrs.group)) {
-                return dimEdgeAttrs(attrs);
-            }
-
-            return { ...attrs, size: attrs.size * 1.5 };
-        },
-        [darkMode],
-    );
+        if (!graphHelper.isHighlighted(attrs.group)) {
+            return dimEdgeAttrs(attrs);
+        }
+        return { ...attrs, size: attrs.size * 1.5 };
+    }, []);
 
     // Read the order per call rather than per render: the graph can be swapped
     // under a Sigma instance whose settings object is deliberately stable.
@@ -303,10 +304,7 @@ const GraphRenderer = () => {
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
                 <GraphControls />
             </ControlsContainer>
-            <ControlsContainer
-                style={{ border: "none", background: "none" }}
-                position={"bottom-right"}
-            >
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-right"}>
                 <SimulationIdBadge />
             </ControlsContainer>
         </SigmaContainer>

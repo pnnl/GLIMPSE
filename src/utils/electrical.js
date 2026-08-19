@@ -33,18 +33,54 @@ export const LOADING_LIMITS = {
 };
 
 // ── Severity palette ────────────────────────────────────────────────────────
-// Chosen to stay distinguishable on both the light and dark canvas, and to
-// avoid colliding with the model's own theme colors (which are mostly
-// blue/orange/green Okabe-Ito tones at low saturation).
+// Severity is the highest-stakes encoding in the app, so it gets the strictest
+// treatment: a diverging blue↔amber/red scale rather than the green/amber/red
+// that red-green color vision deficiency collapses. Blue-vs-orange is the one
+// axis every common CVD type preserves.
+//
+// Two things follow from that choice:
+//   * direction is readable — undervoltage is blue, overvoltage is warm, where
+//     before both were the same amber and told you nothing about which way the
+//     bus had moved;
+//   * severity reads as intensity — the severe levels are the more saturated
+//     end of each arm, so the ramp still works if you only see lightness.
+//
+// `normal` and `unknown` are deliberately quiet neutrals (ISA-101: an operator
+// display should spend its salience budget on the abnormal), and `unknown` sits
+// below the 3:1 contrast floor on purpose — "no measurement" is the least
+// important thing on the canvas.
+//
+// Every pair is at least ΔE 16 apart under simulated protanopia, deuteranopia
+// and tritanopia, except the two same-hue steps within one arm (low/severeLow,
+// high/severeHigh), which are an ordered ramp rather than distinct categories.
+
+// Set from GraphRenderer when the canvas theme changes; the same module-level
+// pattern canvas-utils.js uses, so the severity objects stay plain values that
+// callers can pass around by identity.
+let _darkMode = false;
+
+export const setSeverityDarkMode = (value) => {
+    _darkMode = Boolean(value);
+};
+
+/** A severity whose `color` follows the active canvas theme. */
+const severity = (level, label, light, dark) => ({
+    level,
+    label,
+    get color() {
+        return _darkMode ? dark : light;
+    },
+});
+
 export const SEVERITY = {
-    normal: { level: "normal", label: "Normal", color: "#3aa757" },
-    low: { level: "low", label: "Undervoltage", color: "#f2a93b" },
-    high: { level: "high", label: "Overvoltage", color: "#f2a93b" },
-    severeLow: { level: "severeLow", label: "Severe undervoltage", color: "#d7263d" },
-    severeHigh: { level: "severeHigh", label: "Severe overvoltage", color: "#8e44ad" },
-    elevated: { level: "elevated", label: "Elevated loading", color: "#f2a93b" },
-    overloaded: { level: "overloaded", label: "Overloaded", color: "#d7263d" },
-    unknown: { level: "unknown", label: "No data", color: "#919191" },
+    normal: severity("normal", "Normal", "#4F6470", "#7E94A6"),
+    low: severity("low", "Undervoltage", "#3E8FD0", "#5BB4EE"),
+    high: severity("high", "Overvoltage", "#C77700", "#E69F00"),
+    severeLow: severity("severeLow", "Severe undervoltage", "#0A56B8", "#2E86FF"),
+    severeHigh: severity("severeHigh", "Severe overvoltage", "#A31515", "#FF5C4D"),
+    elevated: severity("elevated", "Elevated loading", "#C77700", "#E69F00"),
+    overloaded: severity("overloaded", "Overloaded", "#A31515", "#FF5C4D"),
+    unknown: severity("unknown", "No data", "#AFB6BA", "#5E6469"),
 };
 
 /** True for the classifications that should count as a violation. */

@@ -86,6 +86,21 @@ socketio = SocketIO(
     app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
+# The gevent hub of the thread running the WSGI server. GridAPPS-D delivers
+# simulation output on stomp-py's own OS thread (a real thread — nothing here is
+# monkey patched), and socketio.emit() from a foreign thread only puts the packet
+# on engine.io's gevent queue: the wake-up it schedules is not thread safe, so the
+# writer greenlet stays parked until the hub happens to spin for some other reason
+# (an inbound frame, the ping timer). Output then reaches the client in bursts
+# rather than one increment at a time. emit_threadsafe() hands the emit back to
+# this hub through the threadsafe callback, which does wake the loop.
+_hub = gevent.get_hub()
+
+
+def emit_threadsafe(event: str, payload):
+    """socketio.emit() from a non-greenlet thread. See _hub above."""
+    _hub.loop.run_callback_threadsafe(socketio.emit, event, payload)
+
 # Whether to include Python tracebacks in error responses. Off by default so we
 # don't leak internal paths/stack details to clients; enable for local debugging.
 EXPOSE_TRACEBACKS = os.environ.get("EXPOSE_TRACEBACKS", "").strip().lower() in (
@@ -980,10 +995,10 @@ def handle_start_simulation(config):
 
                         sim_output["Discrete"].append(measurment_output)
             
-            socketio.emit("sim-output", sim_output)
+            emit_threadsafe("sim-output", sim_output)
 
         def on_sim_log(headers, message):
-            socketio.emit("sim-log", message)
+            emit_threadsafe("sim-log", message)
 
         gridappsd_helper.subscribe_to_simulation_output(on_sim_output)
         gridappsd_helper.subscribe_to_simulation_log(on_sim_log)

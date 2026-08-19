@@ -45,7 +45,6 @@
         "graphology-layout-force": "^0.2.4",
         "graphology-layout-forceatlas2": "^0.10.1",
         "graphology-metrics": "^2.4.0",
-        "iwanthue": "^2.1.0",
         "leaflet": "^1.9.4",
         "mermaid": "^11.16.0",
         "react": "^19.1.1",
