@@ -2,6 +2,7 @@ import os
 import logging
 import socket
 import json
+import time
 from collections.abc import Callable
 from enum import Enum
 from gridappsd import GridAPPSD, topics
@@ -15,6 +16,11 @@ os.environ.setdefault("GRIDAPPSD_USER", "system")
 os.environ.setdefault("GRIDAPPSD_PASSWORD", "manager")
 
 logger = logging.getLogger(__name__)
+
+# How long a platform readiness probe is trusted before it is re-run. The status
+# endpoint is polled every time the load-model modal opens and the probe blocks
+# on a broker round trip, so repeating it on every poll is wasteful.
+PLATFORM_PROBE_TTL = 10.0
 
 class SimulationState(Enum):
     IDLE = "idle"
@@ -49,6 +55,10 @@ class GridAPPSDHelper:
         # a reconnect gives the service another chance once it's deployed.
         self._topology_service_down: bool = False
 
+        # Cached result of the last is_platform_ready() probe (None = unknown).
+        self._platform_ready: bool | None = None
+        self._platform_checked_at: float = 0.0
+
         # ── One-shot initial connection attempt ───────────────────────
         self._try_initial_connect()
 
@@ -80,16 +90,23 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            print("connected")
-            self._available = True
-            logger.info("Connected to GridAPPS-D")
+            # The constructor can return without an established session, so the
+            # link is only real if the client says it is connected.
+            self._available = self.is_connected()
+            if self._available:
+                logger.info("Connected to GridAPPS-D")
+            else:
+                logger.warning("GridAPPS-D client built but no session established — features disabled.")
+                self.gapps = None
         except Exception as e:
             logger.warning(f"GridAPPS-D is not reachable — features disabled. ({e})")
             self.gapps = None
             self._available = False
 
-    # Do the same in try_connect()
     def try_connect(self) -> bool:
+        """(Re)establish the broker connection. Destructive — it drops the current
+        connection and any subscriptions on it, so callers that only want to know
+        the current state should ask is_connected() first."""
         self.disconnect()
 
         if not self._is_port_open():
@@ -99,7 +116,13 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            self._available = True
+            # An open port and a constructor that didn't raise are not a session:
+            # ask the client whether the STOMP connection actually came up.
+            self._available = self.is_connected()
+            if not self._available:
+                logger.warning("GridAPPS-D client built but no session established.")
+                self.gapps = None
+                return False
             self._topology_service_down = False  # give the topology service another chance
             logger.info("Reconnected to GridAPPS-D")
             return True
@@ -134,6 +157,46 @@ class GridAPPSDHelper:
         """
         return self._available and self.is_connected()
 
+    def is_platform_ready(self, force: bool = False) -> bool:
+        """Whether the platform behind the broker can actually serve requests.
+
+        The ActiveMQ broker accepts STOMP connections as soon as the gridappsd
+        container is up — including when the data tier behind it (blazegraph,
+        mysql, ...) is down, a state in which every model query fails. A cheap
+        QUERY_MODEL_NAMES tells the two apart. Blocking: stomp-py waits on a real
+        thread with time.sleep and nothing here is monkey patched, so call this
+        off the event loop (gevent threadpool). Result is cached for
+        PLATFORM_PROBE_TTL seconds; pass force=True to re-probe immediately.
+        """
+        if not self.is_connected():
+            self._platform_ready = None
+            return False
+
+        now = time.monotonic()
+        if (
+            not force
+            and self._platform_ready is not None
+            and now - self._platform_checked_at < PLATFORM_PROBE_TTL
+        ):
+            return self._platform_ready
+
+        ready = False
+        try:
+            response = self.gapps.query_model_names()
+            # The platform answers a failed query with a 200-ish payload carrying
+            # an "error" key rather than raising, so inspect the body.
+            ready = isinstance(response, dict) and "error" not in response
+            if not ready:
+                logger.warning(
+                    f"GridAPPS-D broker is reachable but the platform is not serving queries: {response}"
+                )
+        except Exception as e:
+            logger.warning(f"GridAPPS-D platform probe failed: {e}")
+
+        self._platform_ready = ready
+        self._platform_checked_at = now
+        return ready
+
     def disconnect(self):
         """Cleanly disconnect from GridAPPS-D"""
         if self.gapps:
@@ -145,6 +208,7 @@ class GridAPPSDHelper:
                 self.gapps = None
                 self.sim_id = None
                 self.sim_state = SimulationState.IDLE
+                self._platform_ready = None
 
     # ─── Model Queries ────────────────────────────────────────────────
 

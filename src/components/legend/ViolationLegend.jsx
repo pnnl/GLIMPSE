@@ -14,11 +14,20 @@ const ViolationLegend = () => {
     useSimLiveTick();
 
     const [enabled, setEnabled] = useState(() => graphHelper.isViolationMode());
+    // The band colors below come from a module-level severity scale that
+    // GraphRenderer's effect re-points on a light/dark toggle — after this
+    // component has already rendered. Bumping on the event re-reads them.
+    const [, setThemeTick] = useState(0);
 
     useEffect(() => {
         const handler = (e) => setEnabled(Boolean(e?.detail?.enabled));
+        const bump = () => setThemeTick((n) => n + 1);
         window.addEventListener("graph-violation-mode-change", handler);
-        return () => window.removeEventListener("graph-violation-mode-change", handler);
+        window.addEventListener("graph-theme-changed", bump);
+        return () => {
+            window.removeEventListener("graph-violation-mode-change", handler);
+            window.removeEventListener("graph-theme-changed", bump);
+        };
     }, []);
 
     if (!enabled) return null;

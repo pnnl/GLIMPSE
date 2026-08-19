@@ -66,23 +66,15 @@ const LoadModelModal = ({ onMount }) => {
             key: "example-models",
             children: <ExampleModels closeModal={() => setOpen(false)} />,
         },
-        // Hidden entirely when the broker isn't reachable (see the status
-        // check above).
-        ...(gridappsdAvailable
-            ? [
-                  {
-                      label: "Load w/ GridAPPS-D",
-                      key: "load-gridappsd",
-                      children: (
-                          <GridAPPSDModelForm
-                              initialConnected
-                              onModelSelect={handleModelSelect}
-                          />
-                      ),
-                  },
-              ]
-            : []),
     ];
+
+    if (gridappsdAvailable) {
+        ITEMS.push({
+            label: "Load w/ GridAPPS-D",
+            key: "load-gridappsd",
+            children: <GridAPPSDModelForm initialConnected onModelSelect={handleModelSelect} />,
+        });
+    }
 
     useEffect(() => {
         if (onMount) {
@@ -131,9 +123,7 @@ const LoadModelModal = ({ onMount }) => {
             // the time they resync on that event.
             await loadAgentRoster(graphHelper.currentFeederID);
             newGraphUpdate();
-            window.dispatchEvent(
-                new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }),
-            );
+            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }));
             // Drop any previous run first (stops it, clears its id and logs), then
             // flip to idle: only a model loaded through GridAPPS-D gets the
             // simulation lifecycle controls and log panel, and they gate on this
@@ -145,9 +135,7 @@ const LoadModelModal = ({ onMount }) => {
             // Inline (not a toast): a CIM pull can take minutes, and the user is
             // still looking at this modal when it fails.
             console.error("GridAPPS-D model load failed:", e);
-            setError(
-                errorText(e, "The server could not build a graph from the selected model(s)."),
-            );
+            setError(errorText(e, "The server could not build a graph from the selected model(s)."));
         } finally {
             setLoading(false);
             setLoadProgress(null);

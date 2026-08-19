@@ -777,20 +777,32 @@ def get_gridappsd_models():
 @app.route("/api/gridappsd/status", methods=["GET"])
 def get_gridappsd_status():
     try:
+        # Non-destructive: try_connect() tears down the live connection (and with
+        # it any simulation subscriptions) before rebuilding, and the frontend
+        # polls this route every time the load-model modal opens. Only reconnect
+        # when there is nothing to preserve.
+        broker_up = gridappsd_helper.is_connected() or gridappsd_helper.try_connect()
 
-        connected = gridappsd_helper.try_connect()
+        # A reachable broker is not a usable platform: the gridappsd container
+        # alone answers on 61613 while blazegraph and friends are down. Confirm
+        # with a real query, off the event loop since the probe blocks.
+        connected = broker_up and gevent.get_hub().threadpool.apply(
+            gridappsd_helper.is_platform_ready
+        )
+
+        if connected:
+            message = "Connected to GridAPPS-D"
+        elif broker_up:
+            message = (
+                "The GridAPPS-D message broker is reachable, but the platform is not "
+                "answering queries — check that blazegraph and the other platform "
+                "containers are running."
+            )
+        else:
+            message = "Not connected to GridAPPS-D"
 
         return (
-            json.dumps(
-                {
-                    "connected": connected,
-                    "message": (
-                        "Connected to GridAPPS-D"
-                        if connected
-                        else "Not connected to GridAPPS-D"
-                    ),
-                }
-            ),
+            json.dumps({"connected": connected, "message": message}),
             200,
         )
 

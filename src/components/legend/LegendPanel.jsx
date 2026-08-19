@@ -134,10 +134,18 @@ const LegendPanel = () => {
         window.addEventListener("graph-loaded", handleGraphLoaded);
         window.addEventListener("graph-cleared", handleGraphCleared);
         window.addEventListener("graph-reset", handleGraphReset);
+        // Light/dark toggle re-flattens the theme's color pairs, so the swatches
+        // need re-reading. Highlight/hide state survives — the graph itself didn't
+        // change. Driven by the event rather than the darkMode context value
+        // because this panel lives under GraphRenderer, whose effect is what calls
+        // graphHelper.setDarkMode — a local effect here would run first and read
+        // the old colors.
+        window.addEventListener("graph-theme-changed", refresh);
         return () => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
             window.removeEventListener("graph-reset", handleGraphReset);
+            window.removeEventListener("graph-theme-changed", refresh);
         };
     }, [refresh]);
 

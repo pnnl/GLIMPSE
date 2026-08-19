@@ -98,6 +98,11 @@ const GraphRenderer = () => {
         graphHelper.setDarkMode(darkMode);
         areaHighlight.setDarkMode(darkMode);
         if (graphHelper.sigmaInstance) graphHelper.sigmaInstance.refresh();
+        // The DOM panels rendered inside the SigmaContainer read their colors from
+        // the module state set above (the flattened theme, the severity scale).
+        // Their own render pass runs before this effect, so a darkMode-keyed effect
+        // in them would read the previous mode's colors — they wait on this instead.
+        window.dispatchEvent(new CustomEvent("graph-theme-changed"));
     }, [darkMode]);
 
     const BorderImageNodeProgram = useMemo(() => {
