@@ -31,7 +31,9 @@ export const hoverPayload = (attributes, vitals = []) => {
  * special-case them).
  */
 export const EDGE_ICONS = {
-    switch: { type: "switch", iconType: "switch", switchSize: 8, switchColor: "#ff0000" },
+    // switchColor is the closed/energized color (see simulation.SWITCH_CLOSED_COLOR);
+    // a running simulation repaints it as the position measurements arrive.
+    switch: { type: "switch", iconType: "switch", switchSize: 8, switchColor: "#E04A1F" },
     regulator: { type: "regulator", iconType: "regulator", regulatorSize: 16 },
     transformer: { type: "transformer", iconType: "transformer", transformerSize: 16 },
 };

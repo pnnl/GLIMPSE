@@ -38,6 +38,38 @@ const AgentMarkers = ({ roster, level }) => {
     // Bumped once per animation frame to reproject the markers.
     const [, setFrame] = useState(0);
     const frameRef = useRef(0);
+    // The element the markers are portalled into.
+    //
+    // Sigma empties its container when it is killed, and react-sigma kills and
+    // rebuilds the instance whenever the settings object changes — which the
+    // dark-mode toggle does. Portalling straight into sigma's container
+    // therefore lost the markers on the first theme switch and never got them
+    // back: React still believed its portal node was mounted, so it never
+    // re-appended it.
+    //
+    // Owning the layer fixes that. It is derived from `sigma`, whose identity
+    // changes on every rebuild, so a fresh element is created and attached to
+    // the fresh container each time.
+    const layer = useMemo(() => {
+        if (!sigma) return null;
+
+        const el = document.createElement("div");
+        el.style.position = "absolute";
+        el.style.inset = "0";
+        // The layer must not eat drags or clicks meant for the graph; each
+        // marker opts back in for itself.
+        el.style.pointerEvents = "none";
+        el.style.overflow = "hidden";
+        return el;
+    }, [sigma]);
+
+    // Attached separately: creating the node is pure, putting it in the document
+    // is not. Appending last keeps it above sigma's canvases.
+    useEffect(() => {
+        if (!sigma || !layer) return;
+        sigma.getContainer().appendChild(layer);
+        return () => layer.remove();
+    }, [sigma, layer]);
 
     useEffect(() => {
         if (!sigma) return;
@@ -77,7 +109,7 @@ const AgentMarkers = ({ roster, level }) => {
             .filter(({ centroid }) => centroid !== null);
     }, [roster, level]);
 
-    if (!sigma || placements.length === 0) return null;
+    if (!sigma || !layer || placements.length === 0) return null;
 
     const c = surfaceFor(darkMode);
     const { width, height } = sigma.getDimensions();
@@ -97,21 +129,12 @@ const AgentMarkers = ({ roster, level }) => {
         if (visible.length >= MAX_MARKERS) break;
     }
 
-    // Portalled into the sigma container rather than rendered in place: this
-    // component mounts from a corner ControlsContainer, so an absolutely
-    // positioned layer would be measured against that box instead of the canvas
-    // the markers have to line up with.
+    // Portalled onto the canvas rather than rendered in place: this component
+    // mounts from a corner ControlsContainer, so an absolutely positioned layer
+    // would be measured against that box instead of the canvas the markers have
+    // to line up with.
     return createPortal(
-        <div
-            style={{
-                position: "absolute",
-                inset: 0,
-                // The layer must not eat drags or clicks meant for the graph;
-                // each marker opts back in for itself.
-                pointerEvents: "none",
-                overflow: "hidden",
-            }}
-        >
+        <>
             {visible.map(({ agent, x, y }) => {
                 const selected = selection.includes(agent.areaId);
                 // A selected marker takes its area's contour color, so the chip
@@ -163,8 +186,8 @@ const AgentMarkers = ({ roster, level }) => {
                     </button>
                 );
             })}
-        </div>,
-        sigma.getContainer(),
+        </>,
+        layer,
     );
 };
 
