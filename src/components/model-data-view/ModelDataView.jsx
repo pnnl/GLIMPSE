@@ -365,7 +365,10 @@ const ObjectStudio = () => {
                 <Select
                     style={{ width: "24rem", marginLeft: "auto" }}
                     size="middle"
-                    showSearch
+                    showSearch={{
+                        filterOption: (input, option) =>
+                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+                    }}
                     allowClear
                     aria-label="Find an object in the tables by name or ID"
                     value={searchValue}
@@ -373,9 +376,6 @@ const ObjectStudio = () => {
                     placeholder="Find by Name or ID"
                     onSelect={handleSearchSelect}
                     onChange={(val) => setSearchValue(val)}
-                    filterOption={(input, option) =>
-                        (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                    }
                     optionRender={(option) => (
                         <Flex justify="space-between" align="center" gap="0.75rem">
                             <span

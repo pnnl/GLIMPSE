@@ -187,11 +187,11 @@ const SimulationConfigForm = ({ open, onClose }) => {
         if (changedTiming.run_realtime === true) {
             form.setFieldValue(["simulation_config", "interval"], REALTIME_INTERVAL);
         }
-        form.validateFields(
-            VALIDATED_TIMING_FIELDS.map((key) => ["simulation_config", key]),
-        ).catch(() => {
-            // Rejects with the field errors it just rendered; nothing to do.
-        });
+        form.validateFields(VALIDATED_TIMING_FIELDS.map((key) => ["simulation_config", key])).catch(
+            () => {
+                // Rejects with the field errors it just rendered; nothing to do.
+            },
+        );
     };
 
     // Rebuild from the stored config each time the drawer opens, so unsaved

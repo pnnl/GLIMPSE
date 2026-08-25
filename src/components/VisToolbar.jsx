@@ -144,9 +144,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                                 size="medium"
                                 aria-label="Simulation configuration"
                                 icon={<IoSettingsSharp />}
-                                disabled={
-                                    simulationState === "running" || simulationState === "paused"
-                                }
+                                disabled={simulationState === "running" || simulationState === "paused"}
                                 onClick={() => setSimConfigOpen(true)}
                             />
                         </Tooltip>

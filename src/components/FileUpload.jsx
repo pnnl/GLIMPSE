@@ -139,9 +139,7 @@ const FileUpload = ({ closeModal }) => {
             // stops a simulation that would otherwise stream into this graph.
             socketClientHelper.detachSimulation();
 
-            window.dispatchEvent(
-                new CustomEvent("graph-loaded", { detail: { source: "file-upload" } }),
-            );
+            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "file-upload" } }));
             newGraphUpdate();
             closeModal();
         } catch (err) {
@@ -189,8 +187,7 @@ const FileUpload = ({ closeModal }) => {
                 <p className="ant-upload-text">File Upload</p>
                 <p className="ant-upload-hint">Drag and drop files here or click to browse</p>
                 <p className="ant-upload-hint" style={{ fontSize: 12, opacity: 0.7 }}>
-                    Accepts .glm, .xml (CIM), or .json — plus an optional
-                    &lt;filename&gt;.theme.json
+                    Accepts .glm, .xml (CIM), or .json — plus an optional &lt;filename&gt;.theme.json
                 </p>
                 {uploading && (
                     <div style={{ padding: "0 24px", marginTop: 8 }}>

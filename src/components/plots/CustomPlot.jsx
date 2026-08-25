@@ -88,9 +88,12 @@ const CustomPlot = ({ plot, onRemove }) => {
                 const arr = d.series[i];
                 // Carry forward the previous value when a component reports nothing
                 // this step so line lengths stay aligned with the timestamp axis.
-                const next = value === null || value === undefined || !isFinite(value)
-                    ? arr.length > 0 ? arr[arr.length - 1] : null
-                    : parseFloat(Number(value).toFixed(3));
+                const next =
+                    value === null || value === undefined || !isFinite(value)
+                        ? arr.length > 0
+                            ? arr[arr.length - 1]
+                            : null
+                        : parseFloat(Number(value).toFixed(3));
                 arr.push(next);
                 trimHistory(arr);
             });

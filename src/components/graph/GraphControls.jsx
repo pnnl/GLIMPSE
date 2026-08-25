@@ -131,9 +131,7 @@ const GraphControls = () => {
         if (isRunning) stop(); // the force layout would fight the geographic positions
 
         const positions = new Map();
-        sigma.getGraph().forEachNode((node, attrs) =>
-            positions.set(node, { x: attrs.x, y: attrs.y }),
-        );
+        sigma.getGraph().forEachNode((node, attrs) => positions.set(node, { x: attrs.x, y: attrs.y }));
         savedPositionsRef.current = positions;
 
         bindMap();

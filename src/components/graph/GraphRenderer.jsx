@@ -2,7 +2,7 @@ import "@react-sigma/core/lib/style.css";
 import { useEffect, useMemo, useCallback } from "react";
 import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
-import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
+import { createNodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -15,7 +15,6 @@ import {
     EdgeRectangleProgram,
     createNodeCompoundProgram,
     createEdgeCompoundProgram,
-    EdgeArrowHeadProgram,
 } from "sigma/rendering";
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";

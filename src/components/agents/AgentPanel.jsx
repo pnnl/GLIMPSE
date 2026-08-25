@@ -152,10 +152,7 @@ const AgentPanel = () => {
     }, []);
 
     const byLevel = useMemo(() => agentsByLevel(roster), [roster]);
-    const levelsPresent = useMemo(
-        () => PLACEABLE_LEVELS.filter((l) => byLevel.has(l)),
-        [byLevel],
-    );
+    const levelsPresent = useMemo(() => PLACEABLE_LEVELS.filter((l) => byLevel.has(l)), [byLevel]);
 
     // A model whose areas stop above the current level would otherwise leave the
     // markers pointing at nothing.

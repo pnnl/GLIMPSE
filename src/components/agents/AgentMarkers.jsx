@@ -99,14 +99,16 @@ const AgentMarkers = ({ roster, level }) => {
     const placements = useMemo(() => {
         const agents = agentsByLevel(roster).get(level) ?? [];
 
-        return agents
-            .map((agent) => ({
-                agent,
-                centroid: agent.areaId ? computeAreaCentroid(graphHelper.graph, agent.areaId) : null,
-            }))
-            // An agent whose area has no nodes in this model can't be placed. It
-            // is not dropped — the panel and the bus diagram still list it.
-            .filter(({ centroid }) => centroid !== null);
+        return (
+            agents
+                .map((agent) => ({
+                    agent,
+                    centroid: agent.areaId ? computeAreaCentroid(graphHelper.graph, agent.areaId) : null,
+                }))
+                // An agent whose area has no nodes in this model can't be placed. It
+                // is not dropped — the panel and the bus diagram still list it.
+                .filter(({ centroid }) => centroid !== null)
+        );
     }, [roster, level]);
 
     if (!sigma || !layer || placements.length === 0) return null;

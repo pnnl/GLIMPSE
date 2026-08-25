@@ -77,7 +77,10 @@ const publishPeriodRule = ({ getFieldValue }) => ({
             );
         }
         // Rule 3 — only applies when the run is not following the wall clock.
-        if (!getFieldValue(simulationConfigPath("run_realtime")) && !isFactorOrMultipleOf60(publishPeriod)) {
+        if (
+            !getFieldValue(simulationConfigPath("run_realtime")) &&
+            !isFactorOrMultipleOf60(publishPeriod)
+        ) {
             return reject(`Publish period must be ${SIXTY_HINT}`);
         }
         return Promise.resolve();

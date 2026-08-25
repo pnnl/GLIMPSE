@@ -57,12 +57,8 @@ const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRe
                     // near-black, so the generated "lightest primary" tint came out dark grey —
                     // a selected dropdown option rendered as a dark bar in light mode. Pin it to
                     // the same subtle tint the Menu overrides below already use.
-                    controlItemBgActive: darkMode
-                        ? "rgba(69,171,72,0.2)"
-                        : "rgba(51,51,51,0.12)",
-                    controlItemBgActiveHover: darkMode
-                        ? "rgba(69,171,72,0.28)"
-                        : "rgba(51,51,51,0.18)",
+                    controlItemBgActive: darkMode ? "rgba(69,171,72,0.2)" : "rgba(51,51,51,0.12)",
+                    controlItemBgActiveHover: darkMode ? "rgba(69,171,72,0.28)" : "rgba(51,51,51,0.18)",
                 },
                 components: {
                     Upload: {

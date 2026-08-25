@@ -68,84 +68,87 @@ const SimulationCharts = () => {
     const syncVoltage = voltageTimeline.syncWindow;
     const syncLoad = loadTimeline.syncWindow;
 
-    const processOutput = useCallback((output) => {
-        const { timestamp, Analog } = output;
-        const ts = new Date(timestamp * 1000).toLocaleTimeString();
+    const processOutput = useCallback(
+        (output) => {
+            const { timestamp, Analog } = output;
+            const ts = new Date(timestamp * 1000).toLocaleTimeString();
 
-        // ── Voltage (PNV) ──────────────────────────────────────────────────
-        const pnvMags = Analog.filter((m) => m.measurement_type === "PNV")
-            .map((m) => m.magnitude)
-            .filter(isFinite);
+            // ── Voltage (PNV) ──────────────────────────────────────────────────
+            const pnvMags = Analog.filter((m) => m.measurement_type === "PNV")
+                .map((m) => m.magnitude)
+                .filter(isFinite);
 
-        if (pnvMags.length > 0) {
-            const minV = Math.min(...pnvMags);
-            const maxV = Math.max(...pnvMags);
-            const avgV = pnvMags.reduce((a, b) => a + b, 0) / pnvMags.length;
-            const v = vd.current;
-            v.timestamps.push(ts);
-            v.min.push(parseFloat(minV.toFixed(2)));
-            v.avg.push(parseFloat(avgV.toFixed(2)));
-            v.max.push(parseFloat(maxV.toFixed(2)));
-            // Trimmed only at the retention cap — the run's history is kept so
-            // it can be scrolled back through, not discarded after 20 samples.
-            [v.timestamps, v.min, v.avg, v.max].forEach(trimHistory);
+            if (pnvMags.length > 0) {
+                const minV = Math.min(...pnvMags);
+                const maxV = Math.max(...pnvMags);
+                const avgV = pnvMags.reduce((a, b) => a + b, 0) / pnvMags.length;
+                const v = vd.current;
+                v.timestamps.push(ts);
+                v.min.push(parseFloat(minV.toFixed(2)));
+                v.avg.push(parseFloat(avgV.toFixed(2)));
+                v.max.push(parseFloat(maxV.toFixed(2)));
+                // Trimmed only at the retention cap — the run's history is kept so
+                // it can be scrolled back through, not discarded after 20 samples.
+                [v.timestamps, v.min, v.avg, v.max].forEach(trimHistory);
 
-            voltageChartRef.current?.getEchartsInstance()?.setOption({
-                xAxis: { data: [...v.timestamps] },
-                series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
-            });
-            syncVoltage();
-        }
-
-        // ── Load Demand (VA) ───────────────────────────────────────────────
-        let lP = 0,
-            lQ = 0,
-            bP = 0,
-            bQ = 0,
-            sP = 0,
-            sQ = 0;
-        for (const m of Analog.filter((m) => m.measurement_type === "VA")) {
-            const [P, Q] = polarToRect(m.magnitude, m.angle);
-            const name = m.equipment_name || "";
-            if (LOAD_TYPES.has(m.equipment_type)) {
-                lP += P;
-                lQ += Q;
-            } else if (name.startsWith("PowerElectronicsConnection_BatteryUnit")) {
-                bP += P;
-                bQ += Q;
-            } else if (name.startsWith("PowerElectronicsConnection_PhotovoltaicUnit")) {
-                sP += P;
-                sQ += Q;
+                voltageChartRef.current?.getEchartsInstance()?.setOption({
+                    xAxis: { data: [...v.timestamps] },
+                    series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
+                });
+                syncVoltage();
             }
-        }
 
-        const l = ld.current;
-        const push = (arr, val) => {
-            arr.push(parseFloat((val / 1000).toFixed(3)));
-            trimHistory(arr);
-        };
-        l.timestamps.push(ts);
-        trimHistory(l.timestamps);
-        push(l.loadP, lP);
-        push(l.loadQ, lQ);
-        push(l.batP, bP);
-        push(l.batQ, bQ);
-        push(l.solP, sP);
-        push(l.solQ, sQ);
+            // ── Load Demand (VA) ───────────────────────────────────────────────
+            let lP = 0,
+                lQ = 0,
+                bP = 0,
+                bQ = 0,
+                sP = 0,
+                sQ = 0;
+            for (const m of Analog.filter((m) => m.measurement_type === "VA")) {
+                const [P, Q] = polarToRect(m.magnitude, m.angle);
+                const name = m.equipment_name || "";
+                if (LOAD_TYPES.has(m.equipment_type)) {
+                    lP += P;
+                    lQ += Q;
+                } else if (name.startsWith("PowerElectronicsConnection_BatteryUnit")) {
+                    bP += P;
+                    bQ += Q;
+                } else if (name.startsWith("PowerElectronicsConnection_PhotovoltaicUnit")) {
+                    sP += P;
+                    sQ += Q;
+                }
+            }
 
-        loadChartRef.current?.getEchartsInstance()?.setOption({
-            xAxis: { data: [...l.timestamps] },
-            series: [
-                { data: [...l.loadP] },
-                { data: [...l.loadQ] },
-                { data: [...l.batP] },
-                { data: [...l.batQ] },
-                { data: [...l.solP] },
-                { data: [...l.solQ] },
-            ],
-        });
-        syncLoad();
-    }, [syncVoltage, syncLoad]);
+            const l = ld.current;
+            const push = (arr, val) => {
+                arr.push(parseFloat((val / 1000).toFixed(3)));
+                trimHistory(arr);
+            };
+            l.timestamps.push(ts);
+            trimHistory(l.timestamps);
+            push(l.loadP, lP);
+            push(l.loadQ, lQ);
+            push(l.batP, bP);
+            push(l.batQ, bQ);
+            push(l.solP, sP);
+            push(l.solQ, sQ);
+
+            loadChartRef.current?.getEchartsInstance()?.setOption({
+                xAxis: { data: [...l.timestamps] },
+                series: [
+                    { data: [...l.loadP] },
+                    { data: [...l.loadQ] },
+                    { data: [...l.batP] },
+                    { data: [...l.batQ] },
+                    { data: [...l.solP] },
+                    { data: [...l.solQ] },
+                ],
+            });
+            syncLoad();
+        },
+        [syncVoltage, syncLoad],
+    );
 
     useEffect(() => {
         return socketClientHelper.on("sim-output", processOutput);

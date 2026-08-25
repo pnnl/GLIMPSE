@@ -222,9 +222,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
                             placeholder="Select status"
                             options={config.statusOptions}
                             style={{ width: "100%" }}
-                            // Render the dropdown inside the (themed) modal body so it
-                            // follows the active light/dark theme instead of the
-                            // document-body default.
                             getPopupContainer={(trigger) => trigger.parentElement}
                         />
                     </Form.Item>

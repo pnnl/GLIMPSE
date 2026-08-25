@@ -82,7 +82,6 @@ const DistributionAreaSelector = () => {
                 allowClear
                 treeCheckable
                 showCheckedStrategy={TreeSelect.SHOW_CHILD}
-                treeNodeFilterProp="title"
                 maxTagCount="responsive"
                 onChange={(values) => areaHighlight.select(values ?? [])}
             />
@@ -98,9 +97,7 @@ const DistributionAreaSelector = () => {
                         border: `1px solid ${c.border}`,
                         borderRadius: 6,
                         fontSize: 12,
-                        boxShadow: darkMode
-                            ? "0 1px 4px rgba(0,0,0,0.5)"
-                            : "0 1px 4px rgba(0,0,0,0.15)",
+                        boxShadow: darkMode ? "0 1px 4px rgba(0,0,0,0.5)" : "0 1px 4px rgba(0,0,0,0.15)",
                     }}
                 >
                     {selection.map((id) => (

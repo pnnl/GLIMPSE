@@ -199,8 +199,7 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
         });
 
         // Agents sit above their bus, centered on it.
-        const agentsWidth =
-            busAgents.length * BOX_WIDTH + Math.max(0, busAgents.length - 1) * GAP;
+        const agentsWidth = busAgents.length * BOX_WIDTH + Math.max(0, busAgents.length - 1) * GAP;
         let agentX = left + (width - agentsWidth) / 2;
         busAgents.forEach((agent) => {
             agents.push({
@@ -213,8 +212,7 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
             agentX += BOX_WIDTH + GAP;
         });
 
-        const devicesWidth =
-            busDevices.length * DEVICE_WIDTH + Math.max(0, busDevices.length - 1) * GAP;
+        const devicesWidth = busDevices.length * DEVICE_WIDTH + Math.max(0, busDevices.length - 1) * GAP;
         let deviceX = left + (width - devicesWidth) / 2;
         busDevices.forEach(({ device }) => {
             devices.push({

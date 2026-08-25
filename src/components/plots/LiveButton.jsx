@@ -9,9 +9,7 @@ import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 // telling the user their scroll position is "wrong" when it isn't.
 const LiveButton = ({ following, onResume }) => {
     const isStreaming = (state) => state === "running" || state === "paused";
-    const [streaming, setStreaming] = useState(() =>
-        isStreaming(socketClientHelper.simulationState),
-    );
+    const [streaming, setStreaming] = useState(() => isStreaming(socketClientHelper.simulationState));
 
     useEffect(() => {
         return socketClientHelper.on("sim-state-change", (state) => setStreaming(isStreaming(state)));

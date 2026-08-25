@@ -45,9 +45,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                     <span>Export Model</span>
                     {!canExport && (
                         <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.3 }}>
-                            {!graphLoaded
-                                ? "Load a model first"
-                                : "GLM and JSON models only"}
+                            {!graphLoaded ? "Load a model first" : "GLM and JSON models only"}
                         </Text>
                     )}
                 </Flex>
@@ -282,7 +280,10 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         ref={searchRef}
                         style={{ width: "24rem", marginLeft: "auto" }}
                         size="middle"
-                        showSearch
+                        showSearch={{
+                            filterOption: (input, option) =>
+                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+                        }}
                         aria-label="Search the model by object ID or name"
                         value={searchValue}
                         options={searchOptions}
@@ -292,9 +293,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                             setSearchValue(null);
                         }}
                         onChange={(val) => setSearchValue(val)}
-                        filterOption={(input, option) =>
-                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                        }
                     />
                 )}
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>

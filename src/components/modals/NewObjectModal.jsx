@@ -197,10 +197,10 @@ const NewObjectModal = ({ open, close }) => {
                         placeholder="Select target node..."
                         options={nodeIDs}
                         disabled={hasNoGraph}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                        }
+                        showSearch={{
+                            filterOption: (input, option) =>
+                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+                        }}
                     />
                 </Form.Item>
 
