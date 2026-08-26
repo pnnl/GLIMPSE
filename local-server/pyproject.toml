@@ -1,6 +1,6 @@
 [project]
 name = "local-server"
-version = "0.8.5"
+version = "0.8.6"
 description = "Back end server for GLIMPSE for GLM, CIM, JSON parsing and other functionalities through API or Websocket events"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -20,7 +20,9 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+# celery is a hosted-only runtime dependency (see requirements-hosted.txt), but
+# the parse-job tests exercise the task module, so it belongs in the dev group.
+dev = ["pytest>=8.0", "celery[redis]>=5.4"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

@@ -213,6 +213,12 @@ The finished installer is written to the `release/` directory. The installed app
 
 ### Deployment & Security Configuration
 
+> **Hosting GLIMPSE for several users?** See
+> [docs/HOSTED_DEPLOYMENT.md](docs/HOSTED_DEPLOYMENT.md). The defaults below
+> describe the desktop build, which is a _single-session_ server: one loaded
+> model shared by every connected client. Set `GLIMPSE_MODE=hosted` for the
+> multi-user web deployment.
+
 The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the defaults below are safe as-is. **A networked deployment is different**: the Docker backend binds to `0.0.0.0`, which makes it reachable by any client that can route to the port. Because the backend has no per-user login, treat the following environment variables as required hardening before exposing it beyond localhost.
 
 | Variable                                                                         | Applies to         | Default                                      | Purpose                                                                                                                                                                                                                                                                                                            |
@@ -270,12 +276,6 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
-
-## Running Tests
-
-The `.glm` parser ([`local-server/glmparser/`](local-server/glmparser/)) has a `pytest` suite —
-111 tests covering the parser/writer directly plus golden-file comparisons and full round-trip
-checks against all 17 sample models in [`models/`](models/). It runs from `local-server/`:
 
 ```bash
 cd local-server

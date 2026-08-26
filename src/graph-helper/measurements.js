@@ -1,11 +1,3 @@
-// Reads over the live-simulation overlay (`graphHelper.liveMeasurements`).
-//
-// Everything here is a pure function of (graph, overlay, id): voltage and
-// loading summaries, the severity that drives violation-mode coloring, and the
-// colored "vitals" lines that lead a hover card. The heavy electrical math
-// itself lives in utils/electrical.js — this module is the glue that pulls the
-// model attributes and the measurements together.
-
 import { hoverPayload } from "./element-factory";
 import {
     SEVERITY,
@@ -20,10 +12,6 @@ import {
     summarizeNodeVoltage,
 } from "../utils/electrical";
 
-/**
- * Voltage summary for a node, or null when it has no measurement (or no
- * resolvable base voltage). See utils/electrical.summarizeNodeVoltage.
- */
 export const nodeVoltageSummary = (graph, live, nodeId) => {
     if (!graph.hasNode(nodeId)) return null;
     const measured = live.nodes.get(nodeId);
@@ -66,7 +54,6 @@ const edgeReferenceVoltages = (graph, live, edgeId) => {
     return null;
 };
 
-/** Loading summary for an edge, or null when it has no power measurement. */
 export const edgeLoadingSummary = (graph, live, edgeId) => {
     if (!graph.hasEdge(edgeId)) return null;
     const measured = live.edges.get(edgeId);
@@ -74,7 +61,6 @@ export const edgeLoadingSummary = (graph, live, edgeId) => {
     return summarizeEdgeLoading(measured, edgeReferenceVoltages(graph, live, edgeId));
 };
 
-/** Severity object (see electrical.SEVERITY) driving violation-mode color. */
 export const nodeSeverity = (graph, live, nodeId) =>
     nodeVoltageSummary(graph, live, nodeId)?.worst.severity ?? SEVERITY.unknown;
 
@@ -107,8 +93,6 @@ export const violationCounts = (graph, live) => {
 };
 
 // ── Hover "vitals" ──────────────────────────────────────────────────────────
-// The colored block that leads the hover card. Built fresh from the live
-// overlay each time it changes, so it never drifts from the measurements.
 
 /**
  * @returns {Array<{ text: string, color?: string }>} lines, or [] when the
@@ -174,11 +158,6 @@ export const edgeVitals = (graph, live, edgeId) => {
     return lines;
 };
 
-/**
- * Recomputes a node's hover card in place so its vitals block matches the
- * current overlay. Always rebuilt from the node's own attributes, never
- * appended to, so the model's data stays untouched.
- */
 export const refreshNodeHover = (graph, live, nodeId) => {
     if (!graph.hasNode(nodeId)) return;
     const vitals = nodeVitals(graph, live, nodeId);

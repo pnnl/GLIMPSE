@@ -1,9 +1,3 @@
-// Builders for the sigma attribute objects stored on graph nodes and edges.
-//
-// Every path that creates an element — file load, socket add-node/add-edge, the
-// in-app "new object" forms — goes through here, so a node or edge looks the
-// same no matter where it came from.
-
 import { buildHoverAttributes } from "../utils/hover-attributes";
 
 /**
@@ -23,26 +17,12 @@ export const hoverPayload = (attributes, vitals = []) => {
     };
 };
 
-/**
- * Edges whose type is drawn by a custom WebGL program that paints a symbol at
- * the midpoint (see src/custom-programs/). `type` selects the program, and
- * `iconType` is what the rest of the app tests to know an edge carries a symbol
- * (parallel-edge curvature, the focus pulse, and the flow animation all skip or
- * special-case them).
- */
 export const EDGE_ICONS = {
-    // switchColor is the closed/energized color (see simulation.SWITCH_CLOSED_COLOR);
-    // a running simulation repaints it as the position measurements arrive.
     switch: { type: "switch", iconType: "switch", switchSize: 8, switchColor: "#E04A1F" },
     regulator: { type: "regulator", iconType: "regulator", regulatorSize: 16 },
     transformer: { type: "transformer", iconType: "transformer", transformerSize: 16 },
 };
 
-/**
- * The icon overrides for an edge type, or null when it draws as a plain line.
- * Transformers tagged `class_type: "regulator"` get the tap-changer arrow
- * instead of the plain windings.
- */
 export const edgeIconFor = (objectType, attributes = {}) => {
     if (objectType === "transformer" && attributes?.class_type === "regulator") {
         return EDGE_ICONS.regulator;
@@ -51,7 +31,6 @@ export const edgeIconFor = (objectType, attributes = {}) => {
     return EDGE_ICONS[objectType] ?? null;
 };
 
-/** Flow-animation defaults; the dots only move once a simulation sets `type: "animated"`. */
 const flowDefaults = () => ({
     dotColor: "#ff0000",
     dotSize: 6,

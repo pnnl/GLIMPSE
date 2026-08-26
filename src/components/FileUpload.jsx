@@ -7,6 +7,7 @@ import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
+import { awaitParseJob, isJobHandoff } from "../utils/parse-job";
 import { loadAgentRoster } from "../utils/agent-api";
 
 const { Dragger } = Upload;
@@ -84,6 +85,10 @@ const FileUpload = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    // Set once the bytes are up and the server is parsing. Distinct from
+    // `progress`, which only tracks the transfer — a big CIM model spends
+    // seconds uploading and minutes parsing.
+    const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
 
     const uploadFiles = async (files) => {
@@ -106,8 +111,9 @@ const FileUpload = ({ closeModal }) => {
         try {
             setUploading(true);
             setProgress(0);
+            setStatus(null);
 
-            const { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
+            let { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
                 onUploadProgress: (progressEvent) => {
                     if (!progressEvent.total) return;
                     setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -116,6 +122,15 @@ const FileUpload = ({ closeModal }) => {
 
             if ("error" in response) throw new Error(response.error);
 
+            // The hosted backend hands large CIM parses to a worker and answers
+            // with a job instead of a model. Poll it out to the same payload a
+            // synchronous upload would have returned.
+            if (isJobHandoff(response)) {
+                setStatus("Queued…");
+                response = await awaitParseJob(response.jobId, { onProgress: setStatus });
+                if (response && "error" in response) throw new Error(response.error);
+            }
+
             if (graphHelper.graph.order > 0) {
                 graphHelper.clearGraphData();
                 window.dispatchEvent(new CustomEvent("graph-cleared"));
@@ -123,6 +138,7 @@ const FileUpload = ({ closeModal }) => {
 
             graphHelper.isCIM = endpoint === "api/upload/cim";
             graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setObjectDetails(response.objectDetails);
             const modelData = response.data ?? response;
             graphHelper.setGraphData(modelData);
 
@@ -149,6 +165,7 @@ const FileUpload = ({ closeModal }) => {
             setError(errorText(err, "The server could not parse these files."));
         } finally {
             setUploading(false);
+            setStatus(null);
             setTimeout(() => setProgress(0), 500);
         }
     };
@@ -191,7 +208,18 @@ const FileUpload = ({ closeModal }) => {
                 </p>
                 {uploading && (
                     <div style={{ padding: "0 24px", marginTop: 8 }}>
-                        <Progress percent={progress} size="small" />
+                        {/* Once parsing starts the transfer bar is finished and
+                            meaningless, so show the server's status instead. */}
+                        {status ? (
+                            <Progress percent={100} size="small" status="active" showInfo={false} />
+                        ) : (
+                            <Progress percent={progress} size="small" />
+                        )}
+                        {status && (
+                            <p className="ant-upload-hint" style={{ fontSize: 12, marginTop: 4 }}>
+                                {status}
+                            </p>
+                        )}
                     </div>
                 )}
             </Dragger>

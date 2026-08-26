@@ -1,16 +1,5 @@
 import { useEffect, useRef } from "react";
 
-// ============================================================================
-// useShortcut — declarative keyboard shortcuts.
-// ============================================================================
-// Each component registers the shortcuts for the actions it already owns, so
-// there is no central key table to keep in sync with the buttons. Combos are
-// written as "n", "ctrl+f", "shift+/", "escape", "space" — case-insensitive,
-// modifiers in any order.
-//
-// Shortcuts never fire while the user is typing (see isTypingTarget), which
-// matters here because the app has an always-present search box.
-
 const isTypingTarget = (el) => {
     if (!el || !el.tagName) return false;
     const tag = el.tagName.toUpperCase();
@@ -26,10 +15,11 @@ const normalizeKey = (key) => {
 };
 
 const parseCombo = (combo) => {
-    const parts = combo.toLowerCase().split("+").map((p) => p.trim());
+    const parts = combo
+        .toLowerCase()
+        .split("+")
+        .map((p) => p.trim());
     return {
-        // ctrl and meta are treated as the same modifier so the same combo
-        // works on Windows/Linux (Ctrl) and macOS (Cmd).
         ctrl: parts.includes("ctrl") || parts.includes("cmd") || parts.includes("mod"),
         shift: parts.includes("shift"),
         alt: parts.includes("alt"),
@@ -38,13 +28,18 @@ const parseCombo = (combo) => {
 };
 
 const matches = (parsed, e) => {
-    if (normalizeKey(e.key) !== parsed.key) return false;
-    if (parsed.ctrl !== (e.ctrlKey || e.metaKey)) return false;
-    if (parsed.alt !== e.altKey) return false;
-    // Only enforce shift when the combo asks for it: keys like "?" and "/"
-    // already require shift on many layouts, and demanding an exact match
-    // would make them unreachable.
-    if (parsed.shift && !e.shiftKey) return false;
+    if (normalizeKey(e.key) !== parsed.key) {
+        return false;
+    }
+    if (parsed.ctrl !== (e.ctrlKey || e.metaKey)) {
+        return false;
+    }
+    if (parsed.alt !== e.altKey) {
+        return false;
+    }
+    if (parsed.shift && !e.shiftKey) {
+        return false;
+    }
     return true;
 };
 
@@ -56,10 +51,6 @@ const matches = (parsed, e) => {
  * @param {boolean} [options.allowInInput=false] - also fire while typing
  */
 export const useShortcut = (combo, handler, { enabled = true, allowInInput = false } = {}) => {
-    // Held in a ref so a handler that closes over changing state doesn't
-    // re-register the listener (or go stale) on every render. Written in an
-    // effect rather than during render — refs must not be touched while
-    // rendering.
     const handlerRef = useRef(handler);
     useEffect(() => {
         handlerRef.current = handler;
@@ -82,8 +73,6 @@ export const useShortcut = (combo, handler, { enabled = true, allowInInput = fal
     }, [combo, enabled, allowInInput]);
 };
 
-// The canonical list, rendered by ShortcutsModal. Keeping it here (rather than
-// in the modal) puts the labels next to the matcher they describe.
 export const SHORTCUTS = [
     { combo: "/", label: "Focus search" },
     { combo: "n", label: "Focus next highlighted object" },

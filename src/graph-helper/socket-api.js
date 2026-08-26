@@ -1,12 +1,3 @@
-// ── External socket graph API ───────────────────────────────────────────────
-// The mutations an outside script can drive over the socket: "update",
-// "add-node" / "add-edge", "delete-node" / "delete-edge". Payloads arrive
-// unvalidated, so each entry point checks its input and returns whether it
-// applied rather than throwing. Full contract: socket-testing/EVENTS_API.md.
-//
-// These only touch the graph; rebuilding the legend and refreshing sigma is the
-// caller's job (see GraphHelper).
-
 import { createEdge, createNode } from "./element-factory";
 import { ensureEdgeOption, ensureNodeGroup } from "./theme";
 

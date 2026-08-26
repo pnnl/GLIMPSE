@@ -1,43 +1,44 @@
 import os
 import json
 import threading
-
 from uuid import UUID
 from dataclasses import fields, is_dataclass
-
 from SPARQLWrapper import JSON as SPARQL_JSON, POST as SPARQL_POST, SPARQLWrapper
-
-# from cimbuilder.object_builder.new_energy_consumer import new_energy_consumer
-# from cimbuilder.object_builder import new_synchronous_generator, new_two_terminal_object
-
-# CIM-graph imports
-# from cimgraph.databases.gridappsd import GridappsdConnection
 from cimgraph.databases.blazegraph.blazegraph import BlazegraphConnection
 from cimgraph.models.feeder_model import FeederModel
 import cimgraph.utils as cim_utils
 from cimgraph.databases.fileparsers.xml_parser import XMLFile
 import cimgraph.data_profile.cimhub_2023 as cim
+import cimgraph_patch
 
-#   Web UI:        http://localhost:8080/
-#   Blazegraph:    http://localhost:8889/bigdata/
-#   STOMP:         tcp://localhost:61613
-#   WebSocket:     ws://localhost:61614
-#   OpenWire:      tcp://localhost:61616
+# Speeds up cimgraph's edge construction — see cimgraph_patch for what it
+# replaces and why it is safe. Byte-identical output; set GLIMPSE_CIMGRAPH_PATCH=0
+# to run on the library's own implementation instead.
+cimgraph_patch.apply()
 
-# Environment setup for cimgraph. Defaults only — every CIMG_* value can be
-# overridden from the environment (an empty value counts as unset). These were
-# previously hard assignments, which broke any deployment where Blazegraph
-# isn't on localhost: the Docker backend reached GridAPPS-D's broker via
-# GRIDAPPSD_ADDRESS but still sent SPARQL queries to the container's own
-# localhost. The Blazegraph/STOMP hosts therefore default to the
-# GRIDAPPSD_ADDRESS host (GridAPPS-D runs Blazegraph alongside the broker), so
-# the compose default of host.docker.internal covers both.
+HOSTED_MODE = os.environ.get("GLIMPSE_MODE", "desktop").strip().lower() == "hosted"
+MEASUREMENT_CLASSES = frozenset({"Analog", "Discrete"})
+
+
+class MeasurementFreeXMLFile(XMLFile):
+    @staticmethod
+    def _class_name(element) -> str:
+        return element.tag.split("}")[-1]
+
+    def parse_nodes(self, element):
+        if self._class_name(element) in MEASUREMENT_CLASSES:
+            return None
+        return super().parse_nodes(element)
+
+    def parse_edges(self, element):
+        if self._class_name(element) in MEASUREMENT_CLASSES:
+            return None
+        return super().parse_edges(element)
 
 
 def _env_default(name: str, value: str) -> None:
     if not os.environ.get(name, "").strip():
         os.environ[name] = value
-
 
 def _gridappsd_host() -> str:
     """Host part of GRIDAPPSD_ADDRESS — a bare hostname or a URI like
@@ -49,7 +50,6 @@ def _gridappsd_host() -> str:
 
     parsed = urlsplit(address if "//" in address else f"//{address}")
     return parsed.hostname or "localhost"
-
 
 _blazegraph_host = _gridappsd_host()
 _env_default("CIMG_CIM_PROFILE", "cimhub_2023")
@@ -63,29 +63,11 @@ _env_default("CIMG_NAMESPACE", "http://iec.ch/TC57/CIM100#")
 _env_default("CIMG_IEC61970_301", "8")
 _env_default("CIMG_USE_UNITS", "False")
 
-# Per-query limits for Blazegraph. cimgraph's get_all_edges batches instances
-# into chunks of 100 mRIDs and fires the batches from a thread pool sized to
-# os.cpu_count(), so a large model (e.g. IEEE 9500) generates hundreds of
-# heavyweight queries with real concurrency.
 SPARQL_QUERY_TIMEOUT = int(os.environ.get("GLIMPSE_SPARQL_TIMEOUT", "120"))
 SPARQL_MAX_CONCURRENT = int(os.environ.get("GLIMPSE_SPARQL_MAX_CONCURRENT", "4"))
 
 
 class SafeBlazegraphConnection(BlazegraphConnection):
-    """
-    BlazegraphConnection hardened for cimgraph's threaded get_all_edges:
-
-    - The stock class shares one SPARQLWrapper across all worker threads, and
-      setQuery()/query() is not atomic, so concurrent batches can execute the
-      same query twice while silently skipping others. Build a fresh wrapper
-      per query instead.
-    - SPARQLWrapper sets no HTTP timeout by default, so one stalled response
-      hangs a model load forever. Cap every query at SPARQL_QUERY_TIMEOUT.
-    - Up to os.cpu_count() simultaneous heavy queries can push the Blazegraph
-      JVM into GC thrash on large models; a semaphore caps in-flight queries
-      at SPARQL_MAX_CONCURRENT.
-    """
-
     def __init__(self):
         self._query_slots = threading.BoundedSemaphore(SPARQL_MAX_CONCURRENT)
         super().__init__()
@@ -115,6 +97,22 @@ class CIMHelper:
         self.area_maps: dict[str, dict] = {}
         # feeder_id -> { mRID: {"name", "objectType", "elementType"} }
         self.object_index: dict[str, dict] = {}
+        # feeder_id -> { normalized id: CIM object }; see _build_mrid_index.
+        self._mrid_indexes: dict[str, dict] = {}
+
+    @staticmethod
+    def count_objects(gjs: dict) -> int:
+        return sum(len(feeder.get("objects", [])) for feeder in (gjs or {}).values())
+
+    # ------------------------------------------------------------------
+    # State lifecycle
+    # ------------------------------------------------------------------
+    def release(self) -> None:
+        self.active_measurement_map = {"Discrete": {}, "Analog": {}}
+        self.FEEDERS = {}
+        self.area_maps = {}
+        self.object_index = {}
+        self._mrid_indexes = {}
 
     def classify_line(self, line: object) -> str:
         UNDERGROUND_INFO = (
@@ -159,16 +157,6 @@ class CIMHelper:
         topology_outputs: dict[str, dict] | None = None,
         progress_cb=None,
     ):
-        """
-        topology_outputs: optional { key -> GridAPPS-D topology-service JSON },
-        where key is the model id (for model_IDs) or the file basename (for
-        filepaths). When a model's topology output is present, distribution
-        areas are sourced from it; otherwise they fall back to the CIM model.
-
-        progress_cb: optional callable({model, stage, step, total}) invoked as
-        each load stage of each model starts (relayed to clients as socket
-        progress events during long Blazegraph loads).
-        """
         topology_outputs = topology_outputs or {}
         self.active_measurement_map = {"Discrete": {}, "Analog": {}}  # Reset measurement map for new model(s)
         # Reset once per load request (not per model) so a multi-model load
@@ -179,28 +167,33 @@ class CIMHelper:
         # without re-running any SPARQL. See _parse_model.
         self.area_maps = {}
         self.object_index = {}
+        self._mrid_indexes = {}
         if model_IDs is not None:
             gjs = {id: {"objects": []} for id in model_IDs}
+            object_details: dict[str, dict] = {}
 
             for id in model_IDs:
-                gjs[id]["objects"] = self._parse_model(
+                gjs[id]["objects"], object_details[id] = self._parse_model(
                     model_id=id,
                     topology_json=topology_outputs.get(id),
                     progress_cb=progress_cb,
                 )
 
-            return gjs
+            return gjs, object_details
 
         if filepaths is not None:
             gjs = { os.path.basename(path): {"objects": []} for path in filepaths }
+            object_details = {}
 
             for path in filepaths:
                 filename = os.path.basename(path)
-                gjs[filename]["objects"] = self._parse_model(
+                gjs[filename]["objects"], object_details[filename] = self._parse_model(
                     filepath=path, topology_json=topology_outputs.get(filename)
                 )
 
-            return gjs
+            return gjs, object_details
+
+        return {}, {}
 
     def _parse_model(
         self,
@@ -210,17 +203,13 @@ class CIMHelper:
         progress_cb=None,
     ):
         """
-        Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization
+        Converts CIM XML to GLIMPSE JSON Structure for GLIMPSE visualization.
+
+        Returns (objects, object_details) — see _build_object_details.
         """
         feeder_id: str | None = None
 
         if model_id is not None:
-            # Each get_all_edges call costs ceil(N/100) SPARQL queries, so this
-            # list is kept to what the visualization actually consumes. Classes
-            # that are only referenced (WireInfo subtypes, BaseVoltage, ...)
-            # don't need their own load: expanding the parent class already adds
-            # them as stubs typed by their concrete class, which is all
-            # classify_line's isinstance checks need.
             load_stages = [
                 ("connectivity nodes", [cim.ConnectivityNode, cim.Terminal]),
                 ("lines", [cim.ACLineSegment, cim.ACLineSegmentPhase]),
@@ -231,9 +220,6 @@ class CIMHelper:
                     cim.PowerTransformerEnd,
                     cim.RatioTapChanger,
                 ]),
-                # Distribution areas (for area highlighting in the frontend).
-                # Load most-general to most-specific; the area->node map built
-                # later resolves the tightest containing area for each node.
                 ("distribution areas", [
                     cim.DistributionArea,
                     cim.FeederArea,
@@ -261,9 +247,6 @@ class CIMHelper:
                     cim.Disconnector,
                     cim.Recloser,
                 ]),
-                # Needed to map simulation output to equipment. Analog and
-                # Discrete cover every instance; loading the abstract
-                # Measurement parent would just re-fetch the same objects.
                 ("measurements", [cim.Analog, cim.Discrete]),
             ]
             total_steps = len(load_stages) + 2  # + feeder graph + coordinates
@@ -290,7 +273,10 @@ class CIMHelper:
             cim_utils.get_all_location_data(self.FEEDERS[feeder_id])
         elif filepath is not None:
             # For regular CIM file reading without multi-feeder support
-            cim_file = XMLFile(filepath)
+            # Hosted mode is model exploration only, so it never parses the
+            # measurements it has no feature to spend them on.
+            xml_reader = MeasurementFreeXMLFile if HOSTED_MODE else XMLFile
+            cim_file = xml_reader(filepath)
             filename = os.path.basename(filepath)
             self.FEEDERS[filename] = FeederModel(container=cim.Feeder(), connection=cim_file)
             feeder_id = filename
@@ -315,12 +301,6 @@ class CIMHelper:
         # single-terminal device isn't added twice if it shows up on
         # multiple connectivity nodes.
         seen_equipment: set = set()
-
-        # Map every connectivity node AND equipment mRID to its full distribution
-        # area ancestry (feeder / switch / secondary ids + names). Prefer the
-        # GridAPPS-D topology-service output when provided; otherwise derive the
-        # areas straight from the CIM model. Applied to both nodes and edges so
-        # area highlighting can grey out everything outside the selected areas.
         if topology_json:
             area_map = self._build_topology_area_map(topology_json, feeder_id)
         else:
@@ -575,37 +555,42 @@ class CIMHelper:
             objects.append(new_edge)
 
         # Build measurement map: measurement MRID -> equipment info
-        # This is used to map simulation output measurements to CIM objects
-        self._build_measurement_map(feeder_id)
-
-        # One pass over what we just emitted, so the agents endpoint can name and
-        # classify an area's members without touching the CIM graph again. Built
-        # from the objects rather than at each emission site so it can't drift.
+        # This is used to map simulation output measurements to CIM objects.
+        # Hosted mode has no simulation and no measurements parsed, so there is
+        # nothing to map.
+        if not HOSTED_MODE:
+            self._build_measurement_map(feeder_id)
         self.object_index[feeder_id] = {
             obj["attributes"]["id"]: {
                 "name": obj["attributes"].get("name", ""),
                 "objectType": obj["objectType"],
                 "elementType": obj["elementType"],
-                # A regulator is a "transformer" objectType that carries
-                # class_type "regulator", so the agent roster needs both to tell
-                # an LTC from a plain transformer.
                 "class_type": obj["attributes"].get("class_type", ""),
-                # Only some CIM classes carry phases through _add_attributes.
                 "phases": str(obj["attributes"].get("phases", "")),
             }
             for obj in objects
             if obj.get("attributes", {}).get("id")
         }
 
-        return objects
+        return objects, self._build_object_details(feeder_id, objects)
+
+    def _build_object_details(self, feeder_id: str, objects: list) -> dict:
+        if self.FEEDERS.get(feeder_id) is None:
+            return {}
+
+        details: dict[str, dict] = {}
+        for obj in objects:
+            mrid = obj.get("attributes", {}).get("id")
+            if not mrid or mrid in details or "->" in str(mrid):
+                continue
+            cim_obj = self.resolve_object(feeder_id, mrid)
+            if cim_obj is None:
+                continue
+            details[mrid] = self._object_to_detail(cim_obj)
+
+        return details
 
     def _area_attrs(self, record: dict | None) -> dict:
-        """
-        Convert an ancestry record (feeder/switch/secondary ids + names) into the
-        attribute fields stored on a node or edge: the flat <level>_area_id /
-        <level>_area_name fields used for nesting-aware matching, plus a dist_areas
-        list (general -> specific) used for the area tree and hover tooltip.
-        """
         if not record:
             return {}
 
@@ -631,22 +616,6 @@ class CIMHelper:
         return str(mrid).split("-")[-1]
 
     def _build_distribution_area_map(self, feeder_id: str) -> dict:
-        """
-        Map every connectivity node AND equipment mRID to the full distribution-area
-        ancestry containing it, sourced from the CIM area objects.
-
-        The model nests areas as FeederArea -> SwitchArea -> SecondaryArea. Walking
-        top-down lets every member carry the id/name of each ancestor level, so a
-        node/edge inside a SecondaryArea also records its parent SwitchArea and
-        FeederArea. That is what lets the frontend highlight a SwitchArea and have
-        its SecondaryArea members light up too.
-
-        A node/edge is "in" an area if it is the area's ContainedEquipment (edges +
-        single-terminal equipment, keyed by their own mRID), is a connectivity node
-        on that equipment's terminals, or sits on one of the area's BoundaryTerminals.
-
-        Returns: { mRID: {feeder_area_id, feeder_area_name, switch_area_id, ...} }
-        """
         graph = self.FEEDERS[feeder_id].graph
         area_by_mrid: dict = {}
 
@@ -701,24 +670,39 @@ class CIMHelper:
         return str(mrid).lstrip("_").lower()
 
     def _build_mrid_index(self, feeder_id: str) -> dict:
-        """
-        One-time in-memory {normalized mRID -> object} index over everything the
-        bulk get_all_edges load already fetched.
+        cached = self._mrid_indexes.get(feeder_id)
+        if cached is not None:
+            return cached
 
-        FeederModel.get_object() is NOT an in-memory lookup — every call runs 1-4
-        live SPARQL queries against Blazegraph (retrying case/prefix variants on
-        miss). Resolving the topology service's per-equipment references through
-        it turns one model load into hundreds of sequential round trips. Every
-        mRID the topology references is already in the loaded graph, so a dict
-        lookup replaces all of that.
-        """
         index: dict = {}
-        for instances in self.FEEDERS[feeder_id].graph.values():
+        graph = self.FEEDERS[feeder_id].graph
+        # mRID first and allowed to overwrite, preserving the resolution this
+        # index had when it only held mRIDs; `identifier` then fills gaps only,
+        # so an alias can never displace an object already registered.
+        for instances in graph.values():
             for obj in instances.values():
                 mrid = getattr(obj, "mRID", None)
                 if mrid:
                     index[self._norm_mrid(mrid)] = obj
+        for instances in graph.values():
+            for obj in instances.values():
+                identifier = getattr(obj, "identifier", None)
+                if identifier:
+                    index.setdefault(self._norm_mrid(identifier), obj)
+
+        self._mrid_indexes[feeder_id] = index
         return index
+
+    def _invalidate_index(self, feeder_id: str) -> None:
+        """Drop a feeder's cached index after the graph is mutated."""
+        self._mrid_indexes.pop(feeder_id, None)
+
+    def resolve_object(self, feeder_id: str, uuid) -> object | None:
+        """The CIM instance for an id, or None. Never touches SPARQL or the XML."""
+        feeder = self.FEEDERS.get(feeder_id)
+        if feeder is None or not uuid:
+            return None
+        return self._build_mrid_index(feeder_id).get(self._norm_mrid(uuid))
 
     def _lookup_mrid(self, feeder_id: str, mrid_index: dict, mrid) -> object | None:
         """Resolve an mRID via the in-memory index; fall back to a live
@@ -734,11 +718,6 @@ class CIMHelper:
             return None
 
     def _resolve_area_name(self, feeder_id: str, area_mrid: str, mrid_index: dict) -> str:
-        """
-        The GridAPPS-D topology output carries no area names, so try to read the
-        name from the corresponding CIM object in the loaded model; if that
-        isn't available, fall back to the last segment of the mRID UUID.
-        """
         obj = self._lookup_mrid(feeder_id, mrid_index, area_mrid)
         name = getattr(obj, "name", None) if obj is not None else None
         if name:
@@ -747,23 +726,9 @@ class CIMHelper:
         return self._uuid_tail(area_mrid)
 
     def _build_topology_area_map(self, topology_json: dict, feeder_id: str) -> dict:
-        """
-        Same result as _build_distribution_area_map, but sourced from the GridAPPS-D
-        topology service output (the "GET_DISTRIBUTED_AREAS" shape, identical to
-        ieee123_topo.json) instead of the CIM area objects.
-
-        The topology JSON only references equipment / terminal mRIDs, which are
-        resolved back to the loaded model so each member records its full ancestry
-        (FeederArea -> SwitchArea -> SecondaryArea).
-
-        Returns: { mRID: {feeder_area_id, feeder_area_name, switch_area_id, ...} }
-        """
         area_by_mrid: dict = {}
         distribution_area = (topology_json or {}).get("DistributionArea", {})
 
-        # Resolve every topology reference against this in-memory index instead of
-        # FeederModel.get_object() (1-4 SPARQL round trips per call) — see
-        # _build_mrid_index for why this matters for load time.
         mrid_index = self._build_mrid_index(feeder_id)
 
         for substation in distribution_area.get("Substations", []) or []:
@@ -847,18 +812,6 @@ class CIMHelper:
             area_by_mrid.setdefault(mrid, {}).update(context)
 
     def _build_measurement_map(self, feeder_id: str) -> dict:
-        """
-        Build a lookup from measurement MRID -> conducting equipment info.
-
-        GridAPPS-D simulation output keys measurements by measurement MRID,
-        but we need to know which CIM equipment object each measurement
-        belongs to (and its type) so we can update the visualization.
-
-        For switches, Discrete measurements with measurementType="Pos"
-        carry the open/closed state (value 0=open, 1=closed).
-        For lines/transformers, Analog measurements carry magnitude/angle.
-        """
-        
         measurement_types = [cim.Analog, cim.Discrete]
         for measurement_type in measurement_types:
             if measurement_type not in self.FEEDERS[feeder_id].graph:
@@ -886,10 +839,6 @@ class CIMHelper:
                     entry["conducting_equipment_name"] = equipment.name if equipment.name else ""
                     entry["conducting_equipment_type"] = equipment.__class__.__name__
 
-                # Record the bus (ConnectivityNode) the measurement's terminal sits
-                # on. Voltage (PNV) is keyed to conducting equipment, but the value
-                # belongs to the bus node — the frontend uses this to attribute live
-                # voltage to the corresponding graph node.
                 if measurement.Terminal and measurement.Terminal.ConnectivityNode:
                     cn = measurement.Terminal.ConnectivityNode
                     entry["connectivity_node_mrid"] = str(cn.mRID) if cn.mRID else ""
@@ -904,14 +853,6 @@ class CIMHelper:
 
 
     def get_measurement_catalog(self) -> list:
-        """
-        Flatten active_measurement_map into a list of measurement descriptors for
-        the frontend plot creator. Uses the same field names the live sim-output
-        stream carries (measurement_type / equipment_name / equipment_type /
-        phases / measurement_mrid) so the client can fold both sources through one
-        code path. Populated at CIM model-load time, so plots can be built before a
-        simulation starts. Empty for non-CIM models (GLM/JSON).
-        """
         catalog = []
         for measurement_class in ("Analog", "Discrete"):
             for entry in self.active_measurement_map.get(measurement_class, {}).values():
@@ -962,24 +903,10 @@ class CIMHelper:
         if not self.FEEDERS[feeder_id]:
             return {"error": "No active model available"}  # 400
 
-        # Use GraphModel's get_object method if available
-        if hasattr(self.FEEDERS[feeder_id], "get_object"):
-            obj = self.FEEDERS[feeder_id].get_object(uuid)
-            if obj:
-                detail = self._object_to_detail(obj)
-                return {"uuid": uuid, "object": detail}
-            else:
-                return {"error": f"Object {uuid} not found"}  # 404
-        else:
-            # Manual search through all objects
-            for _, instances in self.FEEDERS[feeder_id].graph.items():
-                for obj in instances.values():
-                    obj_id = str(getattr(obj, "identifier", getattr(obj, "mRID", "")))
-                    if obj_id == uuid:
-                        detail = self._object_to_detail(obj)
-                        return {"uuid": uuid, "object": detail}
-
+        obj = self.resolve_object(feeder_id, uuid)
+        if obj is None:
             return {"error": f"Object {uuid} not found"}  # 404
+        return {"uuid": uuid, "object": self._object_to_detail(obj)}
 
     def new_bus_location(
         self,
@@ -1024,12 +951,6 @@ class CIMHelper:
         cim_utils.write_xml(self.FEEDERS[feeder_id], output_path)
 
     def find_shared_coordinates(self, cim_obj) -> dict:
-        # A connectivity node has no coordinates of its own in CIM; it sits
-        # where the attached equipment endpoints meet. For each terminal, take
-        # only the position point that corresponds to that terminal
-        # (sequenceNumber 1 -> first point, otherwise last point) so a line's
-        # intermediate bend points can't skew the match. xPosition/yPosition
-        # are strings in cimgraph, so compare as floats and as (x, y) pairs.
         candidates = []
         for terminal in cim_obj.Terminals:
             equipment = terminal.ConductingEquipment
@@ -1158,8 +1079,9 @@ class CIMHelper:
     #     cim_utils.write_xml(self.FEEDERS[feeder_id], out_dir)
 
     def get_mermaid(self, feeder_id: str, uuid: str) -> str:
-        # Try to use cimgraph.utils method
-        obj = self.FEEDERS[feeder_id].get_object(uuid)
+        obj = self.resolve_object(feeder_id, uuid)
+        if obj is None:
+            return json.dumps({"uuid": uuid, "error": f"Object {uuid} not found"})
 
         try:
             mermaid_diagram = cim_utils.get_mermaid(obj)
@@ -1178,9 +1100,8 @@ class CIMHelper:
         obj_class = None
         obj_key = None
 
-        if hasattr(self.FEEDERS[feeder_id], "get_object"):
-            obj = self.FEEDERS[feeder_id].get_object(uuid)
-        else:
+        obj = self.resolve_object(feeder_id, uuid)
+        if obj is None:
             # Manual search
             for cim_class, instances in self.FEEDERS[feeder_id].graph.items():
                 for key, instance in instances.items():
@@ -1198,12 +1119,15 @@ class CIMHelper:
         if not obj:
             return False
 
-        # Delete the object
+        # Delete the object. Either branch mutates the graph, so the cached
+        # index must go with it or a deleted object stays resolvable.
         if hasattr(self.FEEDERS[feeder_id], "delete"):
             self.FEEDERS[feeder_id].delete(obj)
+            self._invalidate_index(feeder_id)
             return True
         elif obj_class and obj_key:
             del self.FEEDERS[feeder_id].graph[obj_class][obj_key]
+            self._invalidate_index(feeder_id)
             return True
 
         return False

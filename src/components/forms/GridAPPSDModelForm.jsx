@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Form, Button, Select, Spin } from "antd";
 import axios from "axios";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL, FEATURES } from "../../config";
 import { notify, reportError } from "../../utils/notify";
 
 // initialConnected: pass true when the caller has already verified the broker
@@ -19,6 +19,7 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
         setLoading(true);
 
         try {
+            if (!FEATURES.gridappsd) return;
             const res = await axios.get(`${API_BASE_URL}/api/gridappsd/status`);
 
             if ("connected" in res.data && !res.data.connected) {

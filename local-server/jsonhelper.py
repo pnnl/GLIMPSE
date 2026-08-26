@@ -103,14 +103,6 @@ class JSONHelper:
         return data
 
     def prepare_graph_payload(self, data, name: str = "socket-graph") -> dict:
-        """
-        Normalize a single graph payload received over the socket "load-graph"
-        event into the { <name>: { "objects": [...] } } structure that the
-        frontend's setGraphData expects.
-
-        Accepts either the GLIMPSE objects format (like socialExample.json) or a
-        NetworkX node-link data dump. Raises ValueError on invalid input.
-        """
         if not isinstance(data, dict):
             raise ValueError("Graph payload must be a JSON object.")
 

@@ -5,8 +5,6 @@ import { assignParallelEdgeCurvatures } from "./edge-curvature";
 import { createEdge, createNode } from "./element-factory";
 import { ensureEdgeOption, ensureNodeGroup } from "./theme";
 
-// Graphs above this size get a community-aware layout — plain circlepack turns
-// into an unreadable blob at that scale.
 const LOUVAIN_THRESHOLD = 1_000;
 
 const bump = (counts, type) => {
@@ -64,8 +62,6 @@ const addNodes = (graph, objects, ctx) => {
         }
 
         if ("elementType" in obj && obj.elementType === "node") {
-            // A type the theme doesn't cover (JSON / NetworkX graphs, socket
-            // payloads): mint an entry so it still gets a color and a legend row.
             ensureNodeGroup(theme, objectType);
             if (!nodeTypes.includes(objectType)) nodeTypes.push(objectType);
 
@@ -93,8 +89,6 @@ const addEdges = (graph, objects, ctx) => {
         const attributes = obj.attributes;
         const objectType = obj.objectType ?? obj.name;
 
-        // A node that names a `parent` is wired to it with a synthetic edge —
-        // that parent link is how GLM expresses e.g. a load on a bus.
         if (nodeTypes.includes(objectType) && "parent" in attributes) {
             const nodeID = idOf(attributes);
             const parent = attributes.parent;
@@ -106,9 +100,6 @@ const addEdges = (graph, objects, ctx) => {
                 elementType: "edge",
                 group: "parentChild",
                 type: "straight",
-                // Spread the theme entry so these pick up `color` too — without
-                // it parent-child edges fell back to sigma's default and only
-                // got their theme color after a Reset.
                 ...theme.edgeOptions.parentChild,
                 length: "length" in attributes ? parseFloat(attributes.length) : null,
                 attributes: { to: parent, from: nodeID, id: edgeID },
@@ -152,13 +143,6 @@ const addEdges = (graph, objects, ctx) => {
 
 // ── Geography, layout and placement ─────────────────────────────────────────
 
-/**
- * Geographic models (e.g. CIM feeders exported with real PositionPoints, like
- * IEEE 9500) store longitude in x and latitude in y. A graph counts as
- * geographic when every positioned node falls inside valid lon/lat ranges, which
- * is what lets the UI offer a map background; planar drawing coordinates (IEEE
- * 13/123) fall outside these ranges and fail the check.
- */
 const detectGeoCoords = (graph, bounds, hasFixedNodes) =>
     hasFixedNodes &&
     graph.order > 0 &&
@@ -202,15 +186,7 @@ const collectDistributionAreas = (graph) => {
     return areasByType;
 };
 
-/**
- * Gives the coordinate-less nodes of an otherwise-positioned graph a place to
- * sit: on top of a positioned neighbor when there is one, otherwise somewhere
- * inside the model's bounds.
- */
 const placeFloatingNodes = (graph, bounds, hasGeoCoords) => {
-    // Ensure bounds have a minimum spread so nodes don't stack. For geographic
-    // graphs the spread must stay in degrees — inflating it to 500 would scatter
-    // coordinate-less nodes outside valid lon/lat.
     const MIN_SPREAD = hasGeoCoords ? 0.01 : 500;
     const rangeX = Math.max(bounds.maxX - bounds.minX, MIN_SPREAD);
     const rangeY = Math.max(bounds.maxY - bounds.minY, MIN_SPREAD);
@@ -249,12 +225,6 @@ const applyLayout = (graph) => {
     }
 };
 
-/**
- * Map background support: stamp lat/lng (the attributes read by
- * @sigma/layer-leaflet) from the geographic positions, since binding the map
- * layer overwrites x/y with projected coordinates. Latitude is clamped to the
- * Web-Mercator limit so projection stays finite.
- */
 const stampLatLng = (graph) => {
     graph.updateEachNodeAttributes((_node, attrs) => ({
         ...attrs,

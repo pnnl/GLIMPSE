@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, FEATURES } from "../config";
 import graphHelper from "../graph-helper/GraphHelper";
 
 /**
@@ -14,11 +14,14 @@ import graphHelper from "../graph-helper/GraphHelper";
  * without distribution areas legitimately has no roster. The panels hide
  * themselves when the roster is empty.
  *
+ * The roster is a GridAPPS-D concept, so hosted deployments — which register no
+ * GridAPPS-D routes — skip the request rather than 404 on every model load.
+ *
  * @param {string | null} modelId - model mRID or, for an upload, the filename
  *   the backend keyed the parse by.
  */
 export const loadAgentRoster = async (modelId) => {
-    if (!modelId) return;
+    if (!modelId || !FEATURES.gridappsd) return;
 
     try {
         const { data } = await axios.get(`${API_BASE_URL}/api/gridappsd/agents`, {

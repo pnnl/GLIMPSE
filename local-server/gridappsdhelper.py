@@ -7,9 +7,6 @@ from collections.abc import Callable
 from enum import Enum
 from gridappsd import GridAPPSD, topics
 
-# GridAPPS-D connection settings, overridable via environment. The gridappsd
-# client reads these same vars, so the pre-flight port check below stays in sync.
-# setdefault (not assignment) lets the container / shell override credentials.
 os.environ.setdefault("GRIDAPPSD_ADDRESS", "localhost")
 os.environ.setdefault("GRIDAPPSD_PORT", "61613")
 os.environ.setdefault("GRIDAPPSD_USER", "system")
@@ -17,9 +14,6 @@ os.environ.setdefault("GRIDAPPSD_PASSWORD", "manager")
 
 logger = logging.getLogger(__name__)
 
-# How long a platform readiness probe is trusted before it is re-run. The status
-# endpoint is polled every time the load-model modal opens and the probe blocks
-# on a broker round trip, so repeating it on every poll is wasteful.
 PLATFORM_PROBE_TTL = 10.0
 
 class SimulationState(Enum):
@@ -29,49 +23,27 @@ class SimulationState(Enum):
     STOPPED = "stopped"
     ERROR = "error"
 
-
 class GridAPPSDError(Exception):
     """Custom exception for GridAPPS-D operations"""
 
     pass
 
-
 class GridAPPSDHelper:
 
     def __init__(self):
-        # ── State ─────────────────────────────────────────────────────
         self.gapps: GridAPPSD | None = None
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
         self.current_limit_map = {}
-        # model mRID -> last agent roster pushed over the "agents-update" socket
-        # event, so a client that connects mid-session still sees live status.
         self.agent_roster_cache = {}
-
         self._available: bool = False
-
-        # Set True after a topology-service request fails, so later model loads
-        # skip the request (and its timeout) entirely. Reset on try_connect() so
-        # a reconnect gives the service another chance once it's deployed.
         self._topology_service_down: bool = False
-
-        # Cached result of the last is_platform_ready() probe (None = unknown).
         self._platform_ready: bool | None = None
         self._platform_checked_at: float = 0.0
-
-        # ── One-shot initial connection attempt ───────────────────────
         self._try_initial_connect()
-
-    # ─── Connection Management ────────────────────────────────────────
 
     @staticmethod
     def _is_port_open(host=None, port=None, timeout=2) -> bool:
-        """
-        Quick TCP check BEFORE we hand off to the STOMP library.
-        This avoids the 3x retry + traceback spam from stomp.py
-        when GridAPPS-D isn't running. Defaults come from the same
-        GRIDAPPSD_ADDRESS / GRIDAPPSD_PORT env vars the client uses.
-        """
         host = host or os.environ.get("GRIDAPPSD_ADDRESS", "localhost")
         port = int(port or os.environ.get("GRIDAPPSD_PORT", 61613))
         try:
@@ -90,8 +62,6 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            # The constructor can return without an established session, so the
-            # link is only real if the client says it is connected.
             self._available = self.is_connected()
             if self._available:
                 logger.info("Connected to GridAPPS-D")
@@ -104,9 +74,6 @@ class GridAPPSDHelper:
             self._available = False
 
     def try_connect(self) -> bool:
-        """(Re)establish the broker connection. Destructive — it drops the current
-        connection and any subscriptions on it, so callers that only want to know
-        the current state should ask is_connected() first."""
         self.disconnect()
 
         if not self._is_port_open():
@@ -116,8 +83,6 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            # An open port and a constructor that didn't raise are not a session:
-            # ask the client whether the STOMP connection actually came up.
             self._available = self.is_connected()
             if not self._available:
                 logger.warning("GridAPPS-D client built but no session established.")
@@ -151,23 +116,9 @@ class GridAPPSDHelper:
             return False
 
     def is_available(self) -> bool:
-        """
-        Quick check other parts of the server can use to decide
-        whether to even attempt a GridAPPS-D operation.
-        """
         return self._available and self.is_connected()
 
     def is_platform_ready(self, force: bool = False) -> bool:
-        """Whether the platform behind the broker can actually serve requests.
-
-        The ActiveMQ broker accepts STOMP connections as soon as the gridappsd
-        container is up — including when the data tier behind it (blazegraph,
-        mysql, ...) is down, a state in which every model query fails. A cheap
-        QUERY_MODEL_NAMES tells the two apart. Blocking: stomp-py waits on a real
-        thread with time.sleep and nothing here is monkey patched, so call this
-        off the event loop (gevent threadpool). Result is cached for
-        PLATFORM_PROBE_TTL seconds; pass force=True to re-probe immediately.
-        """
         if not self.is_connected():
             self._platform_ready = None
             return False
@@ -183,8 +134,6 @@ class GridAPPSDHelper:
         ready = False
         try:
             response = self.gapps.query_model_names()
-            # The platform answers a failed query with a 200-ish payload carrying
-            # an "error" key rather than raising, so inspect the body.
             ready = isinstance(response, dict) and "error" not in response
             if not ready:
                 logger.warning(
@@ -223,20 +172,6 @@ class GridAPPSDHelper:
             raise GridAPPSDError(f"Failed to retrieve models: {e}") from e
 
     def get_distributed_areas(self, model_mrid: str, timeout: int | None = None) -> dict | None:
-        """
-        Request the distributed-areas topology for a model from the GridAPPS-D
-        topology service. The response shape matches ieee123_topo.json and is
-        consumed by CIMHelper to tag connectivity nodes with distribution areas.
-
-        Returns the topology dict, or None if the service is unavailable / returns
-        nothing (callers should fall back to deriving areas from the CIM model).
-
-        The topology service may not be deployed yet. To keep model loads fast in
-        that case, the request uses a short timeout (GLIMPSE_TOPOLOGY_TIMEOUT env
-        var, default 5s), and after the first failure the service is marked down
-        for the rest of the session — subsequent loads skip the request entirely.
-        try_connect() clears the mark so a reconnect retries the service.
-        """
         if self._topology_service_down:
             logger.info(
                 f"Skipping topology request for {model_mrid}: service marked "
@@ -257,8 +192,6 @@ class GridAPPSDHelper:
         try:
             response = self.gapps.get_response(topic, message, timeout=timeout)
         except Exception as e:
-            # The topology service may not be running yet; don't break model load,
-            # and don't pay this timeout again on the next model.
             self._topology_service_down = True
             logger.warning(
                 f"Topology service request failed for {model_mrid} ({e}). "

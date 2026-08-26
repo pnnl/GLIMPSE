@@ -8,7 +8,7 @@ import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL, FEATURES } from "../../config";
 import { confirmDiscardChanges, errorText } from "../../utils/notify";
 import { loadAgentRoster } from "../../utils/agent-api";
 
@@ -29,9 +29,10 @@ const LoadModelModal = ({ onMount }) => {
 
     // Only offer the GridAPPS-D tab when the broker is actually reachable.
     // Re-checked every time the modal opens so a broker started after app
-    // launch is picked up.
+    // launch is picked up. Skipped entirely in hosted mode, where the endpoint
+    // isn't registered and every probe would just 404.
     useEffect(() => {
-        if (!open) return;
+        if (!open || !FEATURES.gridappsd) return;
         let cancelled = false;
 
         axios
@@ -118,6 +119,7 @@ const LoadModelModal = ({ onMount }) => {
             // feeder_id still takes precedence (see resolveFeederIdFromGraph).
             graphHelper.currentFeederID = selectedGridappsdModels[0]?.modelId ?? null;
             graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setObjectDetails(response.objectDetails);
             graphHelper.setGraphData(response.data ?? response);
             // Before graph-loaded, so the agent panel and views are populated by
             // the time they resync on that event.

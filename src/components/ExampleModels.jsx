@@ -57,6 +57,7 @@ const ExampleModels = ({ closeModal }) => {
 
             graphHelper.setIsCIM(response.isCIM);
             graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setObjectDetails(response.objectDetails);
             graphHelper.setGraphData(response.data ?? response);
 
             // Example models aren't driveable via GridAPPS-D, so detach from any

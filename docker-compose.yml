@@ -1,50 +1,33 @@
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    environment:
-      FLASK_HOST: 0.0.0.0
-      FLASK_PORT: "5052"
-      # Comma-separated allowed browser origins (or "*"). Empty = local dev defaults.
-      CORS_ORIGINS: "${CORS_ORIGINS:-}"
-      # Shared bearer token required on every request/socket. Empty = auth disabled
-      # (only safe when the backend is not reachable off-host). Set this for any
-      # networked deployment; it must match the frontend's API_TOKEN.
-      GLIMPSE_API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
-      # GridAPPS-D broker. Defaults assume it runs on the Docker host; override
-      # in a .env file or your shell for a remote broker.
-      GRIDAPPSD_ADDRESS: "${GRIDAPPSD_ADDRESS:-host.docker.internal}"
-      GRIDAPPSD_PORT: "${GRIDAPPSD_PORT:-61613}"
-      GRIDAPPSD_USER: "${GRIDAPPSD_USER:-system}"
-      GRIDAPPSD_PASSWORD: "${GRIDAPPSD_PASSWORD:-manager}"
-      # Blazegraph SPARQL endpoint used for CIM model loads. Empty = derived
-      # from GRIDAPPSD_ADDRESS (http://<host>:8889/bigdata/namespace/kb/sparql),
-      # which covers the standard GridAPPS-D deployment. Set explicitly if
-      # Blazegraph runs elsewhere.
-      CIMG_URL: "${CIMG_URL:-}"
-    ports:
-      - "5052:5052"
-    volumes:
-      # Example models for the frontend's "Example Models" tab (/api/examples).
-      # Read-only bind mount instead of a COPY so the image stays small.
-      - ./models:/app/models:ro
-    # Lets the container resolve host.docker.internal on Linux (built in on Docker Desktop).
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    backend:
+        build:
+            context: .
+            dockerfile: Dockerfile.backend
+        environment:
+            FLASK_HOST: 0.0.0.0
+            FLASK_PORT: "5052"
+            CORS_ORIGINS: "${CORS_ORIGINS:-}"
+            GLIMPSE_API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
+            GRIDAPPSD_ADDRESS: "${GRIDAPPSD_ADDRESS:-host.docker.internal}"
+            GRIDAPPSD_PORT: "${GRIDAPPSD_PORT:-61613}"
+            GRIDAPPSD_USER: "${GRIDAPPSD_USER:-system}"
+            GRIDAPPSD_PASSWORD: "${GRIDAPPSD_PASSWORD:-manager}"
+            CIMG_URL: "${CIMG_URL:-}"
+        ports:
+            - "5052:5052"
+        volumes:
+            - ./models:/app/models:ro
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
 
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    environment:
-      # URL the *browser* uses to reach the backend. For local use the default
-      # is fine; when deploying, set this to the backend's public URL.
-      API_URL: "${API_URL:-http://127.0.0.1:5052}"
-      # Must match the backend's GLIMPSE_API_TOKEN (baked into env.js at start).
-      API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
-    ports:
-      # 5173 is already in the backend's CORS allow-list.
-      - "5173:80"
-    depends_on:
-      - backend
+    frontend:
+        build:
+            context: .
+            dockerfile: Dockerfile.frontend
+        environment:
+            API_URL: "${API_URL:-http://127.0.0.1:5052}"
+            API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
+        ports:
+            - "5173:80"
+        depends_on:
+            - backend

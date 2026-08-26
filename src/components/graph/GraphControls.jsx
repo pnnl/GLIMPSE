@@ -3,6 +3,7 @@ import { Button, Tooltip, Space } from "antd";
 import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
 import { useWorkerLayoutForceAtlas2 } from "@react-sigma/layout-forceatlas2";
 import bindLeafletLayer from "@sigma/layer-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { BiZoomIn, BiZoomOut } from "react-icons/bi";
 import { MdFilterCenterFocus, MdFullscreen, MdFullscreenExit, MdOutlineMap } from "react-icons/md";
@@ -60,9 +61,21 @@ const GraphControls = () => {
     // Make sure the worker is torn down when the controls unmount.
     useEffect(() => () => kill(), [kill]);
 
-    const bindMap = useCallback(() => {
-        mapLayerRef.current = bindLeafletLayer(sigma, {
-            tileLayer: MAP_TILES[darkMode ? "dark" : "light"],
+    // Read through a ref so bindMap itself never changes identity. The re-bind
+    // effect below keys on the sigma instance alone; if bindMap changed with
+    // darkMode, that effect would fire during the theme render — while
+    // useSigma() still returns the instance about to be destroyed — which is
+    // the crash it exists to avoid.
+    const darkModeRef = useRef(darkMode);
+    useEffect(() => {
+        darkModeRef.current = darkMode;
+    }, [darkMode]);
+
+    // Takes the instance explicitly rather than closing over `sigma`, so a
+    // caller always binds to the instance it has actually checked.
+    const bindMap = useCallback((instance) => {
+        mapLayerRef.current = bindLeafletLayer(instance, {
+            tileLayer: MAP_TILES[darkModeRef.current ? "dark" : "light"],
         });
 
         // bindLeafletLayer projects node x/y into the map's coordinate space,
@@ -72,10 +85,10 @@ const GraphControls = () => {
         // stale bbox and re-render — normalization then follows the projected
         // coordinates (GraphEvents re-pins the bbox from them) — and reframe;
         // the layer's afterRender hook flies the map to the matching view.
-        sigma.setCustomBBox(null);
-        sigma.refresh();
-        sigma.getCamera().setState({ x: 0.5, y: 0.5, ratio: 1, angle: 0 });
-    }, [sigma, darkMode]);
+        instance.setCustomBBox(null);
+        instance.refresh();
+        instance.getCamera().setState({ x: 0.5, y: 0.5, ratio: 1, angle: 0 });
+    }, []);
 
     // `restoreView: false` is the unmount path: React tears down parents first,
     // so the sigma instance is already killed — touching its bbox/camera there
@@ -113,12 +126,50 @@ const GraphControls = () => {
     // Unbind on unmount so a SigmaContainer remount starts from clean positions.
     useEffect(() => () => unbindMap(false), [unbindMap]);
 
-    // Swap tile source in place when dark mode changes while the map is shown.
+    // Kept in a ref so the re-bind effect below can depend on the sigma
+    // instance alone, without also firing when the map is simply toggled.
+    const mapShownRef = useRef(false);
     useEffect(() => {
-        if (!mapLayerRef.current) return;
-        mapLayerRef.current.clean();
-        bindMap();
-    }, [bindMap]);
+        mapShownRef.current = mapShown;
+    }, [mapShown]);
+
+    // Dark mode: swap the tile source on the existing leaflet map.
+    //
+    // This used to clean the layer and re-bind it, which crashed. Toggling the
+    // theme hands react-sigma a new settings object, so it tears down and
+    // rebuilds the Sigma instance — and because this component lives *inside*
+    // SigmaContainer, React runs this effect before the parent's, while
+    // useSigma() still returns the instance that is about to be killed.
+    // Re-binding there called setCustomBBox/refresh/setState on a dying
+    // instance, which is precisely the crash unbindMap's `restoreView` flag
+    // exists to avoid. Only models with real coordinates offer the map at all,
+    // which is why this only ever showed up on IEEE 9500.
+    //
+    // Swapping tiles touches leaflet only, never sigma, so it is safe whatever
+    // state the instance is in. Re-binding to the rebuilt instance is handled
+    // separately, below, once that instance actually exists.
+    useEffect(() => {
+        const layer = mapLayerRef.current;
+        if (!layer?.map) return;
+
+        const { urlTemplate, attribution } = MAP_TILES[darkMode ? "dark" : "light"];
+        layer.map.eachLayer((existing) => {
+            if (existing instanceof L.TileLayer) layer.map.removeLayer(existing);
+        });
+        L.tileLayer(urlTemplate, { attribution }).addTo(layer.map);
+    }, [darkMode]);
+
+    // Re-bind after react-sigma replaces the Sigma instance (which the theme
+    // toggle does). By the time `sigma` is a new object the container has
+    // finished building it, so this is the first point at which binding is
+    // safe. The old instance's own "kill" handler already cleaned its layer;
+    // node x/y are recomputed from the lat/lng the builder stamped, so the
+    // positions survive the round trip.
+    useEffect(() => {
+        if (!mapShownRef.current || !sigma) return;
+        if (mapLayerRef.current) mapLayerRef.current.clean();
+        bindMap(sigma);
+    }, [sigma, bindMap]);
 
     const toggleMap = () => {
         if (mapShown) {
@@ -134,7 +185,7 @@ const GraphControls = () => {
         sigma.getGraph().forEachNode((node, attrs) => positions.set(node, { x: attrs.x, y: attrs.y }));
         savedPositionsRef.current = positions;
 
-        bindMap();
+        bindMap(sigma);
         setMapShown(true);
     };
 

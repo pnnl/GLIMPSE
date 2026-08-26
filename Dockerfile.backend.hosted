@@ -1,0 +1,67 @@
+# ============================================================================
+# GLIMPSE hosted backend — Flask under gunicorn, no Socket.IO, no GridAPPS-D.
+#
+# The same image serves both roles: `gunicorn server:app` for the web tier and
+# `celery -A tasks worker` for the parse workers (see docker-compose.prod.yml).
+# ============================================================================
+
+# ---- builder: install Python deps into /usr/local --------------------------
+FROM python:3.12-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY local-server/requirements-hosted.txt ./requirements.txt
+RUN uv pip install --system -r requirements.txt
+
+FROM builder AS precompute
+
+WORKDIR /app
+COPY local-server/ ./
+COPY models/ ./models/
+
+# Space-separated example ids, or "none" to skip (fast iteration builds).
+ARG PRECOMPUTE_EXAMPLES="ieee123 glm3000 ieee9500"
+
+ENV GLIMPSE_MODE=hosted GLIMPSE_PRECOMPUTED_DIR=/app/models/precomputed
+
+RUN if [ "$PRECOMPUTE_EXAMPLES" = "none" ]; then \
+        echo "skipping precompute; keeping source models so examples still load"; \
+        mkdir -p "$GLIMPSE_PRECOMPUTED_DIR"; \
+    else \
+        python precompute_examples.py $PRECOMPUTE_EXAMPLES \
+        && rm -rf /app/models/CIM; \
+    fi
+
+# ---- runtime ---------------------------------------------------------------
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    GLIMPSE_MODE=hosted \
+    FLASK_HOST=0.0.0.0 \
+    FLASK_PORT=5052 \
+    GLIMPSE_MODELS_DIR=/app/models \
+    GLIMPSE_PRECOMPUTED_DIR=/app/models/precomputed
+
+COPY --from=builder /usr/local /usr/local
+
+WORKDIR /app
+COPY --from=precompute /app /app
+
+# Don't run as root. The home directory has to exist and be writable: gunicorn
+# and various libraries fall back to $HOME for scratch state.
+RUN useradd --system --uid 10001 --create-home --home-dir /home/glimpse glimpse \
+    && chown -R glimpse:glimpse /app /home/glimpse
+USER glimpse
+ENV HOME=/home/glimpse
+
+EXPOSE 5052
+
+CMD ["gunicorn", "--bind", "0.0.0.0:5052", \
+     "--worker-class", "gthread", "--workers", "4", "--threads", "4", \
+     "--preload", "--no-control-socket", \
+     "--timeout", "1800", "--graceful-timeout", "30", \
+     "--access-logfile", "-", "--error-logfile", "-", \
+     "server:app"]

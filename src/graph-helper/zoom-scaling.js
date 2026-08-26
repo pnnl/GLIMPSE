@@ -1,12 +1,3 @@
-// How drawn items respond to zoom, shared by the graph renderer and the
-// distribution-area contour layer so the two keep the same proportions.
-//
-// Sigma divides an item's size by `zoomToSizeRatioFunction(cameraRatio)`, so with
-// an exponent of 1 an item is glued to the graph (zoom 10x, item draws 10x
-// bigger) and with 0 it holds a fixed pixel size. Big models use a low exponent:
-// zooming into a 5000-node feeder is how you separate the detail, and items that
-// grew with the graph would just cover it back up.
-
 const LARGE_GRAPH_ORDER = 1000;
 
 /** @param {number} order - node count of the graph being drawn */

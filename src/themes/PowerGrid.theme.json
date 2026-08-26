@@ -16,12 +16,12 @@
         "triplex_load": {
             "size": 5,
             "color": {
-                "light": "#A46800",
-                "dark": "#FFB103"
+                "light": "#C07A00",
+                "dark": "#E69F00"
             },
             "borderColor": {
-                "light": "#5D3B00",
-                "dark": "#694800"
+                "light": "#794D00",
+                "dark": "#4D3500"
             },
             "type": "nodeImg",
             "image": "./imgs/Load.svg"
@@ -75,12 +75,12 @@
         "triplex_meter": {
             "size": 5,
             "color": {
-                "light": "#003A5E",
-                "dark": "#549CD9"
+                "light": "#004B7A",
+                "dark": "#3D8FD4"
             },
             "borderColor": {
-                "light": "#000E17",
-                "dark": "#1B4E79"
+                "light": "#001F33",
+                "dark": "#163F62"
             },
             "type": "nodeImg",
             "image": "./imgs/meter.svg"
@@ -101,7 +101,7 @@
         "inverter": {
             "size": 5,
             "color": {
-                "light": "#46966E",
+                "light": "#6FDF92",
                 "dark": "#6FDF92"
             },
             "borderColor": {
@@ -114,12 +114,12 @@
         "inverter_dyn": {
             "size": 5,
             "color": {
-                "light": "#3D8360",
-                "dark": "#86E4A3"
+                "light": "#6FDF92",
+                "dark": "#6FDF92"
             },
             "borderColor": {
-                "light": "#26523C",
-                "dark": "#26AB4F"
+                "light": "#2F654A",
+                "dark": "#219445"
             },
             "type": "nodeImg",
             "image": "./imgs/Inverter.svg"
@@ -140,7 +140,7 @@
         "diesel_dg": {
             "size": 5,
             "color": {
-                "light": "#2B5D44",
+                "light": "#B4EEC6",
                 "dark": "#B4EEC6"
             },
             "borderColor": {

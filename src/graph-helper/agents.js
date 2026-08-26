@@ -1,19 +1,3 @@
-// The distributed-agent roster, as served by /api/gridappsd/agents.
-//
-// GridAPPS-D addresses each agent by its `message_bus_id`, which is the mRID of
-// the distribution area it operates — the same id the graph already carries on
-// every node and edge as feeder_area_id / switch_area_id / secondary_area_id. So
-// an agent is placed on the visualization by a direct id match, and the existing
-// area highlighting is what draws it.
-//
-// This module owns the shape of that roster on the client: it normalizes what
-// came off the wire once, then answers the questions the panel, the on-graph
-// chips and the bus diagram each ask of it. It holds no React state — like the
-// rest of graph-helper it hangs off the graphHelper singleton and components
-// re-read it when a `graph-loaded` or `agents-update` event tells them to.
-
-// General -> specific. Matches the backend's LEVELS plus the system bus that
-// sits above every model-derived area.
 export const AGENT_LEVELS = ["system", "feeder", "switch", "secondary"];
 
 // Human labels for the bus rows of the diagram and the panel's section headers.
@@ -35,17 +19,6 @@ const LEVEL_TITLES = {
 
 const EMPTY = { model: null, source: null, buses: [], agents: [] };
 
-/**
- * A label short enough to read in a 240px panel or on a marker.
- *
- * CIM names distribution areas by extending their parent's name — a feeder's
- * switch areas come out as "<36-char feeder mRID>.0" through ".5". Those differ
- * only in their last character, so shown raw they all ellipsize to the same
- * string and the UI looks like it is repeating one area. Dropping the parent's
- * prefix leaves exactly the part that identifies the area.
- *
- * Falls back to the full name for any model that doesn't follow that convention.
- */
 const shortAreaLabel = (name, parentName, level) => {
     const title = LEVEL_TITLES[level] ?? level;
     if (level === "system") return title;
@@ -62,12 +35,6 @@ const shortAreaLabel = (name, parentName, level) => {
     return `${title} ${tail}`;
 };
 
-/**
- * Coerces a payload — from the REST endpoint or from an `agents-update` socket
- * broadcast — into the roster shape. The backend already guarantees this, but a
- * socket payload comes from an arbitrary external script, so nothing here may
- * assume well-formed input.
- */
 export const normalizeRoster = (payload) => {
     if (!payload || typeof payload !== "object") return { ...EMPTY };
 
@@ -118,11 +85,6 @@ export const normalizeRoster = (payload) => {
     };
 };
 
-/**
- * The roster split by level, in general -> specific order, with empty levels
- * dropped. Both the panel's sections and the diagram's bus rows are built from
- * this, so they can never disagree about which levels exist.
- */
 export const agentsByLevel = (roster) => {
     const byLevel = new Map();
 
@@ -134,18 +96,9 @@ export const agentsByLevel = (roster) => {
     return byLevel;
 };
 
-/** The agent operating a given distribution area, or null. */
 export const agentForArea = (roster, areaId) =>
     roster.agents.find((agent) => agent.areaId === areaId) ?? null;
 
-/**
- * Applies a status-only update without discarding the roster.
- *
- * An `agents-update` broadcast is usually a liveness report, not a new roster —
- * it names agents and their state. Merging by agent id keeps the areas, names
- * and device lists that the (much richer) REST payload established, so a status
- * ping can't blank out the diagram.
- */
 export const mergeRoster = (roster, payload) => {
     const incoming = normalizeRoster(payload);
     if (incoming.agents.length === 0) return roster;

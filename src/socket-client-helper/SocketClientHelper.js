@@ -1,9 +1,23 @@
 import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
-import { API_BASE_URL, API_TOKEN } from "../config";
+import { API_BASE_URL, API_TOKEN, FEATURES } from "../config";
 
-// Pristine defaults. The instance works on deep clones so the simulation
-// config form can always offer a "reset to defaults" built from these.
+const NO_SIMULATION_MESSAGE = "Simulation is not available in this deployment.";
+
+const inertSocket = () => ({
+    id: null,
+    connected: false,
+    on: () => {},
+    off: () => {},
+    connect: () => {},
+    disconnect: () => {},
+    emit: (_event, ..._args) => {
+        // The last argument is the ack callback when the caller expects a reply.
+        const ack = _args[_args.length - 1];
+        if (typeof ack === "function") ack({ error: NO_SIMULATION_MESSAGE });
+    },
+});
+
 export const DEFAULT_POWER_SYSTEM_CONFIG = {
     SubGeographicalRegion_name: "",
     GeographicalRegion_name: "",
@@ -87,10 +101,6 @@ class SocketClientHelper {
     // State
     simulationID = null;
     simulationState = "inactive"; // inactive | idle | running | paused | stopped | error
-
-    // Rolling buffer of GridAPPS-D simulation log messages. Kept here (not in
-    // the log panel) so the panel renders full history even when it mounts, or
-    // is un-minimized, partway through a run. Capped to bound memory.
     simulationLogs = [];
     #MAX_SIM_LOGS = 1000;
 
@@ -99,8 +109,6 @@ class SocketClientHelper {
         "sim-output": [],
         "sim-log": [],
         "sim-log-clear": [],
-        // Fired once when a fresh run is started (not on pause/resume, which
-        // also report "running"). Charts key their history reset off this.
         "sim-run-start": [],
         "sim-state-change": [],
         "connection-change": [],
@@ -111,16 +119,17 @@ class SocketClientHelper {
         "add-edge": [],
         "delete-node": [],
         "delete-edge": [],
-        // Live distributed-agent roster / status, pushed by an external script
-        // or service. See graph-helper/agents.js.
         "agents-update": [],
         error: [],
     };
 
     constructor(serverUrl = API_BASE_URL) {
+        if (!FEATURES.simulation) {
+            this.socket = inertSocket();
+            return;
+        }
+
         this.socket = io(serverUrl, {
-            // Sent in the connection handshake; the server rejects the connection
-            // if a token is required and this doesn't match. Empty when auth is off.
             auth: API_TOKEN ? { token: API_TOKEN } : {},
             reconnection: true,
             reconnectionAttempts: 10,
@@ -153,10 +162,6 @@ class SocketClientHelper {
 
         // Simulation events
         this.socket.on("sim-output", (output) => {
-            // Frames can still arrive after we've detached: stopping is
-            // asynchronous, and the backend may already have output queued.
-            // Applying them would decode measurements against a model they don't
-            // belong to and repopulate the live overlay we just cleared.
             if (this.simulationState === "inactive") return;
 
             this.#emit("sim-output", output);
@@ -164,8 +169,6 @@ class SocketClientHelper {
         });
 
         this.socket.on("sim-log", (log) => {
-            // Buffer first so a panel that mounts (or un-minimizes) mid-run can
-            // read history via getSimulationLogs(); then notify live listeners.
             this.simulationLogs.push(log);
             if (this.simulationLogs.length > this.#MAX_SIM_LOGS) {
                 this.simulationLogs.shift();
@@ -183,8 +186,6 @@ class SocketClientHelper {
             this.#emit("sim-state-change", state);
         });
 
-        // Per-stage progress while the backend loads a CIM model from
-        // Blazegraph. Payload: { model, stage, step, total }.
         this.socket.on("model-load-progress", (progress) => {
             this.#emit("model-load-progress", progress);
         });
@@ -197,14 +198,8 @@ class SocketClientHelper {
             graphHelper.updateCapacitors(data);
         });
 
-        // External-script graph API. The server broadcasts these so connected
-        // frontends load/mutate their visualization. We apply the change to the
-        // shared graphHelper, then re-emit for any React subscribers (e.g. to
-        // trigger a re-render on load-graph).
-
         this.socket.on("load-graph", (payload) => {
             try {
-                // Server sends { data: { name: { objects: [...] } } }
                 graphHelper.loadGraphFromData(payload?.data ?? payload, payload?.themeData ?? null);
             } catch (err) {
                 console.error("[Socket] Failed to load graph:", err);
@@ -235,9 +230,6 @@ class SocketClientHelper {
             this.#emit("delete-edge", id);
         });
 
-        // Distributed-agent roster or liveness report. Merged rather than
-        // replaced, so a status-only ping can't discard the areas and devices
-        // the REST roster established.
         this.socket.on("agents-update", (data) => {
             graphHelper.applyAgentUpdate(data);
             this.#emit("agents-update", data);
@@ -245,11 +237,6 @@ class SocketClientHelper {
     }
 
     // Event Emitter
-
-    /**
-     * Register a listener for a specific event.
-     * Returns an unsubscribe function.
-     */
     on(event, callback) {
         if (!(event in this.#listeners)) {
             console.warn(`[Socket] Unknown event: "${event}"`);
@@ -263,9 +250,6 @@ class SocketClientHelper {
         };
     }
 
-    /**
-     * Remove a specific listener, or all listeners for an event.
-     */
     off(event, callback = null) {
         if (!(event in this.#listeners)) return;
         if (callback) {
@@ -305,11 +289,6 @@ class SocketClientHelper {
 
     // Simulation Configuration
 
-    /**
-     * Build the power_system_config for one selected model: the per-model
-     * override from the config form if there is one, otherwise the shared
-     * defaults, stamped with the model's region/line mRIDs.
-     */
     buildPowerSystemConfig = (model) => {
         const base = this.powerSystemConfigOverrides[model.modelId] ?? this.powerSystemConfig;
         const config = structuredClone(base);
@@ -319,10 +298,6 @@ class SocketClientHelper {
         return config;
     };
 
-    /**
-     * Full GridAPPS-D config exactly as startSimulation would send it for the
-     * given models. The config form uses this as its initial values.
-     */
     buildGridappsdConfig = (models = []) => ({
         ...structuredClone(this.gridappsdConfiguration),
         power_system_configs: models.map(this.buildPowerSystemConfig),
@@ -340,12 +315,6 @@ class SocketClientHelper {
         }),
     });
 
-    /**
-     * Persist edits from the simulation config form. All parts are optional:
-     * simulationConfig merges into simulation_config, advancedConfig replaces
-     * application_config/service_configs/test_config, and
-     * powerSystemConfigsByModelId stores one power_system_config per feeder.
-     */
     applySimulationConfig = ({ simulationConfig, advancedConfig, powerSystemConfigsByModelId } = {}) => {
         if (simulationConfig) {
             this.gridappsdConfiguration.simulation_config = {
@@ -379,9 +348,6 @@ class SocketClientHelper {
                 return;
             }
 
-            // Fresh run — drop logs and chart history from any previous run.
-            // Emitted before the start round-trip so the charts are already
-            // empty when the first frame lands.
             this.clearSimulationLogs();
             this.#emit("sim-run-start");
 
@@ -394,7 +360,8 @@ class SocketClientHelper {
                 if (!ack || ack.error) {
                     this.simulationState = "error";
                     this.#emit("sim-state-change", "error");
-                    const errorMsg = ack?.error?.message || "Unknown error starting simulation";
+                    const errorMsg =
+                        ack?.error?.message || ack?.error || "Unknown error starting simulation";
                     this.#emit("error", { type: "simulation", message: errorMsg });
                     reject(new Error(errorMsg));
                     return;
@@ -465,30 +432,16 @@ class SocketClientHelper {
     };
 
     setSimulationState = (state) => {
-        // "inactive" means nothing on screen belongs to a simulation any more, so
-        // the id has to go with it — the badge reads simulationID on this event,
-        // and would otherwise keep showing the previous run's id indefinitely.
         if (state === "inactive") this.simulationID = null;
 
         this.simulationState = state;
         this.#emit("sim-state-change", state);
     };
 
-    /**
-     * Detach the UI from any simulation. Called when a new model is loaded: the
-     * run no longer corresponds to what's on screen.
-     *
-     * A live run is stopped first — otherwise the backend keeps streaming
-     * sim-output frames that get decoded against an unrelated graph, which both
-     * wastes work and repopulates the live-measurement overlay for a model that
-     * isn't being simulated.
-     */
     detachSimulation = () => {
         const wasLive = this.simulationState === "running" || this.simulationState === "paused";
 
         if (wasLive && this.simulationID) {
-            // Best effort: we tear the UI down regardless of the ack, since the
-            // model it belonged to is already gone.
             this.socket.emit("stop-simulation", this.simulationID);
         }
 
@@ -496,12 +449,8 @@ class SocketClientHelper {
         this.setSimulationState("inactive");
     };
 
-    // Simulation Logs
-
-    /** Snapshot of the buffered simulation log messages (oldest first). */
     getSimulationLogs = () => [...this.simulationLogs];
 
-    /** Drop all buffered logs and notify listeners so panels can reset. */
     clearSimulationLogs = () => {
         this.simulationLogs = [];
         this.#emit("sim-log-clear");

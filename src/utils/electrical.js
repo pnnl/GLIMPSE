@@ -1,21 +1,3 @@
-// ============================================================================
-// electrical.js — turns raw simulation measurements into the quantities an
-// engineer actually reads: per-unit voltage and percent loading, plus a
-// severity classification for each.
-// ============================================================================
-// Pure and dependency-free (like live-measurements.js) so graphHelper can
-// import it without creating a cycle. Nothing here mutates model state.
-//
-// Inputs come from graphHelper.liveMeasurements:
-//   nodes: id -> { voltage: { <phase>: { magnitude, angle } } }        (PNV, volts)
-//   edges: id -> { power: { <phase>: {...} }, apparent, normalLimit }  (VA, amps)
-//
-// UNITS WARNING: `normalLimit` is an ampere rating (GridAPPS-D serves it from
-// `limits.currents`, i.e. CIM CurrentLimit), while the measurements are apparent
-// power in VA. Loading is therefore a *current* ratio and needs a voltage to
-// convert: I = S / V per phase. Dividing VA by amps directly is dimensionally
-// meaningless — see summarizeEdgeLoading.
-
 // ── Voltage limits ──────────────────────────────────────────────────────────
 // ANSI C84.1 service voltage limits, expressed per-unit. Range A is the normal
 // operating band; Range B is the wider band that is tolerable but should be
@@ -32,31 +14,6 @@ export const LOADING_LIMITS = {
     overloaded: 1.0, // above the normal rating
 };
 
-// ── Severity palette ────────────────────────────────────────────────────────
-// Severity is the highest-stakes encoding in the app, so it gets the strictest
-// treatment: a diverging blue↔amber/red scale rather than the green/amber/red
-// that red-green color vision deficiency collapses. Blue-vs-orange is the one
-// axis every common CVD type preserves.
-//
-// Two things follow from that choice:
-//   * direction is readable — undervoltage is blue, overvoltage is warm, where
-//     before both were the same amber and told you nothing about which way the
-//     bus had moved;
-//   * severity reads as intensity — the severe levels are the more saturated
-//     end of each arm, so the ramp still works if you only see lightness.
-//
-// `normal` and `unknown` are deliberately quiet neutrals (ISA-101: an operator
-// display should spend its salience budget on the abnormal), and `unknown` sits
-// below the 3:1 contrast floor on purpose — "no measurement" is the least
-// important thing on the canvas.
-//
-// Every pair is at least ΔE 16 apart under simulated protanopia, deuteranopia
-// and tritanopia, except the two same-hue steps within one arm (low/severeLow,
-// high/severeHigh), which are an ordered ramp rather than distinct categories.
-
-// Set from GraphRenderer when the canvas theme changes; the same module-level
-// pattern canvas-utils.js uses, so the severity objects stay plain values that
-// callers can pass around by identity.
 let _darkMode = false;
 
 export const setSeverityDarkMode = (value) => {
@@ -86,18 +43,6 @@ export const SEVERITY = {
 /** True for the classifications that should count as a violation. */
 export const isViolation = (severity) =>
     severity != null && severity.level !== "normal" && severity.level !== "unknown";
-
-// ── Base voltage resolution ─────────────────────────────────────────────────
-// Per-unit needs a base. Two sources, in order:
-//
-//   1. An explicit nameplate attribute. GridLAB-D models carry
-//      `nominal_voltage` (line-to-neutral, matching PNV) directly on the node.
-//   2. Inference from the measurement itself. CIM/GridAPPS-D models don't
-//      expose a numeric base on the node — cimhelper stringifies BaseVoltage to
-//      its *name* — so the observed magnitude is snapped to the nearest standard
-//      line-to-neutral distribution voltage.
-//
-// Inference is deliberately conservative: see snapToStandardBase.
 
 const BASE_VOLTAGE_KEYS = [
     "nominal_voltage",
@@ -304,9 +249,6 @@ export const summarizeEdgeLoading = (live, phaseVoltages) => {
         phases: [],
         worst: null,
         ratio: null,
-        // Without a rating (or a voltage to convert with) there is nothing to be
-        // over, so severity is unknown rather than normal — the UI shows power
-        // but withholds a loading verdict.
         severity: SEVERITY.unknown,
     };
 
@@ -365,19 +307,7 @@ export const formatAmps = (amps) =>
 
 export const formatPu = (pu) => (Number.isFinite(pu) ? pu.toFixed(3) : "-");
 
-export const formatPercent = (ratio) =>
-    Number.isFinite(ratio) ? `${(ratio * 100).toFixed(0)}%` : "-";
-
-// ── Loading → visual scale ──────────────────────────────────────────────────
-// How hard a conductor is working drives its drawn width and flow-dot speed.
-//
-// Both use a sqrt response rather than linear: on a real feeder the trunk
-// carries most of the load and the laterals run lightly loaded, so a linear map
-// bunches almost every edge at the thin end and wastes the scale.
-//
-// The endpoints are pinned by tests — an earlier version divided volt-amperes by
-// an ampere rating, and when that was corrected the multiplier was left
-// uncalibrated, collapsing every edge to a hairline.
+export const formatPercent = (ratio) => (Number.isFinite(ratio) ? `${(ratio * 100).toFixed(0)}%` : "-");
 
 export const EDGE_WIDTH_MIN = 1.5; // energized but essentially unloaded
 export const EDGE_WIDTH_MAX = 6; // at or beyond EDGE_LOADING_FULL_SCALE
@@ -404,7 +334,10 @@ export const dotSpeedForLoading = (ratio) =>
 
 // Rows for the violation-mode legend panel, in worsening order.
 export const VIOLATION_LEGEND = [
-    { severity: SEVERITY.normal, hint: `${VOLTAGE_LIMITS.rangeA.min}–${VOLTAGE_LIMITS.rangeA.max} p.u.` },
+    {
+        severity: SEVERITY.normal,
+        hint: `${VOLTAGE_LIMITS.rangeA.min}–${VOLTAGE_LIMITS.rangeA.max} p.u.`,
+    },
     { severity: SEVERITY.low, hint: `< ${VOLTAGE_LIMITS.rangeA.min} p.u. (ANSI Range B)` },
     { severity: SEVERITY.high, hint: `> ${VOLTAGE_LIMITS.rangeA.max} p.u. (ANSI Range B)` },
     { severity: SEVERITY.severeLow, hint: `< ${VOLTAGE_LIMITS.rangeB.min} p.u.` },

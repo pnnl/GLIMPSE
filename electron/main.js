@@ -1,14 +1,3 @@
-// GLIMPSE Electron main process.
-//
-// In a packaged app this spawns the PyInstaller-built Flask/SocketIO server
-// (bundled under resources/server/), waits for it to come up, then opens the
-// window pointed at the built frontend. On quit the entire server process
-// tree is terminated so no child processes are left running.
-//
-// In development (`npm run electron:dev`) the backend and the Vite dev server
-// are started by `concurrently`, and this process only opens a window on
-// ELECTRON_START_URL.
-
 const { app, BrowserWindow, dialog, shell } = require("electron");
 const { spawn, spawnSync } = require("child_process");
 const path = require("path");
@@ -24,13 +13,6 @@ let splashWindow = null;
 let serverProcess = null;
 let quitting = false;
 
-// ------------------------------------------------------------------
-// GPU / WebGL availability
-// ------------------------------------------------------------------
-// Sigma.js requires WebGL; without a usable GPU the window renders blank.
-// Allow Chromium's software (SwiftShader) fallback everywhere — it is a
-// no-op on machines with a working GPU. Under WSL additionally ignore the
-// GPU blocklist, which wrongly rejects the WSLg/Mesa stack.
 app.commandLine.appendSwitch("enable-unsafe-swiftshader");
 
 const isWSL =
@@ -222,17 +204,11 @@ const createWindow = () => {
         }
     });
 
-    // Open external links in the default browser instead of new Electron windows.
-    // Only http(s) is handed to the OS — never file:, smb:, or other schemes that
-    // shell.openExternal would otherwise launch (defense against injected links).
     mainWindow.webContents.setWindowOpenHandler((details) => {
         if (/^https?:\/\//i.test(details.url)) shell.openExternal(details.url);
         return { action: "deny" };
     });
 
-    // The app is a SPA (client-side routing via the History API, which does not
-    // fire will-navigate). Any full-page navigation is therefore unexpected —
-    // block it, and send http(s) targets to the default browser instead.
     mainWindow.webContents.on("will-navigate", (event, url) => {
         event.preventDefault();
         if (/^https?:\/\//i.test(url)) shell.openExternal(url);
@@ -290,9 +266,6 @@ if (!gotSingleInstanceLock) {
     });
 }
 
-// Quit fully when the window is closed — including on macOS, where the
-// default is to keep the app (and our bundled backend) running. We don't
-// want an orphaned server holding the port after the user closes the window.
 app.on("window-all-closed", () => {
     app.quit();
 });

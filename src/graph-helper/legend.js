@@ -1,10 +1,3 @@
-// Legend data for the object types actually present in the loaded model.
-//
-// Driven entirely by `objectTypeCount`, which the graph builder and the socket
-// add/delete paths keep up to date. Consumed by the DOM legend panel
-// (components/legend/LegendPanel.jsx).
-
-/** The types with at least one instance in the model. */
 const presentTypes = (counts) =>
     Object.entries(counts)
         .filter(([, count]) => count > 0)

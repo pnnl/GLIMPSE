@@ -70,6 +70,12 @@ class GraphHelper {
     // inherit the previous feeder.
     currentFeederID = null;
 
+    // CIM object details keyed feeder -> mRID -> { attributes, associations, ... }.
+    // The backend ships these with the parsed model instead of serving them one
+    // request at a time, so object inspection needs no round trip and the server
+    // needn't still be holding the model. See cimhelper._build_object_details.
+    objectDetails = {};
+
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
     hasGeoCoords = false; // true when node x/y hold real longitude/latitude (enables map background)
 
@@ -94,6 +100,18 @@ class GraphHelper {
     setIsCIM = (value) => {
         this.isCIM = Boolean(value);
     };
+
+    /** Store the object details that came back with a CIM model load. */
+    setObjectDetails = (details) => {
+        this.objectDetails = details ?? {};
+    };
+
+    /**
+     * Detail record for one CIM object, or null when the model didn't ship one.
+     * Synthetic connector edges have no CIM instance behind them, so a miss here
+     * is expected rather than an error — callers fall back to graph attributes.
+     */
+    getObjectDetail = (feederId, mRID) => this.objectDetails?.[feederId]?.[mRID] ?? null;
 
     // ── Theme ───────────────────────────────────────────────────────────────
 
@@ -558,6 +576,7 @@ class GraphHelper {
         this.communitiesArray = [];
         this.communityColorPallet = {};
         this.distributionAreas = {};
+        this.objectDetails = {};
         this.agents = emptyRoster();
         this.currentFeederID = null;
     };

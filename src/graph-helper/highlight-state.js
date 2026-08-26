@@ -1,27 +1,16 @@
-// What the user has singled out in the graph, and the cursor used to step
-// through it with Prev/Next.
-//
-// Three independent selections feed the Sigma reducers in GraphRenderer:
-//   • node groups and edge types  — toggled from the legend, dim everything else
-//   • distribution areas          — toggled from the area tree
-// The matching node/edge ids are also flattened into `objects`, which the
-// toolbar walks with next()/previous().
-
 export class HighlightState {
     #groups = [];
     #edgeTypes = [];
-    #areas = []; // selected distribution-area ids (any level)
-
-    nodeIDs = []; // [{ type: "node", id }]
-    edgeIDs = []; // [{ type: "edge", id }]
-    objects = []; // nodeIDs + edgeIDs, in Prev/Next order
+    #areas = [];
+    nodeIDs = [];
+    edgeIDs = [];
+    objects = [];
     focusIndex = -1;
 
     #syncObjects() {
         this.objects = [...this.nodeIDs, ...this.edgeIDs];
     }
 
-    /** Toggles a node group's highlight and recomputes the matching node ids. */
     toggleGroup(graph, groupName) {
         this.#groups = toggle(this.#groups, groupName);
         this.nodeIDs = graph
@@ -30,7 +19,6 @@ export class HighlightState {
         this.#syncObjects();
     }
 
-    /** Toggles an edge type's highlight and recomputes the matching edge ids. */
     toggleEdgeType(graph, edgeType) {
         this.#edgeTypes = toggle(this.#edgeTypes, edgeType);
         this.edgeIDs = graph
@@ -47,16 +35,10 @@ export class HighlightState {
         return this.#edgeTypes;
     }
 
-    /** True for a group or edge-type name that is currently highlighted. */
     isHighlighted(name) {
         return this.#groups.includes(name) || this.#edgeTypes.includes(name);
     }
 
-    // Distribution-area highlighting. Selected ids may be at any level
-    // (feeder / switch / secondary); a node or edge is "in" the selection if any
-    // of its area ids match. Because a member carries its full ancestry, selecting
-    // a switch area also matches the nodes/edges in that switch area's secondary
-    // areas, and selecting a feeder area matches everything under it.
     setAreas(areaIds) {
         this.#areas = Array.isArray(areaIds) ? areaIds : [];
     }
@@ -65,7 +47,6 @@ export class HighlightState {
         return this.#areas;
     }
 
-    /** With no area selected everything counts as in-area, so nothing is dimmed. */
     isInArea(attrs) {
         if (this.#areas.length === 0) return true;
         const a = (attrs && attrs.attributes) || {};

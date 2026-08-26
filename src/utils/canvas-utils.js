@@ -1,9 +1,3 @@
-// ============================================================================
-// canvas-utils.js — Custom Sigma.js canvas renderers for node labels,
-// hover tooltips, and shadow/halo effects.
-// ============================================================================
-
-// ── Dark mode flag — toggled by setCanvasDarkMode() ────────────────────────
 let _isDark = false;
 export const setCanvasDarkMode = (val) => {
     _isDark = val;
@@ -68,38 +62,6 @@ export function drawRoundRect(ctx, x, y, width, height, radius) {
     ctx.closePath();
 }
 
-// ============================================================================
-// drawHover — Renders the tooltip card when the user hovers over a node.
-// ============================================================================
-// The card is stacked vertically, most-important-first:
-//   1. Object type label (group name)  — top, smaller font
-//   2. ID label (node label / name)    — larger font
-//   3. Vitals block                    — live electrical readings, per-line
-//                                        color by severity, separated by a rule
-//   4. Attributes                      — the model's own fields, dimmed
-//   5. "+N more attributes" hint       — when the list was truncated
-//
-// The vitals block is what makes this readable during a simulation: per-unit
-// voltage and percent loading sit at the top in their severity color, instead
-// of being buried in an alphabetical dump of CIM identifiers.
-//
-// DATA CONTRACT (properties read from `data`):
-//   data.label            – primary display name (string)
-//   data.group            – object type / category (string, optional)
-//   data.hoverVitals      – [{ text, color? }] live readings (array, optional)
-//   data.attributesLabel  – model attributes, "\n" separated (string, optional)
-//   data.attributesHidden – count of attributes not shown (number, optional)
-//   data.x, data.y        – node center in canvas coords
-//   data.size             – node rendered radius
-//   data.color            – node color (used for attributes text)
-//
-// TO CUSTOMIZE:
-//   • Card background  → change HOVER_BG_COLOR
-//   • Drop shadow      → change HOVER_SHADOW_* constants
-//   • Font sizes       → change HOVER_LABEL_SIZE_BOOST / HOVER_OBJECT_TYPE_SIZE_OFFSET
-//   • Corner roundness → change HOVER_CORNER_RADIUS
-//   • Spacing          → change HOVER_VERTICAL_PADDING
-// ============================================================================
 export function drawHover(context, data, settings) {
     // ── Derive font sizes from sigma settings ──
     const idLabelSize = settings.labelSize + HOVER_LABEL_SIZE_BOOST;
@@ -158,8 +120,7 @@ export function drawHover(context, data, settings) {
             ? bodyLineCount * lineHeight + separatorHeight
             : Math.round(objectTypeLabelSize / 2 + 9);
 
-    const cardHeight =
-        bodyBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
+    const cardHeight = bodyBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
 
     // ── Draw background card with shadow ──
     context.beginPath();
@@ -248,27 +209,6 @@ export function drawHover(context, data, settings) {
     }
 }
 
-// ============================================================================
-// drawLabel — Renders the persistent label beneath each visible node.
-// ============================================================================
-// Sigma calls this for every node whose label should be shown (based on
-// labelDensity, labelRenderedSizeThreshold, etc. in your sigma settings).
-//
-// Labels support multi-line text: embed "\n" in `data.label`.
-// A semi-transparent background rect is drawn behind the text for readability.
-//
-// DATA CONTRACT:
-//   data.label – text to display (string, supports "\n")
-//   data.x, data.y – node center
-//   data.size       – node rendered radius
-//
-// TO CUSTOMIZE:
-//   • Background color / opacity → LABEL_BG_COLOR
-//   • Text color                 → LABEL_TEXT_COLOR
-//   • Padding                    → LABEL_PADDING_X, LABEL_PADDING_Y
-//   • Gap below node             → LABEL_NODE_SPACING
-//   • Line spacing               → LABEL_LINE_HEIGHT_MULTIPLIER
-// ============================================================================
 export function drawLabel(context, data, settings) {
     if (!data.label) return;
 
@@ -317,18 +257,6 @@ export function drawLabel(context, data, settings) {
     context.textBaseline = "alphabetic";
 }
 
-// ============================================================================
-// drawShadow — Draws a soft halo / outline behind a node on hover.
-// ============================================================================
-// Called by sigma when a node is hovered. Gives the node a "glow" effect
-// to make it stand out.
-//
-// TO CUSTOMIZE:
-//   • Halo size    → SHADOW_HALO_EXTRA_RADIUS (px beyond the node edge)
-//   • Halo opacity → SHADOW_HALO_FILL  (rgba string)
-//   • Blur amount  → SHADOW_HALO_BLUR
-//   • Shadow color → SHADOW_HALO_SHADOW_COLOR
-// ============================================================================
 export function drawShadow(context, data, settings) {
     const x = Math.round(data.x || 0);
     const y = Math.round(data.y || 0);

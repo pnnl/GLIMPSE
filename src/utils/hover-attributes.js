@@ -1,19 +1,3 @@
-// ============================================================================
-// hover-attributes.js — chooses which model attributes appear on a hover card.
-// ============================================================================
-// The hover card is a canvas drawing, so it can't have a collapsible section.
-// Instead the noisy identifier/bookkeeping fields are dropped, the rest is
-// sorted with electrically-interesting fields first and capped, and the count
-// of everything omitted is reported so the card can point at the Model Data
-// View — which is where the exhaustive list belongs.
-//
-// Pure and dependency-free so it can be unit-tested directly (see
-// js-testing/hover-attributes.test.mjs).
-
-// Identifiers and association bookkeeping: essential in the data view, useless
-// on hover, where they push the interesting fields off the card. `dist_areas`
-// is dropped because area membership already has its own selector and
-// highlighting.
 export const HIDDEN_ATTRIBUTES = new Set([
     "mRID",
     "id",
@@ -81,10 +65,6 @@ export const buildHoverAttributes = (attributes) => {
 
     let shown = interesting.slice(0, MAX_ATTRIBUTES);
 
-    // Some object types carry nothing but identifiers and area bookkeeping — a
-    // CIM connectivity_node has only id/name/feeder_id/area fields/x/y, all of
-    // which are hidden. Falling back to the identifier keeps the card from
-    // rendering as an empty box.
     if (shown.length === 0) {
         const idKey = !isEmpty(attributes.mRID) ? "mRID" : "id";
         if (!isEmpty(attributes[idKey])) shown = [[idKey, attributes[idKey]]];
