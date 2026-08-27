@@ -18,21 +18,7 @@ TERMINAL = (DONE, FAILED)
 # How long a finished job and its result stay collectable, and how long an
 # accepted-but-unstarted job may sit before it is presumed abandoned.
 RESULT_TTL_SECONDS = int(os.environ.get("GLIMPSE_JOB_TTL", "3600"))
-
-# How many times a single job may be handed to a worker. The parse task runs
-# with acks_late, so a worker that dies mid-parse — an OOM kill is the realistic
-# case, since a 9500-scale parse peaks near 600 MB — has its task redelivered
-# rather than silently losing it, which is exactly what should happen to a
-# worker replaced during a deploy. The same mechanism is a trap for a model that
-# kills whatever tries to parse it: unbounded redelivery of a poison pill takes
-# down every worker in turn. Counting attempts on the job record bounds that.
 MAX_ATTEMPTS = int(os.environ.get("GLIMPSE_JOB_MAX_ATTEMPTS", "2"))
-
-# The Celery queue parse tasks are published to. Named explicitly because the
-# web tier reads its depth directly to shed load: kombu's Redis transport keeps
-# a queue's pending messages in a list under exactly this key, so LLEN is the
-# queue depth. Renaming the queue without renaming this constant would silently
-# report a depth of zero forever.
 PARSE_QUEUE = os.environ.get("GLIMPSE_PARSE_QUEUE", "glimpse.parse")
 
 
@@ -40,13 +26,9 @@ PARSE_QUEUE = os.environ.get("GLIMPSE_PARSE_QUEUE", "glimpse.parse")
 class Job:
     id: str
     state: str = QUEUED
-    # Coarse by design: the underlying cimgraph XML parse is a single blocking
-    # call with no progress to report, so claiming a percentage would be a lie.
     stage: str = "queued"
     filename: str = ""
     error: str | None = None
-    # Incremented each time a worker picks the job up. Above 1 means an earlier
-    # attempt died without reporting, and Celery redelivered the task.
     attempts: int = 0
     created_at: float = field(default_factory=time.time)
     started_at: float | None = None
@@ -77,13 +59,6 @@ class JobStore:
         raise NotImplementedError
 
     def begin(self, job_id: str) -> tuple[Job, bytes] | None:
-        """Take a job for execution. Worker side.
-
-        Returns None when there is nothing to run — the job or its upload
-        expired, or it has already burned through MAX_ATTEMPTS, in which case it
-        is marked failed here so the client gets an answer rather than polling a
-        job that no worker will ever pick up again.
-        """
         raise NotImplementedError
 
     def set_stage(self, job_id: str, stage: str) -> None:
@@ -189,18 +164,6 @@ def _exhausted_message(job: Job) -> str:
 
 
 class RedisJobStore(JobStore):
-    """Redis-backed store: the hosted deployment's shared state.
-
-    Celery owns dispatch — which worker runs which job, and redelivery when one
-    dies. This holds everything Celery deliberately does not: the job record the
-    client polls, the uploaded bytes, and the finished payload.
-
-    Keys, all TTL'd so an abandoned job cannot leak:
-      glimpse:job:<id>      hash   - the Job record
-      glimpse:upload:<id>   string - the uploaded bytes, dropped once terminal
-      glimpse:result:<id>   string - the gzipped payload
-    """
-
     def __init__(self, url: str, ttl: int = RESULT_TTL_SECONDS) -> None:
         self._url = url
         self._ttl = ttl
@@ -209,15 +172,6 @@ class RedisJobStore(JobStore):
 
     @property
     def _redis(self):
-        """The Redis client for *this* process.
-
-        gunicorn runs with --preload, so the app is imported once in the master
-        and the workers are forked from it. A connection pool created before the
-        fork would be shared by every worker, which corrupts protocol state the
-        moment two of them use it at once. Keying the client on the pid means
-        each process lazily builds its own on first use, and the inherited one is
-        never touched.
-        """
         pid = os.getpid()
         if self._client is None or self._client_pid != pid:
             import redis  # imported here so the memory backend needs no redis-py
@@ -280,17 +234,11 @@ class RedisJobStore(JobStore):
             self.fail(job_id, _exhausted_message(job))
             return None
 
-        # Read-modify-write rather than an atomic INCR: Celery hands a task to
-        # one worker at a time, so there is no concurrent writer here as long as
-        # the visibility timeout exceeds the task time limit (see tasks.py).
         job.attempts += 1
         job.state = RUNNING
         job.stage = "parsing"
         job.started_at = time.time()
         self._write(job)
-        # The upload deliberately stays in Redis until the job is terminal. It
-        # is the only copy, and a redelivered attempt after a worker loss has
-        # nothing to parse without it.
         return job, payload
 
     def set_stage(self, job_id: str, stage: str) -> None:
