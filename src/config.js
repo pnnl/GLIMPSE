@@ -25,16 +25,6 @@ export const FEATURES = {
     mermaid: !IS_HOSTED,
     gridappsd: !IS_HOSTED,
     simulation: !IS_HOSTED,
-    // Hosted GLIMPSE is model exploration only. Editing an object PUTs to
-    // /api/cim/objects, which is a desktop_route and therefore not registered
-    // there — without this flag the inputs and Save button render, and every
-    // save fails with a 404 the user has no way to interpret.
     editing: !IS_HOSTED,
-    // Whether the backend still holds the parsed model and can therefore be
-    // asked about an object the payload didn't ship. A model ships details only
-    // for the objects it draws, so every association pointing at something
-    // undrawn — BaseVoltage, Location, Terminal, PerLengthImpedance — is
-    // resolvable only this way. Hosted mode keeps no model, so there the
-    // payload is all there is.
     objectLookup: !IS_HOSTED,
 };

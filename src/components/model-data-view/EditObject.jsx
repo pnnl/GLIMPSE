@@ -306,9 +306,6 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                     attributes={objectToEdit.attributes}
                     readOnlyAttributes={READ_ONLY_ATTRIBUTES}
                     onNavigate={onNavigate}
-                    // Omitted in hosted mode, which makes the table read-only
-                    // and drops the Save button — the same way the Associations
-                    // tab below is always rendered.
                     onChange={FEATURES.editing ? handleChange : undefined}
                     onSave={FEATURES.editing ? handleSave : undefined}
                     feederId={currentFeederId}
