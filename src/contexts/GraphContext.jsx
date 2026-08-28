@@ -5,14 +5,16 @@ const GraphContext = createContext();
 export const GraphProvider = ({ children }) => {
     const [graphUpdateTrigger, setGraphUpdateTrigger] = useState(0);
     const [view, setView] = useState("graph"); // "graph", "object-studio" or "agents"
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(true);
 
     const newGraphUpdate = useCallback(() => {
         setGraphUpdateTrigger((prev) => prev + 1);
     }, []);
 
     return (
-        <GraphContext.Provider value={{ graphUpdateTrigger, newGraphUpdate, view, setView, darkMode, setDarkMode }}>
+        <GraphContext.Provider
+            value={{ graphUpdateTrigger, newGraphUpdate, view, setView, darkMode, setDarkMode }}
+        >
             {children}
         </GraphContext.Provider>
     );

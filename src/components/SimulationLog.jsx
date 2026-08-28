@@ -96,7 +96,7 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
                     ))}
                 </div>
 
-                <Tooltip title="Clear logs">
+                <Tooltip title="Clear logs" placement="topRight" arrow={{ pointAtCenter: true }}>
                     <Button
                         type="text"
                         size="small"
