@@ -29,11 +29,6 @@ const READ_ONLY_ATTRIBUTES = new Set([
     "feeder_id", // feeder_id should never be editable
 ]);
 
-// Object attributes and associations arrive with the model itself (see
-// graphHelper.objectDetails) for every object the model *draws*. Objects it
-// only points at — BaseVoltage, Location, Terminal, PerLengthImpedance — are
-// still fetched one at a time, from a backend that has the parsed model. This
-// cache is for the mermaid diagram, which is fetched the same way.
 const mermaidCache = new Map();
 const CACHE_TTL = 30000; // 30 seconds
 
@@ -57,9 +52,6 @@ const invalidateCache = (feederId, mRID) => {
     mermaidCache.delete(getCacheKey(feederId, mRID));
 };
 
-// Attributes for an object the parse shipped no detail record for — the
-// synthetic connector edges this parser invents have no CIM instance behind
-// them. Falls back to what the graph already holds rather than showing nothing.
 const detailFromGraph = (object) => {
     const { type, id, mRID } = object;
     const graphId = mRID ?? id;
@@ -112,10 +104,7 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
     // has to be fetched. See the effect below.
     const [detailLoading, setDetailLoading] = useState(
         () =>
-            Boolean(object?.mRID && object?.feederId) &&
-            isCIM &&
-            !objectToEdit &&
-            FEATURES.objectLookup,
+            Boolean(object?.mRID && object?.feederId) && isCIM && !objectToEdit && FEATURES.objectLookup,
     );
     const [detailError, setDetailError] = useState(null);
 
@@ -123,12 +112,6 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
     const requestRef = useRef(0);
     const detailRequestRef = useRef(0);
 
-    // A model ships detail records only for the objects it draws. Everything
-    // those objects associate to — BaseVoltage, Location, Terminal,
-    // PerLengthImpedance, and the rest — is a link the user can click with
-    // nothing behind it locally, so it is fetched from the backend still
-    // holding the parsed model. Hosted mode retains no model and registers no
-    // such endpoint, hence FEATURES.objectLookup.
     useEffect(() => {
         if (!object || !isCIM || objectToEdit || !FEATURES.objectLookup) return;
 
@@ -297,9 +280,6 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
 
     const heading = objectToEdit.attributes?.name ?? objectToEdit.id ?? String(object?.mRID || object);
 
-    // Live simulation values for the object currently being viewed. Recomputed
-    // every render (the parent re-renders per sim frame) and shown as read-only
-    // rows above the object's own attributes — the model data is never altered.
     const graphId = object?.mRID ?? object?.id;
     let liveRows = [];
     if (simActive && graphId) {
@@ -370,10 +350,7 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                                         <Spin size="large" description="Loading diagram..." />
                                     </div>
                                 ) : (
-                                    <MermaidDiagram
-                                        mermaidContent={mermaidContent}
-                                        objectID={heading}
-                                    />
+                                    <MermaidDiagram mermaidContent={mermaidContent} objectID={heading} />
                                 ),
                             },
                         ]
