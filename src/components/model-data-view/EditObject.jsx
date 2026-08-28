@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { Tabs, Spin } from "antd";
+import { Tabs, Spin, Typography } from "antd";
 import axios from "axios";
 import AttributesTable from "./AttributesTable";
 import MermaidDiagram from "./MermaidDiagram";
@@ -7,7 +7,7 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { API_BASE_URL, FEATURES } from "../../config";
 import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
-import { notify } from "../../utils/notify";
+import { errorText, notify } from "../../utils/notify";
 
 // Split a formatted "A 2401.3 V" / "A 12.30 kW, 4.50 kVAR" line into a
 // { attrKey, value } row keyed by measurement kind + phase for the table.
@@ -29,10 +29,11 @@ const READ_ONLY_ATTRIBUTES = new Set([
     "feeder_id", // feeder_id should never be editable
 ]);
 
-// Object attributes and associations now arrive with the model itself (see
-// graphHelper.objectDetails), so the only thing still fetched per object is the
-// mermaid diagram — a desktop-only feature, since it reads the live cimgraph
-// object server-side. This cache exists solely for that.
+// Object attributes and associations arrive with the model itself (see
+// graphHelper.objectDetails) for every object the model *draws*. Objects it
+// only points at — BaseVoltage, Location, Terminal, PerLengthImpedance — are
+// still fetched one at a time, from a backend that has the parsed model. This
+// cache is for the mermaid diagram, which is fetched the same way.
 const mermaidCache = new Map();
 const CACHE_TTL = 30000; // 30 seconds
 
@@ -107,9 +108,63 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
             !getCachedMermaid(object.feederId, object.mRID),
     );
     const [saving, setSaving] = useState(false);
+    // Set when this object had no detail record shipped with the model, so one
+    // has to be fetched. See the effect below.
+    const [detailLoading, setDetailLoading] = useState(
+        () =>
+            Boolean(object?.mRID && object?.feederId) &&
+            isCIM &&
+            !objectToEdit &&
+            FEATURES.objectLookup,
+    );
+    const [detailError, setDetailError] = useState(null);
 
     // Track the current request to avoid race conditions
     const requestRef = useRef(0);
+    const detailRequestRef = useRef(0);
+
+    // A model ships detail records only for the objects it draws. Everything
+    // those objects associate to — BaseVoltage, Location, Terminal,
+    // PerLengthImpedance, and the rest — is a link the user can click with
+    // nothing behind it locally, so it is fetched from the backend still
+    // holding the parsed model. Hosted mode retains no model and registers no
+    // such endpoint, hence FEATURES.objectLookup.
+    useEffect(() => {
+        if (!object || !isCIM || objectToEdit || !FEATURES.objectLookup) return;
+
+        // Without both ids there is nothing to ask for; detailLoading was
+        // initialized false for exactly this case, so there is no state to undo.
+        const { feederId, mRID } = object;
+        if (!feederId || !mRID) return;
+
+        const currentRequest = ++detailRequestRef.current;
+
+        const fetchDetail = async () => {
+            try {
+                const { data } = await axios.post(`${API_BASE_URL}/api/cim/objects`, {
+                    feeder_id: feederId,
+                    mRID: mRID,
+                });
+
+                // Guard against stale responses
+                if (currentRequest !== detailRequestRef.current) return;
+
+                // Same shape the model ships (both come from _object_to_detail),
+                // so everything downstream treats it identically.
+                setObjectToEdit({ ...data.object, _feederId: feederId, _mRID: mRID });
+            } catch (error) {
+                if (currentRequest !== detailRequestRef.current) return;
+                console.error("Failed to fetch object:", error);
+                setDetailError(errorText(error, "This object could not be loaded."));
+            } finally {
+                if (currentRequest === detailRequestRef.current) {
+                    setDetailLoading(false);
+                }
+            }
+        };
+
+        fetchDetail();
+    }, [object, isCIM, objectToEdit]);
 
     // Diagram only. Attributes and associations came with the model, so nothing
     // else here needs the network — and in hosted mode nothing here runs at all.
@@ -218,7 +273,23 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
         }
     }, [objectToEdit, isCIM, object, newGraphUpdate]);
 
-    if (!objectToEdit) return null;
+    if (!objectToEdit) {
+        if (detailLoading) {
+            return (
+                <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
+                    <Spin size="large" description="Loading object..." />
+                </div>
+            );
+        }
+        if (detailError) {
+            return (
+                <div style={{ padding: "2rem", textAlign: "center" }}>
+                    <Typography.Text type="secondary">{detailError}</Typography.Text>
+                </div>
+            );
+        }
+        return null;
+    }
 
     // Derive the feederId to pass down — single source of truth
     const currentFeederId =

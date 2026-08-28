@@ -17,15 +17,31 @@ desk and actively wrong for several strangers sharing an instance.
 ## What makes it multi-user
 
 **Responses are self-contained.** Parsing a CIM model also resolves every
-object's attributes and associations (`CIMHelper._build_object_details`), and
-those ship with the model. The client never asks the server "tell me about object
-X" — it already knows — so the server needn't still be holding that model, and no
-request depends on reaching the replica that served the previous one.
+*drawn* object's attributes and associations (`CIMHelper._build_object_details`),
+and those ship with the model. The client never asks the server "tell me about
+the object I am looking at" — it already knows — so the server needn't still be
+holding that model, and no request depends on reaching the replica that served
+the previous one.
 
 This is the property everything else rests on. `local-server/tests/` guards it,
 in particular `test_inspection_works_across_replicas` and
 `test_any_replica_can_serve_any_job`. If someone reintroduces server-retained
 state, those fail; a single-instance smoke test would not notice.
+
+**Where that stops.** "Drawn" is the limit, and it is a real one. A model ships
+details for the objects it renders; the associations on those objects point at
+things it does not render — `BaseVoltage`, `Location`, `Terminal`,
+`PerLengthImpedance` — and none of those travel with it. On IEEE 123 that is
+*every one* of the 1,872 association targets. The data view renders them as
+links, so in hosted mode a user can click one and get an empty panel.
+
+The desktop build answers those clicks from `/api/cim/objects`, against the model
+it still holds; hosted mode has no such endpoint, by design. Closing this for
+hosted means either shipping the full transitive closure with the model (much
+larger payloads for something most users never click) or reintroducing a
+server-side model (giving up the property above). Neither is obviously right,
+which is why it is written down here rather than quietly fixed. Guarded by
+`test_a_model_ships_no_details_for_what_it_only_points_at`.
 
 **Desktop-only endpoints are not registered.** `desktop_route` and
 `desktop_socket_event` skip registration in hosted mode, so `/api/gridappsd/*`,

@@ -299,3 +299,77 @@ def test_desktop_still_parses_measurements():
 
     assert desktop["measurement_entries"] > 0
     assert desktop["switch_mrids"] > 0
+
+
+# --------------------------------------------------------------------------
+# What the shipped details do NOT cover
+# --------------------------------------------------------------------------
+def _association_targets(details: dict) -> set:
+    """Every object id the UI turns into a clickable link, as it parses them."""
+    import json
+    import re
+
+    uuid_re = re.compile(
+        r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}"
+        r"-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+    )
+    targets = set()
+    for detail in details.values():
+        for raw in (detail.get("associations") or {}).values():
+            try:
+                value = json.loads(raw)
+            except (TypeError, ValueError):
+                value = raw
+            if isinstance(value, list):
+                targets.update(
+                    item["@id"] for item in value if isinstance(item, dict) and item.get("@id")
+                )
+            elif isinstance(value, str) and uuid_re.match(value):
+                targets.add(value)
+    return targets
+
+
+def test_a_model_ships_no_details_for_what_it_only_points_at():
+    """The shipped details cover drawn objects, and associations leave them.
+
+    This is the reason the desktop build still needs a per-object lookup: every
+    association points at something the model never drew — BaseVoltage, Location,
+    Terminal — and none of those travel with it.
+    """
+    module = load_server("desktop")
+    body = upload_cim(module.app.test_client())
+    feeder = next(iter(body["data"]))
+    details = body["objectDetails"][feeder]
+
+    targets = _association_targets(details)
+    assert targets, "the fixture model should have association links at all"
+    assert not (targets & set(details)), (
+        "if shipped details ever start covering association targets, the "
+        "desktop lookup below may no longer be the only way to open them"
+    )
+
+
+def test_desktop_can_still_open_an_object_the_model_did_not_ship():
+    """Clicking an association link in the desktop build has to resolve.
+
+    The lookup returns a record in the same shape as the shipped details, which
+    is what lets the data view render either one without caring where it came
+    from. Hosted mode has no such endpoint by design — see
+    test_inspection_works_across_replicas.
+    """
+    module = load_server("desktop")
+    client = module.app.test_client()
+    body = upload_cim(client)
+    feeder = next(iter(body["data"]))
+    details = body["objectDetails"][feeder]
+
+    unshipped = sorted(_association_targets(details) - set(details))
+    assert unshipped, "expected association targets outside the shipped details"
+
+    response = client.post("/api/cim/objects", json={"feeder_id": feeder, "mRID": unshipped[0]})
+    assert response.status_code == 200, response.get_data(as_text=True)[:300]
+
+    fetched = response.get_json()["object"]
+    shipped_shape = set(next(iter(details.values())))
+    assert set(fetched) == shipped_shape
+    assert fetched["attributes"]
