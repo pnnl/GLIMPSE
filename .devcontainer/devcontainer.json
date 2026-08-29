@@ -1,0 +1,58 @@
+{
+    "name": "GLIMPSE",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+    "features": {
+        "ghcr.io/va-h/devcontainers-features/uv:1": {
+            "version": "latest"
+        }
+    },
+    "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+    "mounts": [
+        "source=glimpse-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+        "source=glimpse-server-venv,target=${containerWorkspaceFolder}/local-server/.venv,type=volume"
+    ],
+    "containerEnv": {
+        "FLASK_HOST": "0.0.0.0",
+        "FLASK_PORT": "5052",
+        "GRIDAPPSD_ADDRESS": "host.docker.internal",
+        "GRIDAPPSD_PORT": "61613",
+        "GRIDAPPSD_USER": "system",
+        "GRIDAPPSD_PASSWORD": "manager",
+        "VITE_DEV_HOST": "0.0.0.0",
+        "VITE_STRICT_PORT": "1",
+        "UV_PYTHON": "3.12"
+    },
+    "remoteEnv": {
+        "GLIMPSE_WS": "${containerWorkspaceFolder}",
+        "VIRTUAL_ENV": "${containerWorkspaceFolder}/local-server/.venv",
+        "PATH": "${containerWorkspaceFolder}/local-server/.venv/bin:${containerEnv:PATH}"
+    },
+    "postCreateCommand": "bash .devcontainer/bootstrap.sh ${containerWorkspaceFolder}",
+    "postStartCommand": "bash .devcontainer/dev-stack.sh start",
+    "waitFor": "postCreateCommand",
+    "forwardPorts": [5173, 5052],
+    "portsAttributes": {
+        "5173": {
+            "label": "Vite dev server",
+            "onAutoForward": "notify"
+        },
+        "5052": {
+            "label": "Flask + SocketIO backend",
+            "onAutoForward": "silent"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-python.python", "ms-python.vscode-pylance", "dbaeumer.vscode-eslint"],
+            "settings": {
+                "python.defaultInterpreterPath": "${workspaceFolder}/local-server/.venv/bin/python",
+                "python.terminal.activateEnvironment": true,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["."],
+                "python.testing.cwd": "${workspaceFolder}/local-server",
+                "eslint.workingDirectories": ["${workspaceFolder}"]
+            }
+        }
+    },
+    "remoteUser": "node"
+}
