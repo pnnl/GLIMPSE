@@ -6,40 +6,44 @@
             "version": "latest"
         }
     },
-    "runArgs": ["--add-host=host.docker.internal:host-gateway"],
-    "mounts": [
-        "source=glimpse-node-modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
-        "source=glimpse-server-venv,target=${containerWorkspaceFolder}/local-server/.venv,type=volume"
-    ],
     "containerEnv": {
-        "FLASK_HOST": "0.0.0.0",
+        // The backend is only ever reached through the vite preview proxy on
+        // the same container, so it never needs a routable bind address.
+        "FLASK_HOST": "127.0.0.1",
         "FLASK_PORT": "5052",
-        "GRIDAPPSD_ADDRESS": "host.docker.internal",
-        "GRIDAPPSD_PORT": "61613",
-        "GRIDAPPSD_USER": "system",
-        "GRIDAPPSD_PASSWORD": "manager",
+        // The preview server, by contrast, must bind all interfaces for the
+        // Codespaces port forwarder to reach it.
         "VITE_DEV_HOST": "0.0.0.0",
-        "VITE_STRICT_PORT": "1",
         "UV_PYTHON": "3.12"
+        // No GRIDAPPSD_* on purpose: no broker is reachable from a Codespace.
+        // GridAPPSDHelper's TCP pre-check fails in 2s and the GridAPPS-D
+        // features report themselves unavailable, which is the honest state.
     },
     "remoteEnv": {
         "GLIMPSE_WS": "${containerWorkspaceFolder}",
         "VIRTUAL_ENV": "${containerWorkspaceFolder}/local-server/.venv",
         "PATH": "${containerWorkspaceFolder}/local-server/.venv/bin:${containerEnv:PATH}"
     },
-    "postCreateCommand": "bash .devcontainer/bootstrap.sh ${containerWorkspaceFolder}",
-    "postStartCommand": "bash .devcontainer/dev-stack.sh start",
+    "postCreateCommand": "bash .devcontainer/setup.sh ${containerWorkspaceFolder}",
+    "postAttachCommand": "bash .devcontainer/serve.sh start",
     "waitFor": "postCreateCommand",
-    "forwardPorts": [5173, 5052],
+    // Only the preview server is exposed. Everything is same-origin behind it,
+    // so there is no second origin to authenticate or add to CORS.
+    "forwardPorts": [4173],
     "portsAttributes": {
-        "5173": {
-            "label": "Vite dev server",
-            "onAutoForward": "notify"
+        "4173": {
+            "label": "GLIMPSE",
+            // A real browser tab, not VS Code's Simple Browser — the graph is
+            // WebGL.
+            "onAutoForward": "openBrowserOnce"
         },
         "5052": {
-            "label": "Flask + SocketIO backend",
-            "onAutoForward": "silent"
+            "label": "Flask backend (internal)",
+            "onAutoForward": "ignore"
         }
+    },
+    "otherPortsAttributes": {
+        "onAutoForward": "ignore"
     },
     "customizations": {
         "vscode": {

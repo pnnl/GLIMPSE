@@ -1,9 +1,6 @@
 """Streaming tokenizer for GridLAB-D .glm source.
-
 One regex pass over the source, pulled through a single-token lookahead buffer.
-Whitespace is skipped rather than tokenized -- the Nim implementation this
-replaces heap-allocated a token object per space and newline, which is where
-most of its runtime went.
+Whitespace is skipped rather than tokenized
 """
 import re
 
@@ -65,7 +62,7 @@ _TOKEN_RE = re.compile(
     | (?P<lbrace>\{)
     | (?P<rbrace>\})
     | (?P<semi>;)
-    | (?P<word>"[^"\n]*"|'[^'\n]*'|[^\s{}$;]+|\$\{[^}\s;]*\}|\$)      # quoted string, value, substitution, bare $
+    | (?P<word>"[^"\n]*"|'[^'\n]*'|[^\s{}$;]+|\$\{[^}\s;]*\}|\$) # quoted string, value, substitution, bare $
     """,
     re.VERBOSE,
 )

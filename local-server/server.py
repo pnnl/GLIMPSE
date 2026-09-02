@@ -796,16 +796,8 @@ def get_models():
                 topology_outputs=topology_outputs,
                 progress_cb=progress.update,
             )
-            # Desktop keeps the model resident, so /api/cim/objects still answers
-            # inspection here; the details ride along anyway to keep the payload
-            # shape identical to the upload endpoints.
             return gjs, object_details
 
-        # Run the load in a native thread (gevent threadpool): its blocking
-        # SPARQL/STOMP I/O would otherwise freeze the whole event loop — health
-        # checks, Socket.IO ping/pong, every other request — for minutes on a
-        # large model. This greenlet polls cooperatively and relays progress to
-        # connected clients while the thread works.
         with cim_load_lock:
             worker = gevent.get_hub().threadpool.spawn(load_models)
             last_reported = None
@@ -831,8 +823,6 @@ def get_agents():
     source = request.args.get("source") or "derived"
 
     try:
-        # Default to the single loaded model, which is the common case; a
-        # multi-model load has to name which one it wants.
         if not model_id:
             loaded = list(cim_helper.area_maps.keys())
             if len(loaded) != 1:
@@ -1170,12 +1160,13 @@ def get_job(job_id):
         return jsonify({"error": "Unknown or expired job."}), 404
 
     body = job.to_public_dict()
+
+    # How much work is waiting, so a queued user gets a reason for the wait
+    # rather than an indefinite spinner. Deliberately the current depth and
+    # not this job's position: position would mean walking the queue on
+    # every poll, and under the load this is here to survive that cost is
+    # paid by every waiting client at once.
     if job.state == jobstore.QUEUED:
-        # How much work is waiting, so a queued user gets a reason for the wait
-        # rather than an indefinite spinner. Deliberately the current depth and
-        # not this job's position: position would mean walking the queue on
-        # every poll, and under the load this is here to survive that cost is
-        # paid by every waiting client at once.
         body["queueDepth"] = job_store.queue_depth()
     return jsonify(body), 200
 
@@ -1188,9 +1179,10 @@ def get_job_result(job_id):
         return jsonify({"error": "Unknown or expired job."}), 404
     if job.state == jobstore.FAILED:
         return jsonify({"error": job.error or "Parse failed."}), 500
+
+    # 409 rather than 404: the job exists, it just isn't finished. Lets the
+    # client tell "not yet" apart from "never was".
     if job.state != jobstore.DONE:
-        # 409 rather than 404: the job exists, it just isn't finished. Lets the
-        # client tell "not yet" apart from "never was".
         return jsonify({"error": "Job is not finished.", "state": job.state}), 409
 
     payload = job_store.result(job_id)
@@ -1212,20 +1204,17 @@ def hello():
         "api": "GLIMPSE CIM-Graph Flask Backend",
         "version": "0.8.6",
         "mode": "hosted" if HOSTED_MODE else "desktop",
-        # Advertised so the frontend can hide UI whose endpoints aren't
-        # registered here, rather than discovering it via a 404.
         "features": {
             "mermaid": not HOSTED_MODE,
             "gridappsd": not HOSTED_MODE,
             "simulation": not HOSTED_MODE,
-            # When true, /api/upload/cim answers 202 with a job to poll rather
-            # than the parsed model.
             "asyncUploads": ASYNC_UPLOADS,
         },
     }
+
+    # Surfaced for the load balancer's operators and for autoscaling: a depth
+    # that stays near maxDepth means the worker tier is undersized.
     if ASYNC_UPLOADS:
-        # Surfaced for the load balancer's operators and for autoscaling: a depth
-        # that stays near maxDepth means the worker tier is undersized.
         body["queue"] = {"depth": job_store.queue_depth(), "maxDepth": MAX_QUEUE_DEPTH}
     return body
 

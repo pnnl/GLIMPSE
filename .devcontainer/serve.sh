@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Start/stop/inspect the GLIMPSE dev stack (Flask backend :5052 + Vite :5173)
-# as a detached background process, so the app is already up when the
-# devcontainer finishes opening.
+# Start/stop/inspect the GLIMPSE stack (Flask backend :5052 + vite preview
+# :4173) as a detached background process, so the app is already up when the
+# container finishes opening.
 #
-#   .devcontainer/dev-stack.sh start | stop | restart | status | logs
+# This serves the *built* bundle from dist/. To pick up code changes:
+#   npm run codespace:build && .devcontainer/serve.sh restart
+#
+#   .devcontainer/serve.sh start | stop | restart | status | logs
 set -uo pipefail
 
 WS="${GLIMPSE_WS:-/workspaces/GLIMPSE}"
@@ -11,8 +14,8 @@ WS="${GLIMPSE_WS:-/workspaces/GLIMPSE}"
 cd "$WS"
 
 RUN_DIR="$WS/.devcontainer/.run"
-PIDFILE="$RUN_DIR/dev-stack.pid"
-LOGFILE="$RUN_DIR/dev-stack.log"
+PIDFILE="$RUN_DIR/serve.pid"
+LOGFILE="$RUN_DIR/serve.log"
 mkdir -p "$RUN_DIR"
 
 export PATH="$WS/local-server/.venv/bin:$PATH"
@@ -38,47 +41,58 @@ wait_for_port() {
     return 1
 }
 
+app_url() {
+    if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
+        echo "https://${CODESPACE_NAME}-4173.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    else
+        echo "http://localhost:4173"
+    fi
+}
+
 start() {
     if running; then
-        echo "==> Dev stack already running (pid $(cat "$PIDFILE"))"
+        echo "==> Already running (pid $(cat "$PIDFILE"))"
         status
         return 0
     fi
 
-    # A rebuilt image with a stale volume can leave deps half-installed.
+    # A rebuilt image with stale state can leave things half-installed.
     [ -d node_modules/vite ] || { echo "==> node_modules incomplete, running npm install"; npm install; }
     [ -x local-server/.venv/bin/python ] || { echo "==> venv missing, running uv sync"; uv sync --project local-server; }
+    # dist/ is gitignored, so it only exists once something has built it.
+    [ -f dist/index.html ] || { echo "==> dist/ missing, building"; npm run codespace:build; }
 
-    echo "==> Starting backend (:5052) + frontend (:5173) in the background"
+    echo "==> Starting backend (:5052) + built frontend (:4173) in the background"
     : > "$LOGFILE"
-    setsid nohup npm run dev >>"$LOGFILE" 2>&1 &
+    setsid nohup npm run codespace:start >>"$LOGFILE" 2>&1 &
     echo $! > "$PIDFILE"
     disown 2>/dev/null || true
 
     # Bounded wait so the container reports an honest ready/not-ready state
     # without ever failing the open.
     wait_for_port 5052 "backend " 90 || true
-    wait_for_port 5173 "frontend" 90 || true
-    echo "==> Logs: $LOGFILE   (.devcontainer/dev-stack.sh logs)"
+    wait_for_port 4173 "frontend" 90 || true
+    echo "==> GLIMPSE: $(app_url)"
+    echo "==> Logs: $LOGFILE   (.devcontainer/serve.sh logs)"
 }
 
 stop() {
     if running; then
         local pid; pid="$(cat "$PIDFILE")"
-        echo "==> Stopping dev stack (pgid $pid)"
+        echo "==> Stopping (pgid $pid)"
         kill -TERM "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null || true
         sleep 2
         kill -KILL "-$pid" 2>/dev/null || true
     else
-        echo "==> Dev stack not running"
+        echo "==> Not running"
     fi
     rm -f "$PIDFILE"
 }
 
 status() {
     running && echo "process : up (pid $(cat "$PIDFILE"))" || echo "process : down"
-    port_up 5052 && echo "backend : http://localhost:5052  up" || echo "backend : down"
-    port_up 5173 && echo "frontend: http://localhost:5173  up" || echo "frontend: down"
+    port_up 5052 && echo "backend : 127.0.0.1:5052  up" || echo "backend : down"
+    port_up 4173 && echo "frontend: $(app_url)  up" || echo "frontend: down"
     echo "python  : $(command -v python) ($(python --version 2>&1))"
 }
 

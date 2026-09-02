@@ -14,7 +14,12 @@ API_TOKEN="${API_TOKEN:-}"
 # endpoints the hosted backend doesn't register. Must match the backend's
 # GLIMPSE_MODE.
 MODE="${GLIMPSE_MODE:-desktop}"
-HTML_DIR="/usr/share/nginx/html"
+# Overridable so non-nginx callers (scripts/write-codespace-env.sh) can point
+# this at a built dist/ instead.
+HTML_DIR="${HTML_DIR:-/usr/share/nginx/html}"
+# Extra connect-src origins for the same-origin case, e.g. an explicit wss://
+# host. Space-separated.
+EXTRA_CONNECT_SRC="${EXTRA_CONNECT_SRC:-}"
 
 # 1) Expose runtime config to the app (read by src/config.js).
 cat > "${HTML_DIR}/env.js" <<EOF
@@ -26,7 +31,7 @@ EOF
 if [ -z "${API_URL}" ]; then
     # Same-origin: 'self' already covers it, and an empty token would make the
     # directive malformed.
-    CONNECT="connect-src 'self';"
+    CONNECT="connect-src 'self'${EXTRA_CONNECT_SRC:+ ${EXTRA_CONNECT_SRC}};"
 else
     WS_URL="$(printf '%s' "${API_URL}" | sed -e 's#^http#ws#')"
     CONNECT="connect-src 'self' ${API_URL} ${WS_URL};"

@@ -1,21 +1,23 @@
 #!/usr/bin/env bash
 # postCreateCommand: one-time setup after the container is built.
-# node_modules and local-server/.venv are named volumes, so Docker creates them
-# root-owned on first run — they must be handed to the container user before
-# npm/uv can write into them.
+#
+# Ends by producing dist/ — a Codespace serves the *built* app, so editing src/
+# has no effect until someone runs `npm run codespace:build` again.
 set -euo pipefail
 
 WS="${1:-/workspaces/GLIMPSE}"
 cd "$WS"
 
-echo "==> Fixing ownership on the mounted volumes"
-sudo chown "$(id -u):$(id -g)" node_modules local-server/.venv
-
+# npm install, not npm ci: package-lock.json is gitignored, so a fresh clone
+# has no lockfile to install from.
 echo "==> npm install"
 npm install
 
 echo "==> uv sync (creates local-server/.venv, incl. the dev group: pytest)"
 uv sync --project local-server
+
+echo "==> Building the frontend bundle"
+npm run codespace:build
 
 # Interactive shells get the venv activated the same way a local dev would.
 # remoteEnv already puts .venv/bin on PATH for VS Code processes; this makes
@@ -28,4 +30,4 @@ for RC in "$HOME/.bashrc" "$HOME/.zshrc"; do
     }
 done
 
-echo "==> Bootstrap complete: $(local-server/.venv/bin/python --version)"
+echo "==> Setup complete: $(local-server/.venv/bin/python --version)"

@@ -74,7 +74,49 @@ docker compose down
 
 This stops and removes the containers and network. Built images remain cached for the next start. (If you ran in the foreground, you can also press `Ctrl+C` first, then run `docker compose down` to clean up.)
 
-### Option 3: Build From Source
+### Option 3: GitHub Codespaces (No Install At All)
+
+If you can't install software locally, you can run GLIMPSE entirely in your browser. A
+[Codespace](https://docs.github.com/en/codespaces) builds the app on GitHub's infrastructure and
+forwards it to a URL only you can open — nothing is installed on your machine.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/pnnl/GLIMPSE)
+
+Or, from the repository page: **Code → Codespaces → Create codespace on `master`**.
+
+The first build takes a few minutes (installing Node and Python dependencies, then building the
+frontend). After that, the container starts GLIMPSE automatically and VS Code offers to open the
+forwarded URL — a `https://<your-codespace>-4173.app.github.dev` address. If you dismiss the prompt,
+the **Ports** tab lists it under the label **GLIMPSE**.
+
+#### You get the built app, not the dev server
+
+A Codespace serves the production bundle from `dist/`, so editing files under `src/` has **no effect
+on the running app**. That is deliberate: exploring or accidentally changing the code can't break
+GLIMPSE for you. To make code changes take effect:
+
+```bash
+npm run codespace:build && .devcontainer/serve.sh restart
+```
+
+Other useful commands inside the Codespace terminal:
+
+```bash
+.devcontainer/serve.sh status    # is the backend/frontend up?
+.devcontainer/serve.sh logs      # tail the combined log
+.devcontainer/serve.sh stop      # stop both processes
+```
+
+The regular `npm run dev` workflow from [Option 4](#option-4-build-from-source) still works if you
+want hot reload — just stop the built app first so the ports are free.
+
+#### Sharing and privacy
+
+The forwarded port is **private to you** by default — a GitHub login is required, so pasting the URL
+to someone else won't give them access. Everyone who wants to use GLIMPSE should create their own
+Codespace from the repository.
+
+### Option 4: Build From Source
 
 #### Quick Overview
 

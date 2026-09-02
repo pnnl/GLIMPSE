@@ -1,13 +1,4 @@
-"""AST dict -> GLM text.
-
-Section order and punctuation follow the source models rather than the Nim
-writer this replaces: `#set x=1` carries no semicolon, `#include "f.glm";`
-carries both quotes and one. The Nim version got both wrong, which stayed
-invisible only because it never emitted includes at all.
-"""
-
 _INDENT = "\t"
-
 
 def _unrepresentable(text):
     """Return a reason if this value cannot survive a GLM round-trip, else None.
