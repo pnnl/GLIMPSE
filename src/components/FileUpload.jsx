@@ -8,7 +8,6 @@ import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
 import { awaitParseJob, isJobHandoff } from "../utils/parse-job";
-import { loadAgentRoster } from "../utils/agent-api";
 
 const { Dragger } = Upload;
 
@@ -142,14 +141,6 @@ const FileUpload = ({ closeModal }) => {
             const modelData = response.data ?? response;
             graphHelper.setGraphData(modelData);
 
-            // Only a CIM model has distribution areas, and the backend keys an
-            // uploaded parse by filename rather than by mRID. Awaited before
-            // graph-loaded so the agent panel and views resync with a roster
-            // already in place.
-            if (graphHelper.isCIM) {
-                await loadAgentRoster(Object.keys(modelData)[0]);
-            }
-
             // A file-uploaded model isn't driveable via GridAPPS-D, so detach
             // from any previous run: hides the controls/log/charts/id badge and
             // stops a simulation that would otherwise stream into this graph.
@@ -162,7 +153,20 @@ const FileUpload = ({ closeModal }) => {
             // Shown inline rather than as a toast: the modal stays open, so the
             // message sits right next to the drop zone the user will retry in.
             console.error("Model upload failed:", err);
-            setError(errorText(err, "The server could not parse these files."));
+            // A 413 here is usually not ours: GitHub Codespaces caps a forwarded
+            // port's request body at 16 MB, so a large model is rejected at the
+            // edge and never reaches the backend. The raw nginx HTML that comes
+            // back says nothing useful, so name the real constraint and the way
+            // around it.
+            if (err?.response?.status === 413) {
+                setError(
+                    "This model is too large to upload over the network (the limit is about 16 MB " +
+                        "in a browser-hosted Codespace). Load a bundled model from Example Models " +
+                        "instead, or run GLIMPSE locally to open files of any size.",
+                );
+            } else {
+                setError(errorText(err, "The server could not parse these files."));
+            }
         } finally {
             setUploading(false);
             setStatus(null);

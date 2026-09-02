@@ -110,11 +110,39 @@ Other useful commands inside the Codespace terminal:
 The regular `npm run dev` workflow from [Option 4](#option-4-build-from-source) still works if you
 want hot reload — just stop the built app first so the ports are free.
 
+#### File uploads are capped at ~16 MB
+
+GitHub caps the request body on a forwarded port at **16 MB** and rejects anything larger with a
+`413` before it ever reaches GLIMPSE. This is GitHub's limit, not the app's — the backend accepts up
+to `MAX_UPLOAD_MB` (65 MB by default), and raising that changes nothing here.
+
+The bundled models are unaffected, because they load **server-side**: pick one from **Example
+Models** and the backend reads it straight off disk, so the request carries only the model's name.
+The IEEE 9500 feeder (a 56 MB file, 13,591 objects) opens this way in a Codespace without issue.
+
+To open a large model of your own, either drop it into the `models/` folder in the Codespace's file
+explorer and load it from there, or run GLIMPSE locally, where no such limit applies.
+
 #### Sharing and privacy
 
 The forwarded port is **private to you** by default — a GitHub login is required, so pasting the URL
 to someone else won't give them access. Everyone who wants to use GLIMPSE should create their own
-Codespace from the repository.
+Codespace from the repository. If you deliberately want to share a running instance, right-click the
+port in the **Ports** tab and set **Port Visibility → Public**; be aware this makes it reachable by
+anyone with the link, with no authentication in front of the backend.
+
+#### How it's wired
+
+Only **one** port is exposed. `vite preview` serves the built bundle on `:4173` and proxies `/api`
+and `/socket.io` to the Flask backend on `127.0.0.1:5052` inside the same container. Because the
+browser talks to a single origin, there is no CORS to configure and no second forwarded port to
+authenticate against. The backend is not reachable from outside the Codespace.
+
+> [!NOTE]
+> GridAPPS-D features (live simulations, platform model browsing, the distributed-agent views) are
+> unavailable in a Codespace — there is no broker to connect to. GLIMPSE detects this at startup and
+> disables those panels; file upload, visualization, editing, and export all work normally.
+
 
 ### Option 4: Build From Source
 

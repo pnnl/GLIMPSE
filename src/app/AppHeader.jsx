@@ -24,22 +24,16 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [searchValue, setSearchValue] = useState(null);
     const [exporting, setExporting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    // Which tab of the load modal the current model came from. Only a model
-    // pulled from the GridAPPS-D platform gets the co-branded header.
     const [isGridappsdModel, setIsGridappsdModel] = useState(false);
     const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
     const searchRef = useRef(null);
-
-    // Export writes back through the saved GLM file data, which only exists for
-    // GLM/JSON uploads — a CIM or GridAPPS-D model has nothing to write into.
     const canExport = graphLoaded && !graphHelper.isCIM;
+
+    const hasAgents = useMemo(() => graphLoaded && graphHelper.agents.agents.length > 0, [graphLoaded]);
 
     const menuItems = [
         {
             key: "export-model",
-            // The reason is rendered inline rather than in a Tooltip: a disabled
-            // antd menu item doesn't reliably receive hover, so a tooltip on it
-            // would never appear.
             label: (
                 <Flex vertical gap={0}>
                     <span>Export Model</span>
@@ -56,8 +50,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         { key: "graph-metrics", label: "Metrics", disabled: !graphLoaded },
         { type: "divider" },
         { key: "object-studio", label: "Model Data View", disabled: !graphLoaded },
-        { type: "divider" },
-        { key: "agents", label: "Agents View", disabled: !graphLoaded },
+        ...(hasAgents ? [{ type: "divider" }, { key: "agents", label: "Agents View" }] : []),
         { type: "divider" },
         { key: "shortcuts", label: "Keyboard Shortcuts" },
         { type: "divider" },
@@ -91,6 +84,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     ];
 
     // Listen for graph load/clear events emitted by the Graph component
+    // Loading a model without a roster (any file upload) while the agents view
+    // is open would leave the user on a permanently empty tab whose menu entry
+    // has just disappeared.
+    useEffect(() => {
+        if (!hasAgents && view === "agents") setView("graph");
+    }, [hasAgents, view, setView]);
+
     useEffect(() => {
         const handleGraphLoaded = (e) => {
             setGraphLoaded(true);

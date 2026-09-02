@@ -8,10 +8,10 @@ set -euo pipefail
 WS="${1:-/workspaces/GLIMPSE}"
 cd "$WS"
 
-# npm install, not npm ci: package-lock.json is gitignored, so a fresh clone
-# has no lockfile to install from.
-echo "==> npm install"
-npm install
+# npm ci, not npm install: package-lock.json is committed, so every Codespace
+# resolves to exactly the versions in the repo rather than whatever is current.
+echo "==> npm ci"
+npm ci
 
 echo "==> uv sync (creates local-server/.venv, incl. the dev group: pytest)"
 uv sync --project local-server
