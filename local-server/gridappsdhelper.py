@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import logging
 import socket
@@ -35,7 +36,10 @@ class GridAPPSDHelper:
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
         self.current_limit_map = {}
-        self.agent_roster_cache = {}
+        # Keyed by a model id the client supplies, so it is bounded and evicts
+        # oldest-first: nothing else prunes it and the desktop server is a
+        # long-lived process.
+        self.agent_roster_cache = OrderedDict()
         self._available: bool = False
         self._topology_service_down: bool = False
         self._platform_ready: bool | None = None

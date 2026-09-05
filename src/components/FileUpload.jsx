@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Upload, Progress, Alert } from "antd";
+import React, { useEffect, useRef, useState } from "react";
+import { Upload, Progress, Alert, Button } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
 import { awaitParseJob, isJobHandoff } from "../utils/parse-job";
 
@@ -89,9 +89,25 @@ const FileUpload = ({ closeModal }) => {
     // seconds uploading and minutes parsing.
     const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
+    // Aborts the upload and the job poll together — on unmount, and on Cancel.
+    const abortRef = useRef(null);
+    const timerRef = useRef(null);
+
+    useEffect(
+        () => () => {
+            abortRef.current?.abort();
+            clearTimeout(timerRef.current);
+        },
+        [],
+    );
+
+    const cancelUpload = () => abortRef.current?.abort();
 
     const uploadFiles = async (files) => {
         if (!files || files.length === 0) return;
+        // One upload at a time: a second batch dropped mid-parse would clear the
+        // graph out from under the first.
+        if (abortRef.current) return;
 
         setError(null);
 
@@ -107,12 +123,17 @@ const FileUpload = ({ closeModal }) => {
         const formData = new FormData();
         files.forEach((file) => formData.append("files", file));
 
+        const controller = new AbortController();
+        abortRef.current = controller;
+
         try {
             setUploading(true);
             setProgress(0);
             setStatus(null);
 
             let { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
+                signal: controller.signal,
+                timeout: PARSE_TIMEOUT_MS,
                 onUploadProgress: (progressEvent) => {
                     if (!progressEvent.total) return;
                     setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -126,7 +147,10 @@ const FileUpload = ({ closeModal }) => {
             // synchronous upload would have returned.
             if (isJobHandoff(response)) {
                 setStatus("Queued…");
-                response = await awaitParseJob(response.jobId, { onProgress: setStatus });
+                response = await awaitParseJob(response.jobId, {
+                    onProgress: setStatus,
+                    signal: controller.signal,
+                });
                 if (response && "error" in response) throw new Error(response.error);
             }
 
@@ -158,19 +182,28 @@ const FileUpload = ({ closeModal }) => {
             // edge and never reaches the backend. The raw nginx HTML that comes
             // back says nothing useful, so name the real constraint and the way
             // around it.
-            if (err?.response?.status === 413) {
+            if (controller.signal.aborted) {
+                // The user cancelled, or the modal closed. Not a failure.
+            } else if (err?.response?.status === 413) {
                 setError(
                     "This model is too large to upload over the network (the limit is about 16 MB " +
                         "in a browser-hosted Codespace). Load a bundled model from Example Models " +
                         "instead, or run GLIMPSE locally to open files of any size.",
                 );
+            } else if (err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT") {
+                setError(
+                    "The server stopped responding while handling this model. It may still be " +
+                        "parsing, or it may have run out of memory — check that the backend is " +
+                        "running, then try again.",
+                );
             } else {
                 setError(errorText(err, "The server could not parse these files."));
             }
         } finally {
+            abortRef.current = null;
             setUploading(false);
             setStatus(null);
-            setTimeout(() => setProgress(0), 500);
+            timerRef.current = setTimeout(() => setProgress(0), 500);
         }
     };
 
@@ -224,6 +257,17 @@ const FileUpload = ({ closeModal }) => {
                                 {status}
                             </p>
                         )}
+                        <Button
+                            size="small"
+                            type="text"
+                            style={{ marginTop: 4 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                cancelUpload();
+                            }}
+                        >
+                            Cancel
+                        </Button>
                     </div>
                 )}
             </Dragger>

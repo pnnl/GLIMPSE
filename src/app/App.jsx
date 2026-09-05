@@ -10,7 +10,7 @@ import { GraphProvider, useGraph } from "../contexts/GraphContext";
 import ModelDataView from "../components/model-data-view/ModelDataView";
 import AgentsView from "../components/agents/AgentsView";
 import graphHelper from "../graph-helper/GraphHelper";
-import { registerNotifier } from "../utils/notify";
+import { notify, registerNotifier } from "../utils/notify";
 
 // Hands antd's context-aware message/modal instances to utils/notify so every
 // caller — including non-React modules — gets feedback that follows the active
@@ -21,6 +21,23 @@ const NotificationBridge = () => {
     useEffect(() => {
         registerNotifier(staticApi);
     }, [staticApi]);
+
+    // graph-builder skips objects it cannot draw rather than failing the whole
+    // load. It dispatches instead of notifying directly because utils/notify
+    // imports GraphHelper, and calling back into it would close that cycle.
+    useEffect(() => {
+        const onSkipped = (e) => {
+            const count = e.detail?.count ?? 0;
+            if (count > 0) {
+                notify.warning(
+                    `${count} object${count === 1 ? "" : "s"} in this model could not be drawn ` +
+                        "and were skipped. See the browser console for details.",
+                );
+            }
+        };
+        window.addEventListener("model-objects-skipped", onSkipped);
+        return () => window.removeEventListener("model-objects-skipped", onSkipped);
+    }, []);
 
     return null;
 };

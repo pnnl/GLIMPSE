@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
+import ConnectionStatus from "../components/ConnectionStatus";
 import MetricsModal from "../components/modals/MetricsModal";
 import ShortcutsModal from "../components/modals/ShortcutsModal";
 import "../styles/AppHeader.css";
@@ -275,6 +276,9 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         </Tag>
                     </Tooltip>
                 )}
+                <span style={{ marginLeft: "0.75rem" }}>
+                    <ConnectionStatus />
+                </span>
                 {graphLoaded && (
                     <Select
                         ref={searchRef}

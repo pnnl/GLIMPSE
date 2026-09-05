@@ -176,7 +176,9 @@ const applyDiscrete = (graph, live, discrete) => {
  * @param {Object} output - the `sim-output` payload: { Analog, Discrete }
  */
 export const applySimulationOutput = ({ graph, live, theme }, output) => {
-    const { Analog, Discrete } = output;
+    // A sim-output frame comes off the broker, so no key is guaranteed present.
+    const Analog = Array.isArray(output?.Analog) ? output.Analog : [];
+    const Discrete = Array.isArray(output?.Discrete) ? output.Discrete : [];
 
     const nodesWithNewVoltage = recordVoltages(graph, live, Analog);
     for (const nodeId of nodesWithNewVoltage) refreshNodeHover(graph, live, nodeId);
@@ -188,7 +190,7 @@ export const applySimulationOutput = ({ graph, live, theme }, output) => {
 
 /** Switch open/closed state pushed outside the regular measurement stream. */
 export const applySwitchStates = (graph, simOutput) => {
-    for (const sw of simOutput.switches) {
+    for (const sw of simOutput?.switches ?? []) {
         const { equipment_mrid: switchID, value } = sw;
 
         if (!graph.hasEdge(switchID)) {
@@ -207,7 +209,7 @@ export const applySwitchStates = (graph, simOutput) => {
 
 /** Capacitor section counts pushed outside the regular measurement stream. */
 export const applyCapacitorStates = (graph, live, simOutput) => {
-    for (const cap of simOutput.capacitors) {
+    for (const cap of simOutput?.capacitors ?? []) {
         const { equipment_mrid: capID, value } = cap;
 
         if (!graph.hasNode(capID)) {

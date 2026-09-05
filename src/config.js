@@ -17,6 +17,22 @@ if (API_TOKEN) {
     axios.defaults.headers.common["Authorization"] = `Bearer ${API_TOKEN}`;
 }
 
+/**
+ * Ceiling on any request that doesn't set its own. Without a default axios waits
+ * forever, so a backend that accepts a connection and then stalls leaves the UI
+ * spinning with nothing to recover from.
+ */
+export const REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * For requests that parse a model server-side. IEEE 9500 takes ~6.5s and larger
+ * models legitimately take longer, so these get their own, much longer ceiling —
+ * a bound that exists to end a hang, not to pace a slow parse.
+ */
+export const PARSE_TIMEOUT_MS = 10 * 60_000;
+
+axios.defaults.timeout = REQUEST_TIMEOUT_MS;
+
 export const MODE = (runtimeEnv && runtimeEnv.MODE) || import.meta.env.VITE_GLIMPSE_MODE || "desktop";
 
 export const IS_HOSTED = MODE === "hosted";

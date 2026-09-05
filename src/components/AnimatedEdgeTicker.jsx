@@ -10,18 +10,27 @@ const AnimatedEdgeTicker = () => {
         let running = true;
         let wasPulsing = false;
 
-        const hasAnimatedEdges = () => {
-            const graph = sigma.getGraph();
-            let found = false;
+        // Whether any edge is animated is a whole-graph question, and asking it
+        // every frame cost a full edge scan 60x a second forever — ~20k
+        // iterations per frame on a 9500-bus feeder, with or without a running
+        // simulation. findEdge short-circuits on the first hit, and the answer is
+        // cached between checks: edges start and stop animating on simulation
+        // output, so resolving that a fraction of a second late is not visible.
+        const RECHECK_MS = 250;
+        let cachedHasAnimated = false;
+        let checkedAt = 0;
 
-            graph.forEachEdge((edge, attrs) => {
-                if (attrs.type === "animated") found = true;
-            });
-
-            return found;
+        const hasAnimatedEdges = (now) => {
+            if (now - checkedAt >= RECHECK_MS) {
+                checkedAt = now;
+                cachedHasAnimated = Boolean(
+                    sigma.getGraph().findEdge((edge, attrs) => attrs.type === "animated"),
+                );
+            }
+            return cachedHasAnimated;
         };
 
-        const animate = () => {
+        const animate = (now) => {
             if (!running) return;
 
             const graph = sigma.getGraph();
@@ -30,7 +39,7 @@ const AnimatedEdgeTicker = () => {
                 graphHelper.isFocusPulseActive() && pulseId && graph.hasEdge(pulseId),
             );
 
-            if (hasAnimatedEdges()) {
+            if (hasAnimatedEdges(now)) {
                 // Full refresh already re-applies the pulse to the focused edge.
                 sigma.refresh({ skipIndexation: true });
             } else if (pulsing) {

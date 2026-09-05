@@ -605,7 +605,7 @@ class GraphHelper {
         // save glm file data for exporting changes
         if (!this.isCIM) this.glmFileData = fileData;
 
-        const { graph, hasFixedNodes, hasGeoCoords, distributionAreas } = buildGraph(fileData, {
+        const { graph, hasFixedNodes, hasGeoCoords, distributionAreas, skipped } = buildGraph(fileData, {
             theme: this.#theme,
             nodeTypes: this.nodeTypes,
             edgeTypes: this.edgeTypes,
@@ -618,6 +618,15 @@ class GraphHelper {
         this.#hasFixedNodes = hasFixedNodes;
         this.hasGeoCoords = hasGeoCoords;
         this.distributionAreas = distributionAreas;
+
+        // The model still loads — say so rather than letting the gap go unnoticed.
+        // Dispatched rather than notified directly: utils/notify imports this
+        // module, so calling into it here would close an import cycle.
+        if (skipped > 0 && typeof window !== "undefined") {
+            window.dispatchEvent(
+                new CustomEvent("model-objects-skipped", { detail: { count: skipped } }),
+            );
+        }
 
         // A freshly loaded model matches its source file — nothing to save yet.
         this.clearDirty();

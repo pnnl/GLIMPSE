@@ -143,6 +143,25 @@ class SocketClientHelper {
 
     // Internal Setup
 
+    /**
+     * Run a graph mutation for an incoming socket event.
+     *
+     * These payloads come off the wire, so a malformed one can throw deep inside
+     * graphHelper. Unwrapped, that throw lands in socket.io's emitter and takes
+     * the rest of the handler — including the fan-out to subscribed components —
+     * with it. Reported and contained instead.
+     */
+    #applyToGraph(event, fn) {
+        try {
+            fn();
+            return true;
+        } catch (err) {
+            console.error(`[Socket] "${event}" could not be applied:`, err);
+            this.#emit("error", { type: event, message: err.message });
+            return false;
+        }
+    }
+
     #setupSocketListeners() {
         // Connection events
         this.socket.on("connect", () => {
@@ -152,6 +171,15 @@ class SocketClientHelper {
 
         this.socket.on("disconnect", (reason) => {
             console.warn("[Socket] Disconnected:", reason);
+            // The backend holds the simulation, so a dropped socket means the run
+            // we were tracking is no longer ours to drive. Leaving the id set
+            // leaves the UI offering pause/stop buttons that emit into nothing
+            // and never get an ack back.
+            if (this.simulationState === "running" || this.simulationState === "paused") {
+                this.simulationID = null;
+                this.simulationState = "inactive";
+                this.#emit("sim-state-change", "inactive");
+            }
             this.#emit("connection-change", { connected: false, reason });
         });
 
@@ -160,12 +188,19 @@ class SocketClientHelper {
             this.#emit("error", { type: "connection", message: err.message });
         });
 
+        // socket.io stops retrying after reconnectionAttempts and then goes
+        // quiet. Without this the socket is permanently dead with nothing said.
+        this.socket.io.on("reconnect_failed", () => {
+            console.error("[Socket] Gave up reconnecting.");
+            this.#emit("connection-change", { connected: false, exhausted: true });
+        });
+
         // Simulation events
         this.socket.on("sim-output", (output) => {
             if (this.simulationState === "inactive") return;
 
             this.#emit("sim-output", output);
-            graphHelper.handleSimulationOutput(output);
+            this.#applyToGraph("sim-output", () => graphHelper.handleSimulationOutput(output));
         });
 
         this.socket.on("sim-log", (log) => {
@@ -175,7 +210,7 @@ class SocketClientHelper {
             }
 
             if (log.processStatus === "COMPLETE") {
-                graphHelper.reset();
+                this.#applyToGraph("sim-log", () => graphHelper.reset());
                 this.#emit("sim-state-change", "stopped");
             }
             this.#emit("sim-log", log);
@@ -191,11 +226,11 @@ class SocketClientHelper {
         });
 
         this.socket.on("switch-state-update", (data) => {
-            graphHelper.updateSwitches(data);
+            this.#applyToGraph("switch-state-update", () => graphHelper.updateSwitches(data));
         });
 
         this.socket.on("capacitor-state-update", (data) => {
-            graphHelper.updateCapacitors(data);
+            this.#applyToGraph("capacitor-state-update", () => graphHelper.updateCapacitors(data));
         });
 
         this.socket.on("load-graph", (payload) => {
@@ -210,29 +245,29 @@ class SocketClientHelper {
         });
 
         this.socket.on("update-data", (data) => {
-            graphHelper.applyUpdate(data);
-            this.#emit("update-data", data);
+            if (this.#applyToGraph("update-data", () => graphHelper.applyUpdate(data)))
+                this.#emit("update-data", data);
         });
         this.socket.on("add-node", (data) => {
-            graphHelper.addNode(data);
-            this.#emit("add-node", data);
+            if (this.#applyToGraph("add-node", () => graphHelper.addNode(data)))
+                this.#emit("add-node", data);
         });
         this.socket.on("add-edge", (data) => {
-            graphHelper.addEdge(data);
-            this.#emit("add-edge", data);
+            if (this.#applyToGraph("add-edge", () => graphHelper.addEdge(data)))
+                this.#emit("add-edge", data);
         });
         this.socket.on("delete-node", (id) => {
-            graphHelper.deleteNode(id);
-            this.#emit("delete-node", id);
+            if (this.#applyToGraph("delete-node", () => graphHelper.deleteNode(id)))
+                this.#emit("delete-node", id);
         });
         this.socket.on("delete-edge", (id) => {
-            graphHelper.deleteEdge(id);
-            this.#emit("delete-edge", id);
+            if (this.#applyToGraph("delete-edge", () => graphHelper.deleteEdge(id)))
+                this.#emit("delete-edge", id);
         });
 
         this.socket.on("agents-update", (data) => {
-            graphHelper.applyAgentUpdate(data);
-            this.#emit("agents-update", data);
+            if (this.#applyToGraph("agents-update", () => graphHelper.applyAgentUpdate(data)))
+                this.#emit("agents-update", data);
         });
     }
 

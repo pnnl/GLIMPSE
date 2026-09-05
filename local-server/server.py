@@ -2,13 +2,12 @@ import os
 import json
 import tempfile
 import traceback
-import gc
-import time
 import hmac
 import threading
 import shutil
 import jobstore
 from flask import Flask, request, jsonify, send_file
+from werkzeug.exceptions import HTTPException
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from cimhelper import CIMHelper
@@ -37,12 +36,22 @@ cim_load_lock = threading.Lock() if HOSTED_MODE else BoundedSemaphore(1)
 
 def run_cim_parse(fn, **kwargs):
     with cim_load_lock:
+        try:
+            if HOSTED_MODE:
+                result = fn(**kwargs)
+            else:
+                result = gevent.get_hub().threadpool.apply(fn, kwds=kwargs)
+        except Exception:
+            # A parse that raised leaves the helper half-populated: hosted mode
+            # would keep a model resident it promises not to hold, and desktop
+            # mode would answer later requests from the *previous* model's
+            # measurement map. Clear it either way before propagating.
+            cim_helper.release()
+            raise
         if HOSTED_MODE:
-            result = fn(**kwargs)
-        else:
-            result = gevent.get_hub().threadpool.apply(fn, kwds=kwargs)
-    if HOSTED_MODE:
-        cim_helper.release()
+            # Inside the lock: dropping it first lets this wipe state that the
+            # next thread has already started filling.
+            cim_helper.release()
     return result
 
 
@@ -62,6 +71,10 @@ if ASYNC_UPLOADS:
 # with a 429 the client can act on is a much better failure than accepting an
 # upload Redis will then reject.
 MAX_QUEUE_DEPTH = int(os.environ.get("GLIMPSE_MAX_QUEUE_DEPTH", "24"))
+
+# agents-update is keyed by a model id the caller chooses, so the cache is
+# capped rather than left to grow for the life of the process.
+MAX_CACHED_AGENT_ROSTERS = 32
 
 
 def desktop_route(rule, **options):
@@ -104,7 +117,8 @@ allowed_headers = ["Content-Type", "Authorization"]
 allow_credentials = cors_origins != "*"
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "65")) * 1024 * 1024
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "65"))
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 CORS(
     app,
@@ -153,6 +167,36 @@ def error_body(exc, tb, message=None, extra=None):
     if EXPOSE_TRACEBACKS:
         body["traceback"] = tb
     return body
+
+
+# Every route returns { "error": ... } on the failures it anticipates. Without
+# these, anything else — the 413 Flask raises from MAX_CONTENT_LENGTH, a wrong
+# Content-Type, an exception escaping a view — comes back as Werkzeug's HTML
+# page, which the frontend's errorText() surfaces verbatim into an alert.
+@app.errorhandler(HTTPException)
+def _http_error(exc):
+    if exc.code == 413:
+        message = (
+            f"That upload is larger than the {MAX_UPLOAD_MB} MB limit. "
+            "Set MAX_UPLOAD_MB higher to raise it."
+        )
+    else:
+        message = exc.description
+    return {"error": message}, exc.code
+
+
+@app.errorhandler(Exception)
+def _unhandled_error(exc):
+    return error_body(exc, traceback.format_exc(), message=f"Server error: {exc}"), 500
+
+
+if not HOSTED_MODE:
+    # Without this an exception inside a socket handler returns nothing at all —
+    # the caller's ack callback simply never fires and the script hangs.
+    @socketio.on_error_default
+    def _socket_error(exc):
+        return error_body(exc, traceback.format_exc())
+
 
 EXPORT_BASE_DIR = os.path.abspath(
     os.environ.get("GLIMPSE_EXPORT_DIR", os.path.join(tempfile.gettempdir(), "glimpse_exports"))
@@ -328,7 +372,7 @@ def load_example():
 
     path = _example_model_path(example_id)
     try:
-        return json.dumps(build_example_payload(entry, path))
+        return jsonify(build_example_payload(entry, path))
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
@@ -475,7 +519,7 @@ def upload_json():
             validated_data = json_helper.validate_json_data(json_dict)
             # themeData is already None to begin with if there was no theme file in the paths
             response_data = {"data": validated_data, "themeData": themeData}
-            return json.dumps(response_data)
+            return jsonify(response_data)
         except ValueError as e:
             tb = traceback.format_exc()
             print(tb)
@@ -533,22 +577,16 @@ def glm_upload():
         glm_dict = glm_helper.parse_glm(filtered_paths)  # expects list of paths
         print(f"[SERVER] GLM parsing completed successfully")
 
-        # Serialize response data BEFORE cleanup to ensure no dangling references
-        response = json.dumps({"data": glm_dict, "themeData": themeData})
-        return response
+        return jsonify({"data": glm_dict, "themeData": themeData})
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
         return error_body(e, tb, message=f"Server error: {str(e)}"), 500
     finally:
-        try:
-            print("[SERVER] Running cleanup and garbage collection...")
-            gc.collect()  # Force garbage collection
-            time.sleep(0.5)  # Allow extra time for file handles to release
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            print("[SERVER] Cleanup completed")
-        except Exception as cleanup_error:
-            print(f"Warning: Failed to clean up temp directory: {cleanup_error}")
+        # ignore_errors already tolerates a handle Windows hasn't released yet,
+        # which is all the old gc.collect() + sleep(0.5) here was buying — and
+        # that sleep stalled every other greenlet, live sim output included.
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 @app.route("/api/export/glm", methods=["POST"])
 def export_glm():
@@ -558,6 +596,9 @@ def export_glm():
         return {"error": "No data provided."}, 400
 
     data = json_data["data"]
+    if not isinstance(data, dict):
+        return {"error": "'data' must be an object keyed by file name."}, 400
+
     tmpdir = tempfile.mkdtemp(prefix="glm_export_")
 
     try:
@@ -570,6 +611,10 @@ def export_glm():
             as_attachment=True,
             download_name="exported_model.zip"
         )
+
+    except ValueError as e:
+        # An unusable or escaping file name in the payload — a client error.
+        return {"error": str(e)}, 400
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -814,7 +859,7 @@ def get_models():
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps(error_body(e, tb)), 500
+        return error_body(e, tb), 500
 
 
 @desktop_route("/api/gridappsd/agents", methods=["GET"])
@@ -853,14 +898,14 @@ def get_agents():
 def get_gridappsd_models():
     try:
         if not gridappsd_helper.is_connected():
-            return json.dumps({"error": "Not connected to GridAPPS-D"}), 503
+            return {"error": "Not connected to GridAPPS-D"}, 503
 
         models = gridappsd_helper.get_models()
-        return json.dumps(models), 200
+        return jsonify(models), 200
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps(error_body(e, tb)), 503
+        return error_body(e, tb), 503
 
 
 @desktop_route("/api/gridappsd/status", methods=["GET"])
@@ -1001,7 +1046,11 @@ def agents_update(payload):
 
     model_id = payload.get("model")
     if model_id:
-        gridappsd_helper.agent_roster_cache[model_id] = payload
+        cache = gridappsd_helper.agent_roster_cache
+        cache.pop(model_id, None)
+        cache[model_id] = payload
+        while len(cache) > MAX_CACHED_AGENT_ROSTERS:
+            cache.popitem(last=False)
 
     socketio.emit("agents-update", payload)
     return {"status": "ok", "agentCount": len(payload["agents"])}

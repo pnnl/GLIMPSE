@@ -12,6 +12,15 @@ let mainWindow = null;
 let splashWindow = null;
 let serverProcess = null;
 let quitting = false;
+// A crash loop should not restart forever; one recovery is the useful case.
+const MAX_SERVER_RESTARTS = 1;
+let restartsUsed = 0;
+
+const notifyRenderer = (channel) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(channel);
+    }
+};
 
 app.commandLine.appendSwitch("enable-unsafe-swiftshader");
 
@@ -65,13 +74,35 @@ const startServer = () => {
 
     serverProcess.on("exit", (code, signal) => {
         serverProcess = null;
-        if (!quitting) {
-            dialog.showErrorBox(
-                "GLIMPSE backend stopped",
-                `The local server exited unexpectedly (code: ${code}, signal: ${signal}). GLIMPSE will close.`,
-            );
-            app.quit();
+        if (quitting) return;
+
+        // A parse can OOM the backend, and quitting outright costs the user the
+        // loaded model and every unsaved edit. Try once to bring it back with the
+        // window still open before giving up.
+        if (restartsUsed < MAX_SERVER_RESTARTS) {
+            restartsUsed += 1;
+            console.warn(`[server] exited (code ${code}, signal ${signal}) — restarting.`);
+            notifyRenderer("backend-restarting");
+
+            startServer();
+            waitForServer()
+                .then(() => notifyRenderer("backend-restarted"))
+                .catch((err) => {
+                    dialog.showErrorBox(
+                        "GLIMPSE backend stopped",
+                        `The local server exited and could not be restarted.\n\n${err.message}`,
+                    );
+                    app.quit();
+                });
+            return;
         }
+
+        dialog.showErrorBox(
+            "GLIMPSE backend stopped",
+            `The local server exited unexpectedly (code: ${code}, signal: ${signal}) and has already ` +
+                `been restarted ${MAX_SERVER_RESTARTS} time(s). GLIMPSE will close.`,
+        );
+        app.quit();
     });
 };
 
@@ -86,8 +117,32 @@ const waitForServer = (timeoutMs = 30000) => {
             }
 
             const req = http.get(SERVER_URL, (res) => {
-                res.resume();
-                resolve();
+                // Any listener on 5052 answers here, so check that it is actually
+                // GLIMPSE before adopting it — otherwise an unrelated process on
+                // the port races the spawn and either one can win.
+                let body = "";
+                res.setEncoding("utf8");
+                res.on("data", (chunk) => {
+                    if (body.length < 2048) body += chunk;
+                });
+                res.on("end", () => {
+                    let isGlimpse;
+                    try {
+                        isGlimpse = String(JSON.parse(body).api || "").includes("GLIMPSE");
+                    } catch {
+                        isGlimpse = false;
+                    }
+                    if (isGlimpse) {
+                        resolve();
+                    } else {
+                        reject(
+                            new Error(
+                                `Port ${SERVER_PORT} is already in use by another application. ` +
+                                    "Close it and start GLIMPSE again.",
+                            ),
+                        );
+                    }
+                });
             });
             req.setTimeout(1000, () => req.destroy(new Error("timeout")));
             req.on("error", () => {
@@ -202,6 +257,40 @@ const createWindow = () => {
         if (splashWindow && !splashWindow.isDestroyed()) {
             splashWindow.close();
         }
+    });
+
+    // A renderer crash otherwise leaves a blank window with nothing said. The GPU
+    // process dying is the realistic cause here — this app is WebGL-heavy.
+    mainWindow.webContents.on("render-process-gone", (event, details) => {
+        if (quitting) return;
+        console.error("[renderer] gone:", details.reason);
+
+        const response = dialog.showMessageBoxSync(mainWindow, {
+            type: "error",
+            title: "GLIMPSE stopped responding",
+            message: `The GLIMPSE window crashed (${details.reason}).`,
+            detail: "Reloading starts fresh. Any unsaved model edits will be lost.",
+            buttons: ["Reload", "Quit"],
+            defaultId: 0,
+            cancelId: 1,
+        });
+
+        if (response === 0) mainWindow.reload();
+        else app.quit();
+    });
+
+    mainWindow.on("unresponsive", () => {
+        if (quitting) return;
+        const choice = dialog.showMessageBoxSync(mainWindow, {
+            type: "warning",
+            title: "GLIMPSE is not responding",
+            message: "The window has stopped responding.",
+            detail: "It may be working through a large model. Wait, or reload and lose unsaved edits.",
+            buttons: ["Wait", "Reload"],
+            defaultId: 0,
+            cancelId: 0,
+        });
+        if (choice === 1) mainWindow.reload();
     });
 
     mainWindow.webContents.setWindowOpenHandler((details) => {

@@ -23,6 +23,13 @@ const DEPTH_LABELS = {
 // pixels wide, and the useful first view is the top of the tree.
 const SMALL_ROSTER = 60;
 
+// SVG text doesn't wrap or ellipsize, so a long name would run over its
+// neighbours. The caps are what fits a device chip at each of its two sizes.
+const clip = (text, max) => {
+    const value = text ?? "";
+    return value.length > max ? `${value.slice(0, max - 1)}…` : value;
+};
+
 /**
  * The distributed-agent architecture for the loaded model: a stack of message
  * buses with the agents that sit on each and the field devices they carry.
@@ -39,24 +46,32 @@ const AgentsView = () => {
     const [zoom, setZoom] = useState(1);
     const [pan, setPan] = useState({ x: 0, y: 0 });
     const [expanded, setExpanded] = useState(() => new Set());
+    const [devicesExpanded, setDevicesExpanded] = useState(() => new Set());
     const [depthLevel, setDepthLevel] = useState(null);
     const dragRef = useRef(null);
     const frameRef = useRef(null);
 
     useEffect(() => {
-        const sync = () => {
+        // A new model means none of the old drill-down applies.
+        const resetToRoster = () => {
             setRoster(graphHelper.agents);
             setExpanded(new Set());
+            setDevicesExpanded(new Set());
             setDepthLevel(null);
         };
 
-        window.addEventListener("graph-loaded", sync);
-        window.addEventListener("graph-cleared", sync);
-        const unsubscribe = socketClientHelper.on("agents-update", sync);
+        // A liveness ping is not a new model. agents-update is how status arrives
+        // for the roster already on screen, so clearing the user's drill-down and
+        // depth on every one of them collapsed the diagram mid-interaction.
+        const refreshRoster = () => setRoster(graphHelper.agents);
+
+        window.addEventListener("graph-loaded", resetToRoster);
+        window.addEventListener("graph-cleared", resetToRoster);
+        const unsubscribe = socketClientHelper.on("agents-update", refreshRoster);
 
         return () => {
-            window.removeEventListener("graph-loaded", sync);
-            window.removeEventListener("graph-cleared", sync);
+            window.removeEventListener("graph-loaded", resetToRoster);
+            window.removeEventListener("graph-cleared", resetToRoster);
             unsubscribe();
         };
     }, []);
@@ -78,13 +93,21 @@ const AgentsView = () => {
 
     const activeLevel = depthLevel && levelsPresent.includes(depthLevel) ? depthLevel : defaultLevel;
 
+    // One switch area carries a dozen devices, and a bus is sized to hold its own
+    // contents — so drawing every device is exactly what stretches those bars off
+    // the screen. From the switch-area level down the devices start folded into a
+    // chip per bus, and each bus opens on click.
+    const collapseDevices = activeLevel === "switch" || activeLevel === "secondary";
+
     const layout = useMemo(
         () =>
             layoutAgentBuses(roster, {
                 maxDepth: activeLevel ? depthOfLevel(activeLevel) : 0,
                 expanded,
+                collapseDevices,
+                devicesExpanded,
             }),
-        [roster, activeLevel, expanded],
+        [roster, activeLevel, expanded, collapseDevices, devicesExpanded],
     );
 
     const c = surfaceFor(darkMode);
@@ -105,9 +128,18 @@ const AgentsView = () => {
         setPan({ x: 0, y: 0 });
     }, [layout.width, layout.height]);
 
+    // Re-frame only on changes the user made at the top level — a new roster, or a
+    // new depth. Firing on every layout change meant expanding one device chip
+    // reset zoom and pan and threw the diagram back to the top-left, mid-click.
+    const fitToViewRef = useRef(fitToView);
     useLayoutEffect(() => {
-        fitToView();
+        fitToViewRef.current = fitToView;
     }, [fitToView]);
+
+    const hasExtent = layout.width > 0;
+    useLayoutEffect(() => {
+        if (hasExtent) fitToViewRef.current();
+    }, [roster, depthLevel, hasExtent]);
 
     const onWheel = (e) => {
         // Trackpad and wheel both arrive here; a multiplicative step keeps the
@@ -151,6 +183,13 @@ const AgentsView = () => {
         if (agent.areaId) areaHighlight.select([agent.areaId]);
         setView("graph");
     };
+
+    const toggleDevices = (busId) =>
+        setDevicesExpanded((prev) => {
+            const next = new Set(prev);
+            if (!next.delete(busId)) next.add(busId);
+            return next;
+        });
 
     const revealChildren = (busId) =>
         setExpanded((prev) => {
@@ -198,6 +237,7 @@ const AgentsView = () => {
                             onChange={(level) => {
                                 setDepthLevel(level);
                                 setExpanded(new Set());
+                                setDevicesExpanded(new Set());
                             }}
                             options={levelsPresent.map((level) => ({
                                 label: DEPTH_LABELS[level] ?? level,
@@ -275,6 +315,49 @@ const AgentsView = () => {
                                     <text x={bus.x} y={bus.y - 4} fill={c.sub} fontSize={10}>
                                         {bus.label}
                                     </text>
+
+                                    {/* Devices folded into one chip; clicking
+                                        opens just this bus's row. */}
+                                    {bus.deviceChip && (
+                                        <g
+                                            data-interactive
+                                            transform={`translate(${bus.deviceChip.x}, ${bus.deviceChip.y})`}
+                                            onClick={() => toggleDevices(bus.busId)}
+                                            style={{ cursor: "pointer" }}
+                                        >
+                                            <title>
+                                                {bus.deviceChip.collapsed
+                                                    ? `Show the ${bus.deviceChip.count} device(s) on ${bus.label}`
+                                                    : `Hide the devices on ${bus.label}`}
+                                            </title>
+                                            <rect
+                                                width={bus.deviceChip.width}
+                                                height={bus.deviceChip.height}
+                                                rx={11}
+                                                fill={
+                                                    bus.deviceChip.collapsed
+                                                        ? NODE_COLORS.device
+                                                        : c.hover
+                                                }
+                                                stroke={
+                                                    bus.deviceChip.collapsed ? STROKE : c.border
+                                                }
+                                                strokeWidth={1}
+                                            />
+                                            <text
+                                                x={bus.deviceChip.width / 2}
+                                                y={bus.deviceChip.height / 2 + 1}
+                                                textAnchor="middle"
+                                                dominantBaseline="middle"
+                                                fontSize={11}
+                                                fill={bus.deviceChip.collapsed ? "#1f1f1f" : c.text}
+                                            >
+                                                {bus.deviceChip.collapsed
+                                                    ? `${bus.deviceChip.count} device${bus.deviceChip.count === 1 ? "" : "s"}`
+                                                    : "Hide devices"}
+                                            </text>
+                                        </g>
+                                    )}
 
                                     {bus.chip && (
                                         <g
@@ -364,8 +447,23 @@ const AgentsView = () => {
 
                             {/* Devices */}
                             {layout.devices.map(({ device, busId, x, y, width, height }) => (
-                                <g key={`${busId}-${device.mrid}`} transform={`translate(${x}, ${y})`}>
-                                    <title>{`${device.name}${device.phases ? ` · ${device.phases}` : ""}`}</title>
+                                <g
+                                    key={`${busId}-${device.mrid || device.name}`}
+                                    transform={`translate(${x}, ${y})`}
+                                >
+                                    {/* The chip carries the name and CIM class;
+                                        the role label and phases, which every
+                                        chip of a kind shares, stay in the hover. */}
+                                    <title>
+                                        {[
+                                            device.name,
+                                            device.cimType,
+                                            device.type,
+                                            device.phases && `phases ${device.phases}`,
+                                        ]
+                                            .filter(Boolean)
+                                            .join("\n")}
+                                    </title>
                                     <rect
                                         width={width}
                                         height={height}
@@ -379,10 +477,14 @@ const AgentsView = () => {
                                         y={height / 2}
                                         textAnchor="middle"
                                         dominantBaseline="middle"
-                                        fontSize={10}
                                         fill="#1f1f1f"
                                     >
-                                        {device.type}
+                                        <tspan x={width / 2} dy={-4} fontSize={10} fontWeight={600}>
+                                            {clip(device.name || device.mrid, 24)}
+                                        </tspan>
+                                        <tspan x={width / 2} dy={12} fontSize={9} fillOpacity={0.72}>
+                                            {clip(device.cimType || device.type, 27)}
+                                        </tspan>
                                     </text>
                                 </g>
                             ))}

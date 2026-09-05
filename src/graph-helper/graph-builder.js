@@ -13,20 +13,44 @@ const bump = (counts, type) => {
 
 const idOf = (attributes) => attributes.id ?? attributes.name;
 
+/**
+ * A model is third-party data, so one malformed object must not cost the whole
+ * load. Everything that can throw goes through here: the object is dropped, the
+ * reason is counted, and the build carries on.
+ */
+const skip = (skipped, reason, detail) => {
+    skipped.count += 1;
+    if (skipped.samples.length < 5) skipped.samples.push(`${reason}: ${detail}`);
+};
+
+/** Objects must carry an attributes bag before anything can be read off one. */
+const attributesOf = (obj) =>
+    obj && typeof obj === "object" && obj.attributes && typeof obj.attributes === "object"
+        ? obj.attributes
+        : null;
+
 // ── Pass 1: nodes ───────────────────────────────────────────────────────────
 
 /**
  * @returns {boolean} whether any node carried coordinates from the model itself
  */
-const addNodes = (graph, objects, ctx) => {
+const addNodes = (graph, objects, ctx, skipped) => {
     const { theme, nodeTypes, objectTypeCount, bounds } = ctx;
     let hasFixedNodes = false;
 
     for (const obj of objects) {
-        const attributes = obj.attributes;
+        const attributes = attributesOf(obj);
+        if (!attributes) {
+            skip(skipped, "object has no attributes", JSON.stringify(obj)?.slice(0, 80));
+            continue;
+        }
         // the key at the top of the object, which can be "name" or "objectType"
         const objectType = obj.objectType ?? obj.name;
         const nodeID = idOf(attributes);
+        if (nodeID === undefined || nodeID === null || nodeID === "") {
+            skip(skipped, "node has no id or name", objectType);
+            continue;
+        }
 
         if (nodeTypes.length > 0 && nodeTypes.includes(objectType)) {
             const positioned = "x" in attributes && "y" in attributes;
@@ -53,9 +77,7 @@ const addNodes = (graph, objects, ctx) => {
             try {
                 graph.addNode(nodeID, node);
             } catch (err) {
-                console.log(err);
-                console.log(nodeID);
-                console.log(node);
+                skip(skipped, "node rejected", `${nodeID} (${err.message})`);
             }
 
             continue;
@@ -66,7 +88,11 @@ const addNodes = (graph, objects, ctx) => {
             if (!nodeTypes.includes(objectType)) nodeTypes.push(objectType);
 
             bump(objectTypeCount.nodes, objectType);
-            graph.addNode(nodeID, createNode({ id: nodeID, objectType, attributes, theme }));
+            try {
+                graph.addNode(nodeID, createNode({ id: nodeID, objectType, attributes, theme }));
+            } catch (err) {
+                skip(skipped, "node rejected", `${nodeID} (${err.message})`);
+            }
         }
     }
 
@@ -82,11 +108,12 @@ const growBounds = (bounds, { x, y }) => {
 
 // ── Pass 2: edges ───────────────────────────────────────────────────────────
 
-const addEdges = (graph, objects, ctx) => {
+const addEdges = (graph, objects, ctx, skipped) => {
     const { theme, nodeTypes, edgeTypes, objectTypeCount } = ctx;
 
     for (const obj of objects) {
-        const attributes = obj.attributes;
+        const attributes = attributesOf(obj);
+        if (!attributes) continue; // already counted in the node pass
         const objectType = obj.objectType ?? obj.name;
 
         if (nodeTypes.includes(objectType) && "parent" in attributes) {
@@ -96,26 +123,34 @@ const addEdges = (graph, objects, ctx) => {
 
             bump(objectTypeCount.edges, "parentChild");
 
-            graph.addEdgeWithKey(edgeID, parent, nodeID, {
-                elementType: "edge",
-                group: "parentChild",
-                type: "straight",
-                ...theme.edgeOptions.parentChild,
-                length: "length" in attributes ? parseFloat(attributes.length) : null,
-                attributes: { to: parent, from: nodeID, id: edgeID },
-            });
+            try {
+                graph.addEdgeWithKey(edgeID, parent, nodeID, {
+                    elementType: "edge",
+                    group: "parentChild",
+                    type: "straight",
+                    ...theme.edgeOptions.parentChild,
+                    length: "length" in attributes ? parseFloat(attributes.length) : null,
+                    attributes: { to: parent, from: nodeID, id: edgeID },
+                });
+            } catch (err) {
+                skip(skipped, "parent link dropped", `${edgeID} (${err.message})`);
+            }
 
             continue;
         }
 
         if (edgeTypes.includes(objectType)) {
             bump(objectTypeCount.edges, objectType);
-            graph.addEdgeWithKey(
-                idOf(attributes),
-                attributes.from,
-                attributes.to,
-                createEdge({ objectType, attributes, theme }),
-            );
+            try {
+                graph.addEdgeWithKey(
+                    idOf(attributes),
+                    attributes.from,
+                    attributes.to,
+                    createEdge({ objectType, attributes, theme }),
+                );
+            } catch (err) {
+                skip(skipped, "edge dropped", `${idOf(attributes)} (${err.message})`);
+            }
 
             continue;
         }
@@ -129,14 +164,18 @@ const addEdges = (graph, objects, ctx) => {
             bump(objectTypeCount.edges, objectType);
             if (!edgeTypes.includes(objectType)) edgeTypes.push(objectType);
 
-            graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
-                elementType: "edge",
-                group: objectType,
-                type: "straight",
-                length: attributes.length ?? null,
-                ...theme.edgeOptions[objectType],
-                attributes,
-            });
+            try {
+                graph.addEdgeWithKey(edgeID, edgeFrom, edgeTo, {
+                    elementType: "edge",
+                    group: objectType,
+                    type: "straight",
+                    length: attributes.length ?? null,
+                    ...theme.edgeOptions[objectType],
+                    attributes,
+                });
+            } catch (err) {
+                skip(skipped, "edge dropped", `${edgeID} (${err.message})`);
+            }
         }
     }
 };
@@ -247,13 +286,24 @@ const stampLatLng = (graph) => {
  */
 export const buildGraph = (fileData, ctx) => {
     const graph = new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
-    const objects = Object.values(fileData).flatMap((file) => file.objects);
+    const skipped = { count: 0, samples: [] };
 
-    const hasFixedNodes = addNodes(graph, objects, ctx) || Boolean(ctx.hasFixedNodes);
+    const objects = Object.values(fileData ?? {}).flatMap((file) =>
+        Array.isArray(file?.objects) ? file.objects : [],
+    );
+
+    const hasFixedNodes = addNodes(graph, objects, ctx, skipped) || Boolean(ctx.hasFixedNodes);
     const hasGeoCoords = detectGeoCoords(graph, ctx.bounds, hasFixedNodes);
     const distributionAreas = collectDistributionAreas(graph);
 
-    addEdges(graph, objects, ctx);
+    addEdges(graph, objects, ctx, skipped);
+
+    if (skipped.count > 0) {
+        console.warn(
+            `Skipped ${skipped.count} malformed object(s) while building the graph:`,
+            skipped.samples,
+        );
+    }
 
     if (hasFixedNodes) placeFloatingNodes(graph, ctx.bounds, hasGeoCoords);
     else applyLayout(graph);
@@ -262,5 +312,5 @@ export const buildGraph = (fileData, ctx) => {
 
     assignParallelEdgeCurvatures(graph);
 
-    return { graph, hasFixedNodes, hasGeoCoords, distributionAreas };
+    return { graph, hasFixedNodes, hasGeoCoords, distributionAreas, skipped: skipped.count };
 };

@@ -16,6 +16,10 @@ DEVICE_LABELS = {
 }
 
 CLASS_TYPE_LABELS = {"regulator": "LTC"}
+# class_type is the CIM class the object was parsed from, except for regulators:
+# cimhelper stamps those transformer edges "regulator", so the CIM class they are
+# recognised by is restored here.
+CIM_TYPE_OVERRIDES = {"regulator": "RatioTapChanger"}
 SECONDARY_LABELS = {"DER": "LV Asset", "Load": "LV Asset"}
 MV_LABELS = {"DER": "MV DER", "Load": None}
 MAX_DEVICES_PER_AGENT = 12
@@ -198,11 +202,13 @@ def _area_devices(members: list, object_index: dict, level: str) -> list:
         if not label:
             continue
 
+        class_type = entry.get("class_type") or ""
         devices.append(
             {
                 "mrid": mrid,
                 "name": entry.get("name") or _uuid_tail(mrid),
                 "type": label,
+                "cim_type": CIM_TYPE_OVERRIDES.get(class_type, class_type),
                 "phases": entry.get("phases", ""),
             }
         )
@@ -227,11 +233,13 @@ def _normalize_devices(devices) -> list:
         if not isinstance(device, dict):
             continue
         mrid = device.get("mrid") or device.get("@id") or ""
+        cim_type = device.get("cim_type") or device.get("cimType") or device.get("class_type") or ""
         normalized.append(
             {
                 "mrid": str(mrid),
                 "name": str(device.get("name") or _uuid_tail(mrid)),
                 "type": str(device.get("type") or "Device"),
+                "cim_type": CIM_TYPE_OVERRIDES.get(str(cim_type), str(cim_type)),
                 "phases": str(device.get("phases") or ""),
             }
         )
@@ -279,7 +287,12 @@ def build_agent_model(area_map: dict, object_index: dict, model_id: str, source:
     elif source == "fixture":
         path = os.environ.get("GLIMPSE_AGENTS_FIXTURE", "")
         if path and os.path.isfile(path):
-            raw = agents_from_fixture(path)
+            try:
+                raw = agents_from_fixture(path)
+            except (OSError, ValueError) as exc:
+                # Same outcome as a missing fixture: fall back to the derived
+                # roster rather than failing the request the caller made.
+                logger.warning("Agent fixture at %s could not be read (%s); deriving instead.", path, exc)
         else:
             logger.warning(
                 "Agent fixture requested but GLIMPSE_AGENTS_FIXTURE is unset or "

@@ -21,12 +21,15 @@
 // Kept free of React and of any color decision so the arithmetic can be reasoned
 // about (and tested) on its own; AgentsView paints what this returns.
 
-const ROW_HEIGHT = 150; // vertical distance between bus levels
+// Vertical distance between bus levels. A row has to clear the tallest stack a
+// bus can hold — its devices chip, an opened device row and the "+N areas" chip
+// — before the next row's agent boxes start, or the two collide.
+const ROW_HEIGHT = 175;
 const BUS_HEIGHT = 12;
 const BOX_WIDTH = 96;
 const BOX_HEIGHT = 46;
-const DEVICE_WIDTH = 78;
-const DEVICE_HEIGHT = 24;
+const DEVICE_WIDTH = 148; // two lines: the device's own name over its CIM class
+const DEVICE_HEIGHT = 34;
 const GAP = 16; // horizontal breathing room between sibling subtrees
 const LABEL_GUTTER = 190; // left column holding the row labels
 const AGENT_BUS_GAP = 14; // between an agent box and the bus it sits on
@@ -57,15 +60,14 @@ const ROWS = [
     { level: "secondary", label: "Distribution Secondary\nMessage Buses" },
 ];
 
+const rowWidth = (count, itemWidth) => count * itemWidth + Math.max(0, count - 1) * GAP;
+
 /**
  * Width one bus needs for its own contents: its agents side by side, plus its
  * devices side by side, whichever is wider.
  */
-const intrinsicWidth = (agentCount, deviceCount, hasChip) => {
-    const agentsWidth = agentCount * BOX_WIDTH + Math.max(0, agentCount - 1) * GAP;
-    const devicesWidth = deviceCount * DEVICE_WIDTH + Math.max(0, deviceCount - 1) * GAP;
-    return Math.max(agentsWidth, devicesWidth, hasChip ? CHIP_WIDTH : 0, BOX_WIDTH);
-};
+const intrinsicWidth = (agentCount, devicesWidth, hasChip) =>
+    Math.max(rowWidth(agentCount, BOX_WIDTH), devicesWidth, hasChip ? CHIP_WIDTH : 0, BOX_WIDTH);
 
 /**
  * Arranges a roster into positioned bus bars, agent boxes and device chips.
@@ -75,17 +77,26 @@ const intrinsicWidth = (agentCount, deviceCount, hasChip) => {
  *   maxDepth - how many levels below the root to draw (0 draws the top row only)
  *   expanded - bus ids whose children are drawn in full, ignoring both maxDepth
  *              and the sibling cap. This is the drill-down.
+ *   collapseDevices - draw each bus's devices as one "N devices" chip instead of
+ *              a chip per device. A switch-area row carries a dozen devices and
+ *              the bus is sized to hold them, so drawing them all is what makes
+ *              those bars run off the screen.
+ *   devicesExpanded - bus ids whose devices are drawn in full despite that.
  * @returns {{
  *   width: number, height: number,
  *   rows: {level: string, label: string, y: number}[],
- *   buses: {busId, level, name, label, areaId, x, y, width, height, hiddenChildren, chip}[],
+ *   buses: {busId, level, name, label, areaId, x, y, width, height, hiddenChildren, chip, deviceChip}[],
  *   agents: {agent, x, y, width, height}[],
  *   devices: {device, busId, x, y, width, height}[],
  *   truncated: boolean,
  * }}
  */
-export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {}) => {
+export const layoutAgentBuses = (
+    roster,
+    { maxDepth = Infinity, expanded, collapseDevices = false, devicesExpanded } = {},
+) => {
     const open = expanded ?? new Set();
+    const devicesOpen = devicesExpanded ?? new Set();
     const empty = {
         width: 0,
         height: 0,
@@ -132,8 +143,15 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
      * Places one bus and everything under it, starting at `left`, and reports
      * how wide the whole subtree turned out.
      */
-    const place = (busId, left, depth) => {
+    const place = (busId, left, depth, seen = new Set()) => {
         const bus = busById.get(busId);
+        // childrenOf is built from parent ids the roster supplies, so it can name
+        // a bus that isn't in busById, and those parent links can form a cycle.
+        // Either one would otherwise take the whole app down from inside a
+        // useMemo — an undefined read, or unbounded recursion.
+        if (!bus || seen.has(busId)) return 0;
+        const branch = new Set(seen).add(busId);
+
         const busAgents = agentsByBus.get(busId) ?? [];
         const busDevices = busAgents.flatMap((agent) =>
             agent.devices.map((device) => ({ device, agent })),
@@ -156,24 +174,44 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
         let cursor = left;
         let childrenWidth = 0;
         children.forEach((childId, i) => {
-            const used = place(childId, cursor, depth + 1);
+            const used = place(childId, cursor, depth + 1, branch);
+            if (used === 0) return; // skipped: unknown bus, or a cycle
             const step = used + (i < children.length - 1 ? GAP : 0);
             cursor += step;
             childrenWidth += step;
         });
 
+        // A collapsed bus still shows *that* it carries devices, and the chip is
+        // the control that opens them, so it only disappears when there are none.
+        const devicesCollapsed = collapseDevices && !devicesOpen.has(busId);
+        const drawnDevices = devicesCollapsed ? [] : busDevices;
+        const showDeviceChip = collapseDevices && busDevices.length > 0;
+
         const width = Math.max(
             childrenWidth,
-            intrinsicWidth(busAgents.length, busDevices.length, hiddenChildren > 0),
+            intrinsicWidth(
+                busAgents.length,
+                Math.max(
+                    rowWidth(drawnDevices.length, DEVICE_WIDTH),
+                    showDeviceChip ? CHIP_WIDTH : 0,
+                ),
+                hiddenChildren > 0,
+            ),
         );
 
         const rowIndex = ROWS.findIndex((row) => row.level === bus.level);
         const y = PADDING + (rowIndex < 0 ? depth : rowIndex) * ROW_HEIGHT;
         rowsUsed.add(bus.level);
 
-        // Devices hang below the bus; the "+N more" chip goes below them.
-        const devicesY = y + BUS_HEIGHT + 12;
-        const chipY = devicesY + (busDevices.length > 0 ? DEVICE_HEIGHT + 8 : 0);
+        // Below the bus, in order: the devices chip, the devices themselves, then
+        // the "+N areas" chip. Each is skipped when it has nothing to show, but
+        // the order never changes, so a bus doesn't reflow as it is opened.
+        let stack = y + BUS_HEIGHT + 12;
+        const deviceChipY = stack;
+        if (showDeviceChip) stack += CHIP_HEIGHT + 6;
+        const devicesY = stack;
+        if (drawnDevices.length > 0) stack += DEVICE_HEIGHT + 8;
+        const chipY = stack;
 
         buses.push({
             busId,
@@ -196,10 +234,20 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
                           count: hiddenChildren,
                       }
                     : null,
+            deviceChip: showDeviceChip
+                ? {
+                      x: left + (width - CHIP_WIDTH) / 2,
+                      y: deviceChipY,
+                      width: CHIP_WIDTH,
+                      height: CHIP_HEIGHT,
+                      count: busDevices.length,
+                      collapsed: devicesCollapsed,
+                  }
+                : null,
         });
 
         // Agents sit above their bus, centered on it.
-        const agentsWidth = busAgents.length * BOX_WIDTH + Math.max(0, busAgents.length - 1) * GAP;
+        const agentsWidth = rowWidth(busAgents.length, BOX_WIDTH);
         let agentX = left + (width - agentsWidth) / 2;
         busAgents.forEach((agent) => {
             agents.push({
@@ -212,9 +260,8 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
             agentX += BOX_WIDTH + GAP;
         });
 
-        const devicesWidth = busDevices.length * DEVICE_WIDTH + Math.max(0, busDevices.length - 1) * GAP;
-        let deviceX = left + (width - devicesWidth) / 2;
-        busDevices.forEach(({ device }) => {
+        let deviceX = left + (width - rowWidth(drawnDevices.length, DEVICE_WIDTH)) / 2;
+        drawnDevices.forEach(({ device }) => {
             devices.push({
                 device,
                 busId,
@@ -257,4 +304,12 @@ export const layoutAgentBuses = (roster, { maxDepth = Infinity, expanded } = {})
 /** Depth needed to reach a given level, for the view's depth control. */
 export const depthOfLevel = (level) => ROWS.findIndex((row) => row.level === level);
 
-export const LAYOUT_CONSTANTS = { ROW_HEIGHT, BUS_HEIGHT, BOX_WIDTH, BOX_HEIGHT, LABEL_GUTTER };
+export const LAYOUT_CONSTANTS = {
+    ROW_HEIGHT,
+    BUS_HEIGHT,
+    BOX_WIDTH,
+    BOX_HEIGHT,
+    DEVICE_WIDTH,
+    DEVICE_HEIGHT,
+    LABEL_GUTTER,
+};

@@ -11,6 +11,7 @@ import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
 import { useGraph } from "../../contexts/GraphContext";
 import Graph from "./Graph";
+import WebGLRecovery from "./WebGLRecovery";
 import {
     EdgeRectangleProgram,
     createNodeCompoundProgram,
@@ -293,6 +294,7 @@ const GraphRenderer = () => {
         >
             <Graph />
             <GraphEvents />
+            <WebGLRecovery />
             <AnimatedEdgeTicker />
             {/* Renders nothing; owns the distribution-area contour layers for
                 every consumer of the shared selection (area tree, agents). */}

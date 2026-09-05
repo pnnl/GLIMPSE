@@ -19,6 +19,16 @@ const LEVEL_TITLES = {
 
 const EMPTY = { model: null, source: null, buses: [], agents: [] };
 
+// Device chips show the object's own name and the CIM class it came from, so
+// both are normalized here rather than read snake_case-or-camelCase at render.
+const normalizeDevice = (device) => ({
+    mrid: device.mrid ?? device["@id"] ?? "",
+    name: device.name ?? "",
+    type: device.type ?? "Device",
+    cimType: device.cim_type ?? device.cimType ?? device.class_type ?? "",
+    phases: device.phases ?? "",
+});
+
 const shortAreaLabel = (name, parentName, level) => {
     const title = LEVEL_TITLES[level] ?? level;
     if (level === "system") return title;
@@ -79,7 +89,9 @@ export const normalizeRoster = (payload) => {
                 areaName,
                 label: shortAreaLabel(areaName, parentNameOf(busId), level),
                 status: agent.status ?? "unknown",
-                devices: Array.isArray(agent.devices) ? agent.devices : [],
+                devices: Array.isArray(agent.devices)
+                    ? agent.devices.filter(Boolean).map(normalizeDevice)
+                    : [],
             };
         }),
     };

@@ -1,9 +1,12 @@
 import axios from "axios";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 
 const FIRST_INTERVAL_MS = 500;
 const MAX_INTERVAL_MS = 5000;
 const BACKOFF = 1.5;
+// A job whose worker tier is gone sits at "queued" indefinitely, and the poll
+// itself stays healthy, so the loop needs its own ceiling to ever give up.
+const MAX_WAIT_MS = PARSE_TIMEOUT_MS;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -28,12 +31,22 @@ const describe = (job) => {
 
 export const awaitParseJob = async (jobId, { onProgress, signal } = {}) => {
     let interval = FIRST_INTERVAL_MS;
+    const deadline = Date.now() + MAX_WAIT_MS;
 
     for (;;) {
         if (signal?.aborted) throw new Error("Upload cancelled.");
+        if (Date.now() > deadline) {
+            throw new Error(
+                "This model is still queued after a long wait. The server may have no parse " +
+                    "workers running — try again later.",
+            );
+        }
 
         const { data: job } = await axios.get(`${API_BASE_URL}/api/jobs/${jobId}`, { signal });
 
+        if (!job || typeof job !== "object") {
+            throw new Error("The server returned an unreadable job status.");
+        }
         if (job.state === "failed") {
             throw new Error(job.error || "The server could not parse this model.");
         }

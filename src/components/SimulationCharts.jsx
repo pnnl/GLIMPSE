@@ -70,7 +70,9 @@ const SimulationCharts = () => {
 
     const processOutput = useCallback(
         (output) => {
-            const { timestamp, Analog } = output;
+            const { timestamp } = output ?? {};
+            // Matches CustomPlot: a frame can arrive without Analog.
+            const Analog = Array.isArray(output?.Analog) ? output.Analog : [];
             const ts = new Date(timestamp * 1000).toLocaleTimeString();
 
             // ── Voltage (PNV) ──────────────────────────────────────────────────

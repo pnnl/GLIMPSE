@@ -8,7 +8,7 @@ import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import { API_BASE_URL, FEATURES } from "../../config";
+import { API_BASE_URL, FEATURES, PARSE_TIMEOUT_MS } from "../../config";
 import { confirmDiscardChanges, errorText } from "../../utils/notify";
 import { loadAgentRoster } from "../../utils/agent-api";
 
@@ -99,6 +99,7 @@ const LoadModelModal = ({ onMount }) => {
                 selectedGridappsdModels.map((m) => m.modelId),
                 {
                     headers: { "Content-Type": "application/json" },
+                    timeout: PARSE_TIMEOUT_MS,
                 },
             );
             const { data: response } = await resPromise;

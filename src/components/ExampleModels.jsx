@@ -4,7 +4,7 @@ import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText, reportError } from "../utils/notify";
 
 // Bundled sample models the backend ships with (see EXAMPLE_MODELS in
@@ -45,7 +45,7 @@ const ExampleModels = ({ closeModal }) => {
             const { data: response } = await axios.post(
                 `${API_BASE_URL}/api/examples/load`,
                 { id: example.id },
-                { headers: { "Content-Type": "application/json" } },
+                { headers: { "Content-Type": "application/json" }, timeout: PARSE_TIMEOUT_MS },
             );
 
             if ("error" in response) throw new Error(response.error);
