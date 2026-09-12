@@ -1,6 +1,3 @@
-"""Parse errors carrying enough context to point at the offending source line."""
-
-
 class GlmParseError(Exception):
     """Raised when GLM source cannot be parsed.
 

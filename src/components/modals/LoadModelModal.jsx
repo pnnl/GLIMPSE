@@ -8,7 +8,7 @@ import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import { API_BASE_URL, FEATURES, PARSE_TIMEOUT_MS } from "../../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../../config";
 import { confirmDiscardChanges, errorText } from "../../utils/notify";
 import { loadAgentRoster } from "../../utils/agent-api";
 
@@ -29,10 +29,9 @@ const LoadModelModal = ({ onMount }) => {
 
     // Only offer the GridAPPS-D tab when the broker is actually reachable.
     // Re-checked every time the modal opens so a broker started after app
-    // launch is picked up. Skipped entirely in hosted mode, where the endpoint
-    // isn't registered and every probe would just 404.
+    // launch is picked up.
     useEffect(() => {
-        if (!open || !FEATURES.gridappsd) return;
+        if (!open) return;
         let cancelled = false;
 
         axios

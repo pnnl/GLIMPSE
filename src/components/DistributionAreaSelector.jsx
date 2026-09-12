@@ -14,17 +14,11 @@ const buildTreeData = (areas) =>
     }));
 
 const DistributionAreaSelector = () => {
-    // The tree can be resolved synchronously when the component mounts with a
-    // graph already loaded; graph load/clear events update it afterwards.
     const [treeData, setTreeData] = useState(() => {
         const current = graphHelper.distributionAreas;
         return Object.keys(current).length > 0 ? buildTreeData(current) : [];
     });
     const { darkMode } = useGraph();
-
-    // The selection, its colors and the WebGL contour layers all live outside
-    // this component — the agent markers drive the same highlight, so there is
-    // one shared controller and AreaHighlightLayers does the drawing.
     const areaHighlight = useAreaHighlight();
     const { selection, colors } = areaHighlight;
 
@@ -42,8 +36,6 @@ const DistributionAreaSelector = () => {
     // Listen for graph load/clear events
     useEffect(() => {
         const handleGraphLoaded = () => {
-            // The selection outlives a remount, so a new model would otherwise
-            // inherit area ids belonging to the previous one.
             areaHighlight.clear();
             setTreeData(buildTreeData(graphHelper.distributionAreas));
         };
@@ -64,8 +56,6 @@ const DistributionAreaSelector = () => {
 
     if (treeData.length === 0) return null;
 
-    // Same palette the graph legend panels use, so both float over the canvas
-    // as the same kind of surface in either theme.
     const c = darkMode
         ? { bg: "rgba(31,31,31,0.92)", text: "#e0e0e0", border: "#3a3a3a" }
         : { bg: "rgba(255,255,255,0.92)", text: "#1f1f1f", border: "#e0e0e0" };

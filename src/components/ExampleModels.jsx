@@ -7,9 +7,6 @@ import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText, reportError } from "../utils/notify";
 
-// Bundled sample models the backend ships with (see EXAMPLE_MODELS in
-// local-server/server.py). Parsing happens server-side, so loading one goes
-// through the same { data, themeData } response shape as the upload endpoints.
 const ExampleModels = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
     const [examples, setExamples] = useState([]);

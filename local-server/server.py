@@ -1,28 +1,23 @@
-import os
+import hmac
 import json
+import os
+import shutil
 import tempfile
 import traceback
-import hmac
-import threading
-import shutil
-import jobstore
-from flask import Flask, request, jsonify, send_file
-from werkzeug.exceptions import HTTPException
+
+import gevent
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from flask_socketio import SocketIO
+from gevent.lock import BoundedSemaphore
+from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
+
+import agenthelper
 from cimhelper import CIMHelper
 from glmhelper import GLMHelper
+from gridappsdhelper import GridAPPSDHelper
 from jsonhelper import JSONHelper
-
-HOSTED_MODE = os.environ.get("GLIMPSE_MODE", "desktop").strip().lower() == "hosted"
-
-if not HOSTED_MODE:
-    import gevent
-    from gevent.lock import BoundedSemaphore
-    from flask_socketio import SocketIO
-
-    import agenthelper
-    from gridappsdhelper import GridAPPSDHelper
 
 # ================================================================================================
 # HELPERS
@@ -31,63 +26,25 @@ if not HOSTED_MODE:
 json_helper = JSONHelper()
 glm_helper = GLMHelper()
 cim_helper = CIMHelper()
-gridappsd_helper = GridAPPSDHelper() if not HOSTED_MODE else None
-cim_load_lock = threading.Lock() if HOSTED_MODE else BoundedSemaphore(1)
+gridappsd_helper = GridAPPSDHelper()
+cim_load_lock = BoundedSemaphore(1)
 
 def run_cim_parse(fn, **kwargs):
     with cim_load_lock:
         try:
-            if HOSTED_MODE:
-                result = fn(**kwargs)
-            else:
-                result = gevent.get_hub().threadpool.apply(fn, kwds=kwargs)
+            result = gevent.get_hub().threadpool.apply(fn, kwds=kwargs)
         except Exception:
-            # A parse that raised leaves the helper half-populated: hosted mode
-            # would keep a model resident it promises not to hold, and desktop
-            # mode would answer later requests from the *previous* model's
-            # measurement map. Clear it either way before propagating.
+            # A failed parse leaves the helper half-populated, so later requests
+            # would answer from the previous model's measurement map.
             cim_helper.release()
             raise
-        if HOSTED_MODE:
-            # Inside the lock: dropping it first lets this wipe state that the
-            # next thread has already started filling.
-            cim_helper.release()
     return result
 
-
-job_store = jobstore.build_job_store()
-ASYNC_UPLOADS = HOSTED_MODE and not isinstance(job_store, jobstore.MemoryJobStore)
-
-if ASYNC_UPLOADS:
-    # Imported only on the path that dispatches parses, so the desktop build
-    # never needs celery installed — it isn't in requirements.txt.
-    from tasks import parse_cim
-
-# Load shedding. Every queued job holds its uploaded bytes in Redis until a
-# worker finishes with it, so this depth is a Redis memory budget as much as a
-# wait-time one: the worst case is roughly GLIMPSE_MAX_QUEUE_DEPTH x
-# MAX_UPLOAD_MB of uploads resident at once, and Redis runs noeviction so that
-# it refuses writes rather than quietly dropping someone's job. Refusing early
-# with a 429 the client can act on is a much better failure than accepting an
-# upload Redis will then reject.
-MAX_QUEUE_DEPTH = int(os.environ.get("GLIMPSE_MAX_QUEUE_DEPTH", "24"))
 
 # agents-update is keyed by a model id the caller chooses, so the cache is
 # capped rather than left to grow for the life of the process.
 MAX_CACHED_AGENT_ROSTERS = 32
 
-
-def desktop_route(rule, **options):
-    if HOSTED_MODE:
-        return lambda fn: fn
-    return app.route(rule, **options)
-
-
-def desktop_socket_event(event):
-    """socketio.on(), skipped entirely in hosted mode (no Socket.IO there)."""
-    if HOSTED_MODE:
-        return lambda fn: fn
-    return socketio.on(event)
 
 # ================================================================================================
 # FLASK APP SETUP
@@ -127,13 +84,11 @@ CORS(
     allow_headers=allowed_headers,
     supports_credentials=allow_credentials,
 )
-socketio = (
-    SocketIO(app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True)
-    if not HOSTED_MODE
-    else None
+socketio = SocketIO(
+    app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
-_hub = gevent.get_hub() if not HOSTED_MODE else None
+_hub = gevent.get_hub()
 
 def emit_threadsafe(event: str, payload):
     """socketio.emit() from a non-greenlet thread. See _hub above."""
@@ -144,18 +99,6 @@ EXPOSE_TRACEBACKS = os.environ.get("EXPOSE_TRACEBACKS", "").strip().lower() in (
     "true",
     "yes",
 )
-
-def gzipped_json_response(payload: bytes):
-    if "gzip" not in request.accept_encodings:
-        import gzip as _gzip
-
-        return app.response_class(_gzip.decompress(payload), mimetype="application/json")
-
-    response = app.response_class(payload, mimetype="application/json")
-    response.headers["Content-Encoding"] = "gzip"
-    response.headers["Content-Length"] = str(len(payload))
-    response.headers["Vary"] = "Accept-Encoding"
-    return response
 
 def error_body(exc, tb, message=None, extra=None):
     """Build an error response body. Always logs the traceback server-side, but
@@ -190,12 +133,11 @@ def _unhandled_error(exc):
     return error_body(exc, traceback.format_exc(), message=f"Server error: {exc}"), 500
 
 
-if not HOSTED_MODE:
-    # Without this an exception inside a socket handler returns nothing at all —
-    # the caller's ack callback simply never fires and the script hangs.
-    @socketio.on_error_default
-    def _socket_error(exc):
-        return error_body(exc, traceback.format_exc())
+# Without this an exception inside a socket handler returns nothing at all —
+# the caller's ack callback simply never fires and the script hangs.
+@socketio.on_error_default
+def _socket_error(exc):
+    return error_body(exc, traceback.format_exc())
 
 
 EXPORT_BASE_DIR = os.path.abspath(
@@ -244,7 +186,7 @@ def _require_api_token():
         return jsonify({"error": "Unauthorized"}), 401
     return None
 
-@desktop_socket_event("connect")
+@socketio.on("connect")
 def _authenticate_socket(auth=None):
     if not API_TOKEN:
         return True
@@ -302,22 +244,8 @@ def _example_model_path(example_id):
     return path if os.path.isfile(path) else None
 
 
-# ---------------------------------------------------------------------------
-# Precomputed example payloads
-# ---------------------------------------------------------------------------
-PRECOMPUTED_DIR = os.path.abspath(
-    os.environ.get("GLIMPSE_PRECOMPUTED_DIR", "").strip()
-    or os.path.join(MODELS_DIR or os.path.dirname(os.path.abspath(__file__)), "precomputed")
-)
-
-def _precomputed_path(example_id):
-    # Path to an example's prebuilt payload (gzipped JSON), or None.
-    candidate = os.path.join(PRECOMPUTED_DIR, f"{example_id}.json.gz")
-    return candidate if os.path.isfile(candidate) else None
-
-
 def _example_available(example_id) -> bool:
-    return bool(_precomputed_path(example_id) or _example_model_path(example_id))
+    return _example_model_path(example_id) is not None
 
 
 def build_example_payload(entry, path):
@@ -365,11 +293,6 @@ def load_example():
     if entry is None or not _example_available(example_id):
         return jsonify({"error": f"Unknown or unavailable example model: {example_id}"}), 404
 
-    prebuilt = _precomputed_path(example_id)
-    if prebuilt:
-        with open(prebuilt, "rb") as handle:
-            return gzipped_json_response(handle.read())
-
     path = _example_model_path(example_id)
     try:
         return jsonify(build_example_payload(entry, path))
@@ -384,7 +307,7 @@ def load_example():
 # ================================================================================================
 
 
-@desktop_route("/api/cim/objects", methods=["POST"])
+@app.route("/api/cim/objects", methods=["POST"])
 def get_object():
     try:
         if not request.is_json:
@@ -409,7 +332,7 @@ def get_object():
         return jsonify(error_body(e, tb)), 500
 
 
-@desktop_route("/api/cim/objects", methods=["DELETE"])
+@app.route("/api/cim/objects", methods=["DELETE"])
 def delete_object():
     try:
         if not request.is_json:
@@ -445,7 +368,7 @@ def delete_object():
         return jsonify(error_body(e, tb)), 500
 
 
-@desktop_route("/api/cim/objects/mermaid", methods=["POST"])
+@app.route("/api/cim/objects/mermaid", methods=["POST"])
 def get_object_mermaid():
     try:
         if not request.is_json:
@@ -630,36 +553,6 @@ def export_glm():
 # ================================================================================================
 
 
-def enqueue_parse(path):
-    """Store an upload and hand it to a worker. None if it could not be taken.
-
-    The job record and the uploaded bytes are written before the task is
-    published, so a worker can never be handed an id whose record does not exist
-    yet. If publishing then fails, the job is marked failed rather than left
-    sitting at "queued" with no worker ever coming for it.
-    """
-    with open(path, "rb") as handle:
-        payload = handle.read()
-
-    try:
-        job = job_store.submit(os.path.basename(path), payload)
-    except Exception as exc:  # noqa: BLE001 - realistically Redis refusing a write
-        print(f"[upload] could not store upload: {exc}")
-        return None
-
-    try:
-        # The task carries only the id; the bytes stay in Redis under the job, so
-        # a 56 MB model is never copied into a broker message. Reusing the job id
-        # as the task id keeps the two addressable as one thing.
-        parse_cim.apply_async(args=[job.id], task_id=job.id)
-    except Exception as exc:  # noqa: BLE001 - broker unreachable
-        job_store.fail(job.id, "The server could not queue this model for parsing.")
-        print(f"[upload] could not publish parse task for {job.id}: {exc}")
-        return None
-
-    return job
-
-
 @app.route("/api/upload/cim", methods=["POST"])
 def cim_to_glimpse():
     # Validate presence of 'files' in form-data
@@ -685,65 +578,21 @@ def cim_to_glimpse():
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        if ASYNC_UPLOADS:
-            # A large CIM parse outlives any sane HTTP timeout, so don't try to
-            # answer on this request. Hand the bytes to a worker and return a
-            # job the client can poll — from any replica, since the job lives in
-            # the shared store rather than in this process.
-            if len(paths) > 1:
-                return {"error": "Upload one CIM file at a time."}, 400
-
-            depth = job_store.queue_depth()
-            if depth >= MAX_QUEUE_DEPTH:
-                # Retry-After is an estimate, not a promise: it assumes the
-                # queue drains at roughly the rate the bundled models parse at.
-                return (
-                    {
-                        "error": "The parse queue is full. Please try again shortly.",
-                        "queueDepth": depth,
-                    },
-                    429,
-                    {"Retry-After": str(min(300, max(10, depth * 10)))},
-                )
-
-            job = enqueue_parse(paths[0])
-            if job is None:
-                return {
-                    "error": "The server is at capacity and could not accept this "
-                    "upload. Please try again shortly."
-                }, 503
-
-            return (
-                {
-                    "jobId": job.id,
-                    "state": job.state,
-                    "statusUrl": f"/api/jobs/{job.id}",
-                    "resultUrl": f"/api/jobs/{job.id}/result",
-                    "queueDepth": depth,
-                },
-                202,
-            )
-
-        # See run_cim_parse: serialized per process, and in hosted mode the
-        # parsed graphs are released as soon as the details are extracted.
+        # See run_cim_parse: serialized per process.
         glimpse_structure_data, object_details = run_cim_parse(
             cim_helper.cim_to_gjs, filepaths=paths
         )
 
-        if HOSTED_MODE and cim_helper.count_objects(glimpse_structure_data) == 0:
-            # See worker.run_job: an unreadable model parses to an empty graph
-            # rather than raising, which would otherwise read as a successful
-            # upload of a model with nothing in it.
+        if cim_helper.count_objects(glimpse_structure_data) == 0:
+            # An unreadable model parses to an empty graph rather than raising,
+            # which would otherwise load a blank canvas with no explanation.
             return {
                 "error": "No CIM objects could be read from the uploaded file(s). "
                 "Check that they are valid CIM XML models."
             }, 400
 
-        # `objectDetails` is what makes this response self-contained: the client
-        # gets every object's attributes and associations up front instead of
-        # calling back to /api/cim/objects against a server that would have to
-        # still be holding this exact model. Wrapped in the same
-        # { data, themeData } envelope the other upload endpoints use.
+        # Drawn objects ship their attributes and associations up front; objects
+        # the model only points at are fetched from /api/cim/objects.
         return {
             "data": glimpse_structure_data,
             "themeData": None,
@@ -760,7 +609,7 @@ def cim_to_glimpse():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-@desktop_route("/api/export/export-cim", methods=["POST"])
+@app.route("/api/export/export-cim", methods=["POST"])
 def export_cim_file():
     # CIM structural export (adding / rewiring objects and writing a new XML) is
     # unfinished: cim_helper.export_cim and its cimbuilder dependencies are still
@@ -771,7 +620,7 @@ def export_cim_file():
     return jsonify({"error": "CIM structural export is not implemented yet."}), 501
 
 
-@desktop_route("/api/export/export-cim-coordinates", methods=["POST"])
+@app.route("/api/export/export-cim-coordinates", methods=["POST"])
 def export_cim_coordinates():
     cim_data = request.get_json()
     if not cim_data:
@@ -794,7 +643,7 @@ def export_cim_coordinates():
     return "", 204
 
 
-@desktop_route("/api/cim/measurements", methods=["GET"])
+@app.route("/api/cim/measurements", methods=["GET"])
 def get_cim_measurements():
     # Expose the measurement map built at CIM model-load time so the frontend plot
     # creator can list device measurements before a simulation starts. Returns an
@@ -810,7 +659,7 @@ def get_cim_measurements():
 # ================================================================================================
 # GridAPPS-D INTERACTION ENDPOINTS
 # ================================================================================================
-@desktop_route("/api/gridappsd/models", methods=["POST"])
+@app.route("/api/gridappsd/models", methods=["POST"])
 def get_models():
     req_data = request.get_json()
 
@@ -862,7 +711,7 @@ def get_models():
         return error_body(e, tb), 500
 
 
-@desktop_route("/api/gridappsd/agents", methods=["GET"])
+@app.route("/api/gridappsd/agents", methods=["GET"])
 def get_agents():
     model_id = request.args.get("model") or ""
     source = request.args.get("source") or "derived"
@@ -894,7 +743,7 @@ def get_agents():
         return jsonify(error_body(e, tb)), 500
 
 
-@desktop_route("/api/gridappsd/model-info", methods=["GET"])
+@app.route("/api/gridappsd/model-info", methods=["GET"])
 def get_gridappsd_models():
     try:
         if not gridappsd_helper.is_connected():
@@ -908,7 +757,7 @@ def get_gridappsd_models():
         return error_body(e, tb), 503
 
 
-@desktop_route("/api/gridappsd/status", methods=["GET"])
+@app.route("/api/gridappsd/status", methods=["GET"])
 def get_gridappsd_status():
     try:
         # Non-destructive: try_connect() tears down the live connection (and with
@@ -952,7 +801,7 @@ def get_gridappsd_status():
 # ================================================================================================
 # GLIMPSE WEBSOCKET EVENTS
 # ================================================================================================
-@desktop_socket_event("load-graph")
+@socketio.on("load-graph")
 def load_graph(data):
     try:
         # Accept GLIMPSE objects format or NetworkX node-link data and normalize
@@ -971,7 +820,7 @@ def load_graph(data):
         return error_body(e, tb)
 
 
-@desktop_socket_event("update")
+@socketio.on("update")
 def update_data(data):
     # Update node/edge color, size, and/or hidden state on the connected frontends.
     try:
@@ -1007,7 +856,7 @@ def update_data(data):
         return error_body(e, tb)
 
 
-@desktop_socket_event("add-node")
+@socketio.on("add-node")
 def add_node(new_node_data):
     if not isinstance(new_node_data, dict) or "attributes" not in new_node_data:
         return {"error": "add-node requires an object with an 'attributes' key."}
@@ -1015,7 +864,7 @@ def add_node(new_node_data):
     return {"status": "ok"}
 
 
-@desktop_socket_event("add-edge")
+@socketio.on("add-edge")
 def add_edge(new_edge_data):
     if not isinstance(new_edge_data, dict) or "attributes" not in new_edge_data:
         return {"error": "add-edge requires an object with an 'attributes' key."}
@@ -1023,7 +872,7 @@ def add_edge(new_edge_data):
     return {"status": "ok"}
 
 
-@desktop_socket_event("delete-node")
+@socketio.on("delete-node")
 def delete_node(node_id):
     if not node_id:
         return {"error": "delete-node requires a node id."}
@@ -1031,7 +880,7 @@ def delete_node(node_id):
     return {"status": "ok"}
 
 
-@desktop_socket_event("delete-edge")
+@socketio.on("delete-edge")
 def delete_edge(edge_id):
     if not edge_id:
         return {"error": "delete-edge requires an edge id."}
@@ -1039,7 +888,7 @@ def delete_edge(edge_id):
     return {"status": "ok"}
 
 
-@desktop_socket_event("agents-update")
+@socketio.on("agents-update")
 def agents_update(payload):
     if not isinstance(payload, dict) or not isinstance(payload.get("agents"), list):
         return {"error": "agents-update requires an object with an 'agents' list."}
@@ -1063,7 +912,7 @@ def agents_update(payload):
 # ─── SocketIO Event Handlers ──────────────────────────────────────
 
 
-@desktop_socket_event("start-simulation")
+@socketio.on("start-simulation")
 def handle_start_simulation(config):
     try:
         result = gridappsd_helper.start_simulation(config)
@@ -1109,7 +958,7 @@ def handle_start_simulation(config):
 
                         sim_output["Analog"].append(measurment_output)
 
-                        
+
                     if measurment_mRID in active_measurement_map["Discrete"]:
                         mapping = active_measurement_map["Discrete"].get(measurment_mRID)
 
@@ -1136,7 +985,7 @@ def handle_start_simulation(config):
                             measurment_output["normal_limit"] = normal_limit
 
                         sim_output["Discrete"].append(measurment_output)
-            
+
             emit_threadsafe("sim-output", sim_output)
 
         def on_sim_log(headers, message):
@@ -1154,7 +1003,7 @@ def handle_start_simulation(config):
         return {"error": {"message": str(e)}}
 
 
-@desktop_socket_event("sim-input")
+@socketio.on("sim-input")
 def handle_sim_input(input_data):
     try:
         gridappsd_helper.send_simulation_input(input_data)
@@ -1163,7 +1012,7 @@ def handle_sim_input(input_data):
         return {"error": str(e)}
 
 
-@desktop_socket_event("pause-simulation")
+@socketio.on("pause-simulation")
 def handle_pause_simulation(sim_id):
     try:
         return gridappsd_helper.pause_simulation(sim_id)
@@ -1171,7 +1020,7 @@ def handle_pause_simulation(sim_id):
         return {"error": str(e)}
 
 
-@desktop_socket_event("resume-simulation")
+@socketio.on("resume-simulation")
 def handle_resume_simulation(sim_id):
     try:
         return gridappsd_helper.resume_simulation(sim_id)
@@ -1179,66 +1028,12 @@ def handle_resume_simulation(sim_id):
         return {"error": str(e)}
 
 
-@desktop_socket_event("stop-simulation")
+@socketio.on("stop-simulation")
 def handle_stop_simulation(sim_id):
     try:
         return gridappsd_helper.stop_simulation(sim_id)
     except Exception as e:
         return {"error": str(e)}
-
-
-# ================================================================================================
-# PARSE JOB ENDPOINTS
-# ================================================================================================
-# Only registered when a shared job store is configured; otherwise uploads are
-# synchronous and there is nothing to poll.
-
-
-def job_route(rule, **options):
-    if not ASYNC_UPLOADS:
-        return lambda fn: fn
-    return app.route(rule, **options)
-
-
-@job_route("/api/jobs/<job_id>", methods=["GET"])
-def get_job(job_id):
-    """Poll a parse job. Any replica can answer for any job."""
-    job = job_store.get(job_id)
-    if job is None:
-        # Also what an expired job looks like — jobs are TTL'd, not kept forever.
-        return jsonify({"error": "Unknown or expired job."}), 404
-
-    body = job.to_public_dict()
-
-    # How much work is waiting, so a queued user gets a reason for the wait
-    # rather than an indefinite spinner. Deliberately the current depth and
-    # not this job's position: position would mean walking the queue on
-    # every poll, and under the load this is here to survive that cost is
-    # paid by every waiting client at once.
-    if job.state == jobstore.QUEUED:
-        body["queueDepth"] = job_store.queue_depth()
-    return jsonify(body), 200
-
-
-@job_route("/api/jobs/<job_id>/result", methods=["GET"])
-def get_job_result(job_id):
-    """The finished payload, in the same shape a synchronous upload returns."""
-    job = job_store.get(job_id)
-    if job is None:
-        return jsonify({"error": "Unknown or expired job."}), 404
-    if job.state == jobstore.FAILED:
-        return jsonify({"error": job.error or "Parse failed."}), 500
-
-    # 409 rather than 404: the job exists, it just isn't finished. Lets the
-    # client tell "not yet" apart from "never was".
-    if job.state != jobstore.DONE:
-        return jsonify({"error": "Job is not finished.", "state": job.state}), 409
-
-    payload = job_store.result(job_id)
-    if payload is None:
-        return jsonify({"error": "Result expired."}), 410
-
-    return gzipped_json_response(payload)
 
 
 # ================================================================================================
@@ -1248,24 +1043,11 @@ def get_job_result(job_id):
 
 @app.route("/")
 def hello():
-    """Basic API information endpoint (also the container/LB health check)."""
-    body = {
+    """Basic API information endpoint (also the container health check)."""
+    return {
         "api": "GLIMPSE CIM-Graph Flask Backend",
         "version": "0.8.6",
-        "mode": "hosted" if HOSTED_MODE else "desktop",
-        "features": {
-            "mermaid": not HOSTED_MODE,
-            "gridappsd": not HOSTED_MODE,
-            "simulation": not HOSTED_MODE,
-            "asyncUploads": ASYNC_UPLOADS,
-        },
     }
-
-    # Surfaced for the load balancer's operators and for autoscaling: a depth
-    # that stays near maxDepth means the worker tier is undersized.
-    if ASYNC_UPLOADS:
-        body["queue"] = {"depth": job_store.queue_depth(), "maxDepth": MAX_QUEUE_DEPTH}
-    return body
 
 
 # ================================================================================================
@@ -1276,15 +1058,10 @@ if __name__ == "__main__":
     port = int(os.environ.get("FLASK_PORT", 5052))
     # Bind to loopback for local dev; containers set FLASK_HOST=0.0.0.0
     host = os.environ.get("FLASK_HOST", "127.0.0.1")
-    if HOSTED_MODE:
-        # Convenience only. The hosted deployment runs `gunicorn server:app`
-        # with several worker processes — see docker/ — and never reaches here.
-        app.run(host=host, port=port, debug=False)
-    else:
-        socketio.run(
-            app,
-            host=host,
-            port=port,
-            debug=False,
-            log_output=True,
-        )
+    socketio.run(
+        app,
+        host=host,
+        port=port,
+        debug=False,
+        log_output=True,
+    )

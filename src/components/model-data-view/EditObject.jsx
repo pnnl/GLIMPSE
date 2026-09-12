@@ -5,7 +5,7 @@ import AttributesTable from "./AttributesTable";
 import MermaidDiagram from "./MermaidDiagram";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import { API_BASE_URL, FEATURES } from "../../config";
+import { API_BASE_URL } from "../../config";
 import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
 import { errorText, notify } from "../../utils/notify";
 
@@ -89,22 +89,18 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
         return { id, elementType: type, attributes: { ...attrs.attributes } };
     });
     const [mermaidContent, setMermaidContent] = useState(() => {
-        if (!object || !isCIM || !FEATURES.mermaid) return null;
+        if (!object || !isCIM) return null;
         return getCachedMermaid(object.feederId, object.mRID);
     });
     const [mermaidLoading, setMermaidLoading] = useState(
-        () =>
-            Boolean(object) &&
-            isCIM &&
-            FEATURES.mermaid &&
-            !getCachedMermaid(object.feederId, object.mRID),
+        () => Boolean(object) && isCIM && !getCachedMermaid(object.feederId, object.mRID),
     );
     const [saving, setSaving] = useState(false);
     // Set when this object had no detail record shipped with the model, so one
     // has to be fetched. See the effect below.
     const [detailLoading, setDetailLoading] = useState(
         () =>
-            Boolean(object?.mRID && object?.feederId) && isCIM && !objectToEdit && FEATURES.objectLookup,
+            Boolean(object?.mRID && object?.feederId) && isCIM && !objectToEdit,
     );
     const [detailError, setDetailError] = useState(null);
 
@@ -113,7 +109,7 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
     const detailRequestRef = useRef(0);
 
     useEffect(() => {
-        if (!object || !isCIM || objectToEdit || !FEATURES.objectLookup) return;
+        if (!object || !isCIM || objectToEdit) return;
 
         // Without both ids there is nothing to ask for; detailLoading was
         // initialized false for exactly this case, so there is no state to undo.
@@ -149,10 +145,9 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
         fetchDetail();
     }, [object, isCIM, objectToEdit]);
 
-    // Diagram only. Attributes and associations came with the model, so nothing
-    // else here needs the network — and in hosted mode nothing here runs at all.
+    // Diagram only — the object's attributes and associations are already resolved.
     useEffect(() => {
-        if (!object || !isCIM || !FEATURES.mermaid) return;
+        if (!object || !isCIM) return;
 
         const { feederId, mRID } = object;
 
@@ -306,8 +301,8 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                     attributes={objectToEdit.attributes}
                     readOnlyAttributes={READ_ONLY_ATTRIBUTES}
                     onNavigate={onNavigate}
-                    onChange={FEATURES.editing ? handleChange : undefined}
-                    onSave={FEATURES.editing ? handleSave : undefined}
+                    onChange={handleChange}
+                    onSave={handleSave}
                     feederId={currentFeederId}
                     saving={saving}
                     liveRows={liveRows}
@@ -329,29 +324,24 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                           />
                       ),
                   },
-                  // Desktop only: the diagram is rendered from the live
-                  // cimgraph object, which the hosted backend does not retain.
-                  ...(FEATURES.mermaid
-                      ? [
-                            {
-                                key: "mermaid",
-                                label: "Diagram",
-                                children: mermaidLoading ? (
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            padding: "3rem",
-                                        }}
-                                    >
-                                        <Spin size="large" description="Loading diagram..." />
-                                    </div>
-                                ) : (
-                                    <MermaidDiagram mermaidContent={mermaidContent} objectID={heading} />
-                                ),
-                            },
-                        ]
-                      : []),
+                  // Rendered server-side from the live cimgraph object.
+                  {
+                      key: "mermaid",
+                      label: "Diagram",
+                      children: mermaidLoading ? (
+                          <div
+                              style={{
+                                  display: "flex",
+                                  justifyContent: "center",
+                                  padding: "3rem",
+                              }}
+                          >
+                              <Spin size="large" description="Loading diagram..." />
+                          </div>
+                      ) : (
+                          <MermaidDiagram mermaidContent={mermaidContent} objectID={heading} />
+                      ),
+                  },
               ]
             : []),
     ];

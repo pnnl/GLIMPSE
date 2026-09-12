@@ -1,23 +1,6 @@
 _INDENT = "\t"
 
 def _unrepresentable(text):
-    """Return a reason if this value cannot survive a GLM round-trip, else None.
-
-    Derived from measured behavior, not guessed. Three ways a value breaks:
-
-    - It starts or ends with a quote character. `_value_to_semicolon` strips
-      leading/trailing `'` and `"` off every value, so those characters do not
-      come back.
-    - It needs quoting (contains `;` or a newline) but itself contains a `"`.
-      The lexer's quoted-string branch ends at the first inner `"`, so the
-      quoted form is mis-lexed.
-    - It contains both a `;` and a newline. The quoted-string branch excludes
-      newline (that bound is what stops an unterminated quote swallowing the
-      rest of the file), so no quoting strategy covers this.
-
-    An interior `"` with no `;` or newline is fine: `3"x5` round-trips exactly.
-    Refusing it would make a model with an inch mark permanently un-exportable.
-    """
     if text[:1] in ('"', "'") or text[-1:] in ('"', "'"):
         return "starts or ends with a quote character, which the reader strips"
     if ";" in text or "\n" in text:

@@ -9,11 +9,9 @@ const Graph = () => {
     const { graphUpdateTrigger } = useGraph();
 
     useEffect(() => {
-        // loadGraph copies graphHelper.graph (standalone) into sigma's internal graph
         loadGraph(graphHelper.graph);
         console.log("graph loaded with order:", graphHelper.graph.order);
 
-        // Store sigma reference
         graphHelper.sigmaInstance = sigma;
 
         graphHelper.graph = sigma.getGraph();

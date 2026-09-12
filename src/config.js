@@ -32,15 +32,3 @@ export const REQUEST_TIMEOUT_MS = 30_000;
 export const PARSE_TIMEOUT_MS = 10 * 60_000;
 
 axios.defaults.timeout = REQUEST_TIMEOUT_MS;
-
-export const MODE = (runtimeEnv && runtimeEnv.MODE) || import.meta.env.VITE_GLIMPSE_MODE || "desktop";
-
-export const IS_HOSTED = MODE === "hosted";
-
-export const FEATURES = {
-    mermaid: !IS_HOSTED,
-    gridappsd: !IS_HOSTED,
-    simulation: !IS_HOSTED,
-    editing: !IS_HOSTED,
-    objectLookup: !IS_HOSTED,
-};

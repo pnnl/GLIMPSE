@@ -283,11 +283,10 @@ The finished installer is written to the `release/` directory. The installed app
 
 ### Deployment & Security Configuration
 
-> **Hosting GLIMPSE for several users?** See
-> [docs/HOSTED_DEPLOYMENT.md](docs/HOSTED_DEPLOYMENT.md). The defaults below
-> describe the desktop build, which is a _single-session_ server: one loaded
-> model shared by every connected client. Set `GLIMPSE_MODE=hosted` for the
-> multi-user web deployment.
+> [!NOTE]
+> GLIMPSE runs a _single-session_ server: one loaded model, shared by every
+> connected client. It is built for one user at a time, whether that is the
+> desktop app or a Docker container on a machine you control.
 
 The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the defaults below are safe as-is. **A networked deployment is different**: the Docker backend binds to `0.0.0.0`, which makes it reachable by any client that can route to the port. Because the backend has no per-user login, treat the following environment variables as required hardening before exposing it beyond localhost.
 

@@ -9,7 +9,6 @@ __version__ = "1.0.0"
 
 __all__ = ["load", "loads", "dump", "dumps", "version", "GlmParseError"]
 
-
 def loads(text):
     """Parse GLM source text into the AST dict."""
     return Parser(text).parse()

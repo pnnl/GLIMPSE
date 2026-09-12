@@ -1,11 +1,11 @@
-from collections import OrderedDict
-import os
 import logging
+import os
 import socket
-import json
 import time
+from collections import OrderedDict
 from collections.abc import Callable
 from enum import Enum
+
 from gridappsd import GridAPPSD, topics
 
 os.environ.setdefault("GRIDAPPSD_ADDRESS", "localhost")
@@ -233,7 +233,7 @@ class GridAPPSDHelper:
 
             if not self.sim_id:
                 raise GridAPPSDError(f"No simulation ID in response: {response}")
-            
+
             # get current limits for each model object
             for ps_conf in sim_config["power_system_configs"]:
                 message = {
@@ -247,7 +247,7 @@ class GridAPPSDHelper:
                 res = self.gapps.get_response(topics.CONFIG, message, timeout=30)
                 for current in res["data"]["limits"]["currents"]:
                     self.current_limit_map[current["id"]] = current
-            
+
             self.sim_state = SimulationState.RUNNING
             logger.info(f"Simulation started: {self.sim_id}")
             return {"simulation_id": self.sim_id, "state": self.sim_state.value}

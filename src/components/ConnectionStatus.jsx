@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Button, Tag, Tooltip } from "antd";
 import { DisconnectOutlined, ReloadOutlined } from "@ant-design/icons";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
-import { FEATURES } from "../config";
 import { notify } from "../utils/notify";
 
 /**
@@ -17,13 +16,11 @@ const ConnectionStatus = () => {
     // Seeded from the live socket: the singleton connects at import, before this
     // ever mounts, so the first connection-change may already have fired.
     const [state, setState] = useState(() => ({
-        connected: !FEATURES.simulation || socketClientHelper.isConnected(),
+        connected: socketClientHelper.isConnected(),
         exhausted: false,
     }));
 
     useEffect(() => {
-        if (!FEATURES.simulation) return undefined;
-
         const unsubConn = socketClientHelper.on("connection-change", ({ connected, exhausted }) => {
             setState((prev) => {
                 if (connected && !prev.connected) notify.success("Reconnected to the GLIMPSE server.");
@@ -44,7 +41,7 @@ const ConnectionStatus = () => {
         };
     }, []);
 
-    if (!FEATURES.simulation || state.connected) return null;
+    if (state.connected) return null;
 
     return (
         <Tooltip

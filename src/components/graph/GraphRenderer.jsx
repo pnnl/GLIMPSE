@@ -88,22 +88,28 @@ const dimEdgeAttrs = (attrs) => {
 };
 
 const GraphRenderer = () => {
-    const { graphUpdateTrigger, darkMode } = useGraph();
+    const { graphUpdateTrigger, darkMode, mapShown } = useGraph();
+
+    // Everything drawn on the canvas follows the background it sits on, not the
+    // app chrome. The leaflet map's tiles are light in both themes (see
+    // GraphControls), so while the map is up the graph keeps its light colors —
+    // otherwise dark mode's pale overhead lines all but vanish over the tiles.
+    const canvasDark = darkMode && !mapShown;
 
     useEffect(() => {
-        setCanvasDarkMode(darkMode);
-        setSeverityDarkMode(darkMode);
+        setCanvasDarkMode(canvasDark);
+        setSeverityDarkMode(canvasDark);
         // Repaints every element that is still carrying its themed color, which
         // is what makes the theme's light/dark color pairs take effect.
-        graphHelper.setDarkMode(darkMode);
-        areaHighlight.setDarkMode(darkMode);
+        graphHelper.setDarkMode(canvasDark);
+        areaHighlight.setDarkMode(canvasDark);
         if (graphHelper.sigmaInstance) graphHelper.sigmaInstance.refresh();
         // The DOM panels rendered inside the SigmaContainer read their colors from
         // the module state set above (the flattened theme, the severity scale).
         // Their own render pass runs before this effect, so a darkMode-keyed effect
         // in them would read the previous mode's colors — they wait on this instead.
         window.dispatchEvent(new CustomEvent("graph-theme-changed"));
-    }, [darkMode]);
+    }, [canvasDark]);
 
     const BorderImageNodeProgram = useMemo(() => {
         const NodeBorderCustomProgram = createNodeBorderProgram({

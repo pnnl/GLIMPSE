@@ -1,9 +1,11 @@
-from glmparser import dump as glm_dump
-from glmparser import load as glm_load
-from werkzeug.utils import secure_filename
+import io
 import os
 import zipfile
-import io
+
+from werkzeug.utils import secure_filename
+
+from glmparser import dump as glm_dump
+from glmparser import load as glm_load
 
 
 class GLMHelper:

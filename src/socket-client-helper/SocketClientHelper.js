@@ -1,22 +1,6 @@
 import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
-import { API_BASE_URL, API_TOKEN, FEATURES } from "../config";
-
-const NO_SIMULATION_MESSAGE = "Simulation is not available in this deployment.";
-
-const inertSocket = () => ({
-    id: null,
-    connected: false,
-    on: () => {},
-    off: () => {},
-    connect: () => {},
-    disconnect: () => {},
-    emit: (_event, ..._args) => {
-        // The last argument is the ack callback when the caller expects a reply.
-        const ack = _args[_args.length - 1];
-        if (typeof ack === "function") ack({ error: NO_SIMULATION_MESSAGE });
-    },
-});
+import { API_BASE_URL, API_TOKEN } from "../config";
 
 export const DEFAULT_POWER_SYSTEM_CONFIG = {
     SubGeographicalRegion_name: "",
@@ -124,11 +108,6 @@ class SocketClientHelper {
     };
 
     constructor(serverUrl = API_BASE_URL) {
-        if (!FEATURES.simulation) {
-            this.socket = inertSocket();
-            return;
-        }
-
         this.socket = io(serverUrl, {
             auth: API_TOKEN ? { token: API_TOKEN } : {},
             reconnection: true,

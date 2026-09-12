@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Button, Tooltip, Space } from "antd";
 import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
 import { useWorkerLayoutForceAtlas2 } from "@react-sigma/layout-forceatlas2";
 import bindLeafletLayer from "@sigma/layer-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { BiZoomIn, BiZoomOut } from "react-icons/bi";
 import { MdFilterCenterFocus, MdFullscreen, MdFullscreenExit, MdOutlineMap } from "react-icons/md";
@@ -13,33 +12,18 @@ import { useGraph } from "../../contexts/GraphContext";
 import { useShortcut } from "../../hooks/useShortcut";
 import "../../styles/GraphControls.css";
 
-// Tile sources for the map background: OSM standard in light mode, CARTO's
-// dark-matter tiles in dark mode. Both hosts must stay allowed in the CSP
-// img-src of index.html.
-const MAP_TILES = {
-    light: {
-        urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    },
-    dark: {
-        urlTemplate: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-        attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
+const MAP_TILE_LAYER = {
+    urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 };
 
 const GraphControls = () => {
-    const { darkMode } = useGraph();
+    const { darkMode, mapShown, setMapShown } = useGraph();
     const sigma = useSigma();
     const { zoomIn, zoomOut } = useCamera();
     const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
 
-    // Map background (only for graphs whose x/y are real lon/lat). Binding the
-    // leaflet layer reprojects every node's x/y to the map's coordinate space,
-    // so the pre-map positions are saved and restored on unbind — otherwise a
-    // later remount (or an export) would see the projected coordinates.
-    const [mapShown, setMapShown] = useState(false);
     const mapLayerRef = useRef(null); // { clean, map, ... } returned by bindLeafletLayer
     const savedPositionsRef = useRef(null); // Map<nodeId, {x, y}> captured before binding
 
@@ -61,51 +45,24 @@ const GraphControls = () => {
     // Make sure the worker is torn down when the controls unmount.
     useEffect(() => () => kill(), [kill]);
 
-    // Read through a ref so bindMap itself never changes identity. The re-bind
-    // effect below keys on the sigma instance alone; if bindMap changed with
-    // darkMode, that effect would fire during the theme render — while
-    // useSigma() still returns the instance about to be destroyed — which is
-    // the crash it exists to avoid.
-    const darkModeRef = useRef(darkMode);
-    useEffect(() => {
-        darkModeRef.current = darkMode;
-    }, [darkMode]);
-
     // Takes the instance explicitly rather than closing over `sigma`, so a
     // caller always binds to the instance it has actually checked.
     const bindMap = useCallback((instance) => {
         mapLayerRef.current = bindLeafletLayer(instance, {
-            tileLayer: MAP_TILES[darkModeRef.current ? "dark" : "light"],
+            tileLayer: MAP_TILE_LAYER,
         });
 
-        // bindLeafletLayer projects node x/y into the map's coordinate space,
-        // but sigma keeps normalizing the render through the custom bbox that
-        // GraphEvents pinned from the *original* coordinates, so the layer's
-        // first sync flings map and camera to a nonsense location. Drop the
-        // stale bbox and re-render — normalization then follows the projected
-        // coordinates (GraphEvents re-pins the bbox from them) — and reframe;
-        // the layer's afterRender hook flies the map to the matching view.
         instance.setCustomBBox(null);
         instance.refresh();
         instance.getCamera().setState({ x: 0.5, y: 0.5, ratio: 1, angle: 0 });
     }, []);
 
-    // `restoreView: false` is the unmount path: React tears down parents first,
-    // so the sigma instance is already killed — touching its bbox/camera there
-    // schedules a render on the dead instance and crashes. Restoring the node
-    // positions is still needed (the graph object survives into the next mount).
     const unbindMap = useCallback((restoreView = true) => {
         if (mapLayerRef.current) {
             mapLayerRef.current.clean();
             mapLayerRef.current = null;
         }
 
-        // Restore positions by node id into whatever graph is CURRENT, via the
-        // graphHelper singleton. Instances captured at bind time can be
-        // orphaned before the map is turned off: toggling dark mode hands
-        // react-sigma a new settings object, which rebuilds the whole Sigma
-        // instance (and its graph) while the map stays bound. On a new-file
-        // load the node ids won't match and this is a harmless no-op.
         const positions = savedPositionsRef.current;
         if (positions) {
             graphHelper.graph.updateEachNodeAttributes((node, attrs) => {
@@ -133,38 +90,6 @@ const GraphControls = () => {
         mapShownRef.current = mapShown;
     }, [mapShown]);
 
-    // Dark mode: swap the tile source on the existing leaflet map.
-    //
-    // This used to clean the layer and re-bind it, which crashed. Toggling the
-    // theme hands react-sigma a new settings object, so it tears down and
-    // rebuilds the Sigma instance — and because this component lives *inside*
-    // SigmaContainer, React runs this effect before the parent's, while
-    // useSigma() still returns the instance that is about to be killed.
-    // Re-binding there called setCustomBBox/refresh/setState on a dying
-    // instance, which is precisely the crash unbindMap's `restoreView` flag
-    // exists to avoid. Only models with real coordinates offer the map at all,
-    // which is why this only ever showed up on IEEE 9500.
-    //
-    // Swapping tiles touches leaflet only, never sigma, so it is safe whatever
-    // state the instance is in. Re-binding to the rebuilt instance is handled
-    // separately, below, once that instance actually exists.
-    useEffect(() => {
-        const layer = mapLayerRef.current;
-        if (!layer?.map) return;
-
-        const { urlTemplate, attribution } = MAP_TILES[darkMode ? "dark" : "light"];
-        layer.map.eachLayer((existing) => {
-            if (existing instanceof L.TileLayer) layer.map.removeLayer(existing);
-        });
-        L.tileLayer(urlTemplate, { attribution }).addTo(layer.map);
-    }, [darkMode]);
-
-    // Re-bind after react-sigma replaces the Sigma instance (which the theme
-    // toggle does). By the time `sigma` is a new object the container has
-    // finished building it, so this is the first point at which binding is
-    // safe. The old instance's own "kill" handler already cleaned its layer;
-    // node x/y are recomputed from the lat/lng the builder stamped, so the
-    // positions survive the round trip.
     useEffect(() => {
         if (!mapShownRef.current || !sigma) return;
         if (mapLayerRef.current) mapLayerRef.current.clean();

@@ -29,6 +29,17 @@ import {
 
 const newGraph = () => new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
 
+// Hints for every bulk updateEachEdgeAttributes below. Without them sigma takes
+// its "repaint in place" path, which reuses the program index it built during
+// the last process() — and throws `edge "<id>" can't be repaint` if that index
+// is stale. Any sigma.setSetting clears the index and defers the reprocess to
+// the next frame, so a bulk repaint landing in that gap crashes the renderer:
+// binding the leaflet map does exactly that (@sigma/layer-leaflet calls
+// setSetting on every map move to keep the zoom bounds in sync). Naming a
+// layout-impacting attribute makes sigma reindex instead. Sigma applies the
+// same default to node updates already, which is why only edges need this.
+const EDGE_REINDEX_HINT = { attributes: ["zIndex"] };
+
 class GraphHelper {
     // private
     #boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
@@ -179,11 +190,14 @@ class GraphHelper {
             };
         });
 
-        this.graph.updateEachEdgeAttributes((id, edge) => {
-            const themed = this.#theme.edgeOptions?.[edge.group];
-            if (!themed) return edge;
-            return { ...edge, color: themed.color ?? edge.color };
-        });
+        this.graph.updateEachEdgeAttributes(
+            (id, edge) => {
+                const themed = this.#theme.edgeOptions?.[edge.group];
+                if (!themed) return edge;
+                return { ...edge, color: themed.color ?? edge.color };
+            },
+            EDGE_REINDEX_HINT,
+        );
 
         return true;
     };
@@ -297,7 +311,7 @@ class GraphHelper {
         const hide = (_id, attrs) => (attrs.group === group ? { ...attrs, hidden: true } : attrs);
 
         if (type === "node") this.graph.updateEachNodeAttributes(hide);
-        else if (type === "edge") this.graph.updateEachEdgeAttributes(hide);
+        else if (type === "edge") this.graph.updateEachEdgeAttributes(hide, EDGE_REINDEX_HINT);
     };
 
     // ── Focus (see edge-focus.js) ───────────────────────────────────────────
@@ -538,7 +552,7 @@ class GraphHelper {
                 color: themed?.color ?? edge.color,
                 size: themed?.size ?? edge.size,
             };
-        });
+        }, EDGE_REINDEX_HINT);
 
         this.graph.updateEachNodeAttributes((id, node) => ({
             ...node,

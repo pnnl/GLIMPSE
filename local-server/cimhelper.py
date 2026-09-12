@@ -1,40 +1,24 @@
-import os
 import json
+import os
 import threading
-from uuid import UUID
 from dataclasses import fields, is_dataclass
-from SPARQLWrapper import JSON as SPARQL_JSON, POST as SPARQL_POST, SPARQLWrapper
-from cimgraph.databases.blazegraph.blazegraph import BlazegraphConnection
-from cimgraph.models.feeder_model import FeederModel
-import cimgraph.utils as cim_utils
-from cimgraph.databases.fileparsers.xml_parser import XMLFile
+from uuid import UUID
+
 import cimgraph.data_profile.cimhub_2023 as cim
+import cimgraph.utils as cim_utils
+from cimgraph.databases.blazegraph.blazegraph import BlazegraphConnection
+from cimgraph.databases.fileparsers.xml_parser import XMLFile
+from cimgraph.models.feeder_model import FeederModel
+from SPARQLWrapper import JSON as SPARQL_JSON
+from SPARQLWrapper import POST as SPARQL_POST
+from SPARQLWrapper import SPARQLWrapper
+
 import cimgraph_patch
 
 # Speeds up cimgraph's edge construction — see cimgraph_patch for what it
 # replaces and why it is safe. Byte-identical output; set GLIMPSE_CIMGRAPH_PATCH=0
 # to run on the library's own implementation instead.
 cimgraph_patch.apply()
-
-HOSTED_MODE = os.environ.get("GLIMPSE_MODE", "desktop").strip().lower() == "hosted"
-MEASUREMENT_CLASSES = frozenset({"Analog", "Discrete"})
-
-
-class MeasurementFreeXMLFile(XMLFile):
-    @staticmethod
-    def _class_name(element) -> str:
-        return element.tag.split("}")[-1]
-
-    def parse_nodes(self, element):
-        if self._class_name(element) in MEASUREMENT_CLASSES:
-            return None
-        return super().parse_nodes(element)
-
-    def parse_edges(self, element):
-        if self._class_name(element) in MEASUREMENT_CLASSES:
-            return None
-        return super().parse_edges(element)
-
 
 def _env_default(name: str, value: str) -> None:
     if not os.environ.get(name, "").strip():
@@ -273,10 +257,7 @@ class CIMHelper:
             cim_utils.get_all_location_data(self.FEEDERS[feeder_id])
         elif filepath is not None:
             # For regular CIM file reading without multi-feeder support
-            # Hosted mode is model exploration only, so it never parses the
-            # measurements it has no feature to spend them on.
-            xml_reader = MeasurementFreeXMLFile if HOSTED_MODE else XMLFile
-            cim_file = xml_reader(filepath)
+            cim_file = XMLFile(filepath)
             filename = os.path.basename(filepath)
             self.FEEDERS[filename] = FeederModel(container=cim.Feeder(), connection=cim_file)
             feeder_id = filename
@@ -425,7 +406,7 @@ class CIMHelper:
                             "step": transformer_end.RatioTapChanger.step,
                             "tap": transformer_end.RatioTapChanger.mRID,
                         }
-                        
+
                     new_edge["attributes"]["class_type"] = "regulator"
                     break
 
@@ -556,10 +537,7 @@ class CIMHelper:
 
         # Build measurement map: measurement MRID -> equipment info
         # This is used to map simulation output measurements to CIM objects.
-        # Hosted mode has no simulation and no measurements parsed, so there is
-        # nothing to map.
-        if not HOSTED_MODE:
-            self._build_measurement_map(feeder_id)
+        self._build_measurement_map(feeder_id)
         self.object_index[feeder_id] = {
             obj["attributes"]["id"]: {
                 "name": obj["attributes"].get("name", ""),

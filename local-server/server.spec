@@ -1,7 +1,7 @@
-# -*- mode: python ; coding: utf-8 -*-
+import sys
 
 from PyInstaller.utils.hooks import collect_data_files
-import sys
+
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = []

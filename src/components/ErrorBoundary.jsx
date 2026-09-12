@@ -1,14 +1,6 @@
 import React from "react";
 import { Button, Result, Typography } from "antd";
 
-/**
- * Last line of defence for a render that throws.
- *
- * Without this, one bad node in a model payload — or any other throw during
- * render — unmounts the whole tree and leaves a blank page with no way back.
- * The graph lives in a module singleton rather than React state, so remounting
- * the tree is not enough to recover; a reload is the honest offer.
- */
 class ErrorBoundary extends React.Component {
     state = { error: null };
 

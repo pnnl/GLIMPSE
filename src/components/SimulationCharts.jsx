@@ -193,11 +193,6 @@ const SimulationCharts = () => {
         itemStyle: { color },
     });
 
-    // The render options carry styling only — no `data` keys. With
-    // notMerge={false}, echarts merges the new option and keeps the series
-    // data it already has, so a re-render (e.g. dark mode toggle) never wipes
-    // the live chart lines. The accumulated buffers themselves are re-applied
-    // imperatively in the effect below.
     const voltageOption = {
         backgroundColor: bg,
         textStyle: { color: text },
@@ -229,14 +224,6 @@ const SimulationCharts = () => {
         ],
     };
 
-    // After every commit, push the accumulated buffers back into the charts.
-    // Renders are rare here (theme/layout changes) — streaming updates flow
-    // through processOutput without re-rendering this component.
-    //
-    // Skipped while a buffer is empty: on first mount echarts-for-react hasn't
-    // applied the base option yet (its init is async), and a data-only merge
-    // against that bare chart crashes echarts ("Unknown series undefined") —
-    // and with nothing accumulated there is nothing to restore anyway.
     useEffect(() => {
         const v = vd.current;
         const l = ld.current;
@@ -258,8 +245,6 @@ const SimulationCharts = () => {
             ],
         });
 
-        // Restore the scroll window too — re-applying the option can reset the
-        // zoom, which would silently drag a user who had scrolled back.
         syncVoltage();
         syncLoad();
     }, [syncVoltage, syncLoad]);

@@ -1,6 +1,7 @@
-import jsonschema
 import json
 import os
+
+import jsonschema
 
 
 class JSONHelper:

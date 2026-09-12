@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_BASE_URL, FEATURES } from "../config";
+import { API_BASE_URL } from "../config";
 import graphHelper from "../graph-helper/GraphHelper";
 
 /**
@@ -10,7 +10,7 @@ import graphHelper from "../graph-helper/GraphHelper";
  *   the backend keyed the parse by.
  */
 export const loadAgentRoster = async (modelId) => {
-    if (!modelId || !FEATURES.gridappsd) return;
+    if (!modelId) return;
 
     try {
         const { data } = await axios.get(`${API_BASE_URL}/api/gridappsd/agents`, {

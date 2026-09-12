@@ -1,4 +1,5 @@
 import uuid
+
 from .lexer import EOF, Lexer
 
 # A value stops at any of these; `rbrace` and EOF are tolerated so a final

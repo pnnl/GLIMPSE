@@ -42,5 +42,3 @@ CLAUDE.md
 release/
 local-server/build/
 
-# Local TLS certs for the hosted stack (generated, never committed)
-docker/certs/

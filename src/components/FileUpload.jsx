@@ -7,7 +7,6 @@ import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
-import { awaitParseJob, isJobHandoff } from "../utils/parse-job";
 
 const { Dragger } = Upload;
 
@@ -87,7 +86,6 @@ const FileUpload = ({ closeModal }) => {
     // Set once the bytes are up and the server is parsing. Distinct from
     // `progress`, which only tracks the transfer — a big CIM model spends
     // seconds uploading and minutes parsing.
-    const [status, setStatus] = useState(null);
     const [error, setError] = useState(null);
     // Aborts the upload and the job poll together — on unmount, and on Cancel.
     const abortRef = useRef(null);
@@ -129,9 +127,8 @@ const FileUpload = ({ closeModal }) => {
         try {
             setUploading(true);
             setProgress(0);
-            setStatus(null);
 
-            let { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
+            const { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
                 signal: controller.signal,
                 timeout: PARSE_TIMEOUT_MS,
                 onUploadProgress: (progressEvent) => {
@@ -141,18 +138,6 @@ const FileUpload = ({ closeModal }) => {
             });
 
             if ("error" in response) throw new Error(response.error);
-
-            // The hosted backend hands large CIM parses to a worker and answers
-            // with a job instead of a model. Poll it out to the same payload a
-            // synchronous upload would have returned.
-            if (isJobHandoff(response)) {
-                setStatus("Queued…");
-                response = await awaitParseJob(response.jobId, {
-                    onProgress: setStatus,
-                    signal: controller.signal,
-                });
-                if (response && "error" in response) throw new Error(response.error);
-            }
 
             if (graphHelper.graph.order > 0) {
                 graphHelper.clearGraphData();
@@ -202,7 +187,6 @@ const FileUpload = ({ closeModal }) => {
         } finally {
             abortRef.current = null;
             setUploading(false);
-            setStatus(null);
             timerRef.current = setTimeout(() => setProgress(0), 500);
         }
     };
@@ -245,17 +229,15 @@ const FileUpload = ({ closeModal }) => {
                 </p>
                 {uploading && (
                     <div style={{ padding: "0 24px", marginTop: 8 }}>
-                        {/* Once parsing starts the transfer bar is finished and
-                            meaningless, so show the server's status instead. */}
-                        {status ? (
-                            <Progress percent={100} size="small" status="active" showInfo={false} />
+                        {progress === 100 ? (
+                            <>
+                                <Progress percent={100} size="small" status="active" showInfo={false} />
+                                <p className="ant-upload-hint" style={{ fontSize: 12, marginTop: 4 }}>
+                                    Parsing model…
+                                </p>
+                            </>
                         ) : (
                             <Progress percent={progress} size="small" />
-                        )}
-                        {status && (
-                            <p className="ant-upload-hint" style={{ fontSize: 12, marginTop: 4 }}>
-                                {status}
-                            </p>
                         )}
                         <Button
                             size="small"
