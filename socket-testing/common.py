@@ -61,6 +61,11 @@ def _register_broadcast_loggers(sio):
     def _on_del_edge(data):
         print(f"   broadcast 'delete-edge' received: {data}")
 
+    @sio.on("agents-update")
+    def _on_agents_update(data):
+        agents = data.get("agents", []) if isinstance(data, dict) else []
+        print(f"   broadcast 'agents-update' received ({len(agents)} agents)")
+
 
 def connect(url=DEFAULT_URL, log_broadcasts=True):
     """Create + connect a SocketIO client, exiting with a helpful message on failure."""

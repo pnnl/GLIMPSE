@@ -8,8 +8,9 @@ import GridAPPSDModelForm from "../forms/GridAPPSDModelForm";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import { API_BASE_URL } from "../../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../../config";
 import { confirmDiscardChanges, errorText } from "../../utils/notify";
+import { loadAgentRoster } from "../../utils/agent-api";
 
 const LoadModelModal = ({ onMount }) => {
     const [open, setOpen] = useState(true);
@@ -65,23 +66,15 @@ const LoadModelModal = ({ onMount }) => {
             key: "example-models",
             children: <ExampleModels closeModal={() => setOpen(false)} />,
         },
-        // Hidden entirely when the broker isn't reachable (see the status
-        // check above).
-        ...(gridappsdAvailable
-            ? [
-                  {
-                      label: "Load w/ GridAPPS-D",
-                      key: "load-gridappsd",
-                      children: (
-                          <GridAPPSDModelForm
-                              initialConnected
-                              onModelSelect={handleModelSelect}
-                          />
-                      ),
-                  },
-              ]
-            : []),
     ];
+
+    if (gridappsdAvailable) {
+        ITEMS.push({
+            label: "Load w/ GridAPPS-D",
+            key: "load-gridappsd",
+            children: <GridAPPSDModelForm initialConnected onModelSelect={handleModelSelect} />,
+        });
+    }
 
     useEffect(() => {
         if (onMount) {
@@ -105,6 +98,7 @@ const LoadModelModal = ({ onMount }) => {
                 selectedGridappsdModels.map((m) => m.modelId),
                 {
                     headers: { "Content-Type": "application/json" },
+                    timeout: PARSE_TIMEOUT_MS,
                 },
             );
             const { data: response } = await resPromise;
@@ -125,11 +119,13 @@ const LoadModelModal = ({ onMount }) => {
             // feeder_id still takes precedence (see resolveFeederIdFromGraph).
             graphHelper.currentFeederID = selectedGridappsdModels[0]?.modelId ?? null;
             graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setObjectDetails(response.objectDetails);
             graphHelper.setGraphData(response.data ?? response);
+            // Before graph-loaded, so the agent panel and views are populated by
+            // the time they resync on that event.
+            await loadAgentRoster(graphHelper.currentFeederID);
             newGraphUpdate();
-            window.dispatchEvent(
-                new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }),
-            );
+            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "gridappsd" } }));
             // Drop any previous run first (stops it, clears its id and logs), then
             // flip to idle: only a model loaded through GridAPPS-D gets the
             // simulation lifecycle controls and log panel, and they gate on this
@@ -141,9 +137,7 @@ const LoadModelModal = ({ onMount }) => {
             // Inline (not a toast): a CIM pull can take minutes, and the user is
             // still looking at this modal when it fails.
             console.error("GridAPPS-D model load failed:", e);
-            setError(
-                errorText(e, "The server could not build a graph from the selected model(s)."),
-            );
+            setError(errorText(e, "The server could not build a graph from the selected model(s)."));
         } finally {
             setLoading(false);
             setLoadProgress(null);

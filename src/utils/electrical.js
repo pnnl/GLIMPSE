@@ -1,21 +1,3 @@
-// ============================================================================
-// electrical.js — turns raw simulation measurements into the quantities an
-// engineer actually reads: per-unit voltage and percent loading, plus a
-// severity classification for each.
-// ============================================================================
-// Pure and dependency-free (like live-measurements.js) so graphHelper can
-// import it without creating a cycle. Nothing here mutates model state.
-//
-// Inputs come from graphHelper.liveMeasurements:
-//   nodes: id -> { voltage: { <phase>: { magnitude, angle } } }        (PNV, volts)
-//   edges: id -> { power: { <phase>: {...} }, apparent, normalLimit }  (VA, amps)
-//
-// UNITS WARNING: `normalLimit` is an ampere rating (GridAPPS-D serves it from
-// `limits.currents`, i.e. CIM CurrentLimit), while the measurements are apparent
-// power in VA. Loading is therefore a *current* ratio and needs a voltage to
-// convert: I = S / V per phase. Dividing VA by amps directly is dimensionally
-// meaningless — see summarizeEdgeLoading.
-
 // ── Voltage limits ──────────────────────────────────────────────────────────
 // ANSI C84.1 service voltage limits, expressed per-unit. Range A is the normal
 // operating band; Range B is the wider band that is tolerable but should be
@@ -32,36 +14,35 @@ export const LOADING_LIMITS = {
     overloaded: 1.0, // above the normal rating
 };
 
-// ── Severity palette ────────────────────────────────────────────────────────
-// Chosen to stay distinguishable on both the light and dark canvas, and to
-// avoid colliding with the model's own theme colors (which are mostly
-// blue/orange/green Okabe-Ito tones at low saturation).
+let _darkMode = false;
+
+export const setSeverityDarkMode = (value) => {
+    _darkMode = Boolean(value);
+};
+
+/** A severity whose `color` follows the active canvas theme. */
+const severity = (level, label, light, dark) => ({
+    level,
+    label,
+    get color() {
+        return _darkMode ? dark : light;
+    },
+});
+
 export const SEVERITY = {
-    normal: { level: "normal", label: "Normal", color: "#3aa757" },
-    low: { level: "low", label: "Undervoltage", color: "#f2a93b" },
-    high: { level: "high", label: "Overvoltage", color: "#f2a93b" },
-    severeLow: { level: "severeLow", label: "Severe undervoltage", color: "#d7263d" },
-    severeHigh: { level: "severeHigh", label: "Severe overvoltage", color: "#8e44ad" },
-    elevated: { level: "elevated", label: "Elevated loading", color: "#f2a93b" },
-    overloaded: { level: "overloaded", label: "Overloaded", color: "#d7263d" },
-    unknown: { level: "unknown", label: "No data", color: "#919191" },
+    normal: severity("normal", "Normal", "#4F6470", "#7E94A6"),
+    low: severity("low", "Undervoltage", "#3E8FD0", "#5BB4EE"),
+    high: severity("high", "Overvoltage", "#C77700", "#E69F00"),
+    severeLow: severity("severeLow", "Severe undervoltage", "#0A56B8", "#2E86FF"),
+    severeHigh: severity("severeHigh", "Severe overvoltage", "#A31515", "#FF5C4D"),
+    elevated: severity("elevated", "Elevated loading", "#C77700", "#E69F00"),
+    overloaded: severity("overloaded", "Overloaded", "#A31515", "#FF5C4D"),
+    unknown: severity("unknown", "No data", "#AFB6BA", "#5E6469"),
 };
 
 /** True for the classifications that should count as a violation. */
 export const isViolation = (severity) =>
     severity != null && severity.level !== "normal" && severity.level !== "unknown";
-
-// ── Base voltage resolution ─────────────────────────────────────────────────
-// Per-unit needs a base. Two sources, in order:
-//
-//   1. An explicit nameplate attribute. GridLAB-D models carry
-//      `nominal_voltage` (line-to-neutral, matching PNV) directly on the node.
-//   2. Inference from the measurement itself. CIM/GridAPPS-D models don't
-//      expose a numeric base on the node — cimhelper stringifies BaseVoltage to
-//      its *name* — so the observed magnitude is snapped to the nearest standard
-//      line-to-neutral distribution voltage.
-//
-// Inference is deliberately conservative: see snapToStandardBase.
 
 const BASE_VOLTAGE_KEYS = [
     "nominal_voltage",
@@ -268,9 +249,6 @@ export const summarizeEdgeLoading = (live, phaseVoltages) => {
         phases: [],
         worst: null,
         ratio: null,
-        // Without a rating (or a voltage to convert with) there is nothing to be
-        // over, so severity is unknown rather than normal — the UI shows power
-        // but withholds a loading verdict.
         severity: SEVERITY.unknown,
     };
 
@@ -329,19 +307,7 @@ export const formatAmps = (amps) =>
 
 export const formatPu = (pu) => (Number.isFinite(pu) ? pu.toFixed(3) : "-");
 
-export const formatPercent = (ratio) =>
-    Number.isFinite(ratio) ? `${(ratio * 100).toFixed(0)}%` : "-";
-
-// ── Loading → visual scale ──────────────────────────────────────────────────
-// How hard a conductor is working drives its drawn width and flow-dot speed.
-//
-// Both use a sqrt response rather than linear: on a real feeder the trunk
-// carries most of the load and the laterals run lightly loaded, so a linear map
-// bunches almost every edge at the thin end and wastes the scale.
-//
-// The endpoints are pinned by tests — an earlier version divided volt-amperes by
-// an ampere rating, and when that was corrected the multiplier was left
-// uncalibrated, collapsing every edge to a hairline.
+export const formatPercent = (ratio) => (Number.isFinite(ratio) ? `${(ratio * 100).toFixed(0)}%` : "-");
 
 export const EDGE_WIDTH_MIN = 1.5; // energized but essentially unloaded
 export const EDGE_WIDTH_MAX = 6; // at or beyond EDGE_LOADING_FULL_SCALE
@@ -368,7 +334,10 @@ export const dotSpeedForLoading = (ratio) =>
 
 // Rows for the violation-mode legend panel, in worsening order.
 export const VIOLATION_LEGEND = [
-    { severity: SEVERITY.normal, hint: `${VOLTAGE_LIMITS.rangeA.min}–${VOLTAGE_LIMITS.rangeA.max} p.u.` },
+    {
+        severity: SEVERITY.normal,
+        hint: `${VOLTAGE_LIMITS.rangeA.min}–${VOLTAGE_LIMITS.rangeA.max} p.u.`,
+    },
     { severity: SEVERITY.low, hint: `< ${VOLTAGE_LIMITS.rangeA.min} p.u. (ANSI Range B)` },
     { severity: SEVERITY.high, hint: `> ${VOLTAGE_LIMITS.rangeA.max} p.u. (ANSI Range B)` },
     { severity: SEVERITY.severeLow, hint: `< ${VOLTAGE_LIMITS.rangeB.min} p.u.` },

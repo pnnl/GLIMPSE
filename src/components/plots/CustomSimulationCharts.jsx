@@ -8,8 +8,6 @@ import PlotCreatorModal from "./PlotCreatorModal";
 import "../../styles/CustomPlots.css";
 import { notify } from "../../utils/notify";
 
-// Fold one measurement descriptor into the catalog, grouped as
-// catalog[measurementType][equipmentName] = { equipmentType, phases: { <phase>: mRID } }.
 const indexMeasurement = (catalog, m) => {
     const type = m.measurement_type;
     const name = m.equipment_name;
@@ -36,9 +34,6 @@ const CustomSimulationCharts = () => {
     const [catalog, setCatalog] = useState({});
     const [loadingCatalog, setLoadingCatalog] = useState(false);
 
-    // Fetch the measurement map the backend builds at CIM model-load time, so the
-    // picker is populated before a simulation ever starts (no dependency on the
-    // live output stream). Empty for non-CIM models.
     const openCreator = async () => {
         setCreatorOpen(true);
         setLoadingCatalog(true);

@@ -1,22 +1,12 @@
-// Decoding a GridAPPS-D simulation tick onto the graph.
-//
-// A `sim-output` message carries Analog measurements (PNV bus voltages, VA power
-// flows) and Discrete ones (switch position, capacitor sections). The numbers
-// land in the ephemeral `liveMeasurements` overlay — never in a model's own
-// `attributes` — and drive the flow animation, the hover vitals and, when the
-// user turns it on, violation-mode coloring.
-
 import { hoverPayload } from "./element-factory";
 import { edgeLoadingSummary, nodeVitals, refreshNodeHover } from "./measurements";
 import { cleanPhase } from "../utils/live-measurements";
 import { dotSpeedForLoading, edgeWidthForLoading } from "../utils/electrical";
 
-// Real part of the complex power below this (in VA) is treated as zero so we
-// don't pick a flow direction off of numerical noise.
 const FLOW_THRESHOLD = 1e-6;
 
-const SWITCH_CLOSED_COLOR = "#ff0000";
-const SWITCH_OPEN_COLOR = "#4aff4a";
+const SWITCH_CLOSED_COLOR = "#E04A1F";
+const SWITCH_OPEN_COLOR = "#1F9E6E";
 const NO_FLOW_COLOR = "rgba(145, 145, 145, 0.7)";
 
 // A value of 0 means the switch is open; anything else means closed.
@@ -62,18 +52,6 @@ const recordVoltages = (graph, live, analog) => {
 
 // ── Analog: power flow on edges (VA) ────────────────────────────────────────
 
-/**
- * On a one-line diagram a single edge carries several VA measurements (one per
- * phase). The true power flow is the complex sum of all of them, so this stores
- * the per-phase readings and then aggregates each touched edge from its *full*
- * persisted phase map — a tick may carry only a subset of an edge's phases,
- * which would understate the total.
- *
- * magnitude/angle describe the polar form of each complex VA measurement
- * (angle is in degrees).
- *
- * @returns {Map<string, {real: number, imag: number, normalLimit: number|undefined}>}
- */
 const recordPowerFlows = (graph, live, analog) => {
     const touched = new Set();
 
@@ -121,11 +99,6 @@ const recordPowerFlows = (graph, live, analog) => {
     return sums;
 };
 
-/**
- * Direction follows the sign of the real part of the summed power; when the real
- * part is ~0 fall back to the imaginary part. Same sign->direction mapping for
- * either: positive = from->to (forward), 0 = no flow.
- */
 const flowDirectionOf = ({ real, imag }) => {
     if (Math.abs(real) >= FLOW_THRESHOLD) return real > 0 ? 1 : -1;
     if (Math.abs(imag) >= FLOW_THRESHOLD) return imag > 0 ? 1 : -1;
@@ -135,8 +108,6 @@ const flowDirectionOf = ({ real, imag }) => {
 const animateFlow = (graph, live, theme, sums) => {
     for (const [edgeID, sum] of sums) {
         graph.updateEdgeAttributes(edgeID, (edgeAttrs) => {
-            // Don't animate icon edges (switch/regulator/transformer, straight or
-            // curved) — that would replace their custom symbol program.
             if (edgeAttrs.iconType) return edgeAttrs;
 
             const flowDirection = flowDirectionOf(sum);
@@ -149,14 +120,7 @@ const animateFlow = (graph, live, theme, sums) => {
             }
 
             edgeAttrs.type = "animated";
-            // Restore the edge's theme color in case it was greyed out while it
-            // had no flow on a previous tick.
             edgeAttrs.color = theme.edgeOptions[edgeAttrs.group]?.color ?? edgeAttrs.color;
-
-            // Line thickness and dot speed track how hard the conductor is
-            // working, using the same current ratio as the loading readout. The
-            // mapping is calibrated in utils/electrical (and pinned by tests) so
-            // it stays within a visible range.
             const loading = edgeLoadingSummary(graph, live, edgeID)?.ratio;
             if (loading != null) {
                 edgeAttrs.size = edgeWidthForLoading(loading);
@@ -212,7 +176,9 @@ const applyDiscrete = (graph, live, discrete) => {
  * @param {Object} output - the `sim-output` payload: { Analog, Discrete }
  */
 export const applySimulationOutput = ({ graph, live, theme }, output) => {
-    const { Analog, Discrete } = output;
+    // A sim-output frame comes off the broker, so no key is guaranteed present.
+    const Analog = Array.isArray(output?.Analog) ? output.Analog : [];
+    const Discrete = Array.isArray(output?.Discrete) ? output.Discrete : [];
 
     const nodesWithNewVoltage = recordVoltages(graph, live, Analog);
     for (const nodeId of nodesWithNewVoltage) refreshNodeHover(graph, live, nodeId);
@@ -224,7 +190,7 @@ export const applySimulationOutput = ({ graph, live, theme }, output) => {
 
 /** Switch open/closed state pushed outside the regular measurement stream. */
 export const applySwitchStates = (graph, simOutput) => {
-    for (const sw of simOutput.switches) {
+    for (const sw of simOutput?.switches ?? []) {
         const { equipment_mrid: switchID, value } = sw;
 
         if (!graph.hasEdge(switchID)) {
@@ -243,7 +209,7 @@ export const applySwitchStates = (graph, simOutput) => {
 
 /** Capacitor section counts pushed outside the regular measurement stream. */
 export const applyCapacitorStates = (graph, live, simOutput) => {
-    for (const cap of simOutput.capacitors) {
+    for (const cap of simOutput?.capacitors ?? []) {
         const { equipment_mrid: capID, value } = cap;
 
         if (!graph.hasNode(capID)) {
@@ -253,8 +219,6 @@ export const applyCapacitorStates = (graph, live, simOutput) => {
 
         graph.updateNodeAttributes(capID, (attrs) => {
             const updated = { ...attrs, attributes: { ...attrs.attributes, sections: value } };
-            // Keep the live vitals block — this update only changes the
-            // capacitor's section count, not its voltage measurements.
             return { ...updated, ...hoverPayload(updated.attributes, nodeVitals(graph, live, capID)) };
         });
     }

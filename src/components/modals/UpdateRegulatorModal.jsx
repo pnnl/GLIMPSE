@@ -56,7 +56,10 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
     }, [open, object]);
 
     // Sorted phase keys so the form always renders A, B, C in a stable order.
-    const phases = useMemo(() => Object.keys(phaseValues).sort((a, b) => a.localeCompare(b)), [phaseValues]);
+    const phases = useMemo(
+        () => Object.keys(phaseValues).sort((a, b) => a.localeCompare(b)),
+        [phaseValues],
+    );
 
     // Push the regulator's current values into the antd form (an external
     // store) when the modal opens.
@@ -245,7 +248,6 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                                 <Select
                                     options={controlModeOptions}
                                     style={{ width: "100%" }}
-                                    // Keep the dropdown inside the themed modal body.
                                     getPopupContainer={(trigger) => trigger.parentElement}
                                 />
                             </Form.Item>

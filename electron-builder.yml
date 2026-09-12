@@ -2,34 +2,34 @@ appId: gov.pnnl.glimpse
 productName: GLIMPSE
 copyright: Copyright © 2026 Pacific Northwest National Laboratory
 directories:
-  output: release
-  buildResources: build
+    output: release
+    buildResources: build
 files:
-  - dist/**
-  - electron/**
-  - package.json
-  - "!node_modules/**"
+    - dist/**
+    - electron/**
+    - package.json
+    - "!node_modules/**"
 extraResources:
-  - from: local-server/dist/server
-    to: server
+    - from: local-server/dist/server
+      to: server
 win:
-  target:
-    - nsis
+    target:
+        - nsis
 nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+    oneClick: false
+    allowToChangeInstallationDirectory: true
 mac:
-  category: public.app-category.utilities
-  target:
-    - target: tar.gz
-      arch: arm64
-  sign:
-    entitlements: build/entitlements.mac.plist
-    entitlementsInherit: build/entitlements.mac.inherit.plist
-    hardenedRuntime: true
-    gatekeeperAssess: false
+    category: public.app-category.utilities
+    target:
+        - target: dmg
+          arch: arm64
+    sign:
+        entitlements: build/entitlements.mac.plist
+        entitlementsInherit: build/entitlements.mac.inherit.plist
+        hardenedRuntime: true
+        gatekeeperAssess: false
 linux:
-  target:
-    - tar.gz
-  category: Science
-  synopsis: Power grid model visualization tool
+    target:
+        - tar.gz
+    category: Science
+    synopsis: Power grid model visualization tool

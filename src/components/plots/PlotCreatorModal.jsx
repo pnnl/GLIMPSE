@@ -103,88 +103,100 @@ const PlotCreatorModal = ({ open, close, catalog, loading = false, onCreate }) =
             ]}
         >
             <Spin spinning={loading} description="Loading measurements...">
-            {!hasCatalog ? (
-                <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                        loading
-                            ? "Loading measurements…"
-                            : "No device measurements available. Load a CIM model (or connect to GridAPPS-D) to build plots."
-                    }
-                />
-            ) : (
-                <Form
-                    form={form}
-                    layout="vertical"
-                    autoComplete="off"
-                    initialValues={{ valueKind: "magnitude" }}
-                >
-                    <Form.Item
-                        label="Plot name"
-                        name="name"
-                        rules={[{ required: true, message: "Please enter a plot name" }]}
+                {!hasCatalog ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={
+                            loading
+                                ? "Loading measurements…"
+                                : "No device measurements available. Load a CIM model (or connect to GridAPPS-D) to build plots."
+                        }
+                    />
+                ) : (
+                    <Form
+                        form={form}
+                        layout="vertical"
+                        autoComplete="off"
+                        initialValues={{ valueKind: "magnitude" }}
                     >
-                        <Input placeholder="e.g. Feeder head voltage" />
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Measurement type"
-                        name="measurementType"
-                        rules={[{ required: true, message: "Please select a measurement type" }]}
-                    >
-                        <Select
-                            placeholder="Select type"
-                            options={TYPE_OPTIONS}
-                            // Reset the dependent fields when the type changes.
-                            onChange={() => form.setFieldsValue({ component: undefined, phases: [] })}
-                            getPopupContainer={(t) => t.parentElement}
-                        />
-                    </Form.Item>
-
-                    {!isTap && measurementType && (
-                        <Form.Item label="Value" name="valueKind">
-                            <Radio.Group>
-                                <Radio value="magnitude">Magnitude</Radio>
-                                <Radio value="angle">Angle</Radio>
-                            </Radio.Group>
+                        <Form.Item
+                            label="Plot name"
+                            name="name"
+                            rules={[{ required: true, message: "Please enter a plot name" }]}
+                        >
+                            <Input placeholder="e.g. Feeder head voltage" />
                         </Form.Item>
-                    )}
 
-                    <Form.Item
-                        label="Component"
-                        name="component"
-                        rules={[{ required: true, message: "Please select a component" }]}
-                    >
-                        <Select
-                            showSearch
-                            placeholder={measurementType ? "Select component" : "Select a measurement type first"}
-                            disabled={!measurementType}
-                            options={componentOptions}
-                            onChange={() => form.setFieldsValue({ phases: [] })}
-                            optionFilterProp="label"
-                            getPopupContainer={(t) => t.parentElement}
-                        />
-                    </Form.Item>
+                        <Form.Item
+                            label="Measurement type"
+                            name="measurementType"
+                            rules={[{ required: true, message: "Please select a measurement type" }]}
+                        >
+                            <Select
+                                placeholder="Select type"
+                                options={TYPE_OPTIONS}
+                                onChange={() =>
+                                    form.setFieldsValue({ component: undefined, phases: [] })
+                                }
+                                getPopupContainer={(t) => t.parentElement}
+                            />
+                        </Form.Item>
 
-                    <Form.Item
-                        label="Phases"
-                        name="phases"
-                        rules={[{ required: true, message: "Please select at least one phase" }]}
-                    >
-                        <Select
-                            mode="multiple"
-                            placeholder={componentName ? "Select phases" : "Select a component first"}
-                            disabled={!componentName}
-                            options={phaseOptions}
-                            getPopupContainer={(t) => t.parentElement}
-                        />
-                    </Form.Item>
+                        {!isTap && measurementType && (
+                            <Form.Item label="Value" name="valueKind">
+                                <Radio.Group>
+                                    <Radio value="magnitude">Magnitude</Radio>
+                                    <Radio value="angle">Angle</Radio>
+                                </Radio.Group>
+                            </Form.Item>
+                        )}
 
-                    <p style={{ fontSize: "12px", color: token.colorTextSecondary, marginBottom: 0 }}>
-                        Measurements come from the loaded CIM model.
-                    </p>
-                </Form>
-            )}
+                        <Form.Item
+                            label="Component"
+                            name="component"
+                            rules={[{ required: true, message: "Please select a component" }]}
+                        >
+                            <Select
+                                showSearch={{ optionFilterProp: "label" }}
+                                placeholder={
+                                    measurementType
+                                        ? "Select component"
+                                        : "Select a measurement type first"
+                                }
+                                disabled={!measurementType}
+                                options={componentOptions}
+                                onChange={() => form.setFieldsValue({ phases: [] })}
+                                getPopupContainer={(t) => t.parentElement}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            label="Phases"
+                            name="phases"
+                            rules={[{ required: true, message: "Please select at least one phase" }]}
+                        >
+                            <Select
+                                mode="multiple"
+                                placeholder={
+                                    componentName ? "Select phases" : "Select a component first"
+                                }
+                                disabled={!componentName}
+                                options={phaseOptions}
+                                getPopupContainer={(t) => t.parentElement}
+                            />
+                        </Form.Item>
+
+                        <p
+                            style={{
+                                fontSize: "12px",
+                                color: token.colorTextSecondary,
+                                marginBottom: 0,
+                            }}
+                        >
+                            Measurements come from the loaded CIM model.
+                        </p>
+                    </Form>
+                )}
             </Spin>
         </Modal>,
         document.getElementById("portal"),

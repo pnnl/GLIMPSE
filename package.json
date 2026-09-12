@@ -2,7 +2,7 @@
     "name": "glimpse",
     "productName": "GLIMPSE",
     "description": "GLIMPSE",
-    "version": "0.8.5",
+    "version": "0.8.6",
     "author": {
         "name": "Armando Mendoza Sanchez",
         "email": "mendozasanchez166@pnnl.gov"
@@ -14,7 +14,10 @@
         "dev:frontend": "vite",
         "build": "vite build",
         "lint": "eslint .",
+        "preview": "vite preview",
         "start": "concurrently \"npm run dev:backend\" \"vite preview\"",
+        "codespace:build": "npm run build && bash scripts/write-codespace-env.sh",
+        "codespace:start": "concurrently -k \"npm run dev:backend\" \"npm run preview\"",
         "electron:dev": "concurrently -k \"npm run dev:backend\" \"vite --strictPort --host 127.0.0.1\" \"npm run electron:start\"",
         "electron:start": "wait-on tcp:127.0.0.1:5173 && cross-env ELECTRON_START_URL=http://127.0.0.1:5173 electron .",
         "build:server": "cd local-server && pyinstaller server.spec --noconfirm",
@@ -45,7 +48,6 @@
         "graphology-layout-force": "^0.2.4",
         "graphology-layout-forceatlas2": "^0.10.1",
         "graphology-metrics": "^2.4.0",
-        "iwanthue": "^2.1.0",
         "leaflet": "^1.9.4",
         "mermaid": "^11.16.0",
         "react": "^19.1.1",

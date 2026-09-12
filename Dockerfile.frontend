@@ -7,9 +7,10 @@ FROM node:24-slim AS build
 
 WORKDIR /app
 
-# Install deps first for layer caching (no package-lock.json, so use install).
-COPY package.json ./
-RUN npm install
+# Install deps first for layer caching. npm ci uses the lockfile, so image
+# builds resolve to exactly the versions committed to the repo.
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy only what Vite needs to build, then produce dist/
 COPY vite.config.mjs index.html ./
@@ -20,14 +21,20 @@ RUN npm run build
 # ---- serve stage -----------------------------------------------------------
 FROM nginx:alpine
 
+# openssl is only needed so the TLS entrypoint can generate a self-signed
+# certificate when none is mounted (see docker/45-glimpse-tls.sh).
+RUN apk add --no-cache openssl
+
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Runtime env injection (writes env.js + patches CSP from $API_URL on startup).
+# Runtime env injection (writes env.js + patches CSP from $API_URL on startup)
+# and TLS provisioning. nginx:alpine runs /docker-entrypoint.d/*.sh in order.
 COPY docker/40-glimpse-env.sh /docker-entrypoint.d/40-glimpse-env.sh
+COPY docker/45-glimpse-tls.sh /docker-entrypoint.d/45-glimpse-tls.sh
 # Strip CRs in case of a Windows checkout — a "#!/bin/sh\r" shebang fails at
 # startup with a confusing "not found".
-RUN sed -i 's/\r$//' /docker-entrypoint.d/40-glimpse-env.sh \
-    && chmod +x /docker-entrypoint.d/40-glimpse-env.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.d/40-glimpse-env.sh /docker-entrypoint.d/45-glimpse-tls.sh \
+    && chmod +x /docker-entrypoint.d/40-glimpse-env.sh /docker-entrypoint.d/45-glimpse-tls.sh
 
-EXPOSE 80
+EXPOSE 80 443

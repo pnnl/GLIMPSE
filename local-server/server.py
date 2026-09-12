@@ -1,24 +1,23 @@
-import os
+import hmac
 import json
+import os
+import shutil
 import tempfile
 import traceback
-import gc
-import time
-import hmac
 
 import gevent
-from gevent.lock import BoundedSemaphore
-
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO
+from gevent.lock import BoundedSemaphore
+from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
-import shutil
 
+import agenthelper
 from cimhelper import CIMHelper
 from glmhelper import GLMHelper
-from jsonhelper import JSONHelper
 from gridappsdhelper import GridAPPSDHelper
+from jsonhelper import JSONHelper
 
 # ================================================================================================
 # HELPERS
@@ -28,18 +27,29 @@ json_helper = JSONHelper()
 glm_helper = GLMHelper()
 cim_helper = CIMHelper()
 gridappsd_helper = GridAPPSDHelper()
-
-# CIM loads run off the event loop (gevent threadpool) so the server stays
-# responsive, which means two loads could now interleave — but cim_helper keeps
-# per-load state (FEEDERS, measurement map). Serialize them.
 cim_load_lock = BoundedSemaphore(1)
+
+def run_cim_parse(fn, **kwargs):
+    with cim_load_lock:
+        try:
+            result = gevent.get_hub().threadpool.apply(fn, kwds=kwargs)
+        except Exception:
+            # A failed parse leaves the helper half-populated, so later requests
+            # would answer from the previous model's measurement map.
+            cim_helper.release()
+            raise
+    return result
+
+
+# agents-update is keyed by a model id the caller chooses, so the cache is
+# capped rather than left to grow for the life of the process.
+MAX_CACHED_AGENT_ROSTERS = 32
+
 
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
-# Allowed CORS origins. Override for deployment via the CORS_ORIGINS env var
-# (comma-separated list of origins, or "*" to allow any). Defaults to the local
-# dev ports.
+
 _default_cors_origins = [
     "http://localhost:5173",
     "http://localhost:4173",
@@ -61,18 +71,11 @@ else:
 
 methods = ["GET", "POST", "DELETE", "OPTIONS"]
 allowed_headers = ["Content-Type", "Authorization"]
-
-# Never combine credentialed requests with a wildcard origin: that reflects any
-# origin back with Access-Control-Allow-Credentials, which browsers reject and
-# which would broaden cross-origin access. Only allow credentials when origins
-# are explicitly pinned.
 allow_credentials = cors_origins != "*"
 
 app = Flask(__name__)
-
-# Cap request bodies so unbounded JSON/CIM uploads can't exhaust memory. Override
-# with MAX_UPLOAD_MB. (GLM parsing enforces its own per-file limit as well.)
-app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "65")) * 1024 * 1024
+MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "65"))
+app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 
 CORS(
     app,
@@ -85,14 +88,17 @@ socketio = SocketIO(
     app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
-# Whether to include Python tracebacks in error responses. Off by default so we
-# don't leak internal paths/stack details to clients; enable for local debugging.
+_hub = gevent.get_hub()
+
+def emit_threadsafe(event: str, payload):
+    """socketio.emit() from a non-greenlet thread. See _hub above."""
+    _hub.loop.run_callback_threadsafe(socketio.emit, event, payload)
+
 EXPOSE_TRACEBACKS = os.environ.get("EXPOSE_TRACEBACKS", "").strip().lower() in (
     "1",
     "true",
     "yes",
 )
-
 
 def error_body(exc, tb, message=None, extra=None):
     """Build an error response body. Always logs the traceback server-side, but
@@ -106,14 +112,34 @@ def error_body(exc, tb, message=None, extra=None):
     return body
 
 
-# ---------------------------------------------------------------------------
-# Export path safety
-# ---------------------------------------------------------------------------
-# Export endpoints historically accepted an absolute destination path from the
-# request body and wrote to it directly (arbitrary write / path traversal). By
-# default we confine writes to GLIMPSE_EXPORT_DIR and reject traversal. A desktop
-# build that intentionally lets the user pick any save location can opt out with
-# GLIMPSE_ALLOW_ANY_EXPORT_PATH=1.
+# Every route returns { "error": ... } on the failures it anticipates. Without
+# these, anything else — the 413 Flask raises from MAX_CONTENT_LENGTH, a wrong
+# Content-Type, an exception escaping a view — comes back as Werkzeug's HTML
+# page, which the frontend's errorText() surfaces verbatim into an alert.
+@app.errorhandler(HTTPException)
+def _http_error(exc):
+    if exc.code == 413:
+        message = (
+            f"That upload is larger than the {MAX_UPLOAD_MB} MB limit. "
+            "Set MAX_UPLOAD_MB higher to raise it."
+        )
+    else:
+        message = exc.description
+    return {"error": message}, exc.code
+
+
+@app.errorhandler(Exception)
+def _unhandled_error(exc):
+    return error_body(exc, traceback.format_exc(), message=f"Server error: {exc}"), 500
+
+
+# Without this an exception inside a socket handler returns nothing at all —
+# the caller's ack callback simply never fires and the script hangs.
+@socketio.on_error_default
+def _socket_error(exc):
+    return error_body(exc, traceback.format_exc())
+
+
 EXPORT_BASE_DIR = os.path.abspath(
     os.environ.get("GLIMPSE_EXPORT_DIR", os.path.join(tempfile.gettempdir(), "glimpse_exports"))
 )
@@ -122,7 +148,6 @@ ALLOW_ANY_EXPORT_PATH = os.environ.get("GLIMPSE_ALLOW_ANY_EXPORT_PATH", "").stri
     "true",
     "yes",
 )
-
 
 def safe_export_path(user_path):
     """Resolve a client-supplied export path. Raises ValueError if it escapes the
@@ -143,21 +168,11 @@ def safe_export_path(user_path):
 # ---------------------------------------------------------------------------
 # Authentication
 # ---------------------------------------------------------------------------
-# Shared bearer token. When GLIMPSE_API_TOKEN is unset (the default), auth is
-# disabled — appropriate for the desktop build where the server is bound to
-# loopback only. For any networked deployment (FLASK_HOST=0.0.0.0), set the token
-# so every HTTP request and WebSocket connection must present it.
 API_TOKEN = os.environ.get("GLIMPSE_API_TOKEN", "").strip()
-
-# Paths reachable without a token even when auth is enabled: CORS preflight
-# carries no Authorization header, and the root health check is used by the
-# Electron launcher / container healthchecks to detect readiness.
 _AUTH_EXEMPT_PATHS = {"/"}
-
 
 def _valid_token(token):
     return bool(token) and hmac.compare_digest(token, API_TOKEN)
-
 
 @app.before_request
 def _require_api_token():
@@ -171,26 +186,16 @@ def _require_api_token():
         return jsonify({"error": "Unauthorized"}), 401
     return None
 
-
 @socketio.on("connect")
 def _authenticate_socket(auth=None):
-    # Returning False rejects the connection before any event handlers run.
-    # auth defaults to None for flask-socketio versions that omit the handshake arg.
     if not API_TOKEN:
         return True
     token = auth.get("token") if isinstance(auth, dict) else None
     return _valid_token(token)
 
-
 # ---------------------------------------------------------------------------
 # Bundled example models
 # ---------------------------------------------------------------------------
-# A few sample models offered in the frontend's "Example Models" tab so users
-# can explore GLIMPSE without hunting for files. `file` is relative to the
-# models directory, resolved at startup in this order: GLIMPSE_MODELS_DIR env
-# override, a `models/` folder next to this file (the PyInstaller bundle — see
-# server.spec — or a Docker bind mount), or the repo's top-level models/ folder
-# when running from source. Entries whose file is missing are not offered.
 EXAMPLE_MODELS = {
     "ieee123": {
         "name": "IEEE 123 Node Test Feeder",
@@ -206,7 +211,7 @@ EXAMPLE_MODELS = {
     },
     "ieee9500": {
         "name": "IEEE 9500 Node Test Feeder",
-        "description": "Large CIM distribution feeder (IEEE9500bal.xml) — takes a while to load",
+        "description": "Large CIM distribution feeder (IEEE9500bal.xml)",
         "file": os.path.join("CIM", "IEEE9500bal.xml"),
         "format": "cim",
     },
@@ -239,6 +244,24 @@ def _example_model_path(example_id):
     return path if os.path.isfile(path) else None
 
 
+def _example_available(example_id) -> bool:
+    return _example_model_path(example_id) is not None
+
+
+def build_example_payload(entry, path):
+    object_details = {}
+    if entry["format"] == "glm":
+        data = glm_helper.parse_glm([path])
+    else:
+        data, object_details = run_cim_parse(cim_helper.cim_to_gjs, filepaths=[path])
+    return {
+        "data": data,
+        "themeData": None,
+        "objectDetails": object_details,
+        "isCIM": entry["format"] == "cim",
+    }
+
+
 # ================================================================================================
 # EXAMPLE MODEL ENDPOINTS
 # ================================================================================================
@@ -255,37 +278,24 @@ def list_examples():
             "format": entry["format"],
         }
         for example_id, entry in EXAMPLE_MODELS.items()
-        if _example_model_path(example_id)
+        if _example_available(example_id)
     ]
     return jsonify({"examples": examples}), 200
 
 
 @app.route("/api/examples/load", methods=["POST"])
 def load_example():
-    """Parse a bundled example model server-side and return it in the same
-    { data, themeData } shape as the /api/upload/* endpoints."""
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
 
     example_id = (request.get_json() or {}).get("id")
     entry = EXAMPLE_MODELS.get(example_id)
-    path = _example_model_path(example_id)
-    if entry is None or path is None:
+    if entry is None or not _example_available(example_id):
         return jsonify({"error": f"Unknown or unavailable example model: {example_id}"}), 404
 
+    path = _example_model_path(example_id)
     try:
-        if entry["format"] == "glm":
-            data = glm_helper.parse_glm([path])
-        else:
-            # Same lock and threadpool treatment as /api/upload/cim: XML
-            # parsing shares cim_helper state and can take a while on big files.
-            with cim_load_lock:
-                data = gevent.get_hub().threadpool.apply(
-                    cim_helper.cim_to_gjs, kwds={"filepaths": [path]}
-                )
-        return json.dumps(
-            {"data": data, "themeData": None, "isCIM": entry["format"] == "cim"}
-        )
+        return jsonify(build_example_payload(entry, path))
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
@@ -388,10 +398,6 @@ def get_object_mermaid():
 
 @app.route("/api/upload/json", methods=["POST"])
 def upload_json():
-    """
-    This endpoint receives one or more JSON files via multipart/form-data,
-    validates them against the schema, and returns the transformed data.
-    """
     # Validate presence of 'files' in form-data
     if "files" not in request.files:
         return {"error": "No 'files' part in the form data."}, 400
@@ -436,7 +442,7 @@ def upload_json():
             validated_data = json_helper.validate_json_data(json_dict)
             # themeData is already None to begin with if there was no theme file in the paths
             response_data = {"data": validated_data, "themeData": themeData}
-            return json.dumps(response_data)
+            return jsonify(response_data)
         except ValueError as e:
             tb = traceback.format_exc()
             print(tb)
@@ -458,10 +464,6 @@ def upload_json():
 
 @app.route("/api/upload/glm", methods=["POST"])
 def glm_upload():
-    """
-    This endpoint receives one or more .glm files via multipart/form-data,
-    saves them to a temp directory, collects their paths, and converts to JSON.
-    """
     files = request.files.getlist("files")
     if not files:
         return {"error": "No files uploaded."}, 400
@@ -498,35 +500,28 @@ def glm_upload():
         glm_dict = glm_helper.parse_glm(filtered_paths)  # expects list of paths
         print(f"[SERVER] GLM parsing completed successfully")
 
-        # Serialize response data BEFORE cleanup to ensure no dangling references
-        response = json.dumps({"data": glm_dict, "themeData": themeData})
-        return response
+        return jsonify({"data": glm_dict, "themeData": themeData})
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
         return error_body(e, tb, message=f"Server error: {str(e)}"), 500
     finally:
-        try:
-            print("[SERVER] Running cleanup and garbage collection...")
-            gc.collect()  # Force garbage collection
-            time.sleep(0.5)  # Allow extra time for file handles to release
-            shutil.rmtree(tmpdir, ignore_errors=True)
-            print("[SERVER] Cleanup completed")
-        except Exception as cleanup_error:
-            print(f"Warning: Failed to clean up temp directory: {cleanup_error}")
+        # ignore_errors already tolerates a handle Windows hasn't released yet,
+        # which is all the old gc.collect() + sleep(0.5) here was buying — and
+        # that sleep stalled every other greenlet, live sim output included.
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 @app.route("/api/export/glm", methods=["POST"])
 def export_glm():
-    """
-    Receives JSON graph data, converts to GLM files,
-    and returns them as a zip archive for download.
-    """
     json_data = request.get_json()
 
     if not json_data or "data" not in json_data:
         return {"error": "No data provided."}, 400
 
     data = json_data["data"]
+    if not isinstance(data, dict):
+        return {"error": "'data' must be an object keyed by file name."}, 400
+
     tmpdir = tempfile.mkdtemp(prefix="glm_export_")
 
     try:
@@ -539,6 +534,10 @@ def export_glm():
             as_attachment=True,
             download_name="exported_model.zip"
         )
+
+    except ValueError as e:
+        # An unusable or escaping file name in the payload — a client error.
+        return {"error": str(e)}, 400
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -579,14 +578,27 @@ def cim_to_glimpse():
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        # Same lock and threadpool treatment as /api/gridappsd/models: XML
-        # parsing shares cim_helper state and can take a while on big files.
-        with cim_load_lock:
-            glimpse_structure_data = gevent.get_hub().threadpool.apply(
-                cim_helper.cim_to_gjs, kwds={"filepaths": paths}
-            )
+        # See run_cim_parse: serialized per process.
+        glimpse_structure_data, object_details = run_cim_parse(
+            cim_helper.cim_to_gjs, filepaths=paths
+        )
 
-        return glimpse_structure_data
+        if cim_helper.count_objects(glimpse_structure_data) == 0:
+            # An unreadable model parses to an empty graph rather than raising,
+            # which would otherwise load a blank canvas with no explanation.
+            return {
+                "error": "No CIM objects could be read from the uploaded file(s). "
+                "Check that they are valid CIM XML models."
+            }, 400
+
+        # Drawn objects ship their attributes and associations up front; objects
+        # the model only points at are fetched from /api/cim/objects.
+        return {
+            "data": glimpse_structure_data,
+            "themeData": None,
+            "objectDetails": object_details,
+            "isCIM": True,
+        }
 
     except Exception as e:
         tb = traceback.format_exc()
@@ -673,17 +685,13 @@ def get_models():
             else:
                 print("No topology outputs retrieved from GridAPPS-D; falling back to CIM model")
 
-            return cim_helper.cim_to_gjs(
+            gjs, object_details = cim_helper.cim_to_gjs(
                 model_IDs=req_data,
                 topology_outputs=topology_outputs,
                 progress_cb=progress.update,
             )
+            return gjs, object_details
 
-        # Run the load in a native thread (gevent threadpool): its blocking
-        # SPARQL/STOMP I/O would otherwise freeze the whole event loop — health
-        # checks, Socket.IO ping/pong, every other request — for minutes on a
-        # large model. This greenlet polls cooperatively and relays progress to
-        # connected clients while the thread works.
         with cim_load_lock:
             worker = gevent.get_hub().threadpool.spawn(load_models)
             last_reported = None
@@ -692,48 +700,92 @@ def get_models():
                 if progress and progress != last_reported:
                     last_reported = dict(progress)
                     socketio.emit("model-load-progress", last_reported)
-            gjs = worker.get()
+            gjs, object_details = worker.get()
 
-        if gjs is None:
+        if not gjs:
             return jsonify({"error": "No data returned for the given model IDs"}), 404
-        return gjs, 200
+        return jsonify({"data": gjs, "themeData": None, "objectDetails": object_details, "isCIM": True}), 200
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps(error_body(e, tb)), 500
+        return error_body(e, tb), 500
+
+
+@app.route("/api/gridappsd/agents", methods=["GET"])
+def get_agents():
+    model_id = request.args.get("model") or ""
+    source = request.args.get("source") or "derived"
+
+    try:
+        if not model_id:
+            loaded = list(cim_helper.area_maps.keys())
+            if len(loaded) != 1:
+                return jsonify({
+                    "error": "A 'model' query parameter is required when zero or "
+                             "several models are loaded.",
+                    "loaded": loaded,
+                }), 400
+            model_id = loaded[0]
+
+        if model_id not in cim_helper.area_maps:
+            return jsonify({"error": f"Model {model_id} is not loaded."}), 404
+
+        return jsonify(agenthelper.build_agent_model(
+            area_map=cim_helper.area_maps.get(model_id, {}),
+            object_index=cim_helper.object_index.get(model_id, {}),
+            model_id=model_id,
+            source=source,
+            gridappsd_helper=gridappsd_helper,
+        )), 200
+    except Exception as e:
+        tb = traceback.format_exc()
+        print(tb)
+        return jsonify(error_body(e, tb)), 500
 
 
 @app.route("/api/gridappsd/model-info", methods=["GET"])
 def get_gridappsd_models():
     try:
         if not gridappsd_helper.is_connected():
-            return json.dumps({"error": "Not connected to GridAPPS-D"}), 503
+            return {"error": "Not connected to GridAPPS-D"}, 503
 
         models = gridappsd_helper.get_models()
-        return json.dumps(models), 200
+        return jsonify(models), 200
     except Exception as e:
         tb = traceback.format_exc()
         print(tb)
-        return json.dumps(error_body(e, tb)), 503
+        return error_body(e, tb), 503
 
 
 @app.route("/api/gridappsd/status", methods=["GET"])
 def get_gridappsd_status():
     try:
+        # Non-destructive: try_connect() tears down the live connection (and with
+        # it any simulation subscriptions) before rebuilding, and the frontend
+        # polls this route every time the load-model modal opens. Only reconnect
+        # when there is nothing to preserve.
+        broker_up = gridappsd_helper.is_connected() or gridappsd_helper.try_connect()
 
-        connected = gridappsd_helper.try_connect()
+        # A reachable broker is not a usable platform: the gridappsd container
+        # alone answers on 61613 while blazegraph and friends are down. Confirm
+        # with a real query, off the event loop since the probe blocks.
+        connected = broker_up and gevent.get_hub().threadpool.apply(
+            gridappsd_helper.is_platform_ready
+        )
+
+        if connected:
+            message = "Connected to GridAPPS-D"
+        elif broker_up:
+            message = (
+                "The GridAPPS-D message broker is reachable, but the platform is not "
+                "answering queries — check that blazegraph and the other platform "
+                "containers are running."
+            )
+        else:
+            message = "Not connected to GridAPPS-D"
 
         return (
-            json.dumps(
-                {
-                    "connected": connected,
-                    "message": (
-                        "Connected to GridAPPS-D"
-                        if connected
-                        else "Not connected to GridAPPS-D"
-                    ),
-                }
-            ),
+            json.dumps({"connected": connected, "message": message}),
             200,
         )
 
@@ -836,6 +888,23 @@ def delete_edge(edge_id):
     return {"status": "ok"}
 
 
+@socketio.on("agents-update")
+def agents_update(payload):
+    if not isinstance(payload, dict) or not isinstance(payload.get("agents"), list):
+        return {"error": "agents-update requires an object with an 'agents' list."}
+
+    model_id = payload.get("model")
+    if model_id:
+        cache = gridappsd_helper.agent_roster_cache
+        cache.pop(model_id, None)
+        cache[model_id] = payload
+        while len(cache) > MAX_CACHED_AGENT_ROSTERS:
+            cache.popitem(last=False)
+
+    socketio.emit("agents-update", payload)
+    return {"status": "ok", "agentCount": len(payload["agents"])}
+
+
 # ================================================================================================
 # GRIDAPPS-D REAL-TIME WEBSOCKET EVENTS
 # ================================================================================================
@@ -889,7 +958,7 @@ def handle_start_simulation(config):
 
                         sim_output["Analog"].append(measurment_output)
 
-                        
+
                     if measurment_mRID in active_measurement_map["Discrete"]:
                         mapping = active_measurement_map["Discrete"].get(measurment_mRID)
 
@@ -916,11 +985,11 @@ def handle_start_simulation(config):
                             measurment_output["normal_limit"] = normal_limit
 
                         sim_output["Discrete"].append(measurment_output)
-            
-            socketio.emit("sim-output", sim_output)
+
+            emit_threadsafe("sim-output", sim_output)
 
         def on_sim_log(headers, message):
-            socketio.emit("sim-log", message)
+            emit_threadsafe("sim-log", message)
 
         gridappsd_helper.subscribe_to_simulation_output(on_sim_output)
         gridappsd_helper.subscribe_to_simulation_log(on_sim_log)
@@ -974,8 +1043,11 @@ def handle_stop_simulation(sim_id):
 
 @app.route("/")
 def hello():
-    """Basic API information endpoint"""
-    return {"api": "GLIMPSE CIM-Graph Flask Backend", "version": "0.8.5"}
+    """Basic API information endpoint (also the container health check)."""
+    return {
+        "api": "GLIMPSE CIM-Graph Flask Backend",
+        "version": "0.8.6",
+    }
 
 
 # ================================================================================================
@@ -983,7 +1055,6 @@ def hello():
 # ================================================================================================
 
 if __name__ == "__main__":
-    # Start the Flask-SocketIO server
     port = int(os.environ.get("FLASK_PORT", 5052))
     # Bind to loopback for local dev; containers set FLASK_HOST=0.0.0.0
     host = os.environ.get("FLASK_HOST", "127.0.0.1")

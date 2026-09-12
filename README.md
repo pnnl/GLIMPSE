@@ -74,7 +74,77 @@ docker compose down
 
 This stops and removes the containers and network. Built images remain cached for the next start. (If you ran in the foreground, you can also press `Ctrl+C` first, then run `docker compose down` to clean up.)
 
-### Option 3: Build From Source
+### Option 3: GitHub Codespaces (No Install At All)
+
+If you can't install software locally, you can run GLIMPSE entirely in your browser. A
+[Codespace](https://docs.github.com/en/codespaces) builds the app on GitHub's infrastructure and
+forwards it to a URL only you can open — nothing is installed on your machine.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/pnnl/GLIMPSE)
+
+Or, from the repository page: **Code → Codespaces → Create codespace on `master`**.
+
+The first build takes a few minutes (installing Node and Python dependencies, then building the
+frontend). After that, the container starts GLIMPSE automatically and VS Code offers to open the
+forwarded URL — a `https://<your-codespace>-4173.app.github.dev` address. If you dismiss the prompt,
+the **Ports** tab lists it under the label **GLIMPSE**.
+
+#### You get the built app, not the dev server
+
+A Codespace serves the production bundle from `dist/`, so editing files under `src/` has **no effect
+on the running app**. That is deliberate: exploring or accidentally changing the code can't break
+GLIMPSE for you. To make code changes take effect:
+
+```bash
+npm run codespace:build && .devcontainer/serve.sh restart
+```
+
+Other useful commands inside the Codespace terminal:
+
+```bash
+.devcontainer/serve.sh status    # is the backend/frontend up?
+.devcontainer/serve.sh logs      # tail the combined log
+.devcontainer/serve.sh stop      # stop both processes
+```
+
+The regular `npm run dev` workflow from [Option 4](#option-4-build-from-source) still works if you
+want hot reload — just stop the built app first so the ports are free.
+
+#### File uploads are capped at ~16 MB
+
+GitHub caps the request body on a forwarded port at **16 MB** and rejects anything larger with a
+`413` before it ever reaches GLIMPSE. This is GitHub's limit, not the app's — the backend accepts up
+to `MAX_UPLOAD_MB` (65 MB by default), and raising that changes nothing here.
+
+The bundled models are unaffected, because they load **server-side**: pick one from **Example
+Models** and the backend reads it straight off disk, so the request carries only the model's name.
+The IEEE 9500 feeder (a 56 MB file, 13,591 objects) opens this way in a Codespace without issue.
+
+To open a large model of your own, either drop it into the `models/` folder in the Codespace's file
+explorer and load it from there, or run GLIMPSE locally, where no such limit applies.
+
+#### Sharing and privacy
+
+The forwarded port is **private to you** by default — a GitHub login is required, so pasting the URL
+to someone else won't give them access. Everyone who wants to use GLIMPSE should create their own
+Codespace from the repository. If you deliberately want to share a running instance, right-click the
+port in the **Ports** tab and set **Port Visibility → Public**; be aware this makes it reachable by
+anyone with the link, with no authentication in front of the backend.
+
+#### How it's wired
+
+Only **one** port is exposed. `vite preview` serves the built bundle on `:4173` and proxies `/api`
+and `/socket.io` to the Flask backend on `127.0.0.1:5052` inside the same container. Because the
+browser talks to a single origin, there is no CORS to configure and no second forwarded port to
+authenticate against. The backend is not reachable from outside the Codespace.
+
+> [!NOTE]
+> GridAPPS-D features (live simulations, platform model browsing, the distributed-agent views) are
+> unavailable in a Codespace — there is no broker to connect to. GLIMPSE detects this at startup and
+> disables those panels; file upload, visualization, editing, and export all work normally.
+
+
+### Option 4: Build From Source
 
 #### Quick Overview
 
@@ -213,6 +283,11 @@ The finished installer is written to the `release/` directory. The installed app
 
 ### Deployment & Security Configuration
 
+> [!NOTE]
+> GLIMPSE runs a _single-session_ server: one loaded model, shared by every
+> connected client. It is built for one user at a time, whether that is the
+> desktop app or a Docker container on a machine you control.
+
 The desktop app runs the backend bound to `127.0.0.1` (loopback only), so the defaults below are safe as-is. **A networked deployment is different**: the Docker backend binds to `0.0.0.0`, which makes it reachable by any client that can route to the port. Because the backend has no per-user login, treat the following environment variables as required hardening before exposing it beyond localhost.
 
 | Variable                                                                         | Applies to         | Default                                      | Purpose                                                                                                                                                                                                                                                                                                            |
@@ -270,12 +345,6 @@ GLIMPSE can import and export CIM (Common Information Model) files.
 
 - Example CIM files are available [here](https://github.com/pnnl/GLIMPSE/tree/master/data/cim)
 - Modified models can be exported as CIM/XML files through the GLIMPSE interface
-
-## Running Tests
-
-The `.glm` parser ([`local-server/glmparser/`](local-server/glmparser/)) has a `pytest` suite —
-111 tests covering the parser/writer directly plus golden-file comparisons and full round-trip
-checks against all 17 sample models in [`models/`](models/). It runs from `local-server/`:
 
 ```bash
 cd local-server

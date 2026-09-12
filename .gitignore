@@ -11,7 +11,6 @@ lerna-debug.log*
 **/node_modules
 **/gridappsd-viz
 **/__pycache__
-package-lock.json
 **/glm
 **/.claude
 **/.venv
@@ -42,3 +41,4 @@ CLAUDE.md
 # Electron / PyInstaller build outputs (build/ at repo root holds icons and IS tracked)
 release/
 local-server/build/
+

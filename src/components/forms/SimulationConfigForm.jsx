@@ -31,12 +31,8 @@ import {
 } from "./simulationConfigFields";
 import { notify } from "../../utils/notify";
 
-// Renders inside a themed container (the drawer body) so popups follow the
-// active light/dark theme instead of the document-body default.
 const popupInParent = (trigger) => trigger.parentElement;
 
-// `context` carries the live form state a field needs to decide whether it is
-// locked (currently just { runRealtime }).
 const renderInput = (field, context) => {
     const disabled = isFieldDisabled(field.key) || Boolean(field.disabledWhen?.(context));
 
@@ -145,18 +141,10 @@ const FeederIdentifiers = ({ model, token }) => (
     </div>
 );
 
-/**
- * Left-hand drawer for editing the GridAPPS-D simulation configuration before
- * a run. The shared simulation_config is edited once; every loaded feeder gets
- * its own power_system_config section. Edits persist (per model id) via
- * socketClientHelper.applySimulationConfig until reset or app reload.
- */
 const SimulationConfigForm = ({ open, onClose }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const models = graphHelper.selectedGridappsdModels ?? [];
-    // Drives the interval field's locked state; the switch is elsewhere in the
-    // form, so a watch is needed to re-render on toggle.
     const runRealtime = Form.useWatch(["simulation_config", "run_realtime"], form);
 
     // Flatten a full gridappsd config object into form values.
@@ -164,9 +152,6 @@ const SimulationConfigForm = ({ open, onClose }) => {
         simulation_config: {
             ...config.simulation_config,
             start_time: dayjs.unix(Number(config.simulation_config.start_time) || dayjs().unix()),
-            // A stored config could predate the real-time rule; the interval
-            // field is locked, so it has to open with a value the user could
-            // not otherwise correct.
             interval: config.simulation_config.run_realtime
                 ? REALTIME_INTERVAL
                 : config.simulation_config.interval,
@@ -177,9 +162,6 @@ const SimulationConfigForm = ({ open, onClose }) => {
         ),
     });
 
-    // duration/publish_period/interval/run_realtime validate against each other,
-    // and antd's `dependencies` only cascades to fields the user has already
-    // touched — so revalidate the whole timing group on any change to it.
     const handleValuesChange = (changedValues) => {
         const changedTiming = changedValues.simulation_config;
         if (!changedTiming || !TIMING_FIELD_KEYS.some((key) => key in changedTiming)) return;
@@ -187,16 +169,13 @@ const SimulationConfigForm = ({ open, onClose }) => {
         if (changedTiming.run_realtime === true) {
             form.setFieldValue(["simulation_config", "interval"], REALTIME_INTERVAL);
         }
-        form.validateFields(
-            VALIDATED_TIMING_FIELDS.map((key) => ["simulation_config", key]),
-        ).catch(() => {
-            // Rejects with the field errors it just rendered; nothing to do.
-        });
+        form.validateFields(VALIDATED_TIMING_FIELDS.map((key) => ["simulation_config", key])).catch(
+            () => {
+                // Rejects with the field errors it just rendered; nothing to do.
+            },
+        );
     };
 
-    // Rebuild from the stored config each time the drawer opens, so unsaved
-    // edits from a cancelled visit are discarded. The reset drops their
-    // validation errors too — every value is re-set on the next line.
     useEffect(() => {
         if (open) {
             form.resetFields();
@@ -224,16 +203,11 @@ const SimulationConfigForm = ({ open, onClose }) => {
             start_time: values.simulation_config.start_time.unix(),
         };
 
-        // Defensive: a field that somehow never registered (undefined in
-        // `values`) is skipped, leaving that section of the stored config
-        // unchanged rather than crashing JSON.parse.
         const advancedConfig = {};
         for (const { key } of ADVANCED_CONFIG_FIELDS) {
             if (values[key] !== undefined) advancedConfig[key] = JSON.parse(values[key]);
         }
 
-        // Merge the edited fields over each feeder's current config so
-        // untouched values (e.g. simulation_output) survive.
         const powerSystemConfigsByModelId = {};
         models.forEach((model, index) => {
             const config = socketClientHelper.buildPowerSystemConfig(model);
@@ -259,9 +233,6 @@ const SimulationConfigForm = ({ open, onClose }) => {
         onClose();
     };
 
-    // forceRender mounts collapsed panel content so every Form.Item registers
-    // with the form up front — otherwise validateFields() omits fields of
-    // panels that were never expanded.
     const feederPanels = models.map((model, index) => ({
         key: model.modelId,
         label: `Feeder: ${model.modelName ?? model.modelId}`,

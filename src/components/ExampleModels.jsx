@@ -4,12 +4,9 @@ import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText, reportError } from "../utils/notify";
 
-// Bundled sample models the backend ships with (see EXAMPLE_MODELS in
-// local-server/server.py). Parsing happens server-side, so loading one goes
-// through the same { data, themeData } response shape as the upload endpoints.
 const ExampleModels = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
     const [examples, setExamples] = useState([]);
@@ -45,7 +42,7 @@ const ExampleModels = ({ closeModal }) => {
             const { data: response } = await axios.post(
                 `${API_BASE_URL}/api/examples/load`,
                 { id: example.id },
-                { headers: { "Content-Type": "application/json" } },
+                { headers: { "Content-Type": "application/json" }, timeout: PARSE_TIMEOUT_MS },
             );
 
             if ("error" in response) throw new Error(response.error);
@@ -57,6 +54,7 @@ const ExampleModels = ({ closeModal }) => {
 
             graphHelper.setIsCIM(response.isCIM);
             graphHelper.setThemeObject(response.themeData ?? null);
+            graphHelper.setObjectDetails(response.objectDetails);
             graphHelper.setGraphData(response.data ?? response);
 
             // Example models aren't driveable via GridAPPS-D, so detach from any

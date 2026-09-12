@@ -1,0 +1,62 @@
+{
+    "name": "GLIMPSE",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+    "features": {
+        "ghcr.io/va-h/devcontainers-features/uv:1": {
+            "version": "latest"
+        }
+    },
+    "containerEnv": {
+        // The backend is only ever reached through the vite preview proxy on
+        // the same container, so it never needs a routable bind address.
+        "FLASK_HOST": "127.0.0.1",
+        "FLASK_PORT": "5052",
+        // The preview server, by contrast, must bind all interfaces for the
+        // Codespaces port forwarder to reach it.
+        "VITE_DEV_HOST": "0.0.0.0",
+        "UV_PYTHON": "3.12"
+        // No GRIDAPPSD_* on purpose: no broker is reachable from a Codespace.
+        // GridAPPSDHelper's TCP pre-check fails in 2s and the GridAPPS-D
+        // features report themselves unavailable, which is the honest state.
+    },
+    "remoteEnv": {
+        "GLIMPSE_WS": "${containerWorkspaceFolder}",
+        "VIRTUAL_ENV": "${containerWorkspaceFolder}/local-server/.venv",
+        "PATH": "${containerWorkspaceFolder}/local-server/.venv/bin:${containerEnv:PATH}"
+    },
+    "postCreateCommand": "bash .devcontainer/setup.sh ${containerWorkspaceFolder}",
+    "postAttachCommand": "bash .devcontainer/serve.sh start",
+    "waitFor": "postCreateCommand",
+    // Only the preview server is exposed. Everything is same-origin behind it,
+    // so there is no second origin to authenticate or add to CORS.
+    "forwardPorts": [4173],
+    "portsAttributes": {
+        "4173": {
+            "label": "GLIMPSE",
+            // A real browser tab, not VS Code's Simple Browser — the graph is
+            // WebGL.
+            "onAutoForward": "openBrowserOnce"
+        },
+        "5052": {
+            "label": "Flask backend (internal)",
+            "onAutoForward": "ignore"
+        }
+    },
+    "otherPortsAttributes": {
+        "onAutoForward": "ignore"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-python.python", "ms-python.vscode-pylance", "dbaeumer.vscode-eslint"],
+            "settings": {
+                "python.defaultInterpreterPath": "${workspaceFolder}/local-server/.venv/bin/python",
+                "python.terminal.activateEnvironment": true,
+                "python.testing.pytestEnabled": true,
+                "python.testing.pytestArgs": ["."],
+                "python.testing.cwd": "${workspaceFolder}/local-server",
+                "eslint.workingDirectories": ["${workspaceFolder}"]
+            }
+        }
+    },
+    "remoteUser": "node"
+}

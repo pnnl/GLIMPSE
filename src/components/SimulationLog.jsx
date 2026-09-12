@@ -5,8 +5,6 @@ import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../contexts/GraphContext";
 import "../styles/SimulationLog.css";
 
-// GridAPPS-D log levels, most→least severe. Colors mirror the legacy
-// gridappsd-viz status logger (antd Tag presets picked to read in both themes).
 const LOG_LEVELS = ["FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 const LEVEL_COLOR = {
     FATAL: "red",
@@ -17,7 +15,6 @@ const LEVEL_COLOR = {
     TRACE: "default",
 };
 
-// processStatus values GridAPPS-D reports for a simulation's lifecycle.
 const STATUS_COLOR = {
     STARTING: "processing",
     STARTED: "processing",
@@ -45,8 +42,6 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
     const [logs, setLogs] = useState(() => socketClientHelper.getSimulationLogs());
     const bodyRef = useRef(null);
 
-    // Subscribe to live logs + the clear signal. Initial history comes from the
-    // buffer (see useState initializer) so nothing is missed before mount.
     useEffect(() => {
         const unsubLog = socketClientHelper.on("sim-log", (log) => {
             setLogs((prev) => [...prev, log]);
@@ -58,9 +53,6 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
         };
     }, []);
 
-    // Keep the newest line in view while expanded. Newest renders at the top, so
-    // that means pinning to scrollTop 0 — and only when already near the top, so
-    // a user scrolled down to read history isn't yanked back up.
     useEffect(() => {
         if (!expanded) return;
         const el = bodyRef.current;
@@ -96,7 +88,7 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
                     ))}
                 </div>
 
-                <Tooltip title="Clear logs">
+                <Tooltip title="Clear logs" placement="topRight" arrow={{ pointAtCenter: true }}>
                     <Button
                         type="text"
                         size="small"
@@ -115,11 +107,6 @@ const SimulationLog = ({ expanded, onToggleExpanded }) => {
                             style={{ margin: "16px 0" }}
                         />
                     ) : (
-                        // Newest first, so the tail of a long simulation is the
-                        // first thing on screen. `logs` itself stays in arrival
-                        // order (that's the socket buffer's order), which keeps
-                        // the arrival index usable as a stable key — reversing
-                        // the array alone would re-key every row on each log.
                         logs
                             .map((log, i) => ({ log, i }))
                             .reverse()

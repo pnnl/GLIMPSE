@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Upload, Progress, Alert } from "antd";
+import React, { useEffect, useRef, useState } from "react";
+import { Upload, Progress, Alert, Button } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
-import { API_BASE_URL } from "../config";
+import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
 
 const { Dragger } = Upload;
@@ -83,10 +83,29 @@ const FileUpload = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
+    // Set once the bytes are up and the server is parsing. Distinct from
+    // `progress`, which only tracks the transfer — a big CIM model spends
+    // seconds uploading and minutes parsing.
     const [error, setError] = useState(null);
+    // Aborts the upload and the job poll together — on unmount, and on Cancel.
+    const abortRef = useRef(null);
+    const timerRef = useRef(null);
+
+    useEffect(
+        () => () => {
+            abortRef.current?.abort();
+            clearTimeout(timerRef.current);
+        },
+        [],
+    );
+
+    const cancelUpload = () => abortRef.current?.abort();
 
     const uploadFiles = async (files) => {
         if (!files || files.length === 0) return;
+        // One upload at a time: a second batch dropped mid-parse would clear the
+        // graph out from under the first.
+        if (abortRef.current) return;
 
         setError(null);
 
@@ -102,11 +121,16 @@ const FileUpload = ({ closeModal }) => {
         const formData = new FormData();
         files.forEach((file) => formData.append("files", file));
 
+        const controller = new AbortController();
+        abortRef.current = controller;
+
         try {
             setUploading(true);
             setProgress(0);
 
             const { data: response } = await axios.post(`${API_BASE_URL}/${endpoint}`, formData, {
+                signal: controller.signal,
+                timeout: PARSE_TIMEOUT_MS,
                 onUploadProgress: (progressEvent) => {
                     if (!progressEvent.total) return;
                     setProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -122,26 +146,48 @@ const FileUpload = ({ closeModal }) => {
 
             graphHelper.isCIM = endpoint === "api/upload/cim";
             graphHelper.setThemeObject(response.themeData ?? null);
-            graphHelper.setGraphData(response.data ?? response);
+            graphHelper.setObjectDetails(response.objectDetails);
+            const modelData = response.data ?? response;
+            graphHelper.setGraphData(modelData);
 
             // A file-uploaded model isn't driveable via GridAPPS-D, so detach
             // from any previous run: hides the controls/log/charts/id badge and
             // stops a simulation that would otherwise stream into this graph.
             socketClientHelper.detachSimulation();
 
-            window.dispatchEvent(
-                new CustomEvent("graph-loaded", { detail: { source: "file-upload" } }),
-            );
+            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "file-upload" } }));
             newGraphUpdate();
             closeModal();
         } catch (err) {
             // Shown inline rather than as a toast: the modal stays open, so the
             // message sits right next to the drop zone the user will retry in.
             console.error("Model upload failed:", err);
-            setError(errorText(err, "The server could not parse these files."));
+            // A 413 here is usually not ours: GitHub Codespaces caps a forwarded
+            // port's request body at 16 MB, so a large model is rejected at the
+            // edge and never reaches the backend. The raw nginx HTML that comes
+            // back says nothing useful, so name the real constraint and the way
+            // around it.
+            if (controller.signal.aborted) {
+                // The user cancelled, or the modal closed. Not a failure.
+            } else if (err?.response?.status === 413) {
+                setError(
+                    "This model is too large to upload over the network (the limit is about 16 MB " +
+                        "in a browser-hosted Codespace). Load a bundled model from Example Models " +
+                        "instead, or run GLIMPSE locally to open files of any size.",
+                );
+            } else if (err?.code === "ECONNABORTED" || err?.code === "ETIMEDOUT") {
+                setError(
+                    "The server stopped responding while handling this model. It may still be " +
+                        "parsing, or it may have run out of memory — check that the backend is " +
+                        "running, then try again.",
+                );
+            } else {
+                setError(errorText(err, "The server could not parse these files."));
+            }
         } finally {
+            abortRef.current = null;
             setUploading(false);
-            setTimeout(() => setProgress(0), 500);
+            timerRef.current = setTimeout(() => setProgress(0), 500);
         }
     };
 
@@ -179,12 +225,31 @@ const FileUpload = ({ closeModal }) => {
                 <p className="ant-upload-text">File Upload</p>
                 <p className="ant-upload-hint">Drag and drop files here or click to browse</p>
                 <p className="ant-upload-hint" style={{ fontSize: 12, opacity: 0.7 }}>
-                    Accepts .glm, .xml (CIM), or .json — plus an optional
-                    &lt;filename&gt;.theme.json
+                    Accepts .glm, .xml (CIM), or .json — plus an optional &lt;filename&gt;.theme.json
                 </p>
                 {uploading && (
                     <div style={{ padding: "0 24px", marginTop: 8 }}>
-                        <Progress percent={progress} size="small" />
+                        {progress === 100 ? (
+                            <>
+                                <Progress percent={100} size="small" status="active" showInfo={false} />
+                                <p className="ant-upload-hint" style={{ fontSize: 12, marginTop: 4 }}>
+                                    Parsing model…
+                                </p>
+                            </>
+                        ) : (
+                            <Progress percent={progress} size="small" />
+                        )}
+                        <Button
+                            size="small"
+                            type="text"
+                            style={{ marginTop: 4 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                cancelUpload();
+                            }}
+                        >
+                            Cancel
+                        </Button>
                     </div>
                 )}
             </Dragger>

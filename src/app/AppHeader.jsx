@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
+import ConnectionStatus from "../components/ConnectionStatus";
 import MetricsModal from "../components/modals/MetricsModal";
 import ShortcutsModal from "../components/modals/ShortcutsModal";
 import "../styles/AppHeader.css";
@@ -24,30 +25,22 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const [searchValue, setSearchValue] = useState(null);
     const [exporting, setExporting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    // Which tab of the load modal the current model came from. Only a model
-    // pulled from the GridAPPS-D platform gets the co-branded header.
     const [isGridappsdModel, setIsGridappsdModel] = useState(false);
     const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
     const searchRef = useRef(null);
-
-    // Export writes back through the saved GLM file data, which only exists for
-    // GLM/JSON uploads — a CIM or GridAPPS-D model has nothing to write into.
     const canExport = graphLoaded && !graphHelper.isCIM;
+
+    const hasAgents = useMemo(() => graphLoaded && graphHelper.agents.agents.length > 0, [graphLoaded]);
 
     const menuItems = [
         {
             key: "export-model",
-            // The reason is rendered inline rather than in a Tooltip: a disabled
-            // antd menu item doesn't reliably receive hover, so a tooltip on it
-            // would never appear.
             label: (
                 <Flex vertical gap={0}>
                     <span>Export Model</span>
                     {!canExport && (
                         <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.3 }}>
-                            {!graphLoaded
-                                ? "Load a model first"
-                                : "GLM and JSON models only"}
+                            {!graphLoaded ? "Load a model first" : "GLM and JSON models only"}
                         </Text>
                     )}
                 </Flex>
@@ -58,6 +51,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         { key: "graph-metrics", label: "Metrics", disabled: !graphLoaded },
         { type: "divider" },
         { key: "object-studio", label: "Model Data View", disabled: !graphLoaded },
+        ...(hasAgents ? [{ type: "divider" }, { key: "agents", label: "Agents View" }] : []),
         { type: "divider" },
         { key: "shortcuts", label: "Keyboard Shortcuts" },
         { type: "divider" },
@@ -91,6 +85,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     ];
 
     // Listen for graph load/clear events emitted by the Graph component
+    // Loading a model without a roster (any file upload) while the agents view
+    // is open would leave the user on a permanently empty tab whose menu entry
+    // has just disappeared.
+    useEffect(() => {
+        if (!hasAgents && view === "agents") setView("graph");
+    }, [hasAgents, view, setView]);
+
     useEffect(() => {
         const handleGraphLoaded = (e) => {
             setGraphLoaded(true);
@@ -221,6 +222,9 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             case "object-studio":
                 setView(view === "object-studio" ? "graph" : "object-studio");
                 break;
+            case "agents":
+                setView(view === "agents" ? "graph" : "agents");
+                break;
             case "shortcuts":
                 setShowShortcuts(true);
                 break;
@@ -272,12 +276,18 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         </Tag>
                     </Tooltip>
                 )}
+                <span style={{ marginLeft: "0.75rem" }}>
+                    <ConnectionStatus />
+                </span>
                 {graphLoaded && (
                     <Select
                         ref={searchRef}
                         style={{ width: "24rem", marginLeft: "auto" }}
                         size="middle"
-                        showSearch
+                        showSearch={{
+                            filterOption: (input, option) =>
+                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
+                        }}
                         aria-label="Search the model by object ID or name"
                         value={searchValue}
                         options={searchOptions}
@@ -287,9 +297,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                             setSearchValue(null);
                         }}
                         onChange={(val) => setSearchValue(val)}
-                        filterOption={(input, option) =>
-                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                        }
                     />
                 )}
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>

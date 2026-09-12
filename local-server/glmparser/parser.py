@@ -1,10 +1,3 @@
-"""GLM source -> AST dict.
-
-The output shape is a hard contract. server.py ships this dict straight to the
-frontend, GraphHelper.js reads `name` and `attributes` off each object, and the
-same dict comes back through /api/export/glm for writing. Every key must
-survive the round-trip.
-"""
 import uuid
 
 from .lexer import EOF, Lexer

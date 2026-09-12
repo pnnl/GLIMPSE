@@ -2,146 +2,230 @@
     "groups": {
         "load": {
             "size": 5,
-            "color": "#E69F00",
+            "color": {
+                "light": "#C07A00",
+                "dark": "#E69F00"
+            },
+            "borderColor": {
+                "light": "#794D00",
+                "dark": "#4D3500"
+            },
             "type": "nodeImg",
-            "borderColor": "#A67000",
             "image": "./imgs/Load.svg"
         },
         "triplex_load": {
             "size": 5,
-            "color": "#F0C060",
+            "color": {
+                "light": "#C07A00",
+                "dark": "#E69F00"
+            },
+            "borderColor": {
+                "light": "#794D00",
+                "dark": "#4D3500"
+            },
             "type": "nodeImg",
-            "borderColor": "#A67000",
             "image": "./imgs/Load.svg"
-        },
-        "capacitor": {
-            "size": 5,
-            "color": "#56B4E9",
-            "type": "nodeImg",
-            "borderColor": "#1F6F9C",
-            "image": "./imgs/Capacitor.svg"
-        },
-        "triplex_node": {
-            "size": 2.5,
-            "color": "#56B4E9",
-            "borderColor": "#1F6F9C"
-        },
-        "substation": {
-            "size": 5,
-            "color": "#D55E00",
-            "type": "nodeImg",
-            "borderColor": "#8C3D00",
-            "image": "./imgs/substation.svg"
-        },
-        "triplex_meter": {
-            "size": 5,
-            "color": "#0072B2",
-            "borderColor": "#004D78",
-            "type": "nodeImg",
-            "image": "./imgs/meter.svg"
         },
         "node": {
             "size": 2.5,
-            "color": "#56B4E9",
-            "borderColor": "#1F6F9C"
+            "color": {
+                "light": "#63757F",
+                "dark": "#93A5B3"
+            },
+            "borderColor": {
+                "light": "#445057",
+                "dark": "#475866"
+            }
         },
-        "meter": {
-            "size": 5,
-            "color": "#CC79A7",
-            "type": "nodeImg",
-            "borderColor": "#8C4E75",
-            "image": "./imgs/meter.svg"
-        },
-        "inverter_dyn": {
-            "size": 5,
-            "color": "#F0E442",
-            "borderColor": "#A89E00",
-            "type": "nodeImg",
-            "image": "./imgs/Inverter.svg"
-        },
-        "inverter": {
-            "size": 5,
-            "color": "#F0E442",
-            "image": "./imgs/Inverter.svg",
-            "type": "nodeImg"
-        },
-        "battery": {
-            "size": 5,
-            "color": "#CC79A7",
-            "image": "./imgs/battery.svg",
-            "type": "nodeImg"
-        },
-        "diesel_dg": {
-            "size": 5,
-            "color": "#D55E00",
-            "borderColor": "#8C3D00",
-            "type": "nodeImg",
-            "image": "./imgs/generator-g.svg"
-        },
-        "communication_node": {
-            "size": 5,
-            "color": "#CC79A7",
-            "borderColor": "#8C4E75",
-            "type": "nodeImg",
-            "image": "./imgs/comm.jpg"
-        },
-        "microgrid": {
-            "size": 5,
-            "color": "#009E73",
-            "borderColor": "#006B4F",
-            "type": "nodeImg",
-            "image": "./imgs/microgrid.svg"
-        },
-        "inactive": {
-            "color": "rgba(180, 180, 180, 0.4)"
+        "triplex_node": {
+            "size": 2.5,
+            "color": {
+                "light": "#57666F",
+                "dark": "#A3B3BF"
+            },
+            "borderColor": {
+                "light": "#384147",
+                "dark": "#526777"
+            }
         },
         "connectivity_node": {
             "size": 2.5,
-            "type": "node",
-            "color": "#FFA500",
-            "borderColor": "#000000"
+            "color": {
+                "light": "#FFA500",
+                "dark": "#FFA500"
+            },
+            "borderColor": {
+                "light": "#2B3337",
+                "dark": "#2B3337"
+            }
+        },
+        "meter": {
+            "size": 5,
+            "color": {
+                "light": "#004B7A",
+                "dark": "#3D8FD4"
+            },
+            "borderColor": {
+                "light": "#001F33",
+                "dark": "#163F62"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/meter.svg"
+        },
+        "triplex_meter": {
+            "size": 5,
+            "color": {
+                "light": "#004B7A",
+                "dark": "#3D8FD4"
+            },
+            "borderColor": {
+                "light": "#001F33",
+                "dark": "#163F62"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/meter.svg"
+        },
+        "capacitor": {
+            "size": 5,
+            "color": {
+                "light": "#28A0C8",
+                "dark": "#45DCF0"
+            },
+            "borderColor": {
+                "light": "#1C708C",
+                "dark": "#0C8190"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/Capacitor.svg"
+        },
+        "inverter": {
+            "size": 5,
+            "color": {
+                "light": "#6FDF92",
+                "dark": "#6FDF92"
+            },
+            "borderColor": {
+                "light": "#2F654A",
+                "dark": "#219445"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/Inverter.svg"
+        },
+        "inverter_dyn": {
+            "size": 5,
+            "color": {
+                "light": "#6FDF92",
+                "dark": "#6FDF92"
+            },
+            "borderColor": {
+                "light": "#2F654A",
+                "dark": "#219445"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/Inverter.svg"
+        },
+        "battery": {
+            "size": 5,
+            "color": {
+                "light": "#347052",
+                "dark": "#9DE9B5"
+            },
+            "borderColor": {
+                "light": "#1D3F2E",
+                "dark": "#2BC25B"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/battery.svg"
+        },
+        "diesel_dg": {
+            "size": 5,
+            "color": {
+                "light": "#B4EEC6",
+                "dark": "#B4EEC6"
+            },
+            "borderColor": {
+                "light": "#142C20",
+                "dark": "#37D267"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/generator-g.svg"
+        },
+        "substation": {
+            "size": 5,
+            "color": {
+                "light": "#99331F",
+                "dark": "#F4614F"
+            },
+            "borderColor": {
+                "light": "#5E1F13",
+                "dark": "#A01A0A"
+            },
+            "type": "nodeImg",
+            "image": "./imgs/substation.svg"
+        },
+        "inactive": {
+            "color": {
+                "light": "rgba(120,128,134,0.40)",
+                "dark": "rgba(150,158,164,0.35)"
+            }
         }
     },
     "edgeOptions": {
         "overhead_line": {
             "size": 2,
-            "color": "#000000"
+            "color": {
+                "light": "#4A4A4A",
+                "dark": "#C4C4C4"
+            }
         },
         "underground_line": {
             "size": 2,
-            "color": "#555555"
-        },
-        "triplex_line": {
-            "size": 2,
-            "color": "#999999"
-        },
-        "switch": {
-            "size": 2,
-            "color": "#0072B2"
-        },
-        "series_reactor": {
-            "size": 2,
-            "color": "#CC79A7"
-        },
-        "regulator": {
-            "size": 2,
-            "color": "#D55E00"
-        },
-        "transformer": {
-            "size": 2,
-            "color": "#009E73"
-        },
-        "parentChild": {
-            "size": 2,
-            "color": "#BBBBBB"
-        },
-        "communication": {
-            "size": 2,
-            "color": "#CC79A7"
+            "color": {
+                "light": "#6E6E6E",
+                "dark": "#9C9C9C"
+            }
         },
         "line": {
             "size": 1,
-            "color": "#AAAAAA"
+            "color": {
+                "light": "#8C8C8C",
+                "dark": "#7E7E7E"
+            }
+        },
+        "triplex_line": {
+            "size": 2,
+            "color": {
+                "light": "#A6A6A6",
+                "dark": "#666666"
+            }
+        },
+        "parentChild": {
+            "size": 2,
+            "color": {
+                "light": "#C4C4C4",
+                "dark": "#4F4F4F"
+            }
+        },
+        "switch": {
+            "size": 2,
+            "color": {
+                "light": "#3D8FD4",
+                "dark": "#3D8FD4"
+            }
+        },
+        "regulator": {
+            "size": 2,
+            "color": {
+                "light": "#C07A00",
+                "dark": "#E69F00"
+            }
+        },
+        "transformer": {
+            "size": 2,
+            "color": {
+                "light": "#46966E",
+                "dark": "#6FDF92"
+            }
         }
     }
 }

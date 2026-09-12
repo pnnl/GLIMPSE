@@ -1,5 +1,3 @@
-/* Sized by height, not width: the GridAPPS-D and GLIMPSE logos have different
-   aspect ratios, and the header co-brands them side by side. */
 .nav-logo {
     height: 2.75rem;
     width: auto;

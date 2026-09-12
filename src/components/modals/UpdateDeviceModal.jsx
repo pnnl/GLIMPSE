@@ -5,6 +5,36 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { v4 as uuidv4 } from "uuid";
 
+/**
+ * Canonical "OPEN"/"CLOSED" from any of the shapes these attributes hold:
+ *   switch `status`      "OPEN" / "CLOSED"   — written by live simulation output
+ *   switch `open`        boolean true/false from CIM, or "True"/"False" from a GLM
+ *   capacitor `sections` a section count, 0 meaning open
+ *
+ * @returns {"OPEN"|"CLOSED"|null} null when the attribute is missing or unreadable
+ */
+const normalizeStatus = (raw) => {
+    if (raw === null || raw === undefined || raw === "") return null;
+    if (typeof raw === "boolean") return raw ? "OPEN" : "CLOSED";
+
+    const text = String(raw).trim().toUpperCase();
+    if (text === "OPEN" || text === "CLOSED") return text;
+    if (text === "TRUE") return "OPEN";
+    if (text === "FALSE") return "CLOSED";
+
+    const count = Number(text);
+    return Number.isNaN(count) ? null : count ? "CLOSED" : "OPEN";
+};
+
+/** First of `sources` that yields a readable status. */
+const readStatus = (attributes, sources) => {
+    for (const key of sources) {
+        const status = normalizeStatus(attributes[key]);
+        if (status) return status;
+    }
+    return null;
+};
+
 const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
@@ -16,7 +46,7 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
         () => ({
             capacitor: {
                 attribute: "ShuntCompensator.sections",
-                statusSource: "sections",
+                statusSources: ["sections"],
                 statusOptions: [
                     { label: "OPEN", value: "OPEN" },
                     { label: "CLOSED", value: "CLOSED" },
@@ -26,7 +56,11 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
             },
             switch: {
                 attribute: "Switch.open",
-                statusSource: "open",
+                // `status` is what live simulation output writes onto the edge
+                // (see graph-helper/simulation.js). `open` is the model's
+                // load-time value and is never updated once a sim is running, so
+                // it is only the fallback for the first read.
+                statusSources: ["status", "open"],
                 statusOptions: [
                     { label: "OPEN", value: "OPEN" },
                     { label: "CLOSED", value: "CLOSED" },
@@ -41,25 +75,17 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
     const config = useMemo(() => deviceConfig[deviceType], [deviceType, deviceConfig]);
 
     // Current status, read straight off the graph while the modal is open.
-    // Derived (not state): the modal closes right after a save, and the save
-    // path updates the graph optimistically, so the next open re-reads the
-    // fresh value here.
+    // Derived (not state): live simulation output writes the device's new state
+    // back onto the graph element each tick, so re-reading on every open is what
+    // keeps this in step with the running simulation. It also feeds
+    // reverse_differences on save, so a stale read here sends a wrong "before"
+    // value to the platform.
     const { currentStatus, loadError } = useMemo(() => {
         if (!open || !object || !config) return { currentStatus: null, loadError: null };
 
         try {
-            const status = config.getAttributes(object).attributes[config.statusSource];
-
-            // Normalize whatever the source attribute holds ("True"/"False" for
-            // switches, a numeric section count for capacitors) into the canonical
-            // "OPEN"/"CLOSED" label the form and statusValueMap are keyed by.
-            let normalizedStatus;
-            if (status !== "False" && status !== "True") {
-                normalizedStatus = parseInt(status, 10) ? "CLOSED" : "OPEN"; // Handle capacitor status mapping
-            } else {
-                normalizedStatus = status === "False" ? "CLOSED" : "OPEN";
-            }
-            return { currentStatus: normalizedStatus, loadError: null };
+            const attributes = config.getAttributes(object).attributes;
+            return { currentStatus: readStatus(attributes, config.statusSources), loadError: null };
         } catch (error) {
             return { currentStatus: null, loadError: error };
         }
@@ -196,9 +222,6 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
                             placeholder="Select status"
                             options={config.statusOptions}
                             style={{ width: "100%" }}
-                            // Render the dropdown inside the (themed) modal body so it
-                            // follows the active light/dark theme instead of the
-                            // document-body default.
                             getPopupContainer={(trigger) => trigger.parentElement}
                         />
                     </Form.Item>

@@ -6,22 +6,24 @@ const AnimatedEdgeTicker = () => {
     const sigma = useSigma();
 
     useEffect(() => {
+        const RECHECK_MS = 250;
         let frameId;
         let running = true;
         let wasPulsing = false;
+        let cachedHasAnimated = false;
+        let checkedAt = 0;
 
-        const hasAnimatedEdges = () => {
-            const graph = sigma.getGraph();
-            let found = false;
-
-            graph.forEachEdge((edge, attrs) => {
-                if (attrs.type === "animated") found = true;
-            });
-
-            return found;
+        const hasAnimatedEdges = (now) => {
+            if (now - checkedAt >= RECHECK_MS) {
+                checkedAt = now;
+                cachedHasAnimated = Boolean(
+                    sigma.getGraph().findEdge((edge, attrs) => attrs.type === "animated"),
+                );
+            }
+            return cachedHasAnimated;
         };
 
-        const animate = () => {
+        const animate = (now) => {
             if (!running) return;
 
             const graph = sigma.getGraph();
@@ -30,16 +32,11 @@ const AnimatedEdgeTicker = () => {
                 graphHelper.isFocusPulseActive() && pulseId && graph.hasEdge(pulseId),
             );
 
-            if (hasAnimatedEdges()) {
-                // Full refresh already re-applies the pulse to the focused edge.
+            if (hasAnimatedEdges(now)) {
                 sigma.refresh({ skipIndexation: true });
             } else if (pulsing) {
-                // Only the focused edge changes each frame, so repaint just it.
-                // Its z-order was already established by the full refresh in focus().
                 sigma.refresh({ partialGraph: { edges: [pulseId] }, skipIndexation: true });
             } else if (wasPulsing && pulseId && graph.hasEdge(pulseId)) {
-                // Pulse just ended — one last repaint locks in the steady emphasis
-                // instead of leaving the edge frozen mid-pulse.
                 sigma.refresh({ partialGraph: { edges: [pulseId] }, skipIndexation: true });
             }
 

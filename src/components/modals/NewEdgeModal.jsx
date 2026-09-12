@@ -35,6 +35,10 @@ const NewEdgeModal = ({ open, close }) => {
         setFormFields((prev) => ({ ...prev, ...changedValue }));
     };
 
+    const searchFilterFunc = (input, option) => {
+        (option?.label ?? "").toLowerCase().includes(input.toLowerCase());
+    };
+
     // The graph is a module singleton (mutations don't re-render this modal),
     // so `open` is the recompute signal: options are rebuilt each time the
     // modal opens and stay stable while it's up.
@@ -73,10 +77,7 @@ const NewEdgeModal = ({ open, close }) => {
             onClick={handleSubmit}
             loading={loading}
             disabled={
-                !formFields.edgeType ||
-                !formFields.edgeID ||
-                !formFields.fromNode ||
-                !formFields.toNode
+                !formFields.edgeType || !formFields.edgeID || !formFields.fromNode || !formFields.toNode
             }
         >
             Create Edge
@@ -110,7 +111,7 @@ const NewEdgeModal = ({ open, close }) => {
             )}
             {!hasNoGraph && hasNoNodes && (
                 <Alert
-                    message="Insufficient nodes"
+                    title="Insufficient nodes"
                     description="At least 2 nodes are required to create an edge."
                     type="info"
                     showIcon
@@ -119,12 +120,11 @@ const NewEdgeModal = ({ open, close }) => {
             )}
             {error && (
                 <Alert
-                    message="Error"
+                    title="Error"
                     description={error}
                     type="error"
                     showIcon
-                    closable
-                    onClose={() => setError("")}
+                    closable={{ onClose: () => setError("") }}
                     style={{ marginBottom: 20 }}
                 />
             )}
@@ -135,11 +135,7 @@ const NewEdgeModal = ({ open, close }) => {
                 autoComplete="off"
                 onValuesChange={handleValuesChange}
             >
-                <Space
-                    orientation="vertical"
-                    size="small"
-                    style={{ width: "100%", marginBottom: 16 }}
-                >
+                <Space orientation="vertical" size="small" style={{ width: "100%", marginBottom: 16 }}>
                     <span style={{ fontSize: 12, color: "#999" }}>Edge Definition</span>
                 </Space>
 
@@ -157,8 +153,7 @@ const NewEdgeModal = ({ open, close }) => {
                         { required: true, message: "Please enter an edge ID" },
                         {
                             pattern: /^[a-zA-Z0-9_-]+$/,
-                            message:
-                                "ID can only contain letters, numbers, hyphens, and underscores",
+                            message: "ID can only contain letters, numbers, hyphens, and underscores",
                         },
                     ]}
                 >
@@ -208,10 +203,9 @@ const NewEdgeModal = ({ open, close }) => {
                         placeholder="Select source node..."
                         options={nodeIDs}
                         disabled={hasNoNodes}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                        }
+                        showSearch={{
+                            filterOption: searchFilterFunc,
+                        }}
                     />
                 </Form.Item>
 
@@ -231,10 +225,9 @@ const NewEdgeModal = ({ open, close }) => {
                         placeholder="Select destination node..."
                         options={nodeIDs}
                         disabled={hasNoNodes}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                        }
+                        showSearch={{
+                            filterOption: searchFilterFunc,
+                        }}
                     />
                 </Form.Item>
             </Form>

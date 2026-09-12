@@ -1,20 +1,21 @@
-import os
 import logging
+import os
 import socket
-import json
+import time
+from collections import OrderedDict
 from collections.abc import Callable
 from enum import Enum
+
 from gridappsd import GridAPPSD, topics
 
-# GridAPPS-D connection settings, overridable via environment. The gridappsd
-# client reads these same vars, so the pre-flight port check below stays in sync.
-# setdefault (not assignment) lets the container / shell override credentials.
 os.environ.setdefault("GRIDAPPSD_ADDRESS", "localhost")
 os.environ.setdefault("GRIDAPPSD_PORT", "61613")
 os.environ.setdefault("GRIDAPPSD_USER", "system")
 os.environ.setdefault("GRIDAPPSD_PASSWORD", "manager")
 
 logger = logging.getLogger(__name__)
+
+PLATFORM_PROBE_TTL = 10.0
 
 class SimulationState(Enum):
     IDLE = "idle"
@@ -23,43 +24,30 @@ class SimulationState(Enum):
     STOPPED = "stopped"
     ERROR = "error"
 
-
 class GridAPPSDError(Exception):
     """Custom exception for GridAPPS-D operations"""
 
     pass
 
-
 class GridAPPSDHelper:
 
     def __init__(self):
-        # ── State ─────────────────────────────────────────────────────
         self.gapps: GridAPPSD | None = None
         self.sim_id: str | None = None
         self.sim_state: SimulationState = SimulationState.IDLE
         self.current_limit_map = {}
-        self.distribution_area_map = {}
-
+        # Keyed by a model id the client supplies, so it is bounded and evicts
+        # oldest-first: nothing else prunes it and the desktop server is a
+        # long-lived process.
+        self.agent_roster_cache = OrderedDict()
         self._available: bool = False
-
-        # Set True after a topology-service request fails, so later model loads
-        # skip the request (and its timeout) entirely. Reset on try_connect() so
-        # a reconnect gives the service another chance once it's deployed.
         self._topology_service_down: bool = False
-
-        # ── One-shot initial connection attempt ───────────────────────
+        self._platform_ready: bool | None = None
+        self._platform_checked_at: float = 0.0
         self._try_initial_connect()
-
-    # ─── Connection Management ────────────────────────────────────────
 
     @staticmethod
     def _is_port_open(host=None, port=None, timeout=2) -> bool:
-        """
-        Quick TCP check BEFORE we hand off to the STOMP library.
-        This avoids the 3x retry + traceback spam from stomp.py
-        when GridAPPS-D isn't running. Defaults come from the same
-        GRIDAPPSD_ADDRESS / GRIDAPPSD_PORT env vars the client uses.
-        """
         host = host or os.environ.get("GRIDAPPSD_ADDRESS", "localhost")
         port = int(port or os.environ.get("GRIDAPPSD_PORT", 61613))
         try:
@@ -78,15 +66,17 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            print("connected")
-            self._available = True
-            logger.info("Connected to GridAPPS-D")
+            self._available = self.is_connected()
+            if self._available:
+                logger.info("Connected to GridAPPS-D")
+            else:
+                logger.warning("GridAPPS-D client built but no session established — features disabled.")
+                self.gapps = None
         except Exception as e:
             logger.warning(f"GridAPPS-D is not reachable — features disabled. ({e})")
             self.gapps = None
             self._available = False
 
-    # Do the same in try_connect()
     def try_connect(self) -> bool:
         self.disconnect()
 
@@ -97,7 +87,11 @@ class GridAPPSDHelper:
 
         try:
             self.gapps = GridAPPSD()
-            self._available = True
+            self._available = self.is_connected()
+            if not self._available:
+                logger.warning("GridAPPS-D client built but no session established.")
+                self.gapps = None
+                return False
             self._topology_service_down = False  # give the topology service another chance
             logger.info("Reconnected to GridAPPS-D")
             return True
@@ -126,11 +120,35 @@ class GridAPPSDHelper:
             return False
 
     def is_available(self) -> bool:
-        """
-        Quick check other parts of the server can use to decide
-        whether to even attempt a GridAPPS-D operation.
-        """
         return self._available and self.is_connected()
+
+    def is_platform_ready(self, force: bool = False) -> bool:
+        if not self.is_connected():
+            self._platform_ready = None
+            return False
+
+        now = time.monotonic()
+        if (
+            not force
+            and self._platform_ready is not None
+            and now - self._platform_checked_at < PLATFORM_PROBE_TTL
+        ):
+            return self._platform_ready
+
+        ready = False
+        try:
+            response = self.gapps.query_model_names()
+            ready = isinstance(response, dict) and "error" not in response
+            if not ready:
+                logger.warning(
+                    f"GridAPPS-D broker is reachable but the platform is not serving queries: {response}"
+                )
+        except Exception as e:
+            logger.warning(f"GridAPPS-D platform probe failed: {e}")
+
+        self._platform_ready = ready
+        self._platform_checked_at = now
+        return ready
 
     def disconnect(self):
         """Cleanly disconnect from GridAPPS-D"""
@@ -143,6 +161,7 @@ class GridAPPSDHelper:
                 self.gapps = None
                 self.sim_id = None
                 self.sim_state = SimulationState.IDLE
+                self._platform_ready = None
 
     # ─── Model Queries ────────────────────────────────────────────────
 
@@ -157,20 +176,6 @@ class GridAPPSDHelper:
             raise GridAPPSDError(f"Failed to retrieve models: {e}") from e
 
     def get_distributed_areas(self, model_mrid: str, timeout: int | None = None) -> dict | None:
-        """
-        Request the distributed-areas topology for a model from the GridAPPS-D
-        topology service. The response shape matches ieee123_topo.json and is
-        consumed by CIMHelper to tag connectivity nodes with distribution areas.
-
-        Returns the topology dict, or None if the service is unavailable / returns
-        nothing (callers should fall back to deriving areas from the CIM model).
-
-        The topology service may not be deployed yet. To keep model loads fast in
-        that case, the request uses a short timeout (GLIMPSE_TOPOLOGY_TIMEOUT env
-        var, default 5s), and after the first failure the service is marked down
-        for the rest of the session — subsequent loads skip the request entirely.
-        try_connect() clears the mark so a reconnect retries the service.
-        """
         if self._topology_service_down:
             logger.info(
                 f"Skipping topology request for {model_mrid}: service marked "
@@ -191,8 +196,6 @@ class GridAPPSDHelper:
         try:
             response = self.gapps.get_response(topic, message, timeout=timeout)
         except Exception as e:
-            # The topology service may not be running yet; don't break model load,
-            # and don't pay this timeout again on the next model.
             self._topology_service_down = True
             logger.warning(
                 f"Topology service request failed for {model_mrid} ({e}). "
@@ -230,7 +233,7 @@ class GridAPPSDHelper:
 
             if not self.sim_id:
                 raise GridAPPSDError(f"No simulation ID in response: {response}")
-            
+
             # get current limits for each model object
             for ps_conf in sim_config["power_system_configs"]:
                 message = {
@@ -244,7 +247,7 @@ class GridAPPSDHelper:
                 res = self.gapps.get_response(topics.CONFIG, message, timeout=30)
                 for current in res["data"]["limits"]["currents"]:
                     self.current_limit_map[current["id"]] = current
-            
+
             self.sim_state = SimulationState.RUNNING
             logger.info(f"Simulation started: {self.sim_id}")
             return {"simulation_id": self.sim_id, "state": self.sim_state.value}

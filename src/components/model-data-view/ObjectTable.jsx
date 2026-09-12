@@ -333,9 +333,7 @@ const ObjectTable = ({
         if (!sorter) return data.findIndex((row) => row.id === id);
 
         const direction = order === "descend" ? -1 : 1;
-        return [...data]
-            .sort((a, b) => direction * sorter(a, b))
-            .findIndex((row) => row.id === id);
+        return [...data].sort((a, b) => direction * sorter(a, b)).findIndex((row) => row.id === id);
     };
 
     // Clamped rather than reset: narrowing the type filter can shrink the data
@@ -387,11 +385,8 @@ const ObjectTable = ({
                 size="small"
                 sticky
                 rowClassName={(record, index) => {
-                    const stripe =
-                        index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd";
-                    return record.id === highlightedId
-                        ? `${stripe} object-table-row-highlight`
-                        : stripe;
+                    const stripe = index % 2 === 0 ? "object-table-row-even" : "object-table-row-odd";
+                    return record.id === highlightedId ? `${stripe} object-table-row-highlight` : stripe;
                 }}
                 pagination={{
                     current: currentPage,

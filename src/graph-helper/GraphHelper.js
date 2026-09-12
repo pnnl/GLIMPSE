@@ -1,4 +1,5 @@
 import { MultiUndirectedGraph } from "graphology";
+import { emptyRoster, mergeRoster, normalizeRoster } from "./agents";
 import { assignParallelEdgeCurvatures as assignCurvatures } from "./edge-curvature";
 import { EdgeFocus } from "./edge-focus";
 import { createEdge, createNode, hoverPayload } from "./element-factory";
@@ -17,14 +18,34 @@ import {
 } from "./measurements";
 import { applyCapacitorStates, applySimulationOutput, applySwitchStates } from "./simulation";
 import * as socketApi from "./socket-api";
-import { edgeTypesOf, emptyTypeCounts, nodeTypesOf, resolveTheme } from "./theme";
+import {
+    edgeTypesOf,
+    emptyTypeCounts,
+    flattenTheme,
+    nodeTypesOf,
+    resolveTheme,
+    themeSourceFor,
+} from "./theme";
 
 const newGraph = () => new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
+
+// Hints for every bulk updateEachEdgeAttributes below. Without them sigma takes
+// its "repaint in place" path, which reuses the program index it built during
+// the last process() — and throws `edge "<id>" can't be repaint` if that index
+// is stale. Any sigma.setSetting clears the index and defers the reprocess to
+// the next frame, so a bulk repaint landing in that gap crashes the renderer:
+// binding the leaflet map does exactly that (@sigma/layer-leaflet calls
+// setSetting on every map move to keep the zoom bounds in sync). Naming a
+// layout-impacting attribute makes sigma reindex instead. Sigma applies the
+// same default to node updates already, which is why only edges need this.
+const EDGE_REINDEX_HINT = { attributes: ["zIndex"] };
 
 class GraphHelper {
     // private
     #boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-    #theme = {};
+    #theme = {};        // colors already flattened for the active mode
+    #themeSource = null; // as authored, so a mode switch can re-flatten it
+    #darkMode = false;
     #hasFixedNodes = false;
     #highlights = new HighlightState();
     #edgeFocus = new EdgeFocus();
@@ -60,8 +81,19 @@ class GraphHelper {
     // inherit the previous feeder.
     currentFeederID = null;
 
+    // CIM object details keyed feeder -> mRID -> { attributes, associations, ... }.
+    // The backend ships these with the parsed model instead of serving them one
+    // request at a time, so object inspection needs no round trip and the server
+    // needn't still be holding the model. See cimhelper._build_object_details.
+    objectDetails = {};
+
     distributionAreas = {}; // { "SwitchArea": [{ name, id }, ...], "SecondaryArea": [...] }
     hasGeoCoords = false; // true when node x/y hold real longitude/latitude (enables map background)
+
+    // The GridAPPS-D distributed-agent roster for the loaded model. Agents are
+    // keyed to distribution areas by mRID, so they ride on the same area ids the
+    // graph already carries — see graph-helper/agents.js.
+    agents = emptyRoster();
 
     // Ephemeral per-tick simulation measurements — voltage on bus nodes (PNV)
     // and power flow on edges (VA) — surfaced as a read-only overlay during a
@@ -80,10 +112,23 @@ class GraphHelper {
         this.isCIM = Boolean(value);
     };
 
+    /** Store the object details that came back with a CIM model load. */
+    setObjectDetails = (details) => {
+        this.objectDetails = details ?? {};
+    };
+
+    /**
+     * Detail record for one CIM object, or null when the model didn't ship one.
+     * Synthetic connector edges have no CIM instance behind them, so a miss here
+     * is expected rather than an error — callers fall back to graph attributes.
+     */
+    getObjectDetail = (feederId, mRID) => this.objectDetails?.[feederId]?.[mRID] ?? null;
+
     // ── Theme ───────────────────────────────────────────────────────────────
 
     setThemeObject = (jsonTheme = null) => {
-        const theme = resolveTheme(this.themeName, jsonTheme);
+        const theme = resolveTheme(this.themeName, jsonTheme, this.#darkMode);
+        this.#themeSource = themeSourceFor(this.themeName, jsonTheme);
 
         if (!theme) {
             // The custom theme was selected but no theme file came with the
@@ -102,6 +147,59 @@ class GraphHelper {
     /** Guards the socket entry points, which can fire before any model is loaded. */
     #ensureTheme = () => {
         if (!this.#theme?.groups || !this.#theme?.edgeOptions) this.setThemeObject();
+    };
+
+    /**
+     * Switches the theme between its light and dark colors.
+     *
+     * Theme colors are baked into node/edge attributes when the graph is built,
+     * so re-flattening the theme is not enough on its own — every element that
+     * still carries its themed color has to be repainted. Elements the renderer
+     * is currently coloring by something other than type (violation mode, flow
+     * animation) are left alone: those reducers re-derive their color each frame
+     * anyway, and the reset path restores from the theme.
+     *
+     * @param {boolean} darkMode
+     * @returns {boolean} whether anything changed
+     */
+    setDarkMode = (darkMode) => {
+        const next = Boolean(darkMode);
+        if (next === this.#darkMode) return false;
+        this.#darkMode = next;
+
+        if (!this.#themeSource) return false;
+
+        // Types minted at load time for objects the theme didn't know about
+        // (see ensureNodeGroup/ensureEdgeOption) only exist on the flattened
+        // copy, so carry them across rather than losing them on every toggle.
+        const reflowed = flattenTheme(this.#themeSource, next);
+        for (const section of ["groups", "edgeOptions"]) {
+            for (const [type, attrs] of Object.entries(this.#theme[section] ?? {})) {
+                if (!(type in reflowed[section])) reflowed[section][type] = attrs;
+            }
+        }
+        this.#theme = reflowed;
+
+        this.graph.updateEachNodeAttributes((id, node) => {
+            const themed = this.#theme.groups?.[node.group];
+            if (!themed) return node;
+            return {
+                ...node,
+                color: themed.color ?? node.color,
+                borderColor: themed.borderColor ?? node.borderColor,
+            };
+        });
+
+        this.graph.updateEachEdgeAttributes(
+            (id, edge) => {
+                const themed = this.#theme.edgeOptions?.[edge.group];
+                if (!themed) return edge;
+                return { ...edge, color: themed.color ?? edge.color };
+            },
+            EDGE_REINDEX_HINT,
+        );
+
+        return true;
     };
 
     // ── Unsaved-edit tracking ───────────────────────────────────────────────
@@ -213,7 +311,7 @@ class GraphHelper {
         const hide = (_id, attrs) => (attrs.group === group ? { ...attrs, hidden: true } : attrs);
 
         if (type === "node") this.graph.updateEachNodeAttributes(hide);
-        else if (type === "edge") this.graph.updateEachEdgeAttributes(hide);
+        else if (type === "edge") this.graph.updateEachEdgeAttributes(hide, EDGE_REINDEX_HINT);
     };
 
     // ── Focus (see edge-focus.js) ───────────────────────────────────────────
@@ -454,7 +552,7 @@ class GraphHelper {
                 color: themed?.color ?? edge.color,
                 size: themed?.size ?? edge.size,
             };
-        });
+        }, EDGE_REINDEX_HINT);
 
         this.graph.updateEachNodeAttributes((id, node) => ({
             ...node,
@@ -492,7 +590,24 @@ class GraphHelper {
         this.communitiesArray = [];
         this.communityColorPallet = {};
         this.distributionAreas = {};
+        this.objectDetails = {};
+        this.agents = emptyRoster();
         this.currentFeederID = null;
+    };
+
+    /** Replaces the agent roster wholesale — the response from /api/gridappsd/agents. */
+    setAgentData = (payload) => {
+        this.agents = normalizeRoster(payload);
+    };
+
+    /**
+     * Folds an `agents-update` broadcast into the roster. A status-only payload
+     * updates liveness in place rather than replacing the roster, so a ping from
+     * an external script can't blank out the areas and devices the REST load
+     * established.
+     */
+    applyAgentUpdate = (payload) => {
+        this.agents = mergeRoster(this.agents, payload);
     };
 
     /**
@@ -504,7 +619,7 @@ class GraphHelper {
         // save glm file data for exporting changes
         if (!this.isCIM) this.glmFileData = fileData;
 
-        const { graph, hasFixedNodes, hasGeoCoords, distributionAreas } = buildGraph(fileData, {
+        const { graph, hasFixedNodes, hasGeoCoords, distributionAreas, skipped } = buildGraph(fileData, {
             theme: this.#theme,
             nodeTypes: this.nodeTypes,
             edgeTypes: this.edgeTypes,
@@ -517,6 +632,15 @@ class GraphHelper {
         this.#hasFixedNodes = hasFixedNodes;
         this.hasGeoCoords = hasGeoCoords;
         this.distributionAreas = distributionAreas;
+
+        // The model still loads — say so rather than letting the gap go unnoticed.
+        // Dispatched rather than notified directly: utils/notify imports this
+        // module, so calling into it here would close an import cycle.
+        if (skipped > 0 && typeof window !== "undefined") {
+            window.dispatchEvent(
+                new CustomEvent("model-objects-skipped", { detail: { count: skipped } }),
+            );
+        }
 
         // A freshly loaded model matches its source file — nothing to save yet.
         this.clearDirty();

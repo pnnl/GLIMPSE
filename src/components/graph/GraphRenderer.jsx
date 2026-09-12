@@ -2,7 +2,7 @@ import "@react-sigma/core/lib/style.css";
 import { useEffect, useMemo, useCallback } from "react";
 import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
-import { createNodeImageProgram, NodePictogramProgram, NodeImageProgram } from "@sigma/node-image";
+import { createNodeImageProgram } from "@sigma/node-image";
 import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
 import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -11,11 +11,11 @@ import GraphEvents from "./GraphEvents";
 import EdgeCurveProgram from "@sigma/edge-curve";
 import { useGraph } from "../../contexts/GraphContext";
 import Graph from "./Graph";
+import WebGLRecovery from "./WebGLRecovery";
 import {
     EdgeRectangleProgram,
     createNodeCompoundProgram,
     createEdgeCompoundProgram,
-    EdgeArrowHeadProgram,
 } from "sigma/rendering";
 import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
@@ -23,11 +23,14 @@ import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSqua
 import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
 import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
+import AgentPanel from "../agents/AgentPanel";
+import AreaHighlightLayers from "./AreaHighlightLayers";
 import GraphControls from "./GraphControls";
 import SimulationIdBadge from "../SimulationIdBadge";
 import LegendPanel from "../legend/LegendPanel";
 import ViolationLegend from "../legend/ViolationLegend";
-import { isViolation } from "../../utils/electrical";
+import areaHighlight from "../../graph-helper/area-highlight";
+import { isViolation, setSeverityDarkMode } from "../../utils/electrical";
 
 const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
 
@@ -85,12 +88,28 @@ const dimEdgeAttrs = (attrs) => {
 };
 
 const GraphRenderer = () => {
-    const { graphUpdateTrigger, darkMode } = useGraph();
+    const { graphUpdateTrigger, darkMode, mapShown } = useGraph();
+
+    // Everything drawn on the canvas follows the background it sits on, not the
+    // app chrome. The leaflet map's tiles are light in both themes (see
+    // GraphControls), so while the map is up the graph keeps its light colors —
+    // otherwise dark mode's pale overhead lines all but vanish over the tiles.
+    const canvasDark = darkMode && !mapShown;
 
     useEffect(() => {
-        setCanvasDarkMode(darkMode);
+        setCanvasDarkMode(canvasDark);
+        setSeverityDarkMode(canvasDark);
+        // Repaints every element that is still carrying its themed color, which
+        // is what makes the theme's light/dark color pairs take effect.
+        graphHelper.setDarkMode(canvasDark);
+        areaHighlight.setDarkMode(canvasDark);
         if (graphHelper.sigmaInstance) graphHelper.sigmaInstance.refresh();
-    }, [darkMode]);
+        // The DOM panels rendered inside the SigmaContainer read their colors from
+        // the module state set above (the flattened theme, the severity scale).
+        // Their own render pass runs before this effect, so a darkMode-keyed effect
+        // in them would read the previous mode's colors — they wait on this instead.
+        window.dispatchEvent(new CustomEvent("graph-theme-changed"));
+    }, [canvasDark]);
 
     const BorderImageNodeProgram = useMemo(() => {
         const NodeBorderCustomProgram = createNodeBorderProgram({
@@ -170,41 +189,36 @@ const GraphRenderer = () => {
         return { ...attrs, size: attrs.size * 2 };
     }, []);
 
-    const customEdgeReducer = useCallback(
-        (edgeId, attrs) => {
-            // Searched/focused edge always wins: pulse it and keep it on top —
-            // never dim it, whatever the area/group highlight state is.
-            const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
-            if (focusStyle) return focusStyle;
+    const customEdgeReducer = useCallback((edgeId, attrs) => {
+        // Searched/focused edge always wins: pulse it and keep it on top —
+        // never dim it, whatever the area/group highlight state is.
+        const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
+        if (focusStyle) return focusStyle;
 
-            // Condition coloring replaces type coloring outright (see the node
-            // reducer). The flow-animation type is left alone so dots still move.
-            if (graphHelper.isViolationMode()) {
-                return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
-            }
+        // Condition coloring replaces type coloring outright (see the node
+        // reducer). The flow-animation type is left alone so dots still move.
+        if (graphHelper.isViolationMode()) {
+            return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
+        }
 
-            // Distribution-area highlighting takes precedence: grey out any edge that
-            // is not in a selected area.
-            if (graphHelper.getHighlightedAreas().length > 0) {
-                return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
-            }
+        // Distribution-area highlighting takes precedence: grey out any edge that
+        // is not in a selected area.
+        if (graphHelper.getHighlightedAreas().length > 0) {
+            return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
+        }
 
-            if (
-                graphHelper.getHighlightedEdgeTypes().length === 0 &&
-                graphHelper.getHighlightedGroups().length === 0
-            ) {
-                if (darkMode && attrs.group === "overhead_line") attrs.color = "#bfc0c0";
-                return attrs;
-            }
+        if (
+            graphHelper.getHighlightedEdgeTypes().length === 0 &&
+            graphHelper.getHighlightedGroups().length === 0
+        ) {
+            return attrs;
+        }
 
-            if (!graphHelper.isHighlighted(attrs.group)) {
-                return dimEdgeAttrs(attrs);
-            }
-
-            return { ...attrs, size: attrs.size * 1.5 };
-        },
-        [darkMode],
-    );
+        if (!graphHelper.isHighlighted(attrs.group)) {
+            return dimEdgeAttrs(attrs);
+        }
+        return { ...attrs, size: attrs.size * 1.5 };
+    }, []);
 
     // Read the order per call rather than per render: the graph can be swapped
     // under a Sigma instance whose settings object is deliberately stable.
@@ -286,21 +300,23 @@ const GraphRenderer = () => {
         >
             <Graph />
             <GraphEvents />
+            <WebGLRecovery />
             <AnimatedEdgeTicker />
+            {/* Renders nothing; owns the distribution-area contour layers for
+                every consumer of the shared selection (area tree, agents). */}
+            <AreaHighlightLayers />
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-left"}>
                 <DistributionAreaSelector />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"top-right"}>
                 <ViolationLegend />
                 <LegendPanel />
+                <AgentPanel />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-left"}>
                 <GraphControls />
             </ControlsContainer>
-            <ControlsContainer
-                style={{ border: "none", background: "none" }}
-                position={"bottom-right"}
-            >
+            <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-right"}>
                 <SimulationIdBadge />
             </ControlsContainer>
         </SigmaContainer>

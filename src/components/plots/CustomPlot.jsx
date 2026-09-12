@@ -28,9 +28,6 @@ const yAxisLabel = (plot) => {
     }
 };
 
-// Pull the plotted scalar out of a single measurement, matching the legacy
-// _getNextMeasurementValue: voltage/power use magnitude (power in kVA) or angle,
-// tap uses the discrete value.
 const extractValue = (plot, measurement) => {
     if (!measurement) return null;
     switch (plot.measurementType) {
@@ -70,11 +67,8 @@ const CustomPlot = ({ plot, onRemove }) => {
     const processOutput = useCallback(
         (output) => {
             const ts = new Date(output.timestamp * 1000).toLocaleTimeString();
-
-            // Index every incoming measurement by its mRID so each plotted
-            // component can look up its own value regardless of ordering. Tap
-            // (Pos) measurements arrive as Discrete, voltage/power as Analog.
             const byMrid = new Map();
+
             for (const m of [...(output.Analog ?? []), ...(output.Discrete ?? [])]) {
                 if (m.measurement_mrid) byMrid.set(m.measurement_mrid, m);
             }
@@ -86,11 +80,12 @@ const CustomPlot = ({ plot, onRemove }) => {
             plot.components.forEach((component, i) => {
                 const value = extractValue(plot, byMrid.get(component.id));
                 const arr = d.series[i];
-                // Carry forward the previous value when a component reports nothing
-                // this step so line lengths stay aligned with the timestamp axis.
-                const next = value === null || value === undefined || !isFinite(value)
-                    ? arr.length > 0 ? arr[arr.length - 1] : null
-                    : parseFloat(Number(value).toFixed(3));
+                const next =
+                    value === null || value === undefined || !isFinite(value)
+                        ? arr.length > 0
+                            ? arr[arr.length - 1]
+                            : null
+                        : parseFloat(Number(value).toFixed(3));
                 arr.push(next);
                 trimHistory(arr);
             });
@@ -108,12 +103,6 @@ const CustomPlot = ({ plot, onRemove }) => {
         return socketClientHelper.on("sim-output", processOutput);
     }, [processOutput]);
 
-    // ── ECharts theming (matches SimulationCharts) ─────────────────────────
-    // The declarative option deliberately omits every `data` field. ReactECharts
-    // re-applies this option (merge mode) on each render — e.g. a dark-mode toggle
-    // — and because the accumulated point data lives only in the imperative
-    // setOption calls above, leaving `data` out here preserves the live series
-    // instead of wiping them, all without reading the ref during render.
     const text = darkMode ? "#cccccc" : "#333333";
     const bg = darkMode ? "#1f1f1f" : "#fafafa";
     const gridLine = darkMode ? "#2e2e2e" : "#ebebeb";
@@ -121,7 +110,6 @@ const CustomPlot = ({ plot, onRemove }) => {
     const option = {
         backgroundColor: bg,
         textStyle: { color: text },
-        // Extra bottom room for the zoom slider.
         grid: { left: 52, right: 10, top: 38, bottom: TIMELINE_GRID_BOTTOM },
         tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
         legend: {
