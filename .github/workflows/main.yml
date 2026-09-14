@@ -27,7 +27,7 @@ jobs:
       DOCKER_IMAGE_NAME: ${{ matrix.image_name }}
       SKIP_BUILD: "false"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Checking environment
         run: |
