@@ -1,0 +1,136 @@
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build only, skip docker push"
+        type: boolean
+        default: false
+
+env:
+  DOCKER_PROJECT: gridappsd
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    name: Build and push the docker container
+    strategy:
+      matrix:
+        include:
+          - image_name: glimpse-backend
+            dockerfile: Dockerfile.backend
+            readme: docker/README-backend.md
+          - image_name: glimpse-frontend
+            dockerfile: Dockerfile.frontend
+            readme: docker/README-frontend.md
+    env:
+      DOCKER_IMAGE_NAME: ${{ matrix.image_name }}
+      SKIP_BUILD: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checking environment
+        run: |
+          if [ "x${{ env.DOCKER_IMAGE_NAME }}" == "x" ]; then
+            echo "Error: missing DOCKER_IMAGE_NAME"
+            exit 1
+          fi
+
+          OWNER=`echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]'`
+          PROJECT=`echo "${{ env.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
+          if [ "$OWNER" != "$PROJECT" ]; then
+            echo "Skipping: repository owner '$OWNER' does not match DOCKER_PROJECT '$PROJECT'"
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+          else
+            echo "SKIP_BUILD=false" >> $GITHUB_ENV
+          fi
+
+      - name: Log in to docker
+        if: env.SKIP_BUILD != 'true'
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" -a -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+
+            echo " "
+            echo "Connecting to docker"
+            echo "${{ secrets.DOCKER_TOKEN }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "Error: status $status"
+              exit 1
+            fi
+          fi
+
+      - name: Build the image
+        if: env.DOCKER_IMAGE_NAME != null && env.SKIP_BUILD != 'true'
+        run: |
+          TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG#refs/tags/}"
+          TAG="${TAG//\//_}"
+          ORG=`echo "${{ env.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
+          ORG="${ORG:-gridappsd}"
+          ORG="${ORG:+${ORG}/}"
+          IMAGE="${ORG}${{ env.DOCKER_IMAGE_NAME }}"
+          TIMESTAMP=`date +'%y%m%d%H'`
+          GITHASH=`git log -1 --pretty=format:"%h"`
+          BUILD_VERSION="${TIMESTAMP}_${GITHASH}${BRANCH:+:$TAG}"
+          echo "BUILD_VERSION $BUILD_VERSION"
+          echo "TAG ${IMAGE}:${TIMESTAMP}_${GITHASH}"
+          docker build --build-arg VERSION="${TAG}" --build-arg TIMESTAMP="${BUILD_VERSION}" -f ${{ matrix.dockerfile }} -t ${IMAGE}:${TIMESTAMP}_${GITHASH} .
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "Error: status $status"
+            exit 1
+          fi
+
+
+      - name: Push the image
+        if: env.DOCKER_IMAGE_NAME != null && env.SKIP_BUILD != 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          TAG="${GITHUB_REF#refs/heads/}"
+          TAG="${TAG#refs/tags/}"
+          TAG="${TAG//\//_}"
+          ORG=`echo "${{ env.DOCKER_PROJECT }}" | tr '[:upper:]' '[:lower:]'`
+          ORG="${ORG:-gridappsd}"
+          ORG="${ORG:+${ORG}/}"
+          IMAGE="${ORG}${{ env.DOCKER_IMAGE_NAME }}"
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" -a -n "${{ secrets.DOCKER_TOKEN }}" ]; then
+
+            if [ -n "$TAG" -a -n "$ORG" ]; then
+              # Get the built container name
+              CONTAINER=`docker images --format "{{.Repository}}:{{.Tag}}" ${IMAGE}`
+
+              echo "docker push ${CONTAINER}"
+              docker push "${CONTAINER}"
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+
+              echo "docker tag ${CONTAINER} ${IMAGE}:$TAG"
+              docker tag ${CONTAINER} ${IMAGE}:$TAG
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+
+              echo "docker push ${IMAGE}:$TAG"
+              docker push ${IMAGE}:$TAG
+              status=$?
+              if [ $status -ne 0 ]; then
+                echo "Error: status $status"
+                exit 1
+              fi
+            fi
+
+          fi
+
+      - name: Update Docker Hub overview
+        if: env.DOCKER_IMAGE_NAME != null && env.SKIP_BUILD != 'true' && github.event.inputs.dry_run != 'true'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: ${{ env.DOCKER_PROJECT }}/${{ env.DOCKER_IMAGE_NAME }}
+          readme-filepath: ${{ matrix.readme }}
