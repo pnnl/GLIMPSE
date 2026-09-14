@@ -19,8 +19,10 @@ jobs:
         include:
           - image_name: glimpse-backend
             dockerfile: Dockerfile.backend
+            readme: docker/README-backend.md
           - image_name: glimpse-frontend
             dockerfile: Dockerfile.frontend
+            readme: docker/README-frontend.md
     env:
       DOCKER_IMAGE_NAME: ${{ matrix.image_name }}
       SKIP_BUILD: "false"
@@ -123,3 +125,12 @@ jobs:
             fi
 
           fi
+
+      - name: Update Docker Hub overview
+        if: env.DOCKER_IMAGE_NAME != null && env.SKIP_BUILD != 'true' && github.event.inputs.dry_run != 'true'
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: ${{ env.DOCKER_PROJECT }}/${{ env.DOCKER_IMAGE_NAME }}
+          readme-filepath: ${{ matrix.readme }}
