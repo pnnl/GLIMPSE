@@ -11,7 +11,6 @@ lerna-debug.log*
 **/node_modules
 **/gridappsd-viz
 **/__pycache__
-**/glm
 **/.claude
 **/.venv
 **/.env
@@ -22,13 +21,12 @@ lerna-debug.log*
 **/env/
 **/CIM-Builder
 *.local
-Dockerfile
-.dockerignore
 
 CLAUDE.md
 
 # Editor directories and files
 .vscode/*
+.zed/*
 !.vscode/extensions.json
 .idea
 .DS_Store
@@ -41,4 +39,3 @@ CLAUDE.md
 # Electron / PyInstaller build outputs (build/ at repo root holds icons and IS tracked)
 release/
 local-server/build/
-
