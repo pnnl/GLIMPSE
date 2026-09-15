@@ -7,6 +7,8 @@ import { ensureEdgeOption, ensureNodeGroup } from "./theme";
 
 const LOUVAIN_THRESHOLD = 1_000;
 
+export const newGraph = () => new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
+
 const bump = (counts, type) => {
     counts[type] = (counts[type] ?? 0) + 1;
 };
@@ -285,7 +287,7 @@ const stampLatLng = (graph) => {
  *            distributionAreas: Object }}
  */
 export const buildGraph = (fileData, ctx) => {
-    const graph = new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
+    const graph = newGraph();
     const skipped = { count: 0, samples: [] };
 
     const objects = Object.values(fileData ?? {}).flatMap((file) =>

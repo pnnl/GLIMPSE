@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { Modal, Form, Select, Button, Divider, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
-import { v4 as uuidv4 } from "uuid";
+import { emitDifferences } from "./device-control";
 
 /**
  * Canonical "OPEN"/"CLOSED" from any of the shapes these attributes hold:
@@ -35,44 +35,37 @@ const readStatus = (attributes, sources) => {
     return null;
 };
 
+const STATUS_OPTIONS = [
+    { label: "OPEN", value: "OPEN" },
+    { label: "CLOSED", value: "CLOSED" },
+];
+
+const DEVICE_CONFIG = {
+    capacitor: {
+        attribute: "ShuntCompensator.sections",
+        statusSources: ["sections"],
+        statusValueMap: { OPEN: 0, CLOSED: 1 },
+        getAttributes: (id) => graphHelper.graph.getNodeAttributes(id),
+    },
+    switch: {
+        attribute: "Switch.open",
+        // `status` is what live simulation output writes onto the edge
+        // (see graph-helper/simulation.js). `open` is the model's load-time
+        // value and is never updated once a sim is running, so it is only the
+        // fallback for the first read.
+        statusSources: ["status", "open"],
+        statusValueMap: { OPEN: 1, CLOSED: 0 },
+        getAttributes: (id) => graphHelper.graph.getEdgeAttributes(id),
+    },
+};
+
 const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
-    const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
+    const [simulationState, setSimulationState] = useState(() => socketClientHelper.simulationState);
 
-    // Configuration for different device types
-    const deviceConfig = useMemo(
-        () => ({
-            capacitor: {
-                attribute: "ShuntCompensator.sections",
-                statusSources: ["sections"],
-                statusOptions: [
-                    { label: "OPEN", value: "OPEN" },
-                    { label: "CLOSED", value: "CLOSED" },
-                ],
-                statusValueMap: { OPEN: 0, CLOSED: 1 },
-                getAttributes: (id) => graphHelper.graph.getNodeAttributes(id),
-            },
-            switch: {
-                attribute: "Switch.open",
-                // `status` is what live simulation output writes onto the edge
-                // (see graph-helper/simulation.js). `open` is the model's
-                // load-time value and is never updated once a sim is running, so
-                // it is only the fallback for the first read.
-                statusSources: ["status", "open"],
-                statusOptions: [
-                    { label: "OPEN", value: "OPEN" },
-                    { label: "CLOSED", value: "CLOSED" },
-                ],
-                statusValueMap: { OPEN: 1, CLOSED: 0 },
-                getAttributes: (id) => graphHelper.graph.getEdgeAttributes(id),
-            },
-        }),
-        [],
-    );
-
-    const config = useMemo(() => deviceConfig[deviceType], [deviceType, deviceConfig]);
+    const config = DEVICE_CONFIG[deviceType];
 
     // Current status, read straight off the graph while the modal is open.
     // Derived (not state): live simulation output writes the device's new state
@@ -102,73 +95,21 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
         form.setFieldsValue({ status: currentStatus });
     }, [open, currentStatus, loadError, form]);
 
-    useEffect(() => {
-        const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
-            setSimulationState(simState);
-        });
-
-        return () => {
-            unsubSimState();
-        };
-    });
+    useEffect(() => socketClientHelper.on("sim-state-change", setSimulationState), []);
 
     const handleSave = async () => {
         try {
             setLoading(true);
             const values = await form.validateFields();
-            console.log(values);
 
-            // Check if simulation is running
-            if (socketClientHelper.simulationState !== "running") {
-                setLoading(false);
-                return;
-            }
+            if (socketClientHelper.simulationState !== "running") return;
 
-            // Get device attributes
-            const obj = config.getAttributes(object);
-            const equipmentMRID = obj.attributes?.mRID ?? object;
-            let oldStatus = currentStatus;
-            const newStatus = values.status;
+            const equipmentMRID = config.getAttributes(object).attributes?.mRID ?? object;
+            const difference = (status) => [
+                { object: equipmentMRID, attribute: config.attribute, value: config.statusValueMap[status] },
+            ];
 
-            // Map status values
-            const oldValue = config.statusValueMap[oldStatus];
-            const newValue = config.statusValueMap[newStatus];
-
-            console.log("=====================================");
-            console.log("Device MRID:", equipmentMRID);
-            console.log("Old Status:", oldStatus, "->", oldValue);
-            console.log("New Status:", newStatus, "->", newValue);
-
-            // Build the input message
-            const inputMessage = {
-                command: "update",
-                input: {
-                    simulation_id: socketClientHelper.simulationID,
-                    message: {
-                        timestamp: Math.floor(Date.now() / 1000),
-                        difference_mrid: uuidv4(),
-                        reverse_differences: [
-                            {
-                                object: equipmentMRID,
-                                attribute: config.attribute,
-                                value: oldValue,
-                            },
-                        ],
-                        forward_differences: [
-                            {
-                                object: equipmentMRID,
-                                attribute: config.attribute,
-                                value: newValue,
-                            },
-                        ],
-                    },
-                },
-            };
-
-            // Emit the update to the backend
-            console.log(inputMessage);
-            socketClientHelper.socket.emit("sim-input", inputMessage);
-
+            emitDifferences(difference(currentStatus), difference(values.status));
             close();
         } catch (error) {
             console.error("Save failed:", error);
@@ -220,7 +161,7 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
                     >
                         <Select
                             placeholder="Select status"
-                            options={config.statusOptions}
+                            options={STATUS_OPTIONS}
                             style={{ width: "100%" }}
                             getPopupContainer={(trigger) => trigger.parentElement}
                         />

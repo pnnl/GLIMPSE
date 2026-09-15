@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Tabs, Spin, Typography } from "antd";
 import axios from "axios";
 import AttributesTable from "./AttributesTable";
@@ -44,34 +44,27 @@ const getCachedMermaid = (feederId, mRID) => {
     return null;
 };
 
-const setCachedMermaid = (feederId, mRID, data) => {
-    mermaidCache.set(getCacheKey(feederId, mRID), { data, timestamp: Date.now() });
-};
-
-const invalidateCache = (feederId, mRID) => {
-    mermaidCache.delete(getCacheKey(feederId, mRID));
-};
-
 const detailFromGraph = (object) => {
     const { type, id, mRID } = object;
     const graphId = mRID ?? id;
-    const attrs = graphHelper.graph.hasEdge(graphId)
-        ? graphHelper.graph.getEdgeAttributes(graphId)
-        : graphHelper.graph.hasNode(graphId)
-          ? graphHelper.graph.getNodeAttributes(graphId)
-          : null;
+    let attrs = null;
+    if (graphHelper.graph.hasEdge(graphId)) attrs = graphHelper.graph.getEdgeAttributes(graphId);
+    else if (graphHelper.graph.hasNode(graphId)) attrs = graphHelper.graph.getNodeAttributes(graphId);
     if (!attrs) return null;
     return { id: graphId, elementType: type, attributes: { ...attrs.attributes }, associations: {} };
 };
+
+const Centered = ({ children }) => (
+    <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>{children}</div>
+);
 
 const EditObject = ({ object, onNavigate, simActive = false }) => {
     const { newGraphUpdate } = useGraph();
     const isCIM = graphHelper.isCIM;
 
     // The parent remounts this component (via key) for each object viewed, so
-    // these initializers run per object. Everything an object needs to render is
-    // already in memory — CIM details came down with the model — so there is no
-    // loading state for attributes at all.
+    // these initializers run per object. CIM details normally came down with the
+    // model, so attributes usually need no loading state at all.
     const [objectToEdit, setObjectToEdit] = useState(() => {
         if (!object) return null;
 
@@ -88,61 +81,49 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                 : graphHelper.graph.getNodeAttributes(id);
         return { id, elementType: type, attributes: { ...attrs.attributes } };
     });
-    const [mermaidContent, setMermaidContent] = useState(() => {
-        if (!object || !isCIM) return null;
-        return getCachedMermaid(object.feederId, object.mRID);
-    });
+    const [mermaidContent, setMermaidContent] = useState(() =>
+        object && isCIM ? getCachedMermaid(object.feederId, object.mRID) : null,
+    );
     const [mermaidLoading, setMermaidLoading] = useState(
         () => Boolean(object) && isCIM && !getCachedMermaid(object.feederId, object.mRID),
     );
-    const [saving, setSaving] = useState(false);
     // Set when this object had no detail record shipped with the model, so one
     // has to be fetched. See the effect below.
     const [detailLoading, setDetailLoading] = useState(
-        () =>
-            Boolean(object?.mRID && object?.feederId) && isCIM && !objectToEdit,
+        () => Boolean(object?.mRID && object?.feederId) && isCIM && !objectToEdit,
     );
     const [detailError, setDetailError] = useState(null);
-
-    // Track the current request to avoid race conditions
-    const requestRef = useRef(0);
-    const detailRequestRef = useRef(0);
 
     useEffect(() => {
         if (!object || !isCIM || objectToEdit) return;
 
         // Without both ids there is nothing to ask for; detailLoading was
-        // initialized false for exactly this case, so there is no state to undo.
+        // initialized false for exactly this case.
         const { feederId, mRID } = object;
         if (!feederId || !mRID) return;
 
-        const currentRequest = ++detailRequestRef.current;
+        let cancelled = false;
 
         const fetchDetail = async () => {
             try {
                 const { data } = await axios.post(`${API_BASE_URL}/api/cim/objects`, {
                     feeder_id: feederId,
-                    mRID: mRID,
+                    mRID,
                 });
-
-                // Guard against stale responses
-                if (currentRequest !== detailRequestRef.current) return;
-
-                // Same shape the model ships (both come from _object_to_detail),
-                // so everything downstream treats it identically.
-                setObjectToEdit({ ...data.object, _feederId: feederId, _mRID: mRID });
+                // Same shape the model ships (both come from _object_to_detail).
+                if (!cancelled) setObjectToEdit({ ...data.object, _feederId: feederId, _mRID: mRID });
             } catch (error) {
-                if (currentRequest !== detailRequestRef.current) return;
+                if (cancelled) return;
                 console.error("Failed to fetch object:", error);
                 setDetailError(errorText(error, "This object could not be loaded."));
-            } finally {
-                if (currentRequest === detailRequestRef.current) {
-                    setDetailLoading(false);
-                }
+                setDetailLoading(false);
             }
         };
 
         fetchDetail();
+        return () => {
+            cancelled = true;
+        };
     }, [object, isCIM, objectToEdit]);
 
     // Diagram only — the object's attributes and associations are already resolved.
@@ -158,58 +139,50 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
 
         if (getCachedMermaid(feederId, mRID)) return;
 
-        const currentRequest = ++requestRef.current;
+        let cancelled = false;
 
         const fetchMermaid = async () => {
             try {
                 const { data } = await axios.post(`${API_BASE_URL}/api/cim/objects/mermaid`, {
                     feeder_id: feederId,
-                    mRID: mRID,
+                    mRID,
                 });
+                if (cancelled) return;
 
-                // Guard against stale responses
-                if (currentRequest !== requestRef.current) return;
-
-                setCachedMermaid(feederId, mRID, data.mermaid);
+                mermaidCache.set(getCacheKey(feederId, mRID), { data: data.mermaid, timestamp: Date.now() });
                 setMermaidContent(data.mermaid);
             } catch (error) {
-                if (currentRequest !== requestRef.current) return;
                 // The object's own data is already on screen, so a failed
                 // diagram degrades the Diagram tab rather than the whole panel.
-                console.error("Failed to fetch object diagram:", error);
+                if (!cancelled) console.error("Failed to fetch object diagram:", error);
             } finally {
-                if (currentRequest === requestRef.current) {
-                    setMermaidLoading(false);
-                }
+                if (!cancelled) setMermaidLoading(false);
             }
         };
 
         fetchMermaid();
+        return () => {
+            cancelled = true;
+        };
     }, [object, isCIM]);
 
-    const handleChange = useCallback((key, value) => {
+    const handleChange = (key, value) => {
         setObjectToEdit((prev) => ({
             ...prev,
             attributes: { ...prev.attributes, [key]: value },
         }));
-    }, []);
+    };
 
-    const handleSave = useCallback(async () => {
-        if (!objectToEdit) return;
-
-        setSaving(true);
-
+    const handleSave = async () => {
         try {
             if (isCIM) {
                 const feederId = objectToEdit._feederId || objectToEdit.attributes?.feeder_id;
                 const mRID = objectToEdit._mRID || objectToEdit.attributes?.mRID;
 
-                // Batch save: collect all non-read-only attributes
                 const updates = Object.entries(objectToEdit.attributes).filter(
                     ([key]) => !READ_ONLY_ATTRIBUTES.has(key),
                 );
 
-                // Save sequentially to maintain order (or use Promise.all for speed)
                 const results = await Promise.allSettled(
                     updates.map(([key, val]) =>
                         axios.put(`${API_BASE_URL}/api/cim/objects`, {
@@ -227,18 +200,15 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                     notify.success("Object saved successfully");
                 }
 
-                // Invalidate cache so next fetch gets fresh data
-                invalidateCache(feederId, mRID);
+                // Invalidate so the next visit refetches the diagram
+                mermaidCache.delete(getCacheKey(feederId, mRID));
             } else {
                 const { type, id } = object;
+                const attributes = { ...objectToEdit.attributes };
                 if (type === "edge") {
-                    graphHelper.graph.setEdgeAttribute(id, "attributes", {
-                        ...objectToEdit.attributes,
-                    });
+                    graphHelper.graph.setEdgeAttribute(id, "attributes", attributes);
                 } else {
-                    graphHelper.graph.setNodeAttribute(id, "attributes", {
-                        ...objectToEdit.attributes,
-                    });
+                    graphHelper.graph.setNodeAttribute(id, "attributes", attributes);
                 }
                 newGraphUpdate();
                 notify.success("Object saved");
@@ -246,17 +216,15 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
         } catch (error) {
             console.error("Save failed:", error);
             notify.error("Failed to save object");
-        } finally {
-            setSaving(false);
         }
-    }, [objectToEdit, isCIM, object, newGraphUpdate]);
+    };
 
     if (!objectToEdit) {
         if (detailLoading) {
             return (
-                <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
+                <Centered>
                     <Spin size="large" description="Loading object..." />
-                </div>
+                </Centered>
             );
         }
         if (detailError) {
@@ -269,7 +237,6 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
         return null;
     }
 
-    // Derive the feederId to pass down — single source of truth
     const currentFeederId =
         objectToEdit._feederId || objectToEdit.attributes?.feeder_id || object?.feederId;
 
@@ -304,47 +271,41 @@ const EditObject = ({ object, onNavigate, simActive = false }) => {
                     onChange={handleChange}
                     onSave={handleSave}
                     feederId={currentFeederId}
-                    saving={saving}
                     liveRows={liveRows}
                 />
             ),
         },
-        ...(isCIM
-            ? [
-                  {
-                      key: "associations",
-                      label: "Associations",
-                      children: (
-                          <AttributesTable
-                              heading={heading}
-                              attributes={objectToEdit.associations}
-                              readOnlyAttributes={READ_ONLY_ATTRIBUTES}
-                              onNavigate={onNavigate}
-                              feederId={currentFeederId}
-                          />
-                      ),
-                  },
-                  // Rendered server-side from the live cimgraph object.
-                  {
-                      key: "mermaid",
-                      label: "Diagram",
-                      children: mermaidLoading ? (
-                          <div
-                              style={{
-                                  display: "flex",
-                                  justifyContent: "center",
-                                  padding: "3rem",
-                              }}
-                          >
-                              <Spin size="large" description="Loading diagram..." />
-                          </div>
-                      ) : (
-                          <MermaidDiagram mermaidContent={mermaidContent} objectID={heading} />
-                      ),
-                  },
-              ]
-            : []),
     ];
+
+    if (isCIM) {
+        tabItems.push(
+            {
+                key: "associations",
+                label: "Associations",
+                children: (
+                    <AttributesTable
+                        heading={heading}
+                        attributes={objectToEdit.associations}
+                        readOnlyAttributes={READ_ONLY_ATTRIBUTES}
+                        onNavigate={onNavigate}
+                        feederId={currentFeederId}
+                    />
+                ),
+            },
+            // Rendered server-side from the live cimgraph object.
+            {
+                key: "mermaid",
+                label: "Diagram",
+                children: mermaidLoading ? (
+                    <Centered>
+                        <Spin size="large" description="Loading diagram..." />
+                    </Centered>
+                ) : (
+                    <MermaidDiagram mermaidContent={mermaidContent} objectID={heading} />
+                ),
+            },
+        );
+    }
 
     return (
         <Tabs items={tabItems} style={{ height: "100%", display: "flex", flexDirection: "column" }} />

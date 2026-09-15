@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import areaHighlight from "../graph-helper/area-highlight";
 
-export const useAreaHighlight = () => {
+const useAreaHighlight = () => {
     useSyncExternalStore(
         (onChange) => areaHighlight.subscribe(onChange),
         () => areaHighlight.selection,

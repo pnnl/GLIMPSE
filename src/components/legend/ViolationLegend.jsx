@@ -3,6 +3,7 @@ import graphHelper from "../../graph-helper/GraphHelper";
 import { useGraph } from "../../contexts/GraphContext";
 import { useSimLiveTick } from "../../hooks/useSimLiveTick";
 import { VIOLATION_LEGEND, isViolation } from "../../utils/electrical";
+import { panelStyle, surfaceFor } from "../agents/agent-palette";
 
 // Colour scale for violation mode, with a live count beside each band so the
 // user can tell whether anything is actually wrong without scanning the canvas.
@@ -34,24 +35,10 @@ const ViolationLegend = () => {
 
     const counts = graphHelper.getViolationCounts();
 
-    const c = darkMode
-        ? { bg: "#1f1f1f", text: "#e0e0e0", sub: "#8c8c8c", border: "#3a3a3a" }
-        : { bg: "#ffffff", text: "#1f1f1f", sub: "#8c8c8c", border: "#e0e0e0" };
+    const c = surfaceFor(darkMode);
 
     return (
-        <div
-            style={{
-                width: 230,
-                marginBottom: 8,
-                background: c.bg,
-                color: c.text,
-                border: `1px solid ${c.border}`,
-                borderRadius: 8,
-                fontSize: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                overflow: "hidden",
-            }}
-        >
+        <div style={{ ...panelStyle(c), marginBottom: 8 }}>
             <div
                 style={{
                     padding: "8px 10px",

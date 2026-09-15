@@ -191,12 +191,7 @@ const AgentsView = () => {
             return next;
         });
 
-    const revealChildren = (busId) =>
-        setExpanded((prev) => {
-            const next = new Set(prev);
-            next.add(busId);
-            return next;
-        });
+    const revealChildren = (busId) => setExpanded((prev) => new Set(prev).add(busId));
 
     return (
         <div

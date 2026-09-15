@@ -36,7 +36,7 @@ export const NODE_COLORS = {
 // Outlines. One dark stroke keeps every box legible over either surface.
 export const STROKE = "#4a4a4a";
 
-/** Surfaces and text for whichever theme is active. */
+/** Surfaces and text for whichever theme is active. Also used by the legend panels. */
 export const surfaceFor = (darkMode) =>
     darkMode
         ? {
@@ -55,3 +55,31 @@ export const surfaceFor = (darkMode) =>
               border: "#e0e0e0",
               hover: "#f0f0f0",
           };
+
+/** Card shell shared by the corner panels (legend, condition, agents). */
+export const panelStyle = (c) => ({
+    width: 230,
+    background: c.bg,
+    color: c.text,
+    border: `1px solid ${c.border}`,
+    borderRadius: 8,
+    fontSize: 12,
+    boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
+    overflow: "hidden",
+});
+
+/** Click-to-collapse header button of a corner panel. */
+export const panelHeaderStyle = (c, expanded) => ({
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 10px",
+    background: "transparent",
+    border: "none",
+    borderBottom: expanded ? `1px solid ${c.border}` : "none",
+    color: c.text,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+});

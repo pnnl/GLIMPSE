@@ -2,7 +2,7 @@ import { io } from "socket.io-client";
 import graphHelper from "../graph-helper/GraphHelper";
 import { API_BASE_URL, API_TOKEN } from "../config";
 
-export const DEFAULT_POWER_SYSTEM_CONFIG = {
+const DEFAULT_POWER_SYSTEM_CONFIG = {
     SubGeographicalRegion_name: "",
     GeographicalRegion_name: "",
     Line_name: "",
@@ -28,7 +28,7 @@ export const DEFAULT_POWER_SYSTEM_CONFIG = {
     },
 };
 
-export const DEFAULT_GRIDAPPSD_CONFIGURATION = {
+const DEFAULT_GRIDAPPSD_CONFIGURATION = {
     power_system_configs: [],
     simulation_config: {
         start_time: 1774673298,
@@ -43,6 +43,14 @@ export const DEFAULT_GRIDAPPSD_CONFIGURATION = {
     test_config: { events: [], appId: "" },
 };
 
+/** A deep copy of `base` addressed to one feeder model. */
+const powerSystemConfigFor = (base, model) => ({
+    ...structuredClone(base),
+    SubGeographicalRegion_name: model.subRegionId,
+    GeographicalRegion_name: model.regionId,
+    Line_name: model.modelId,
+});
+
 class SocketClientHelper {
     //  Active Configs (defaults until the simulation config form edits them)
     powerSystemConfig = structuredClone(DEFAULT_POWER_SYSTEM_CONFIG);
@@ -56,31 +64,6 @@ class SocketClientHelper {
     // True once the user has applied the simulation config form; the start
     // button uses this to skip the "proceed with defaults?" warning.
     simulationConfigCustomized = false;
-
-    inputMessage = {
-        command: "update",
-        input: {
-            simulation_id: "",
-            message: {
-                timestamp: "", // time of message being sent in seconds
-                difference_mrid: "", // can be a random UUID
-                reverse_differences: [
-                    {
-                        object: "",
-                        attribute: "",
-                        value: "",
-                    },
-                ],
-                forward_differences: [
-                    {
-                        object: "",
-                        attribute: "",
-                        value: "",
-                    },
-                ],
-            },
-        },
-    };
 
     // State
     simulationID = null;
@@ -213,41 +196,26 @@ class SocketClientHelper {
         });
 
         this.socket.on("load-graph", (payload) => {
-            try {
-                graphHelper.loadGraphFromData(payload?.data ?? payload, payload?.themeData ?? null);
-            } catch (err) {
-                console.error("[Socket] Failed to load graph:", err);
-                this.#emit("error", { type: "load-graph", message: err.message });
-                return;
-            }
-            this.#emit("load-graph", payload);
+            const loaded = this.#applyToGraph("load-graph", () =>
+                graphHelper.loadGraphFromData(payload?.data ?? payload, payload?.themeData ?? null),
+            );
+            if (loaded) this.#emit("load-graph", payload);
         });
 
-        this.socket.on("update-data", (data) => {
-            if (this.#applyToGraph("update-data", () => graphHelper.applyUpdate(data)))
-                this.#emit("update-data", data);
-        });
-        this.socket.on("add-node", (data) => {
-            if (this.#applyToGraph("add-node", () => graphHelper.addNode(data)))
-                this.#emit("add-node", data);
-        });
-        this.socket.on("add-edge", (data) => {
-            if (this.#applyToGraph("add-edge", () => graphHelper.addEdge(data)))
-                this.#emit("add-edge", data);
-        });
-        this.socket.on("delete-node", (id) => {
-            if (this.#applyToGraph("delete-node", () => graphHelper.deleteNode(id)))
-                this.#emit("delete-node", id);
-        });
-        this.socket.on("delete-edge", (id) => {
-            if (this.#applyToGraph("delete-edge", () => graphHelper.deleteEdge(id)))
-                this.#emit("delete-edge", id);
-        });
-
-        this.socket.on("agents-update", (data) => {
-            if (this.#applyToGraph("agents-update", () => graphHelper.applyAgentUpdate(data)))
-                this.#emit("agents-update", data);
-        });
+        // External-script graph API: apply to the graph, then fan out to subscribers.
+        const graphUpdates = {
+            "update-data": graphHelper.applyUpdate,
+            "add-node": graphHelper.addNode,
+            "add-edge": graphHelper.addEdge,
+            "delete-node": graphHelper.deleteNode,
+            "delete-edge": graphHelper.deleteEdge,
+            "agents-update": graphHelper.applyAgentUpdate,
+        };
+        for (const [event, apply] of Object.entries(graphUpdates)) {
+            this.socket.on(event, (data) => {
+                if (this.#applyToGraph(event, () => apply(data))) this.#emit(event, data);
+            });
+        }
     }
 
     // Event Emitter
@@ -262,15 +230,6 @@ class SocketClientHelper {
         return () => {
             this.#listeners[event] = this.#listeners[event].filter((cb) => cb !== callback);
         };
-    }
-
-    off(event, callback = null) {
-        if (!(event in this.#listeners)) return;
-        if (callback) {
-            this.#listeners[event] = this.#listeners[event].filter((cb) => cb !== callback);
-        } else {
-            this.#listeners[event] = [];
-        }
     }
 
     #emit(event, data) {
@@ -303,14 +262,8 @@ class SocketClientHelper {
 
     // Simulation Configuration
 
-    buildPowerSystemConfig = (model) => {
-        const base = this.powerSystemConfigOverrides[model.modelId] ?? this.powerSystemConfig;
-        const config = structuredClone(base);
-        config.SubGeographicalRegion_name = model.subRegionId;
-        config.GeographicalRegion_name = model.regionId;
-        config.Line_name = model.modelId;
-        return config;
-    };
+    buildPowerSystemConfig = (model) =>
+        powerSystemConfigFor(this.powerSystemConfigOverrides[model.modelId] ?? this.powerSystemConfig, model);
 
     buildGridappsdConfig = (models = []) => ({
         ...structuredClone(this.gridappsdConfiguration),
@@ -320,13 +273,7 @@ class SocketClientHelper {
     /** Same shape as buildGridappsdConfig, but from the pristine defaults. */
     buildDefaultGridappsdConfig = (models = []) => ({
         ...structuredClone(DEFAULT_GRIDAPPSD_CONFIGURATION),
-        power_system_configs: models.map((model) => {
-            const config = structuredClone(DEFAULT_POWER_SYSTEM_CONFIG);
-            config.SubGeographicalRegion_name = model.subRegionId;
-            config.GeographicalRegion_name = model.regionId;
-            config.Line_name = model.modelId;
-            return config;
-        }),
+        power_system_configs: models.map((model) => powerSystemConfigFor(DEFAULT_POWER_SYSTEM_CONFIG, model)),
     });
 
     applySimulationConfig = ({ simulationConfig, advancedConfig, powerSystemConfigsByModelId } = {}) => {
@@ -389,45 +336,30 @@ class SocketClientHelper {
         });
     };
 
-    pauseSimulation = () => {
+    /** Pause/resume share one ack contract; `verb` only words the no-simulation error. */
+    #controlSimulation(event, verb, nextState) {
         return new Promise((resolve, reject) => {
             if (!this.simulationID) {
-                reject(new Error("No active simulation to pause."));
+                reject(new Error(`No active simulation to ${verb}.`));
                 return;
             }
 
-            this.socket.emit("pause-simulation", this.simulationID, (ack) => {
+            this.socket.emit(event, this.simulationID, (ack) => {
                 if (ack?.error) {
                     this.#emit("error", { type: "simulation", message: ack.error });
                     reject(new Error(ack.error));
                     return;
                 }
-                this.simulationState = "paused";
-                this.#emit("sim-state-change", "paused");
+                this.simulationState = nextState;
+                this.#emit("sim-state-change", nextState);
                 resolve(ack);
             });
         });
-    };
+    }
 
-    resumeSimulation = () => {
-        return new Promise((resolve, reject) => {
-            if (!this.simulationID) {
-                reject(new Error("No active simulation to resume."));
-                return;
-            }
+    pauseSimulation = () => this.#controlSimulation("pause-simulation", "pause", "paused");
 
-            this.socket.emit("resume-simulation", this.simulationID, (ack) => {
-                if (ack?.error) {
-                    this.#emit("error", { type: "simulation", message: ack.error });
-                    reject(new Error(ack.error));
-                    return;
-                }
-                this.simulationState = "running";
-                this.#emit("sim-state-change", "running");
-                resolve(ack);
-            });
-        });
-    };
+    resumeSimulation = () => this.#controlSimulation("resume-simulation", "resume", "running");
 
     stopSimulation = () => {
         return new Promise((resolve, reject) => {
@@ -469,12 +401,6 @@ class SocketClientHelper {
         this.simulationLogs = [];
         this.#emit("sim-log-clear");
     };
-
-    getStatus = () => ({
-        socketConnected: this.isConnected(),
-        simulationID: this.simulationID,
-        simulationState: this.simulationState,
-    });
 }
 
 const socketClientHelper = new SocketClientHelper();

@@ -27,14 +27,13 @@ import {
     SIMULATOR_CONFIG_FIELDS,
     TIMING_FIELD_KEYS,
     VALIDATED_TIMING_FIELDS,
-    isFieldDisabled,
 } from "./simulationConfigFields";
 import { notify } from "../../utils/notify";
 
 const popupInParent = (trigger) => trigger.parentElement;
 
 const renderInput = (field, context) => {
-    const disabled = isFieldDisabled(field.key) || Boolean(field.disabledWhen?.(context));
+    const disabled = Boolean(field.disabledWhen?.(context));
 
     switch (field.input) {
         case "number":

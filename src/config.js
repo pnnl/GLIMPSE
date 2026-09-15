@@ -22,7 +22,7 @@ if (API_TOKEN) {
  * forever, so a backend that accepts a connection and then stalls leaves the UI
  * spinning with nothing to recover from.
  */
-export const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * For requests that parse a model server-side. IEEE 9500 takes ~6.5s and larger

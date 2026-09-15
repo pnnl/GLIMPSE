@@ -10,8 +10,6 @@ const Graph = () => {
 
     useEffect(() => {
         loadGraph(graphHelper.graph);
-        console.log("graph loaded with order:", graphHelper.graph.order);
-
         graphHelper.sigmaInstance = sigma;
 
         graphHelper.graph = sigma.getGraph();

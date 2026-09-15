@@ -33,10 +33,9 @@ const GraphLayout = () => {
     const chartsActive = simActive && activePanel === "charts";
 
     // Track the simulation lifecycle so the toolbar/charts/log panels mount and
-    // unmount with it. Empty deps: the subscription is stable for the lifetime
-    // of the component — without them it re-registered on every render.
+    // unmount with it.
     useEffect(() => {
-        const unsubSimState = socketClientHelper.on("sim-state-change", (simulationState) => {
+        return socketClientHelper.on("sim-state-change", (simulationState) => {
             setSimState(simulationState);
 
             // Charts belong to a run. Collapse the panel when one ends so the
@@ -44,23 +43,13 @@ const GraphLayout = () => {
             // panel actually closed.
             if (simulationState === "inactive") setActivePanel(null);
         });
-
-        return () => {
-            unsubSimState();
-        };
     }, []);
 
     // External scripts can push a graph over the socket "load-graph" event.
     // graphHelper has already rebuilt its graph by the time this fires; we just
     // bump the update trigger so the renderer remounts and shows it.
     useEffect(() => {
-        const unsubLoadGraph = socketClientHelper.on("load-graph", () => {
-            newGraphUpdate();
-        });
-
-        return () => {
-            unsubLoadGraph();
-        };
+        return socketClientHelper.on("load-graph", () => newGraphUpdate());
     }, [newGraphUpdate]);
 
     // Re-fit sigma whenever the graph container changes size: the charts panel
@@ -82,7 +71,6 @@ const GraphLayout = () => {
         return () => cancelAnimationFrame(id);
     }, [chartsActive, logExpanded, simActive]);
 
-    // The charts button collapses the panel when it's already active, else opens it.
     const toggleCharts = () => setActivePanel((v) => (v === "charts" ? null : "charts"));
 
     const border = darkMode ? "#3a3a3a" : "#e0e0e0";
@@ -111,7 +99,7 @@ const GraphLayout = () => {
                     topology stays visible during a live gridappsd sim. Kept mounted (not
                     unmounted) whenever a sim is active so accumulated chart history isn't
                     wiped when switching panels; it just collapses to zero width. */}
-                {simState !== "inactive" && (
+                {simActive && (
                     <div
                         style={{
                             width: chartsActive ? "30%" : "0",

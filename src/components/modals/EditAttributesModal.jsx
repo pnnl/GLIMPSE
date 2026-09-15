@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom";
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Modal, Form, Input, Button, Divider, Spin, Empty, theme } from "antd";
 import { LockOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -34,6 +34,9 @@ const READ_ONLY_ATTRIBUTES = [
     "y",
 ];
 
+// Arrays/objects (e.g. dist_areas) can't render in a plain Input.
+const isComplexValue = (value) => value !== null && typeof value === "object";
+
 const EditAttributesModal = ({ close, context }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
@@ -41,36 +44,19 @@ const EditAttributesModal = ({ close, context }) => {
     const [hasChanges, setHasChanges] = useState(false);
     const { open, object } = context;
 
-    // Arrays/objects (e.g. dist_areas) can't render in a plain Input; show them
-    // as pretty JSON in a read-only textarea instead.
-    const isComplexValue = useCallback(
-        (value) => Array.isArray(value) || (value !== null && typeof value === "object"),
-        [],
-    );
-    const formatValue = useCallback(
-        (value) => (isComplexValue(value) ? JSON.stringify(value, null, 2) : value),
-        [isComplexValue],
-    );
-
     // Snapshot the object's attributes when the modal opens. Derived during
     // render (not in an effect) so the form renders in a single pass.
     const { attributes, loadError } = useMemo(() => {
         if (!open || !object) return { attributes: {}, loadError: null };
 
         try {
+            let attributes = {};
             if (object.type === "node") {
-                return {
-                    attributes: graphHelper.graph.getNodeAttribute(object.id, "attributes") || {},
-                    loadError: null,
-                };
+                attributes = graphHelper.graph.getNodeAttribute(object.id, "attributes") || {};
+            } else if (object.type === "edge") {
+                attributes = graphHelper.graph.getEdgeAttribute(object.id, "attributes") || {};
             }
-            if (object.type === "edge") {
-                return {
-                    attributes: graphHelper.graph.getEdgeAttribute(object.id, "attributes") || {},
-                    loadError: null,
-                };
-            }
-            return { attributes: {}, loadError: null };
+            return { attributes, loadError: null };
         } catch (error) {
             return { attributes: {}, loadError: error };
         }
@@ -88,11 +74,6 @@ const EditAttributesModal = ({ close, context }) => {
         form.setFieldsValue(attributes);
     }, [open, object, attributes, loadError, form]);
 
-    // Track form changes to enable/disable save button
-    const handleFormChange = useCallback(() => {
-        setHasChanges(true);
-    }, []);
-
     const handleSave = async () => {
         if (!hasChanges) {
             notify.info("No changes to save");
@@ -109,7 +90,6 @@ const EditAttributesModal = ({ close, context }) => {
             // dist_areas) are preserved unchanged.
             const merged = { ...attributes, ...values };
 
-            // Update the graph with new attribute values
             if (object.type === "node") {
                 graphHelper.graph.setNodeAttribute(object.id, "attributes", merged);
                 // Rebuild the hover card so it reflects the edited attributes
@@ -186,7 +166,7 @@ const EditAttributesModal = ({ close, context }) => {
                     <Form
                         form={form}
                         layout="vertical"
-                        onValuesChange={handleFormChange}
+                        onValuesChange={() => setHasChanges(true)}
                         autoComplete="off"
                     >
                         {attributeEntries.map(([attributeName, value], i) => {
@@ -211,19 +191,11 @@ const EditAttributesModal = ({ close, context }) => {
                                 </span>
                             );
 
-                            // Read-only fields — and any complex value (arrays/objects
-                            // such as per-phase regulator taps like AN/BN/CN, or
-                            // dist_areas) — are not registered with the form. A
-                            // name-bound Form.Item makes AntD inject the raw store value
-                            // into the input, which for an object renders as
-                            // "[object Object]"; leaving off `name` lets our explicit
-                            // pretty-JSON `value` show instead. Both are preserved
-                            // unchanged via the merge on save.
+                            // Read-only fields are not registered with the form (a
+                            // name-bound Form.Item would render objects as
+                            // "[object Object]"); the merge on save preserves them.
+                            // Shown as full-contrast text in a token-styled box.
                             if (isReadOnly) {
-                                // Render read-only values as full-contrast text in a
-                                // bordered box (not a greyed-out disabled input). Uses
-                                // AntD theme tokens so it tracks the active light/dark
-                                // theme and lines up with the input metrics.
                                 const boxStyle = {
                                     minHeight: token.controlHeight,
                                     border: `1px solid ${token.colorBorder}`,
@@ -237,11 +209,7 @@ const EditAttributesModal = ({ close, context }) => {
                                     <Form.Item
                                         label={label}
                                         key={i}
-                                        tooltip={
-                                            isReadOnly
-                                                ? "This field is read-only and cannot be edited"
-                                                : undefined
-                                        }
+                                        tooltip="This field is read-only and cannot be edited"
                                     >
                                         {isComplexValue(value) ? (
                                             <pre
@@ -254,7 +222,7 @@ const EditAttributesModal = ({ close, context }) => {
                                                     fontSize: token.fontSizeSM,
                                                 }}
                                             >
-                                                {formatValue(value)}
+                                                {JSON.stringify(value, null, 2)}
                                             </pre>
                                         ) : (
                                             <div

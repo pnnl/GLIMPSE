@@ -9,9 +9,8 @@ import { notify, reportError } from "../../utils/notify";
 // is reachable (LoadModelModal only shows this tab after a status check) — it
 // skips the manual "Connect" button and fetches model info immediately.
 const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
-    const [regionNames, setRegionNames] = useState(null);
     const [regionName, setRegionName] = useState(null);
-    const [modelInfo, setModelInfo] = useState(false);
+    const [modelInfo, setModelInfo] = useState(null);
     const [connected, setConnected] = useState(initialConnected);
     const [loading, setLoading] = useState(false);
 
@@ -19,16 +18,17 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
         setLoading(true);
 
         try {
-            const res = await axios.get(`${API_BASE_URL}/api/gridappsd/status`);
+            const { data } = await axios.get(`${API_BASE_URL}/api/gridappsd/status`);
 
-            if ("connected" in res.data && !res.data.connected) {
+            if (data.connected) {
+                // Loading stays on until the model-info fetch below finishes.
+                setConnected(true);
+            } else {
                 notify.warning(
-                    res.data.message ??
+                    data.message ??
                         "The GridAPPS-D broker is not reachable. Check that it is running on port 61613.",
                 );
                 setLoading(false);
-            } else if ("connected" in res.data && res.data.connected) {
-                setConnected(res.data.connected);
             }
         } catch (e) {
             reportError("Could not reach GridAPPS-D", e);
@@ -39,24 +39,15 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
     useEffect(() => {
         const getModelInfo = async () => {
             try {
-                const modelInfoRequest = axios.get(`${API_BASE_URL}/api/gridappsd/model-info`);
-                const res = await modelInfoRequest;
+                const { data } = await axios.get(`${API_BASE_URL}/api/gridappsd/model-info`);
 
-                if (res.data.error || res.status === 500) {
-                    reportError("Could not list GridAPPS-D models", res.data.error);
+                if (data.error) {
+                    reportError("Could not list GridAPPS-D models", data.error);
                     setConnected(false);
                     return;
                 }
 
-                // models is an array
-                const models = res.data.models;
-                const regionNamesSet = new Set();
-
-                // get set of region names
-                models.forEach((model) => regionNamesSet.add(model.regionName));
-
-                setRegionNames(Array.from(regionNamesSet));
-                setModelInfo(res.data.models);
+                setModelInfo(data.models);
             } catch (e) {
                 reportError("Could not list GridAPPS-D models", e);
                 setConnected(false);
@@ -70,16 +61,14 @@ const GridAPPSDModelForm = ({ onModelSelect, initialConnected = false }) => {
         }
     }, [connected]);
 
-    // Empty deps: the subscription is stable for the lifetime of the component.
-    // Without them this re-subscribed on every render.
     useEffect(() => {
-        const unSub = socketClientHelper.on("error", (err) => {
+        return socketClientHelper.on("error", (err) => {
             notify.error(err.message ?? "GridAPPS-D reported an error.");
             setLoading(false);
         });
-
-        return () => unSub();
     }, []);
+
+    const regionNames = modelInfo ? [...new Set(modelInfo.map((model) => model.regionName))] : [];
 
     return (
         <Form>

@@ -1,5 +1,6 @@
 import { floatColor } from "sigma/utils";
 import { EdgeProgram } from "sigma/rendering";
+import { CORNER_QUAD } from "../edge-icon-program";
 import FRAGMENT_SHADER_SOURCE from "./animated-dot.frag.glsl.js";
 import VERTEX_SHADER_SOURCE from "./animated-dot.vert.glsl.js";
 
@@ -27,15 +28,7 @@ export default class AnimatedDotProgram extends EdgeProgram {
                 { name: "a_color", size: 4, type: UNSIGNED_BYTE, normalized: true },
                 { name: "a_id", size: 4, type: UNSIGNED_BYTE, normalized: true },
             ],
-            CONSTANT_ATTRIBUTES: [{ name: "a_corner", size: 2, type: FLOAT }],
-            CONSTANT_DATA: [
-                [-1, -1],
-                [1, -1],
-                [-1, 1],
-                [-1, 1],
-                [1, -1],
-                [1, 1],
-            ],
+            ...CORNER_QUAD,
         };
     }
 

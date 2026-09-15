@@ -1,5 +1,5 @@
 import { hoverPayload } from "./element-factory";
-import { edgeLoadingSummary, nodeVitals, refreshNodeHover } from "./measurements";
+import { edgeLoadingSummary, nodeVitals, refreshNodeHover, sumPower } from "./measurements";
 import { cleanPhase } from "../utils/live-measurements";
 import { dotSpeedForLoading, edgeWidthForLoading } from "../utils/electrical";
 
@@ -10,10 +10,21 @@ const SWITCH_OPEN_COLOR = "#1F9E6E";
 const NO_FLOW_COLOR = "rgba(145, 145, 145, 0.7)";
 
 // A value of 0 means the switch is open; anything else means closed.
-const switchStateFor = (value) => ({
-    switchColor: value === 0 ? SWITCH_OPEN_COLOR : SWITCH_CLOSED_COLOR,
-    status: value === 0 ? "OPEN" : "CLOSED",
-});
+const setSwitchState = (graph, switchID, value) => {
+    const open = value === 0;
+    graph.updateEdgeAttributes(switchID, (attrs) => ({
+        ...attrs,
+        switchColor: open ? SWITCH_OPEN_COLOR : SWITCH_CLOSED_COLOR,
+        attributes: { ...attrs.attributes, status: open ? "OPEN" : "CLOSED" },
+    }));
+};
+
+const setCapacitorSections = (graph, live, capID, sections) => {
+    graph.updateNodeAttributes(capID, (attrs) => {
+        const attributes = { ...attrs.attributes, sections };
+        return { ...attrs, attributes, ...hoverPayload(attributes, nodeVitals(graph, live, capID)) };
+    });
+};
 
 // ── Analog: bus voltages (PNV) ──────────────────────────────────────────────
 
@@ -84,12 +95,7 @@ const recordPowerFlows = (graph, live, analog) => {
     const sums = new Map();
     for (const edgeID of touched) {
         const edgeLive = live.edges.get(edgeID);
-        let real = 0;
-        let imag = 0;
-        for (const phase of Object.values(edgeLive.power)) {
-            if (Number.isFinite(phase.real)) real += phase.real;
-            if (Number.isFinite(phase.imag)) imag += phase.imag;
-        }
+        const { real, imag } = sumPower(edgeLive.power);
 
         // Complex sum -> apparent power, the quantity a rating is stated in.
         edgeLive.apparent = Math.hypot(real, imag);
@@ -114,7 +120,8 @@ const animateFlow = (graph, live, theme, sums) => {
             edgeAttrs.flowDirection = flowDirection;
 
             if (flowDirection === 0) {
-                edgeAttrs.color = NO_FLOW_COLOR;
+                // Theme-aware so dead lines recede on the dark canvas too.
+                edgeAttrs.color = theme.groups?.inactive?.color ?? NO_FLOW_COLOR;
                 edgeAttrs.type = "straight";
                 return edgeAttrs;
             }
@@ -135,30 +142,14 @@ const animateFlow = (graph, live, theme, sums) => {
 // ── Discrete: switch position and capacitor sections ────────────────────────
 
 const applyDiscrete = (graph, live, discrete) => {
-    for (const measurement of discrete) {
-        const id = measurement.equipment_mrid;
+    for (const { equipment_mrid: id, value } of discrete) {
         const isEdge = graph.hasEdge(id) && !graph.hasNode(id);
         const isNode = graph.hasNode(id) && !graph.hasEdge(id);
 
-        if (isEdge) {
-            graph.updateEdgeAttributes(id, (edge) => {
-                if (edge.group === "switch") {
-                    const { switchColor, status } = switchStateFor(measurement.value);
-                    edge.switchColor = switchColor;
-                    edge.attributes.status = status;
-                }
-
-                return edge;
-            });
-        } else if (isNode) {
-            graph.updateNodeAttributes(id, (node) => {
-                if (node.group === "capacitor") {
-                    node.attributes.sections = measurement.value;
-                    Object.assign(node, hoverPayload(node.attributes, nodeVitals(graph, live, id)));
-                }
-
-                return node;
-            });
+        if (isEdge && graph.getEdgeAttribute(id, "group") === "switch") {
+            setSwitchState(graph, id, value);
+        } else if (isNode && graph.getNodeAttribute(id, "group") === "capacitor") {
+            setCapacitorSections(graph, live, id, value);
         }
     }
 };
@@ -190,36 +181,22 @@ export const applySimulationOutput = ({ graph, live, theme }, output) => {
 
 /** Switch open/closed state pushed outside the regular measurement stream. */
 export const applySwitchStates = (graph, simOutput) => {
-    for (const sw of simOutput?.switches ?? []) {
-        const { equipment_mrid: switchID, value } = sw;
-
+    for (const { equipment_mrid: switchID, value } of simOutput?.switches ?? []) {
         if (!graph.hasEdge(switchID)) {
             console.warn(`Switch with ID ${switchID} not found in the graph.`);
             continue;
         }
-
-        const { switchColor, status } = switchStateFor(value);
-        graph.updateEdgeAttributes(switchID, (attrs) => ({
-            ...attrs,
-            switchColor,
-            attributes: { ...attrs.attributes, status },
-        }));
+        setSwitchState(graph, switchID, value);
     }
 };
 
 /** Capacitor section counts pushed outside the regular measurement stream. */
 export const applyCapacitorStates = (graph, live, simOutput) => {
-    for (const cap of simOutput?.capacitors ?? []) {
-        const { equipment_mrid: capID, value } = cap;
-
+    for (const { equipment_mrid: capID, value } of simOutput?.capacitors ?? []) {
         if (!graph.hasNode(capID)) {
             console.warn(`Capacitor with ID ${capID} not found in the graph.`);
             continue;
         }
-
-        graph.updateNodeAttributes(capID, (attrs) => {
-            const updated = { ...attrs, attributes: { ...attrs.attributes, sections: value } };
-            return { ...updated, ...hoverPayload(updated.attributes, nodeVitals(graph, live, capID)) };
-        });
+        setCapacitorSections(graph, live, capID, value);
     }
 };

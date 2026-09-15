@@ -7,7 +7,7 @@ import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import useAreaHighlight from "../../hooks/useAreaHighlight";
 import { AGENT_LEVELS, LEVEL_LABELS, agentsByLevel } from "../../graph-helper/agents";
 import AgentMarkers from "./AgentMarkers";
-import { STATUS_COLORS, surfaceFor } from "./agent-palette";
+import { STATUS_COLORS, panelHeaderStyle, panelStyle, surfaceFor } from "./agent-palette";
 
 // Levels a marker can be placed at. "system" is excluded: the coordinating agent
 // operates the whole model, so it has no area to sit on — it appears in the list
@@ -173,36 +173,8 @@ const AgentPanel = () => {
         <>
             <AgentMarkers roster={roster} level={activeLevel} />
 
-            <div
-                style={{
-                    width: 230,
-                    marginTop: 8,
-                    background: c.bg,
-                    color: c.text,
-                    border: `1px solid ${c.border}`,
-                    borderRadius: 8,
-                    fontSize: 12,
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                    overflow: "hidden",
-                }}
-            >
-                <button
-                    onClick={() => setExpanded((prev) => !prev)}
-                    style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "8px 10px",
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: expanded ? `1px solid ${c.border}` : "none",
-                        color: c.text,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                    }}
-                >
+            <div style={{ ...panelStyle(c), marginTop: 8 }}>
+                <button onClick={() => setExpanded((prev) => !prev)} style={panelHeaderStyle(c, expanded)}>
                     {expanded ? <IoChevronDown size={14} /> : <IoChevronForward size={14} />}
                     Agents
                     <span style={{ marginLeft: "auto", color: c.sub, fontWeight: 400, fontSize: 11 }}>
@@ -249,7 +221,6 @@ const AgentPanel = () => {
                             <div
                                 style={{
                                     marginTop: 2,
-                                    paddingTop: 6,
                                     borderTop: `1px solid ${c.border}`,
                                     padding: "6px 8px 2px",
                                     fontSize: 10,

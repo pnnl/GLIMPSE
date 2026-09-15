@@ -1,16 +1,9 @@
 import POWER_GRID_THEME from "../themes/PowerGrid.theme.json";
 
-export const CUSTOM_THEME_NAME = "custom-theme";
+const CUSTOM_THEME_NAME = "custom-theme";
 
-/** Generates a random color in hexadecimal format. */
-export const randomColor = () => {
-    const letters = "0123456789ABCDEF";
-    let color = "#";
-
-    while (color.length < 7) color += letters[Math.floor(Math.random() * 16)];
-
-    return color;
-};
+const randomColor = () =>
+    `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, "0").toUpperCase()}`;
 
 /** Theme keys whose value may be a `{ light, dark }` pair. */
 const MODE_KEYS = ["color", "borderColor"];
@@ -42,20 +35,9 @@ export const flattenTheme = (theme, darkMode) => {
 };
 
 /**
- * The theme to use for a given selection. Anything other than the custom theme
- * falls back to the bundled power-grid theme.
- *
- * @param {string} themeName - graphHelper.themeName
- * @param {Object|null} jsonTheme - the uploaded `<name>.theme.json`, when there is one
- * @param {boolean} [darkMode] - which side of any `{ light, dark }` pair to use
- * @returns {Object|null} the theme, or null when a custom theme was selected without a file
- *   (the caller then keeps the previous type lists — see setThemeObject)
+ * The unflattened theme for a selection: the uploaded file for the custom theme
+ * (null when none came with the upload), otherwise the bundled power-grid theme.
  */
-export const resolveTheme = (themeName, jsonTheme = null, darkMode = false) => {
-    const theme = themeSourceFor(themeName, jsonTheme);
-    return theme ? flattenTheme(theme, darkMode) : null;
-};
-
 export const themeSourceFor = (themeName, jsonTheme = null) =>
     themeName === CUSTOM_THEME_NAME ? jsonTheme : POWER_GRID_THEME;
 

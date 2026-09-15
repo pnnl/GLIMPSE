@@ -1,6 +1,8 @@
-export const PULSE_DURATION = 2600; // ms
-export const PULSE_PERIOD = 650; // ms — one grow/shrink cycle
-export const FOCUS_COLOR = "#ff9500";
+import { EDGE_ICONS } from "./element-factory";
+
+const PULSE_DURATION = 2600; // ms
+const PULSE_PERIOD = 650; // ms — one grow/shrink cycle
+const FOCUS_COLOR = "#ff9500";
 
 const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
@@ -61,12 +63,11 @@ export class EdgeFocus {
 
         // Icon edges pulse their symbol too, without overwriting a switch's
         // open/closed status color (which stays meaningful).
-        const iconScale = 1 + 0.6 * wave * decay;
-        if (attrs.iconType === "switch") styled.switchSize = (attrs.switchSize || 8) * iconScale;
-        else if (attrs.iconType === "regulator")
-            styled.regulatorSize = (attrs.regulatorSize || 16) * iconScale;
-        else if (attrs.iconType === "transformer")
-            styled.transformerSize = (attrs.transformerSize || 16) * iconScale;
+        const icon = EDGE_ICONS[attrs.iconType];
+        if (icon) {
+            const sizeKey = `${attrs.iconType}Size`;
+            styled[sizeKey] = (attrs[sizeKey] || icon[sizeKey]) * (1 + 0.6 * wave * decay);
+        }
 
         return styled;
     }

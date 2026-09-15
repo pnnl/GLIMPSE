@@ -23,7 +23,7 @@ export const EDGE_ICONS = {
     transformer: { type: "transformer", iconType: "transformer", transformerSize: 16 },
 };
 
-export const edgeIconFor = (objectType, attributes = {}) => {
+const edgeIconFor = (objectType, attributes = {}) => {
     if (objectType === "transformer" && attributes?.class_type === "regulator") {
         return EDGE_ICONS.regulator;
     }

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import mermaid from "mermaid";
 import { Card, Typography } from "antd";
 import { useGraph } from "../../contexts/GraphContext";

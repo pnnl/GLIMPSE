@@ -1,19 +1,21 @@
+import { nodeInArea } from "./area-contour";
+
 export class HighlightState {
     #groups = [];
     #edgeTypes = [];
     #areas = [];
-    nodeIDs = [];
-    edgeIDs = [];
+    #nodeIDs = [];
+    #edgeIDs = [];
     objects = [];
     focusIndex = -1;
 
     #syncObjects() {
-        this.objects = [...this.nodeIDs, ...this.edgeIDs];
+        this.objects = [...this.#nodeIDs, ...this.#edgeIDs];
     }
 
     toggleGroup(graph, groupName) {
         this.#groups = toggle(this.#groups, groupName);
-        this.nodeIDs = graph
+        this.#nodeIDs = graph
             .filterNodes((n, attrs) => this.#groups.includes(attrs.group))
             .map((n) => ({ type: "node", id: n }));
         this.#syncObjects();
@@ -21,7 +23,7 @@ export class HighlightState {
 
     toggleEdgeType(graph, edgeType) {
         this.#edgeTypes = toggle(this.#edgeTypes, edgeType);
-        this.edgeIDs = graph
+        this.#edgeIDs = graph
             .filterEdges((e, attrs) => this.#edgeTypes.includes(attrs.group))
             .map((e) => ({ type: "edge", id: e }));
         this.#syncObjects();
@@ -48,13 +50,7 @@ export class HighlightState {
     }
 
     isInArea(attrs) {
-        if (this.#areas.length === 0) return true;
-        const a = (attrs && attrs.attributes) || {};
-        return (
-            this.#areas.includes(a.feeder_area_id) ||
-            this.#areas.includes(a.switch_area_id) ||
-            this.#areas.includes(a.secondary_area_id)
-        );
+        return this.#areas.length === 0 || this.#areas.some((areaId) => nodeInArea(attrs, areaId));
     }
 
     // ── Prev/Next cursor (wraps in both directions) ─────────────────────────
@@ -80,8 +76,8 @@ export class HighlightState {
         this.#groups = [];
         this.#edgeTypes = [];
         this.#areas = [];
-        this.nodeIDs = [];
-        this.edgeIDs = [];
+        this.#nodeIDs = [];
+        this.#edgeIDs = [];
         this.objects = [];
         this.focusIndex = -1;
     }

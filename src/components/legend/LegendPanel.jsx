@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useSigma } from "@react-sigma/core";
 import { IoChevronDown, IoChevronForward } from "react-icons/io5";
 import graphHelper from "../../graph-helper/GraphHelper";
-import LegendContextMenu from "../menus/LegendContextMenu";
+import ContextMenu from "../menus/ContextMenu";
 import { useGraph } from "../../contexts/GraphContext";
+import { panelHeaderStyle, panelStyle, surfaceFor } from "../agents/agent-palette";
 
 // A DOM legend rendered inside a sigma ControlsContainer (so it has sigma context
 // but its own toggle state lives inside the SigmaContainer — toggling it never
@@ -11,6 +12,9 @@ import { useGraph } from "../../contexts/GraphContext";
 // types present in the model with their color + count. Double-click a type to
 // highlight it; right-click for a context menu (Hide All).
 const key = (elementType, type) => `${elementType}:${type}`;
+
+const MENU_ITEMS = [{ key: "hide-all", label: "Hide All" }];
+const CLOSED_MENU = { open: false, x: 0, y: 0 };
 
 // Row/Section live at module scope (not recreated per LegendPanel render) so
 // React treats them as stable component types across renders.
@@ -107,44 +111,39 @@ const LegendPanel = () => {
     const [data, setData] = useState(() => graphHelper.getLegendData());
     const [highlighted, setHighlighted] = useState(() => new Set());
     const [hidden, setHidden] = useState(() => new Set());
-    const [context, setContext] = useState({ open: false, x: 0, y: 0 });
+    const [context, setContext] = useState(CLOSED_MENU);
 
     const refresh = useCallback(() => setData(graphHelper.getLegendData()), []);
 
     // Re-read on graph load/clear; wipe local highlight/hide state since the graph
     // (and graphHelper's highlight sets) reset with it.
     useEffect(() => {
-        const handleGraphLoaded = () => {
-            refresh();
+        const clearMarks = () => {
             setHighlighted(new Set());
             setHidden(new Set());
+        };
+        const handleGraphLoaded = () => {
+            refresh();
+            clearMarks();
         };
         const handleGraphCleared = () => {
             setData({ nodes: [], edges: [] });
-            setHighlighted(new Set());
-            setHidden(new Set());
-        };
-        // Reset button clears highlight/hide on the graph; mirror that here so the
-        // accent + strike-through go away too.
-        const handleGraphReset = () => {
-            setHighlighted(new Set());
-            setHidden(new Set());
+            clearMarks();
         };
 
         window.addEventListener("graph-loaded", handleGraphLoaded);
         window.addEventListener("graph-cleared", handleGraphCleared);
-        window.addEventListener("graph-reset", handleGraphReset);
+        // The Reset button clears highlight/hide on the graph; mirror it here.
+        window.addEventListener("graph-reset", clearMarks);
         // Light/dark toggle re-flattens the theme's color pairs, so the swatches
-        // need re-reading. Highlight/hide state survives — the graph itself didn't
-        // change. Driven by the event rather than the darkMode context value
-        // because this panel lives under GraphRenderer, whose effect is what calls
-        // graphHelper.setDarkMode — a local effect here would run first and read
-        // the old colors.
+        // need re-reading. Driven by the event rather than darkMode because
+        // GraphRenderer's effect (which runs after this panel renders) is what
+        // calls graphHelper.setDarkMode.
         window.addEventListener("graph-theme-changed", refresh);
         return () => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
-            window.removeEventListener("graph-reset", handleGraphReset);
+            window.removeEventListener("graph-reset", clearMarks);
             window.removeEventListener("graph-theme-changed", refresh);
         };
     }, [refresh]);
@@ -156,7 +155,7 @@ const LegendPanel = () => {
         if (!context.open) return;
         const close = (e) => {
             if (e.target.closest?.("[data-legend-menu]")) return;
-            setContext({ open: false, x: 0, y: 0 });
+            setContext(CLOSED_MENU);
         };
         window.addEventListener("mousedown", close);
         return () => window.removeEventListener("mousedown", close);
@@ -187,49 +186,21 @@ const LegendPanel = () => {
         setContext({ open: true, type: elementType, group: type, x: e.pageX, y: e.pageY });
     };
 
-    const handleHideAll = (elementType, group) => {
-        graphHelper.hideGroup(elementType, group);
+    // "Hide All" is the menu's only item.
+    const hideAll = () => {
+        graphHelper.hideGroup(context.type, context.group);
         sigma.refresh();
-        setHidden((prev) => new Set(prev).add(key(elementType, group)));
+        setHidden((prev) => new Set(prev).add(key(context.type, context.group)));
+        setContext(CLOSED_MENU);
     };
 
-    const c = darkMode
-        ? { bg: "#1f1f1f", text: "#e0e0e0", sub: "#8c8c8c", border: "#3a3a3a", hover: "#2c2c2c", accent: "#4c8bf5" }
-        : { bg: "#ffffff", text: "#1f1f1f", sub: "#8c8c8c", border: "#e0e0e0", hover: "#f0f0f0", accent: "#1677ff" };
+    const c = { ...surfaceFor(darkMode), accent: darkMode ? "#4c8bf5" : "#1677ff" };
 
     const isEmpty = data.nodes.length === 0 && data.edges.length === 0;
 
     return (
-        <div
-            style={{
-                width: 230,
-                background: c.bg,
-                color: c.text,
-                border: `1px solid ${c.border}`,
-                borderRadius: 8,
-                fontSize: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.18)",
-                overflow: "hidden",
-            }}
-        >
-            {/* Header — click to expand/collapse */}
-            <button
-                onClick={toggleExpanded}
-                style={{
-                    width: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 10px",
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: expanded ? `1px solid ${c.border}` : "none",
-                    color: c.text,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                }}
-            >
+        <div style={panelStyle(c)}>
+            <button onClick={toggleExpanded} style={panelHeaderStyle(c, expanded)}>
                 {expanded ? <IoChevronDown size={14} /> : <IoChevronForward size={14} />}
                 Legend
             </button>
@@ -260,33 +231,28 @@ const LegendPanel = () => {
                                 onToggleHighlight={toggleHighlight}
                                 onOpenMenu={openMenu}
                             />
+                            <div
+                                style={{
+                                    marginTop: 6,
+                                    borderTop: `1px solid ${c.border}`,
+                                    padding: "6px 8px 2px",
+                                    fontSize: 10,
+                                    color: c.sub,
+                                }}
+                            >
+                                Double-click a type to highlight · right-click for options
+                            </div>
                         </>
-                    )}
-
-                    {/* Extension slot — future legend actions (theme editor, filters,
-                        export, etc.) can be added below this divider. */}
-                    {!isEmpty && (
-                        <div
-                            style={{
-                                marginTop: 6,
-                                paddingTop: 6,
-                                borderTop: `1px solid ${c.border}`,
-                                padding: "6px 8px 2px",
-                                fontSize: 10,
-                                color: c.sub,
-                            }}
-                        >
-                            Double-click a type to highlight · right-click for options
-                        </div>
                     )}
                 </div>
             )}
 
-            <LegendContextMenu
+            <ContextMenu
+                data-legend-menu
                 context={context}
-                close={() => setContext({ open: false, x: 0, y: 0 })}
-                onHideAll={handleHideAll}
-                onEditTheme={() => {}}
+                width="8rem"
+                items={MENU_ITEMS}
+                onClick={hideAll}
             />
         </div>
     );

@@ -1,9 +1,11 @@
+import functools
 import hmac
 import json
 import os
 import shutil
 import tempfile
 import traceback
+from contextlib import contextmanager
 
 import gevent
 from flask import Flask, jsonify, request, send_file
@@ -41,25 +43,17 @@ def run_cim_parse(fn, **kwargs):
     return result
 
 
-# agents-update is keyed by a model id the caller chooses, so the cache is
-# capped rather than left to grow for the life of the process.
-MAX_CACHED_AGENT_ROSTERS = 32
+def count_objects(gjs: dict) -> int:
+    return sum(len(entry.get("objects", [])) for entry in (gjs or {}).values())
+
+
+def _env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes")
 
 
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
-
-_default_cors_origins = [
-    "http://localhost:5173",
-    "http://localhost:4173",
-    "http://localhost:3000",
-    "http://localhost:61613",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:4173",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:61613",
-]
 
 _cors_env = os.environ.get("CORS_ORIGINS", "").strip()
 if _cors_env == "*":
@@ -67,11 +61,16 @@ if _cors_env == "*":
 elif _cors_env:
     cors_origins = [origin.strip() for origin in _cors_env.split(",") if origin.strip()]
 else:
-    cors_origins = _default_cors_origins
-
-methods = ["GET", "POST", "DELETE", "OPTIONS"]
-allowed_headers = ["Content-Type", "Authorization"]
-allow_credentials = cors_origins != "*"
+    cors_origins = [
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:3000",
+        "http://localhost:61613",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:61613",
+    ]
 
 app = Flask(__name__)
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "65"))
@@ -80,36 +79,46 @@ app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 CORS(
     app,
     origins=cors_origins,
-    methods=methods,
-    allow_headers=allowed_headers,
-    supports_credentials=allow_credentials,
+    methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    supports_credentials=cors_origins != "*",
 )
 socketio = SocketIO(
     app, async_mode="gevent", cors_allowed_origins=cors_origins, allow_upgrades=True
 )
 
+# The main thread's hub, captured here: get_hub() on a broker callback thread
+# would create a separate hub for that thread.
 _hub = gevent.get_hub()
 
 def emit_threadsafe(event: str, payload):
-    """socketio.emit() from a non-greenlet thread. See _hub above."""
+    """socketio.emit() from a non-greenlet thread."""
     _hub.loop.run_callback_threadsafe(socketio.emit, event, payload)
 
-EXPOSE_TRACEBACKS = os.environ.get("EXPOSE_TRACEBACKS", "").strip().lower() in (
-    "1",
-    "true",
-    "yes",
-)
+EXPOSE_TRACEBACKS = _env_flag("EXPOSE_TRACEBACKS")
 
-def error_body(exc, tb, message=None, extra=None):
-    """Build an error response body. Always logs the traceback server-side, but
-    only exposes it to the client when EXPOSE_TRACEBACKS is set."""
+def error_body(exc, message=None):
+    """Error body for the exception being handled. Always logs the traceback,
+    but only exposes it to the client when EXPOSE_TRACEBACKS is set."""
+    tb = traceback.format_exc()
     print(tb)
     body = {"error": message if message is not None else str(exc)}
-    if extra:
-        body.update(extra)
     if EXPOSE_TRACEBACKS:
         body["traceback"] = tb
     return body
+
+
+def json_errors(status=500):
+    """Answer any exception escaping the view with error_body at `status`."""
+    def decorate(view):
+        @functools.wraps(view)
+        def wrapper(*args, **kwargs):
+            try:
+                return view(*args, **kwargs)
+            except Exception as e:
+                return error_body(e), status
+        return wrapper
+    return decorate
 
 
 # Every route returns { "error": ... } on the failures it anticipates. Without
@@ -130,24 +139,20 @@ def _http_error(exc):
 
 @app.errorhandler(Exception)
 def _unhandled_error(exc):
-    return error_body(exc, traceback.format_exc(), message=f"Server error: {exc}"), 500
+    return error_body(exc, message=f"Server error: {exc}"), 500
 
 
 # Without this an exception inside a socket handler returns nothing at all —
 # the caller's ack callback simply never fires and the script hangs.
 @socketio.on_error_default
 def _socket_error(exc):
-    return error_body(exc, traceback.format_exc())
+    return error_body(exc)
 
 
 EXPORT_BASE_DIR = os.path.abspath(
     os.environ.get("GLIMPSE_EXPORT_DIR", os.path.join(tempfile.gettempdir(), "glimpse_exports"))
 )
-ALLOW_ANY_EXPORT_PATH = os.environ.get("GLIMPSE_ALLOW_ANY_EXPORT_PATH", "").strip().lower() in (
-    "1",
-    "true",
-    "yes",
-)
+ALLOW_ANY_EXPORT_PATH = _env_flag("GLIMPSE_ALLOW_ANY_EXPORT_PATH")
 
 def safe_export_path(user_path):
     """Resolve a client-supplied export path. Raises ValueError if it escapes the
@@ -163,6 +168,24 @@ def safe_export_path(user_path):
     if os.path.commonpath([candidate, EXPORT_BASE_DIR]) != EXPORT_BASE_DIR:
         raise ValueError("Destination path escapes the allowed export directory.")
     return candidate
+
+
+@contextmanager
+def saved_uploads(prefix):
+    """Save the request's 'files' into a temp dir, yielding their paths; the dir
+    is removed on exit."""
+    tmpdir = tempfile.mkdtemp(prefix=prefix)
+    try:
+        paths = []
+        for f in request.files.getlist("files"):
+            if not f or f.filename == "":
+                continue
+            dest_path = os.path.join(tmpdir, secure_filename(f.filename))
+            f.save(dest_path)
+            paths.append(dest_path)
+        yield paths
+    finally:
+        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 # ---------------------------------------------------------------------------
@@ -244,24 +267,6 @@ def _example_model_path(example_id):
     return path if os.path.isfile(path) else None
 
 
-def _example_available(example_id) -> bool:
-    return _example_model_path(example_id) is not None
-
-
-def build_example_payload(entry, path):
-    object_details = {}
-    if entry["format"] == "glm":
-        data = glm_helper.parse_glm([path])
-    else:
-        data, object_details = run_cim_parse(cim_helper.cim_to_gjs, filepaths=[path])
-    return {
-        "data": data,
-        "themeData": None,
-        "objectDetails": object_details,
-        "isCIM": entry["format"] == "cim",
-    }
-
-
 # ================================================================================================
 # EXAMPLE MODEL ENDPOINTS
 # ================================================================================================
@@ -278,7 +283,7 @@ def list_examples():
             "format": entry["format"],
         }
         for example_id, entry in EXAMPLE_MODELS.items()
-        if _example_available(example_id)
+        if _example_model_path(example_id)
     ]
     return jsonify({"examples": examples}), 200
 
@@ -289,17 +294,21 @@ def load_example():
         return jsonify({"error": "Request must be JSON"}), 400
 
     example_id = (request.get_json() or {}).get("id")
-    entry = EXAMPLE_MODELS.get(example_id)
-    if entry is None or not _example_available(example_id):
+    path = _example_model_path(example_id)
+    if path is None:
         return jsonify({"error": f"Unknown or unavailable example model: {example_id}"}), 404
 
-    path = _example_model_path(example_id)
-    try:
-        return jsonify(build_example_payload(entry, path))
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
+    is_cim = EXAMPLE_MODELS[example_id]["format"] == "cim"
+    if is_cim:
+        data, object_details = run_cim_parse(cim_helper.cim_to_gjs, filepaths=[path])
+    else:
+        data, object_details = glm_helper.parse_glm([path]), {}
+    return jsonify({
+        "data": data,
+        "themeData": None,
+        "objectDetails": object_details,
+        "isCIM": is_cim,
+    })
 
 
 # ================================================================================================
@@ -307,88 +316,54 @@ def load_example():
 # ================================================================================================
 
 
+def _feeder_and_mrid():
+    """(feeder_id, mRID, None) from the JSON body, or (None, None, error response)."""
+    if not request.is_json:
+        return None, None, (jsonify({"error": "Request must be JSON"}), 400)
+
+    data = request.get_json()
+    feeder_id = data.get("feeder_id")
+    mRID = data.get("mRID")
+    if not feeder_id or not mRID:
+        return None, None, (jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400)
+    return feeder_id, mRID, None
+
+
 @app.route("/api/cim/objects", methods=["POST"])
+@json_errors()
 def get_object():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
+    feeder_id, mRID, error = _feeder_and_mrid()
+    if error:
+        return error
 
-        data = request.get_json()
-        feeder_id = data.get("feeder_id")
-        mRID = data.get("mRID")
-
-        if not feeder_id or not mRID:
-            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
-
-        res = cim_helper.get_cim_object(feeder_id, mRID)
-
-        if "error" in res:
-            return res, 404
-        return res, 200
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify(error_body(e, tb)), 500
+    res = cim_helper.get_cim_object(feeder_id, mRID)
+    return res, 404 if "error" in res else 200
 
 
 @app.route("/api/cim/objects", methods=["DELETE"])
+@json_errors()
 def delete_object():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
+    feeder_id, mRID, error = _feeder_and_mrid()
+    if error:
+        return error
 
-        data = request.get_json()
-        feeder_id = data.get("feeder_id")
-        mRID = data.get("mRID")
-
-        if not feeder_id or not mRID:
-            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
-
-        if cim_helper.delete_cim_object(feeder_id, mRID):
-            return jsonify(
-                {
-                    "success": True,
-                    "feeder_id": feeder_id,
-                    "mRID": mRID,
-                    "message": "Object deleted successfully",
-                }
-            )
-        else:
-            return (
-                jsonify(
-                    {"error": f"Failed to delete object {mRID} in feeder {feeder_id}"}
-                ),
-                400,
-            )
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify(error_body(e, tb)), 500
+    if not cim_helper.delete_cim_object(feeder_id, mRID):
+        return jsonify({"error": f"Failed to delete object {mRID} in feeder {feeder_id}"}), 400
+    return jsonify({
+        "success": True,
+        "feeder_id": feeder_id,
+        "mRID": mRID,
+        "message": "Object deleted successfully",
+    })
 
 
 @app.route("/api/cim/objects/mermaid", methods=["POST"])
+@json_errors()
 def get_object_mermaid():
-    try:
-        if not request.is_json:
-            return jsonify({"error": "Request must be JSON"}), 400
-
-        data = request.get_json()
-        print(data)
-        feeder_id = data.get("feeder_id")
-        mRID = data.get("mRID")
-
-        if not feeder_id or not mRID:
-            return jsonify({"error": "Both 'feeder_id' and 'mRID' are required"}), 400
-
-        res = cim_helper.get_mermaid(feeder_id, mRID)
-        return res, 200
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify(error_body(e, tb)), 500
+    feeder_id, mRID, error = _feeder_and_mrid()
+    if error:
+        return error
+    return cim_helper.get_mermaid(feeder_id, mRID), 200
 
 
 # ================================================================================================
@@ -398,63 +373,25 @@ def get_object_mermaid():
 
 @app.route("/api/upload/json", methods=["POST"])
 def upload_json():
-    # Validate presence of 'files' in form-data
     if "files" not in request.files:
         return {"error": "No 'files' part in the form data."}, 400
 
-    files = request.files.getlist("files")
-    if not files:
-        return {"error": "No files uploaded."}, 400
-
-    tmpdir = tempfile.mkdtemp(prefix="json_upload_")
-    paths = []
-
-    try:
-        # Save uploaded files
-        for f in files:
-            if not f or f.filename == "":
-                continue
-            filename = secure_filename(f.filename)
-            dest_path = os.path.join(tmpdir, filename)
-            f.save(dest_path)
-            paths.append(dest_path)
-
+    with saved_uploads("json_upload_") as paths:
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        # Filter out theme files from paths and store separately
-        theme_filename = json_helper.get_theme_filename(paths)
+        theme_data, json_paths = json_helper.split_theme(paths)
 
-        themeData = None
-        if theme_filename:
-            themeData = json_helper.validate_json_theme(theme_filename)
-
-        # Read JSON files
         json_dict = {}
-        for path in paths:
-            if path == theme_filename:
-                continue
+        for path in json_paths:
             with open(path, "r") as json_file:
                 json_dict[os.path.basename(path)] = json.load(json_file)
 
-        # Validate and transform JSON data
         try:
             validated_data = json_helper.validate_json_data(json_dict)
-            # themeData is already None to begin with if there was no theme file in the paths
-            response_data = {"data": validated_data, "themeData": themeData}
-            return jsonify(response_data)
         except ValueError as e:
-            tb = traceback.format_exc()
-            print(tb)
-            return error_body(e, tb), 400
-
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
-    finally:
-        # Clean up temp files/dir
-        shutil.rmtree(tmpdir, ignore_errors=True)
+            return error_body(e), 400
+        return jsonify({"data": validated_data, "themeData": theme_data})
 
 
 # ================================================================================================
@@ -464,52 +401,16 @@ def upload_json():
 
 @app.route("/api/upload/glm", methods=["POST"])
 def glm_upload():
-    files = request.files.getlist("files")
-    if not files:
+    if not request.files.getlist("files"):
         return {"error": "No files uploaded."}, 400
 
-    tmpdir = tempfile.mkdtemp(prefix="glm_upload_")
-    paths = []
-
-    try:
-        for f in files:
-
-            if not f or f.filename == "":
-                continue
-
-            filename = secure_filename(f.filename)
-            dest_path = os.path.join(tmpdir, filename)
-            f.save(dest_path)
-            paths.append(dest_path)
-
+    with saved_uploads("glm_upload_") as paths:
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        print("\n" + "=" * 30)
-        print(f"Received files: {paths}")
-        print("=" * 30)
-
-        theme_filename = json_helper.get_theme_filename(paths)
-        themeData = None
-        if theme_filename:
-            themeData = json_helper.validate_json_theme(theme_filename)
-
-        filtered_paths = [p for p in paths if p != theme_filename]
-
-        print(f"[SERVER] Processing {len(filtered_paths)} GLM files...")
-        glm_dict = glm_helper.parse_glm(filtered_paths)  # expects list of paths
-        print(f"[SERVER] GLM parsing completed successfully")
-
-        return jsonify({"data": glm_dict, "themeData": themeData})
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
-    finally:
-        # ignore_errors already tolerates a handle Windows hasn't released yet,
-        # which is all the old gc.collect() + sleep(0.5) here was buying — and
-        # that sleep stalled every other greenlet, live sim output included.
-        shutil.rmtree(tmpdir, ignore_errors=True)
+        print(f"[SERVER] Parsing GLM upload: {paths}")
+        theme_data, glm_paths = json_helper.split_theme(paths)
+        return jsonify({"data": glm_helper.parse_glm(glm_paths), "themeData": theme_data})
 
 @app.route("/api/export/glm", methods=["POST"])
 def export_glm():
@@ -525,27 +426,19 @@ def export_glm():
     tmpdir = tempfile.mkdtemp(prefix="glm_export_")
 
     try:
-
         zip_buffer = glm_helper.json_to_glm(data, tmpdir)
-
         return send_file(
             zip_buffer,
             mimetype="application/zip",
             as_attachment=True,
             download_name="exported_model.zip"
         )
-
     except ValueError as e:
         # An unusable or escaping file name in the payload — a client error.
         return {"error": str(e)}, 400
-
     except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb, message=f"Export failed: {str(e)}"), 500
-
+        return error_body(e, message=f"Export failed: {e}"), 500
     finally:
-        # Clean up temp directory
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 # ================================================================================================
@@ -555,35 +448,18 @@ def export_glm():
 
 @app.route("/api/upload/cim", methods=["POST"])
 def cim_to_glimpse():
-    # Validate presence of 'files' in form-data
     if "files" not in request.files:
         return {"error": "No 'files' part in the form data."}, 400
 
-    files = request.files.getlist("files")
-    if not files:
-        return {"error": "No files uploaded."}, 400
-
-    tmpdir = tempfile.mkdtemp(prefix="cim_upload_")
-    paths = []
-
-    try:
-        for f in files:
-            if not f or f.filename == "":
-                continue
-            filename = secure_filename(f.filename)
-            dest_path = os.path.join(tmpdir, filename)
-            f.save(dest_path)
-            paths.append(dest_path)
-
+    with saved_uploads("cim_upload_") as paths:
         if not paths:
             return {"error": "No valid files received."}, 400
 
-        # See run_cim_parse: serialized per process.
         glimpse_structure_data, object_details = run_cim_parse(
             cim_helper.cim_to_gjs, filepaths=paths
         )
 
-        if cim_helper.count_objects(glimpse_structure_data) == 0:
+        if count_objects(glimpse_structure_data) == 0:
             # An unreadable model parses to an empty graph rather than raising,
             # which would otherwise load a blank canvas with no explanation.
             return {
@@ -600,23 +476,11 @@ def cim_to_glimpse():
             "isCIM": True,
         }
 
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb, message=f"Server error: {str(e)}"), 500
-    finally:
-        # Cleanup
-        shutil.rmtree(tmpdir, ignore_errors=True)
-
 
 @app.route("/api/export/export-cim", methods=["POST"])
 def export_cim_file():
-    # CIM structural export (adding / rewiring objects and writing a new XML) is
-    # unfinished: cim_helper.export_cim and its cimbuilder dependencies are still
-    # commented out (see cimhelper.py), and no client calls this route yet. Return
-    # an explicit 501 rather than the previous 500 AttributeError. When the export
-    # logic is completed, validate the destination with safe_export_path() before
-    # writing (as export-cim-coordinates does).
+    # CIM structural export is unfinished and no client calls this route yet.
+    # When implemented, validate the destination with safe_export_path().
     return jsonify({"error": "CIM structural export is not implemented yet."}), 501
 
 
@@ -638,22 +502,16 @@ def export_cim_coordinates():
     try:
         cim_helper.export_cim_coords(feeder_id, new_coords_obj, output_path)
     except Exception as e:
-        tb = traceback.format_exc()
-        return jsonify(error_body(e, tb)), 500
+        return error_body(e), 500
     return "", 204
 
 
 @app.route("/api/cim/measurements", methods=["GET"])
+@json_errors()
 def get_cim_measurements():
-    # Expose the measurement map built at CIM model-load time so the frontend plot
-    # creator can list device measurements before a simulation starts. Returns an
-    # empty list for non-CIM models (GLM/JSON have no measurement map).
-    try:
-        return jsonify({"measurements": cim_helper.get_measurement_catalog()}), 200
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify(error_body(e, tb)), 500
+    # The measurement map built at CIM load time, so the plot creator can list
+    # device measurements before a simulation starts. Empty for GLM/JSON models.
+    return jsonify({"measurements": cim_helper.get_measurement_catalog()}), 200
 
 
 # ================================================================================================
@@ -685,12 +543,11 @@ def get_models():
             else:
                 print("No topology outputs retrieved from GridAPPS-D; falling back to CIM model")
 
-            gjs, object_details = cim_helper.cim_to_gjs(
+            return cim_helper.cim_to_gjs(
                 model_IDs=req_data,
                 topology_outputs=topology_outputs,
                 progress_cb=progress.update,
             )
-            return gjs, object_details
 
         with cim_load_lock:
             worker = gevent.get_hub().threadpool.spawn(load_models)
@@ -706,55 +563,40 @@ def get_models():
             return jsonify({"error": "No data returned for the given model IDs"}), 404
         return jsonify({"data": gjs, "themeData": None, "objectDetails": object_details, "isCIM": True}), 200
     except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb), 500
+        return error_body(e), 500
 
 
 @app.route("/api/gridappsd/agents", methods=["GET"])
+@json_errors()
 def get_agents():
     model_id = request.args.get("model") or ""
-    source = request.args.get("source") or "derived"
 
-    try:
-        if not model_id:
-            loaded = list(cim_helper.area_maps.keys())
-            if len(loaded) != 1:
-                return jsonify({
-                    "error": "A 'model' query parameter is required when zero or "
-                             "several models are loaded.",
-                    "loaded": loaded,
-                }), 400
-            model_id = loaded[0]
+    if not model_id:
+        loaded = list(cim_helper.area_maps.keys())
+        if len(loaded) != 1:
+            return jsonify({
+                "error": "A 'model' query parameter is required when zero or "
+                         "several models are loaded.",
+                "loaded": loaded,
+            }), 400
+        model_id = loaded[0]
 
-        if model_id not in cim_helper.area_maps:
-            return jsonify({"error": f"Model {model_id} is not loaded."}), 404
+    if model_id not in cim_helper.area_maps:
+        return jsonify({"error": f"Model {model_id} is not loaded."}), 404
 
-        return jsonify(agenthelper.build_agent_model(
-            area_map=cim_helper.area_maps.get(model_id, {}),
-            object_index=cim_helper.object_index.get(model_id, {}),
-            model_id=model_id,
-            source=source,
-            gridappsd_helper=gridappsd_helper,
-        )), 200
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return jsonify(error_body(e, tb)), 500
+    return jsonify(agenthelper.build_agent_model(
+        area_map=cim_helper.area_maps[model_id],
+        object_index=cim_helper.object_index.get(model_id, {}),
+        model_id=model_id,
+    )), 200
 
 
 @app.route("/api/gridappsd/model-info", methods=["GET"])
+@json_errors(status=503)
 def get_gridappsd_models():
-    try:
-        if not gridappsd_helper.is_connected():
-            return {"error": "Not connected to GridAPPS-D"}, 503
-
-        models = gridappsd_helper.get_models()
-        return jsonify(models), 200
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb), 503
+    if not gridappsd_helper.is_connected():
+        return {"error": "Not connected to GridAPPS-D"}, 503
+    return jsonify(gridappsd_helper.get_models()), 200
 
 
 @app.route("/api/gridappsd/status", methods=["GET"])
@@ -784,18 +626,11 @@ def get_gridappsd_status():
         else:
             message = "Not connected to GridAPPS-D"
 
-        return (
-            json.dumps({"connected": connected, "message": message}),
-            200,
-        )
+        return json.dumps({"connected": connected, "message": message}), 200
 
     except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return (
-            json.dumps(error_body(e, tb, extra={"connected": False})),
-            200,
-        )  # Return 200 so React app can handle the response
+        # 200 so the React app can handle the response
+        return json.dumps({**error_body(e), "connected": False}), 200
 
 
 # ================================================================================================
@@ -803,57 +638,46 @@ def get_gridappsd_status():
 # ================================================================================================
 @socketio.on("load-graph")
 def load_graph(data):
+    # Accept GLIMPSE objects format or NetworkX node-link data and normalize
+    # it into the { name: { objects: [...] } } shape the frontend consumes.
     try:
-        # Accept GLIMPSE objects format or NetworkX node-link data and normalize
-        # it into the { name: { objects: [...] } } shape the frontend consumes.
         prepared = json_helper.prepare_graph_payload(data)
-        socketio.emit("load-graph", {"data": prepared})
-
-        object_count = sum(len(f.get("objects", [])) for f in prepared.values())
-        return {"status": "ok", "objectCount": object_count}
     except ValueError as e:
         print(str(e))
         return {"error": str(e)}
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb)
+
+    socketio.emit("load-graph", {"data": prepared})
+    return {"status": "ok", "objectCount": count_objects(prepared)}
 
 
 @socketio.on("update")
 def update_data(data):
     # Update node/edge color, size, and/or hidden state on the connected frontends.
-    try:
-        if not isinstance(data, dict):
-            return {"error": "Update payload must be a JSON object."}
+    if not isinstance(data, dict):
+        return {"error": "Update payload must be a JSON object."}
 
-        object_id = data.get("id")
-        element_type = data.get("elementType")
-        updates = data.get("updates")
+    object_id = data.get("id")
+    element_type = data.get("elementType")
+    updates = data.get("updates")
 
-        if object_id is None or element_type not in ("node", "edge"):
-            return {
-                "error": "Update payload requires 'id' and 'elementType' ('node' or 'edge')."
-            }
-        if not isinstance(updates, dict):
-            return {"error": "Update payload requires an 'updates' object."}
-
-        # Normalize to the supported update keys; null means "leave unchanged".
-        normalized = {
-            "id": object_id,
-            "elementType": element_type,
-            "updates": {
-                "color": updates.get("color"),
-                "size": updates.get("size"),
-                "hidden": updates.get("hidden"),
-            },
+    if object_id is None or element_type not in ("node", "edge"):
+        return {
+            "error": "Update payload requires 'id' and 'elementType' ('node' or 'edge')."
         }
-        socketio.emit("update-data", normalized)
-        return {"status": "ok"}
-    except Exception as e:
-        tb = traceback.format_exc()
-        print(tb)
-        return error_body(e, tb)
+    if not isinstance(updates, dict):
+        return {"error": "Update payload requires an 'updates' object."}
+
+    # Normalize to the supported update keys; null means "leave unchanged".
+    socketio.emit("update-data", {
+        "id": object_id,
+        "elementType": element_type,
+        "updates": {
+            "color": updates.get("color"),
+            "size": updates.get("size"),
+            "hidden": updates.get("hidden"),
+        },
+    })
+    return {"status": "ok"}
 
 
 @socketio.on("add-node")
@@ -893,14 +717,6 @@ def agents_update(payload):
     if not isinstance(payload, dict) or not isinstance(payload.get("agents"), list):
         return {"error": "agents-update requires an object with an 'agents' list."}
 
-    model_id = payload.get("model")
-    if model_id:
-        cache = gridappsd_helper.agent_roster_cache
-        cache.pop(model_id, None)
-        cache[model_id] = payload
-        while len(cache) > MAX_CACHED_AGENT_ROSTERS:
-            cache.popitem(last=False)
-
     socketio.emit("agents-update", payload)
     return {"status": "ok", "agentCount": len(payload["agents"])}
 
@@ -909,82 +725,41 @@ def agents_update(payload):
 # GRIDAPPS-D REAL-TIME WEBSOCKET EVENTS
 # ================================================================================================
 
-# ─── SocketIO Event Handlers ──────────────────────────────────────
-
 
 @socketio.on("start-simulation")
 def handle_start_simulation(config):
     try:
         result = gridappsd_helper.start_simulation(config)
 
-        # Subscribe to output and relay to the client via WebSocket
+        # Decode measurements through the CIM measurement map into
+        # equipment-level updates and relay them to the frontends.
         def on_sim_output(headers, message: dict):
-            sim_output = {"timestamp": "", "Analog": [], "Discrete": []}
+            msg = message.get("message", message)
+            sim_output = {"timestamp": msg.get("timestamp"), "Analog": [], "Discrete": []}
+            measurement_map = cim_helper.active_measurement_map
 
-            # Process measurements through the map to emit equipment-level updates
-            active_measurement_map = cim_helper.active_measurement_map
-            if active_measurement_map:
-                msg = message.get("message", message)
-                measurements = msg.get("measurements", {})
-                sim_output["timestamp"] = msg.get("timestamp")
+            for measurement_mrid, measurement_data in msg.get("measurements", {}).items():
+                for measurement_class in ("Analog", "Discrete"):
+                    mapping = measurement_map[measurement_class].get(measurement_mrid)
+                    if not mapping:
+                        continue
 
+                    eq_mrid = mapping.get("conducting_equipment_mrid", "")
+                    measurement_output = {
+                        "equipment_mrid": eq_mrid,
+                        "equipment_name": mapping.get("conducting_equipment_name", ""),
+                        "equipment_type": mapping.get("conducting_equipment_type", ""),
+                        "measurement_type": mapping.get("measurement_type", ""),  # Pos, PNV, VA
+                        "phases": mapping.get("phases", ""),
+                        "connectivity_node_mrid": mapping.get("connectivity_node_mrid", ""),
+                        **measurement_data,
+                    }
 
-                for measurment_mRID, measurment_data in measurements.items():
+                    normal_limit = gridappsd_helper.current_limit_map.get(eq_mrid)
+                    if normal_limit:
+                        measurement_output["normal_limit"] = normal_limit
 
-                    if measurment_mRID in active_measurement_map["Analog"]:
-                        mapping = active_measurement_map["Analog"].get(measurment_mRID)
-
-                        if not mapping:
-                            continue
-
-                        eq_type = mapping.get("conducting_equipment_type", "")
-                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
-                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
-                        measurement_type = mapping.get("measurement_type", "")
-
-                        measurment_output = {
-                            "equipment_mrid": eq_mRID,
-                            "equipment_name": conducting_eq_name,
-                            "equipment_type": eq_type,
-                            "measurement_type": measurement_type, # Pos, PNV, VA
-                            "phases": mapping.get("phases", ""),
-                            "connectivity_node_mrid": mapping.get("connectivity_node_mrid", ""),
-                            **measurment_data
-                        }
-
-                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
-                        if normal_limit:
-                            measurment_output["normal_limit"] = normal_limit
-
-                        sim_output["Analog"].append(measurment_output)
-
-
-                    if measurment_mRID in active_measurement_map["Discrete"]:
-                        mapping = active_measurement_map["Discrete"].get(measurment_mRID)
-
-                        if not mapping:
-                            continue
-
-                        eq_type = mapping.get("conducting_equipment_type", "")
-                        eq_mRID = mapping.get("conducting_equipment_mrid", "")
-                        conducting_eq_name = mapping.get("conducting_equipment_name", "")
-                        measurement_type = mapping.get("measurement_type", "")
-
-                        measurment_output = {
-                            "equipment_mrid": eq_mRID,
-                            "equipment_name": conducting_eq_name,
-                            "equipment_type": eq_type,
-                            "measurement_type": measurement_type, # Pos, PNV, VA
-                            "phases": mapping.get("phases", ""),
-                            "connectivity_node_mrid": mapping.get("connectivity_node_mrid", ""),
-                            **measurment_data
-                        }
-
-                        normal_limit = gridappsd_helper.current_limit_map.get(eq_mRID, None)
-                        if normal_limit:
-                            measurment_output["normal_limit"] = normal_limit
-
-                        sim_output["Discrete"].append(measurment_output)
+                    sim_output[measurement_class].append(measurement_output)
 
             emit_threadsafe("sim-output", sim_output)
 
@@ -994,9 +769,7 @@ def handle_start_simulation(config):
         gridappsd_helper.subscribe_to_simulation_output(on_sim_output)
         gridappsd_helper.subscribe_to_simulation_log(on_sim_log)
 
-        print("=" * 20 + "result" + "=" * 20)
-        print(json.dumps(result, indent=2))
-        print("=" * 46)
+        print(f"Simulation started:\n{json.dumps(result, indent=2)}")
         return result
 
     except Exception as e:

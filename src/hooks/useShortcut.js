@@ -27,21 +27,11 @@ const parseCombo = (combo) => {
     };
 };
 
-const matches = (parsed, e) => {
-    if (normalizeKey(e.key) !== parsed.key) {
-        return false;
-    }
-    if (parsed.ctrl !== (e.ctrlKey || e.metaKey)) {
-        return false;
-    }
-    if (parsed.alt !== e.altKey) {
-        return false;
-    }
-    if (parsed.shift && !e.shiftKey) {
-        return false;
-    }
-    return true;
-};
+const matches = (parsed, e) =>
+    normalizeKey(e.key) === parsed.key &&
+    parsed.ctrl === (e.ctrlKey || e.metaKey) &&
+    parsed.alt === e.altKey &&
+    (!parsed.shift || e.shiftKey);
 
 /**
  * @param {string} combo - e.g. "n", "ctrl+f", "escape"

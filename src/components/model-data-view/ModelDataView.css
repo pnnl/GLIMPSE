@@ -183,10 +183,7 @@
    background-color, but nothing competes for box-shadow. */
 .object-table-row-highlight > td,
 .object-table-row-highlight > td.ant-table-cell-fix-left,
-.object-table-row-highlight > td.ant-table-cell-fix-right,
-.dark-mode .object-table-row-highlight > td,
-.dark-mode .object-table-row-highlight > td.ant-table-cell-fix-left,
-.dark-mode .object-table-row-highlight > td.ant-table-cell-fix-right {
+.object-table-row-highlight > td.ant-table-cell-fix-right {
     background-color: rgba(22, 119, 255, 0.16) !important;
     animation: object-table-row-flash 1.4s ease-out;
 }

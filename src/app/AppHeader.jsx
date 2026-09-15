@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip } from "antd";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip, Typography } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import ConnectionStatus from "../components/ConnectionStatus";
 import MetricsModal from "../components/modals/MetricsModal";
@@ -13,11 +13,10 @@ import { useGraph } from "../contexts/GraphContext";
 import { API_BASE_URL } from "../config";
 import { notify, reportError } from "../utils/notify";
 import { useShortcut } from "../hooks/useShortcut";
-import Typography from "antd/es/typography/Typography";
 
 const { Text } = Typography;
 
-const AppHeader = ({ onAboutClick, openModelLoader }) => {
+const AppHeader = ({ onAboutClick, onLoadClick }) => {
     const [graphLoaded, setGraphLoaded] = useState(false);
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
@@ -30,7 +29,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const searchRef = useRef(null);
     const canExport = graphLoaded && !graphHelper.isCIM;
 
-    const hasAgents = useMemo(() => graphLoaded && graphHelper.agents.agents.length > 0, [graphLoaded]);
+    const hasAgents = graphLoaded && graphHelper.agents.agents.length > 0;
 
     const menuItems = [
         {
@@ -84,7 +83,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         },
     ];
 
-    // Listen for graph load/clear events emitted by the Graph component
     // Loading a model without a roster (any file upload) while the agents view
     // is open would leave the user on a permanently empty tab whose menu entry
     // has just disappeared.
@@ -110,14 +108,13 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
         window.addEventListener("graph-loaded", handleGraphLoaded);
         window.addEventListener("graph-cleared", handleGraphCleared);
         window.addEventListener("graph-dirty-change", handleDirtyChange);
-        graphHelper.themeName = selectedTheme;
 
         return () => {
             window.removeEventListener("graph-loaded", handleGraphLoaded);
             window.removeEventListener("graph-cleared", handleGraphCleared);
             window.removeEventListener("graph-dirty-change", handleDirtyChange);
         };
-    }, [selectedTheme]);
+    }, []);
 
     // One option per node + edge — 20k+ on the larger feeders. The graph key and
     // element type are kept as fields on the option (Select passes the whole
@@ -147,7 +144,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     }, [graphLoaded, graphUpdateTrigger]);
 
     const handleExport = async () => {
-        // Get updated graph data from GraphHelper
         const exportData = graphHelper.export();
 
         if (!exportData || Object.keys(exportData).length === 0) {
@@ -171,7 +167,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 },
             );
 
-            // Create a download link and trigger it
             const blob = new Blob([response.data], { type: "application/zip" });
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
@@ -180,7 +175,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             document.body.appendChild(link);
             link.click();
 
-            // Cleanup
             link.remove();
             window.URL.revokeObjectURL(url);
 
@@ -206,9 +200,6 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
     const handleMenuClick = ({ key }) => {
         switch (key) {
             case "feeder-model-theme":
-                setSelectedTheme(key);
-                graphHelper.themeName = key;
-                break;
             case "custom-theme":
                 setSelectedTheme(key);
                 graphHelper.themeName = key;
@@ -231,13 +222,10 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
             case "dark-mode":
                 setDarkMode(!darkMode);
                 break;
-            case "export-theme":
         }
     };
 
-    const focusSearch = useCallback(() => searchRef.current?.focus(), []);
-
-    useShortcut("/", focusSearch, { enabled: graphLoaded });
+    useShortcut("/", () => searchRef.current?.focus(), { enabled: graphLoaded });
     useShortcut("d", () => setDarkMode((v) => !v));
     useShortcut("?", () => setShowShortcuts(true));
     // Allowed while typing so it also gets the user out of the search box.
@@ -302,7 +290,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
                     <Button
                         style={{ textTransform: "uppercase" }}
-                        onClick={() => openModelLoader.current(true)}
+                        onClick={onLoadClick}
                         size="middle"
                         type="primary"
                     >
@@ -312,7 +300,7 @@ const AppHeader = ({ onAboutClick, openModelLoader }) => {
                         type="primary"
                         size="middle"
                         style={{ textTransform: "uppercase" }}
-                        onClick={() => onAboutClick.current(true)}
+                        onClick={onAboutClick}
                     >
                         About
                     </Button>

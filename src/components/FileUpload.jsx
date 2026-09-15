@@ -1,12 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, Progress, Alert, Button } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
-import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText } from "../utils/notify";
+import { replaceModel } from "./modals/load-model";
 
 const { Dragger } = Upload;
 
@@ -83,9 +83,6 @@ const FileUpload = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
     const [uploading, setUploading] = useState(false);
     const [progress, setProgress] = useState(0);
-    // Set once the bytes are up and the server is parsing. Distinct from
-    // `progress`, which only tracks the transfer — a big CIM model spends
-    // seconds uploading and minutes parsing.
     const [error, setError] = useState(null);
     // Aborts the upload and the job poll together — on unmount, and on Cancel.
     const abortRef = useRef(null);
@@ -137,18 +134,7 @@ const FileUpload = ({ closeModal }) => {
                 },
             });
 
-            if ("error" in response) throw new Error(response.error);
-
-            if (graphHelper.graph.order > 0) {
-                graphHelper.clearGraphData();
-                window.dispatchEvent(new CustomEvent("graph-cleared"));
-            }
-
-            graphHelper.isCIM = endpoint === "api/upload/cim";
-            graphHelper.setThemeObject(response.themeData ?? null);
-            graphHelper.setObjectDetails(response.objectDetails);
-            const modelData = response.data ?? response;
-            graphHelper.setGraphData(modelData);
+            replaceModel(response, endpoint === "api/upload/cim");
 
             // A file-uploaded model isn't driveable via GridAPPS-D, so detach
             // from any previous run: hides the controls/log/charts/id badge and

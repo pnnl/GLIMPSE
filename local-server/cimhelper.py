@@ -2,6 +2,7 @@ import json
 import os
 import threading
 from dataclasses import fields, is_dataclass
+from urllib.parse import urlsplit
 from uuid import UUID
 
 import cimgraph.data_profile.cimhub_2023 as cim
@@ -30,8 +31,6 @@ def _gridappsd_host() -> str:
     address = os.environ.get("GRIDAPPSD_ADDRESS", "").strip()
     if not address:
         return "localhost"
-    from urllib.parse import urlsplit
-
     parsed = urlsplit(address if "//" in address else f"//{address}")
     return parsed.hostname or "localhost"
 
@@ -72,9 +71,67 @@ class SafeBlazegraphConnection(BlazegraphConnection):
         return self._run_query(update_message)
 
 
+UNDERGROUND_INFO = tuple(
+    c
+    for c in (
+        getattr(cim, "ConcentricNeutralCableInfo", None),
+        getattr(cim, "TapeShieldCableInfo", None),
+        getattr(cim, "CableInfo", None),
+    )
+    if c is not None
+)
+
+SWITCH_TYPES = [
+    cim.Breaker,
+    cim.Fuse,
+    cim.Switch,
+    cim.Sectionaliser,
+    cim.LoadBreakSwitch,
+    cim.Disconnector,
+    cim.Recloser,
+]
+
+# Single-terminal equipment drawn as a node, by CIM class -> objectType
+EQUIPMENT_NODE_TYPES = {
+    "RotatingMachine": "diesel_dg",
+    "SynchronousMachine": "diesel_dg",
+    "AsynchronousMachine": "diesel_dg",
+    "EnergySource": "diesel_dg",
+    "ShuntCompensator": "capacitor",
+    "LinearShuntCompensator": "capacitor",
+    "SeriesCompensator": "capacitor",
+    "PowerElectronicsConnection": "inverter_dyn",
+    "EnergyConsumer": "load",
+    "ConformLoad": "load",
+    "NonConformLoad": "load",
+}
+
+# Reference fields summarized (list length or referenced name) in _add_attributes
+DENSE_FIELDS = {
+    "ConnectivityNode",
+    "ConductingEquipment",
+    "ConnectivityNodeContainer",
+    "Location",
+    "PowerElectronicsConnection",
+    "PerLengthImpedance",
+    "PowerTransformer",
+    "TransformerEnds",
+    "BaseVoltage",
+    "VoltageLevel",
+    "TransformerTankInfo",
+    "LoadResponse",
+    "RegulatingControl",
+    "GeneratingUnit",
+    "WireSpacingInfo",
+}
+
+
 # Current CIM network model - this holds the main graph data
 class CIMHelper:
     def __init__(self) -> None:
+        self.release()
+
+    def release(self) -> None:
         self.active_measurement_map: dict = {"Discrete": {}, "Analog": {}}
         self.FEEDERS: dict[str, FeederModel] = {}
         # feeder_id -> { member mRID: ancestry record } (see _build_*_area_map)
@@ -84,27 +141,7 @@ class CIMHelper:
         # feeder_id -> { normalized id: CIM object }; see _build_mrid_index.
         self._mrid_indexes: dict[str, dict] = {}
 
-    @staticmethod
-    def count_objects(gjs: dict) -> int:
-        return sum(len(feeder.get("objects", [])) for feeder in (gjs or {}).values())
-
-    # ------------------------------------------------------------------
-    # State lifecycle
-    # ------------------------------------------------------------------
-    def release(self) -> None:
-        self.active_measurement_map = {"Discrete": {}, "Analog": {}}
-        self.FEEDERS = {}
-        self.area_maps = {}
-        self.object_index = {}
-        self._mrid_indexes = {}
-
     def classify_line(self, line: object) -> str:
-        UNDERGROUND_INFO = (
-            getattr(cim, "ConcentricNeutralCableInfo", None),
-            getattr(cim, "TapeShieldCableInfo", None),
-            getattr(cim, "CableInfo", None),
-        )
-        UNDERGROUND_INFO = tuple(c for c in UNDERGROUND_INFO if c is not None)
         # Gather WireInfo objects from every phase of this segment
         infos = []
         for phs in line.ACLineSegmentPhases or []:
@@ -126,13 +163,6 @@ class CIMHelper:
             return "overhead_line"
         return "line"
 
-    def _get_cim_feeder(self, model_id: str):
-        database = SafeBlazegraphConnection()
-        # database = GridappsdConnection()
-        feeder = cim.Feeder(mRID=model_id)
-        feeder_model = FeederModel(connection=database, container=feeder)
-        return feeder_model
-
     # gjs: GLIMPSE JSON Structure
     def cim_to_gjs(
         self,
@@ -142,42 +172,29 @@ class CIMHelper:
         progress_cb=None,
     ):
         topology_outputs = topology_outputs or {}
-        self.active_measurement_map = {"Discrete": {}, "Analog": {}}  # Reset measurement map for new model(s)
         # Reset once per load request (not per model) so a multi-model load
         # keeps every FeederModel available for object lookups and exports.
-        self.FEEDERS = {}
-        # Distribution-area ancestry and a light object index, kept per feeder so
-        # the agents endpoint can rebuild the area hierarchy after the load
-        # without re-running any SPARQL. See _parse_model.
-        self.area_maps = {}
-        self.object_index = {}
-        self._mrid_indexes = {}
-        if model_IDs is not None:
-            gjs = {id: {"objects": []} for id in model_IDs}
-            object_details: dict[str, dict] = {}
+        self.release()
+        gjs: dict[str, dict] = {}
+        object_details: dict[str, dict] = {}
 
+        if model_IDs is not None:
             for id in model_IDs:
-                gjs[id]["objects"], object_details[id] = self._parse_model(
+                objects, object_details[id] = self._parse_model(
                     model_id=id,
                     topology_json=topology_outputs.get(id),
                     progress_cb=progress_cb,
                 )
-
-            return gjs, object_details
-
-        if filepaths is not None:
-            gjs = { os.path.basename(path): {"objects": []} for path in filepaths }
-            object_details = {}
-
+                gjs[id] = {"objects": objects}
+        elif filepaths is not None:
             for path in filepaths:
                 filename = os.path.basename(path)
-                gjs[filename]["objects"], object_details[filename] = self._parse_model(
+                objects, object_details[filename] = self._parse_model(
                     filepath=path, topology_json=topology_outputs.get(filename)
                 )
+                gjs[filename] = {"objects": objects}
 
-            return gjs, object_details
-
-        return {}, {}
+        return gjs, object_details
 
     def _parse_model(
         self,
@@ -222,15 +239,7 @@ class CIMHelper:
                     cim.PowerElectronicsConnection,
                     cim.BatteryUnit,
                 ]),
-                ("switches", [
-                    cim.Breaker,
-                    cim.Fuse,
-                    cim.Switch,
-                    cim.Sectionaliser,
-                    cim.LoadBreakSwitch,
-                    cim.Disconnector,
-                    cim.Recloser,
-                ]),
+                ("switches", SWITCH_TYPES),
                 ("measurements", [cim.Analog, cim.Discrete]),
             ]
             total_steps = len(load_stages) + 2  # + feeder graph + coordinates
@@ -246,7 +255,9 @@ class CIMHelper:
 
             feeder_id = model_id
             report("feeder graph", 1)
-            self.FEEDERS[feeder_id] = self._get_cim_feeder(model_id=model_id)
+            self.FEEDERS[feeder_id] = FeederModel(
+                connection=SafeBlazegraphConnection(), container=cim.Feeder(mRID=model_id)
+            )
 
             for index, (stage, cim_classes) in enumerate(load_stages, start=2):
                 report(stage, index)
@@ -263,20 +274,6 @@ class CIMHelper:
             feeder_id = filename
 
         objects = []
-
-        TYPES = {
-            "RotatingMachine": "diesel_dg",
-            "SynchronousMachine": "diesel_dg",
-            "AsynchronousMachine": "diesel_dg",
-            "EnergySource": "diesel_dg",
-            "ShuntCompensator": "capacitor",
-            "LinearShuntCompensator": "capacitor",
-            "SeriesCompensator": "capacitor",
-            "PowerElectronicsConnection": "inverter_dyn",
-            "EnergyConsumer": "load",
-            "ConformLoad": "load",
-            "NonConformLoad": "load",
-        }
 
         # Track equipment we've already emitted as a node so the same
         # single-terminal device isn't added twice if it shows up on
@@ -317,10 +314,10 @@ class CIMHelper:
                 if equipment is not None:
                     class_type = equipment.__class__.__name__
 
-                    if class_type in TYPES and equipment.mRID not in seen_equipment:
+                    if class_type in EQUIPMENT_NODE_TYPES and equipment.mRID not in seen_equipment:
                         seen_equipment.add(equipment.mRID)
                         new_obj = {
-                            "objectType": TYPES[class_type],
+                            "objectType": EQUIPMENT_NODE_TYPES[class_type],
                             "elementType": "node",
                             "attributes": {
                                 "id": equipment.mRID,
@@ -431,72 +428,47 @@ class CIMHelper:
             new_edge["attributes"].update(self._area_attrs(area_map.get(p_transformer.mRID)))
             objects.append(new_edge)
 
-        cim_switch_types = [
-            cim.Breaker,
-            cim.Fuse,
-            cim.Switch,
-            cim.Sectionaliser,
-            cim.LoadBreakSwitch,
-            cim.Disconnector,
-            cim.Recloser,
-        ]
+        for cim_type in SWITCH_TYPES:
+            for switch_obj in self.FEEDERS[feeder_id].graph.get(cim_type, {}).values():
+                switch_terminals = switch_obj.Terminals
+                if (
+                    len(switch_terminals) < 2
+                    or switch_terminals[0].ConnectivityNode is None
+                    or switch_terminals[1].ConnectivityNode is None
+                ):
+                    continue
 
-        for cim_type in cim_switch_types:
-            if cim_type in self.FEEDERS[feeder_id].graph:
-                for switch_obj in self.FEEDERS[feeder_id].graph[cim_type].values():
-                    switch_terminals = switch_obj.Terminals
-                    if (
-                        len(switch_terminals) < 2
-                        or switch_terminals[0].ConnectivityNode is None
-                        or switch_terminals[1].ConnectivityNode is None
-                    ):
-                        continue
+                measurement_mrids = [
+                    str(m.mRID) for m in (getattr(switch_obj, "Measurements", None) or []) if m.mRID
+                ]
+                normal_open = bool(switch_obj.normalOpen)
+                switch_status = bool(switch_obj.open) if switch_obj.open is not None else normal_open
+                rated_current = (
+                    str(switch_obj.ratedCurrent) if switch_obj.ratedCurrent is not None else None
+                )
 
-                    # Collect measurement MRIDs associated with this switch
-                    measurement_mrids = []
-                    if hasattr(switch_obj, "Measurements") and switch_obj.Measurements:
-                        for m in switch_obj.Measurements:
-                            if m.mRID:
-                                measurement_mrids.append(str(m.mRID))
+                new_edge = {
+                    "objectType": "switch",
+                    "elementType": "edge",
+                    "attributes": {
+                        "id": switch_obj.mRID,
+                        "from": switch_terminals[0].ConnectivityNode.mRID,
+                        "to": switch_terminals[1].ConnectivityNode.mRID,
+                        "class_type": switch_obj.__class__.__name__,
+                        "normalStatus": "OPEN" if normal_open else "CLOSED",
+                        "open": switch_status,
+                        "ratedCurrent": rated_current,
+                        "measurement_mrids": measurement_mrids,
+                        "feeder_id": feeder_id,
+                    },
+                }
 
-                    normal_open = (
-                        bool(switch_obj.normalOpen)
-                        if switch_obj.normalOpen is not None
-                        else False
-                    )
-                    switch_status = (
-                        bool(switch_obj.open)
-                        if switch_obj.open is not None
-                        else normal_open
-                    )
-                    rated_current = (
-                        str(switch_obj.ratedCurrent)
-                        if switch_obj.ratedCurrent is not None
-                        else None
-                    )
+                if getattr(switch_obj, "breakingCapacity", None) is not None:
+                    new_edge["attributes"]["breakingCapacity"] = str(switch_obj.breakingCapacity)
 
-                    new_edge = {
-                        "objectType": "switch",
-                        "elementType": "edge",
-                        "attributes": {
-                            "id": switch_obj.mRID,
-                            "from": switch_terminals[0].ConnectivityNode.mRID,
-                            "to": switch_terminals[1].ConnectivityNode.mRID,
-                            "class_type": switch_obj.__class__.__name__,
-                            "normalStatus": "OPEN" if normal_open else "CLOSED",
-                            "open": switch_status,
-                            "ratedCurrent": rated_current,
-                            "measurement_mrids": measurement_mrids,
-                            "feeder_id": feeder_id,
-                        },
-                    }
-
-                    if hasattr(switch_obj, "breakingCapacity") and switch_obj.breakingCapacity is not None:
-                        new_edge["attributes"]["breakingCapacity"] = str(switch_obj.breakingCapacity)
-
-                    new_edge["attributes"].update(self._area_attrs(area_map.get(switch_obj.mRID)))
-                    self._add_attributes(switch_obj, new_edge)
-                    objects.append(new_edge)
+                new_edge["attributes"].update(self._area_attrs(area_map.get(switch_obj.mRID)))
+                self._add_attributes(switch_obj, new_edge)
+                objects.append(new_edge)
 
         for battery in self.FEEDERS[feeder_id].graph.get(cim.BatteryUnit, {}).values():
             new_battery = {
@@ -671,10 +643,6 @@ class CIMHelper:
         self._mrid_indexes[feeder_id] = index
         return index
 
-    def _invalidate_index(self, feeder_id: str) -> None:
-        """Drop a feeder's cached index after the graph is mutated."""
-        self._mrid_indexes.pop(feeder_id, None)
-
     def resolve_object(self, feeder_id: str, uuid) -> object | None:
         """The CIM instance for an id, or None. Never touches SPARQL or the XML."""
         feeder = self.FEEDERS.get(feeder_id)
@@ -697,11 +665,7 @@ class CIMHelper:
 
     def _resolve_area_name(self, feeder_id: str, area_mrid: str, mrid_index: dict) -> str:
         obj = self._lookup_mrid(feeder_id, mrid_index, area_mrid)
-        name = getattr(obj, "name", None) if obj is not None else None
-        if name:
-            return name
-
-        return self._uuid_tail(area_mrid)
+        return getattr(obj, "name", None) or self._uuid_tail(area_mrid)
 
     def _build_topology_area_map(self, topology_json: dict, feeder_id: str) -> dict:
         area_by_mrid: dict = {}
@@ -789,13 +753,9 @@ class CIMHelper:
         for mrid in mrids:
             area_by_mrid.setdefault(mrid, {}).update(context)
 
-    def _build_measurement_map(self, feeder_id: str) -> dict:
-        measurement_types = [cim.Analog, cim.Discrete]
-        for measurement_type in measurement_types:
-            if measurement_type not in self.FEEDERS[feeder_id].graph:
-                continue
-
-            for measurement in self.FEEDERS[feeder_id].graph[measurement_type].values():
+    def _build_measurement_map(self, feeder_id: str) -> None:
+        for measurement_type in (cim.Analog, cim.Discrete):
+            for measurement in self.FEEDERS[feeder_id].graph.get(measurement_type, {}).values():
                 if not measurement.mRID:
                     continue
 
@@ -878,9 +838,8 @@ class CIMHelper:
         return detail
 
     def get_cim_object(self, feeder_id: str, uuid: str):
-        if not self.FEEDERS[feeder_id]:
-            return {"error": "No active model available"}  # 400
-
+        if feeder_id not in self.FEEDERS:
+            raise KeyError(feeder_id)
         obj = self.resolve_object(feeder_id, uuid)
         if obj is None:
             return {"error": f"Object {uuid} not found"}  # 404
@@ -925,6 +884,8 @@ class CIMHelper:
                 yPosition=obj["y"],
             )
 
+        # New Location/PositionPoint objects must be resolvable too.
+        self._mrid_indexes.pop(feeder_id, None)
         cim_utils.get_all_data(self.FEEDERS[feeder_id])
         cim_utils.write_xml(self.FEEDERS[feeder_id], output_path)
 
@@ -960,101 +921,19 @@ class CIMHelper:
         return {"x": x, "y": y}
 
     def _add_attributes(self, cim_obj, new_obj):
-        dense_fields = [
-            "ConnectivityNode",
-            "ConductingEquipment",
-            "ConnectivityNodeContainer",
-            "Location",
-            "PowerElectronicsConnection",
-            "PerLengthImpedance",
-            "PowerTransformer",
-            "TransformerEnds",
-            "BaseVoltage",
-            "VoltageLevel",
-            "TransformerTankInfo",
-            "LoadResponse",
-            "RegulatingControl",
-            "GeneratingUnit",
-            "WireSpacingInfo"
-        ]
-
         for field in fields(cim_obj):
             if field.name == "identifier":
                 continue
 
             if field.metadata.get("type") == "Attribute":  # association, aggregateof, and ofaggregate
                 attribute = getattr(cim_obj, field.name)
-                if field.name in dense_fields and attribute is not None:
+                if field.name in DENSE_FIELDS and attribute is not None:
                     if isinstance(attribute, list):
                         new_obj["attributes"][field.name] = len(attribute)
                     else:
                         new_obj["attributes"][field.name] = str(attribute.name)
                 elif attribute is not None:
                     new_obj["attributes"][field.name] = str(attribute)
-
-    # def export_cim(
-    #     self, feeder_id: str, dir2save: str, filename: str, data: list
-    # ) -> None:
-    #     if len(data) == 0:
-    #         cim_utils.get_all_data(self.FEEDERS[feeder_id])
-    #         cim_utils.write_xml(self.FEEDERS[feeder_id], dir2save + "\\cim_output.xml")
-    #         return
-
-    #     feeder = self.FEEDERS[feeder_id].container
-
-    #     # [0] = new nerminal with type
-    #     # [1] = new connectivity node
-    #     # [2] = existing connectivity node
-
-    #     for nodeObj in data:
-    #         # 1. get existing connectivity node
-    #         existing_c_node = self.FEEDERS[feeder_id].graph[cim.ConnectivityNode][
-    #             UUID(nodeObj[2]["mRID"].upper())
-    #         ]
-
-    #         # 2. create new connectivity node
-    #         new_c_node = cim.ConnectivityNode(
-    #             mRID=nodeObj[1]["mRID"].upper(), name=nodeObj[1]["name"]
-    #         )
-    #         self.FEEDERS[feeder_id].add_to_graph(new_c_node)
-
-    #         # 3. connect both connectivity nodes with new_two_terminal_obj function
-    #         new_two_terminal_object(
-    #             network=self.FEEDERS[feeder_id],
-    #             container=feeder,
-    #             class_type=cim.ACLineSegment,
-    #             name=existing_c_node.mRID.split("-")[0],
-    #             node1=existing_c_node,
-    #             node2=new_c_node,
-    #         )
-
-    #         # 4. Finally create the new synchronous generator or energy consumer by connecting to new connectivity node
-    #         if nodeObj[0]["type"] == "diesel_dg":
-    #             new_synchronous_generator(
-    #                 network=self.FEEDERS[feeder_id],
-    #                 container=feeder,
-    #                 name=nodeObj[0]["name"],
-    #                 node=new_c_node,
-    #             )
-    #         elif nodeObj[0]["type"] == "load":
-    #             new_energy_consumer(
-    #                 network=self.FEEDERS[feeder_id],
-    #                 container=feeder,
-    #                 name=nodeObj[0]["name"],
-    #                 node=new_c_node,
-    #             )
-    #         elif nodeObj[0]["type"] == "inverter_dyn":
-    #             # new power electronics connection
-    #             pass
-    #         elif nodeObj[0]["type"] == "capacitor":
-    #             # new one terminal object
-    #             pass
-
-    #     out_dir = os.path.join(
-    #         dir2save, os.path.splitext(os.path.basename(filename))[0] + "_out.xml"
-    #     )
-    #     cim_utils.get_all_data(self.FEEDERS[feeder_id])
-    #     cim_utils.write_xml(self.FEEDERS[feeder_id], out_dir)
 
     def get_mermaid(self, feeder_id: str, uuid: str) -> str:
         obj = self.resolve_object(feeder_id, uuid)
@@ -1070,42 +949,12 @@ class CIMHelper:
             return json.dumps({"uuid": uuid, "mermaid": mermaid})
 
     def delete_cim_object(self, feeder_id: str, uuid: str) -> bool:
-        if not self.FEEDERS[feeder_id]:
-            return False
-
-        # Get the object first
-        obj = None
-        obj_class = None
-        obj_key = None
-
+        feeder = self.FEEDERS[feeder_id]  # KeyError (500) for an unknown feeder
         obj = self.resolve_object(feeder_id, uuid)
         if obj is None:
-            # Manual search
-            for cim_class, instances in self.FEEDERS[feeder_id].graph.items():
-                for key, instance in instances.items():
-                    obj_id = str(
-                        getattr(instance, "identifier", getattr(instance, "mRID", ""))
-                    )
-                    if obj_id == uuid:
-                        obj = instance
-                        obj_class = cim_class
-                        obj_key = key
-                        break
-                if obj:
-                    break
-
-        if not obj:
             return False
 
-        # Delete the object. Either branch mutates the graph, so the cached
-        # index must go with it or a deleted object stays resolvable.
-        if hasattr(self.FEEDERS[feeder_id], "delete"):
-            self.FEEDERS[feeder_id].delete(obj)
-            self._invalidate_index(feeder_id)
-            return True
-        elif obj_class and obj_key:
-            del self.FEEDERS[feeder_id].graph[obj_class][obj_key]
-            self._invalidate_index(feeder_id)
-            return True
-
-        return False
+        feeder.delete(obj)
+        # Otherwise the cached index keeps the deleted object resolvable.
+        self._mrid_indexes.pop(feeder_id, None)
+        return True

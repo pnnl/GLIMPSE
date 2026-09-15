@@ -4,8 +4,6 @@ services:
             context: .
             dockerfile: Dockerfile.backend
         environment:
-            FLASK_HOST: 0.0.0.0
-            FLASK_PORT: "5052"
             CORS_ORIGINS: "${CORS_ORIGINS:-}"
             GLIMPSE_API_TOKEN: "${GLIMPSE_API_TOKEN:-}"
             GRIDAPPSD_ADDRESS: "${GRIDAPPSD_ADDRESS:-host.docker.internal}"

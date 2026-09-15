@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 
-export const MAX_HISTORY_POINTS = 3600;
-export const LIVE_WINDOW_POINTS = 20;
+const MAX_HISTORY_POINTS = 3600;
+const LIVE_WINDOW_POINTS = 20;
 
 /** Drop the oldest sample once a series exceeds the retention cap. */
 export const trimHistory = (arr) => {
@@ -128,5 +128,3 @@ export const useChartTimeline = (chartRef, getPointCount, clearBuffers) => {
 
     return { syncWindow, isFollowing, resumeFollowing };
 };
-
-export default useChartTimeline;

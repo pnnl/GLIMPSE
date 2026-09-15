@@ -108,9 +108,6 @@ export const agentsByLevel = (roster) => {
     return byLevel;
 };
 
-export const agentForArea = (roster, areaId) =>
-    roster.agents.find((agent) => agent.areaId === areaId) ?? null;
-
 export const mergeRoster = (roster, payload) => {
     const incoming = normalizeRoster(payload);
     if (incoming.agents.length === 0) return roster;

@@ -1,32 +1,18 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import ReactDom from "react-dom";
 import { Modal, Table } from "antd";
 import { density } from "graphology-metrics/graph";
 import graphHelper from "../../graph-helper/GraphHelper";
-import { UndirectedGraph } from "graphology";
+
+const COLUMNS = [
+    { title: "Metric", dataIndex: "metric", key: "metric" },
+    { title: "Value", dataIndex: "value", key: "value" },
+    { title: "Description", dataIndex: "description", key: "description" },
+];
 
 const MetricsModal = ({ open, close }) => {
-    const columns = [
-        {
-            title: "Metric",
-            dataIndex: "metric",
-            key: "metric",
-        },
-        {
-            title: "Value",
-            dataIndex: "value",
-            key: "value",
-        },
-        {
-            title: "Description",
-            dataIndex: "description",
-            key: "description",
-        },
-    ];
-
     // Recomputed each time the modal opens (the graph is a module singleton,
-    // so `open` is the signal that fresh metrics are needed). Previously this
-    // useMemo had no dependency array at all, which recomputed every render.
+    // so `open` is the signal that fresh metrics are needed).
     const metricsData = useMemo(() => {
         if (!open || graphHelper.graph.order === 0) return [];
 
@@ -103,7 +89,7 @@ const MetricsModal = ({ open, close }) => {
 
     return ReactDom.createPortal(
         <Modal centered open={open} footer={[]} title={"Metrics"} onCancel={close}>
-            <Table columns={columns} dataSource={metricsData} pagination={false} />
+            <Table columns={COLUMNS} dataSource={metricsData} pagination={false} />
         </Modal>,
         document.getElementById("portal"),
     );

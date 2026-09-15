@@ -27,5 +27,3 @@ export const useSimLiveTick = (throttleMs = 800) => {
 
     return { simActive, tick };
 };
-
-export default useSimLiveTick;
