@@ -1,4 +1,4 @@
-export const HIDDEN_ATTRIBUTES = new Set([
+const HIDDEN_ATTRIBUTES = new Set([
     "mRID",
     "id",
     "feeder_id",
@@ -19,7 +19,7 @@ export const HIDDEN_ATTRIBUTES = new Set([
 ]);
 
 // Shown first when present — the fields an engineer looks for on a feeder.
-export const PRIORITY_ATTRIBUTES = [
+const PRIORITY_ATTRIBUTES = [
     "phases",
     "nominal_voltage",
     "status",
@@ -36,7 +36,7 @@ export const PRIORITY_ATTRIBUTES = [
     "to",
 ];
 
-export const MAX_ATTRIBUTES = 8;
+const MAX_ATTRIBUTES = 8;
 
 const isEmpty = (v) => v === null || v === undefined || v === "";
 

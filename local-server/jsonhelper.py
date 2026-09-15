@@ -9,9 +9,6 @@ class JSONHelper:
     # list under "edges" (>=3.6) or "links" (older releases), so either counts.
     _NODE_LINK_REQUIRED = ("directed", "multigraph", "nodes")
 
-    def __init__(self):
-        pass
-
     def _load_schema(self, schema_name: str) -> dict:
         schema_path = os.path.join(os.path.dirname(__file__), "schemas", schema_name)
         with open(schema_path, "r") as f:
@@ -32,7 +29,6 @@ class JSONHelper:
         """
         objects = []
 
-        # Process nodes
         for node in file_data.get("nodes", []):
             if "type" in node and isinstance(node["type"], dict):
                 object_type = "-".join(node["type"].get("path", []))
@@ -54,7 +50,6 @@ class JSONHelper:
                 }
             )
 
-        # Process edges ("edges" in newer NetworkX, "links" in older releases)
         edge_list = file_data.get("edges")
         if edge_list is None:
             edge_list = file_data.get("links", [])
@@ -82,64 +77,40 @@ class JSONHelper:
 
         return objects
 
-    def validate_json_data(self, json_data: dict) -> dict:
-        # Load the JSON schema once for the whole batch
-        json_upload_schema = self._load_schema("json_upload.schema.json")
+    def _to_objects_format(self, data, error_prefix: str) -> dict:
+        """Node-link data is converted; anything else must already match the schema."""
+        if self._is_node_link_data(data):
+            return {"objects": self._node_link_to_objects(data)}
 
-        data = {}
-        for file_path, file_data in json_data.items():
-            if self._is_node_link_data(file_data):
-                # Transform node-link data to GLIMPSE format
-                data[file_path] = {"objects": self._node_link_to_objects(file_data)}
-            else:
-                # Validate against the GLIMPSE JSON schema
-                try:
-                    jsonschema.validate(instance=file_data, schema=json_upload_schema)
-                    data[file_path] = file_data
-                except jsonschema.ValidationError as e:
-                    raise ValueError(
-                        f"JSON validation error for {file_path}: {e.message}"
-                    )
-
+        try:
+            jsonschema.validate(instance=data, schema=self._load_schema("json_upload.schema.json"))
+        except jsonschema.ValidationError as e:
+            raise ValueError(f"{error_prefix}: {e.message}")
         return data
 
-    def prepare_graph_payload(self, data, name: str = "socket-graph") -> dict:
+    def validate_json_data(self, json_data: dict) -> dict:
+        return {
+            file_path: self._to_objects_format(file_data, f"JSON validation error for {file_path}")
+            for file_path, file_data in json_data.items()
+        }
+
+    def prepare_graph_payload(self, data) -> dict:
         if not isinstance(data, dict):
             raise ValueError("Graph payload must be a JSON object.")
-
-        if self._is_node_link_data(data):
-            return {name: {"objects": self._node_link_to_objects(data)}}
-
-        # Otherwise expect the GLIMPSE objects format and validate it
-        json_upload_schema = self._load_schema("json_upload.schema.json")
-        try:
-            jsonschema.validate(instance=data, schema=json_upload_schema)
-        except jsonschema.ValidationError as e:
-            raise ValueError(f"Graph validation error: {e.message}")
-
-        return {name: data}
+        return {"socket-graph": self._to_objects_format(data, "Graph validation error")}
 
     def validate_json_theme(self, json_theme_filename: str) -> dict:
-        # Load the JSON schema
-        json_theme_schema = self._load_schema("theme_upload.schema.json")
-
-        theme_data = None
         with open(json_theme_filename, "r") as f:
             theme_data = json.load(f)
 
         try:
-            jsonschema.validate(instance=theme_data, schema=json_theme_schema)
+            jsonschema.validate(instance=theme_data, schema=self._load_schema("theme_upload.schema.json"))
             return theme_data
         except jsonschema.ValidationError as e:
             raise ValueError(f"JSON theme validation error: {e.message}")
 
-    def is_theme_file(self, filename):
-        """Check if filename matches <filename>.theme.json pattern"""
-        parts = filename.split(".")
-        return len(parts) >= 3 and parts[-2] == "theme" and parts[-1] == "json"
-
-    def get_theme_filename(self, paths: list[str]) -> str | None:
-        for path in paths:
-            if self.is_theme_file(os.path.basename(path)):
-                return path
-        return None
+    def split_theme(self, paths: list[str]) -> tuple[dict | None, list[str]]:
+        """(validated data of the first <name>.theme.json or None, the other paths)."""
+        theme_path = next((p for p in paths if os.path.basename(p).endswith(".theme.json")), None)
+        theme_data = self.validate_json_theme(theme_path) if theme_path else None
+        return theme_data, [p for p in paths if p != theme_path]

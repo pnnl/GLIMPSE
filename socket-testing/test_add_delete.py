@@ -12,19 +12,7 @@ with pauses so you can watch the graph change in the GLIMPSE UI.
     python socket-testing/test_add_delete.py
 """
 
-import json
-import os
-
 import common
-
-SOCIAL_EXAMPLE = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "testing",
-    "models",
-    "demo_examples",
-    "socialExample.json",
-)
 
 NEW_NODE_ID = "Tony-Stark"
 EXISTING_NODE_ID = "John-Doe"  # exists in socialExample.json
@@ -34,8 +22,7 @@ NEW_EDGE_ID = "TonyStark-JohnDoe"
 def main():
     sio = common.connect()
     try:
-        with open(SOCIAL_EXAMPLE, "r") as f:
-            common.call(sio, "load-graph", json.load(f))
+        common.call(sio, "load-graph", common.social_example())
         sio.sleep(1.5)
 
         # Add a new node

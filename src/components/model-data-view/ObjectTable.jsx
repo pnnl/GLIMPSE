@@ -1,11 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Table, Typography, Button } from "antd";
 import { ControlOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { formatVoltageLines, formatPowerLines } from "../../utils/live-measurements";
 import { formatAmps, formatPercent, formatPu, formatVA, isViolation } from "../../utils/electrical";
+import { getControlType } from "../modals/device-control";
 
 const { Link, Text } = Typography;
+
+const attributeSorter = (key) => (a, b) =>
+    String(a.attributes?.[key] ?? "").localeCompare(String(b.attributes?.[key] ?? ""));
 
 // A per-unit voltage or percent-loading cell, colored by severity so a table
 // sorted by loading reads like a violation report.
@@ -42,24 +46,6 @@ const LiveLines = ({ lines }) => {
     );
 };
 
-/**
- * Detects whether a table row is a device that can be controlled during a live
- * GridAPPS-D simulation. Switches (open/close) and regulators (tap positions)
- * are edges; capacitors (open/close) are nodes. Mirrors the double-click
- * detection in GraphEvents so the tabular view and the graph stay in sync.
- */
-const getControlType = (record, elementType) => {
-    const group = record.group;
-    const classType = record.attributes?.class_type;
-    if (elementType === "edge") {
-        if (group === "regulator" || classType === "regulator") return "regulator";
-        if (group === "switch") return "switch";
-    } else if (elementType === "node") {
-        if (group === "capacitor") return "capacitor";
-    }
-    return null;
-};
-
 const ObjectTable = ({
     data,
     columns,
@@ -81,28 +67,23 @@ const ObjectTable = ({
     const sorterRef = useRef({ columnKey: null, order: null });
     const containerRef = useRef(null);
 
+    // CIM objects are addressed by mRID + feeder, everything else by graph key.
     const handleObjectClick = (record) => {
-        if (isCIM) {
-            onEditObject({
-                mRID: record.attributes.mRID,
-                feederId: record.attributes.feeder_id,
-            });
-        } else {
-            onEditObject({ id: record.id });
-        }
+        onEditObject(
+            isCIM
+                ? { mRID: record.attributes.mRID, feederId: record.attributes.feeder_id }
+                : { id: record.id },
+        );
     };
 
     const handleFromToClick = (nodeId) => {
         if (!graphHelper.graph.hasNode(nodeId)) return;
-        const nodeAttrs = graphHelper.graph.getNodeAttributes(nodeId);
-        if (isCIM) {
-            onEditObject({
-                mRID: nodeAttrs.attributes?.mRID,
-                feederId: nodeAttrs.attributes?.feeder_id,
-            });
-        } else {
-            onEditObject({ type: "node", id: nodeId });
-        }
+        const { attributes } = graphHelper.graph.getNodeAttributes(nodeId);
+        onEditObject(
+            isCIM
+                ? { mRID: attributes?.mRID, feederId: attributes?.feeder_id }
+                : { type: "node", id: nodeId },
+        );
     };
 
     const tableColumns = columns.map((colName) => {
@@ -157,11 +138,7 @@ const ObjectTable = ({
                 title: colName,
                 key: colName,
                 width: 120,
-                sorter: (a, b) => {
-                    const aVal = String(a.attributes?.name ?? "");
-                    const bVal = String(b.attributes?.name ?? "");
-                    return aVal.localeCompare(bVal);
-                },
+                sorter: attributeSorter("name"),
                 render: (_, record) => {
                     const value = record.attributes.name;
                     if (!value) return "-";
@@ -174,11 +151,7 @@ const ObjectTable = ({
             title: colName,
             key: colName,
             ellipsis: true,
-            sorter: (a, b) => {
-                const aVal = String(a.attributes?.[colName] ?? "");
-                const bVal = String(b.attributes?.[colName] ?? "");
-                return aVal.localeCompare(bVal);
-            },
+            sorter: attributeSorter(colName),
             render: (_, record) => {
                 const value = record.attributes[colName];
                 if (value == null || value === "") return "-";
@@ -195,14 +168,13 @@ const ObjectTable = ({
     });
 
     // Trailing fixed-right columns, kept visible while the attribute columns
-    // scroll: a live-measurement column (during a simulation) and the device
-    // control column (CIM/GridAPPS-D models only).
+    // scroll: condition + live-measurement columns (during a simulation) and the
+    // device control column (CIM/GridAPPS-D models only).
     const trailingColumns = [];
 
-    // Condition columns: worst-phase p.u. voltage for nodes, percent loading for
-    // edges. Sortable, so "show me the worst 25 buses" is one click. Placed
-    // before the raw measurement column since it's the summarizing number.
     if (simActive) {
+        // Condition: worst-phase p.u. voltage for nodes, percent loading for
+        // edges. Sortable, so "show me the worst 25 buses" is one click.
         trailingColumns.push(
             elementType === "node"
                 ? {
@@ -262,11 +234,9 @@ const ObjectTable = ({
                       },
                   },
         );
-    }
 
-    // Live voltage (nodes) / power flow (edges) from the simulation overlay.
-    // Read-only and ephemeral — the model's own attributes are never touched.
-    if (simActive) {
+        // Live voltage (nodes) / power flow (edges) from the simulation overlay.
+        // Read-only and ephemeral — the model's own attributes are never touched.
         trailingColumns.push(
             elementType === "node"
                 ? {
@@ -320,8 +290,7 @@ const ObjectTable = ({
         });
     }
 
-    const columnsWithActions =
-        trailingColumns.length > 0 ? [...tableColumns, ...trailingColumns] : tableColumns;
+    const columnsWithActions = [...tableColumns, ...trailingColumns];
 
     // Position of a row in the order the table is currently displaying, which
     // is `data` re-sorted by the active column sorter (antd negates the

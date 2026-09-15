@@ -117,7 +117,7 @@ Replace the visualized graph. Accepts **either** the GLIMPSE objects format
 
 **Emit payload** — one of:
 
-GLIMPSE objects format (see [socialExample.json](../testing/models/demo_examples/socialExample.json)):
+GLIMPSE objects format (see [socialExample.json](../models/demo_examples/socialExample.json)):
 
 ```json
 {

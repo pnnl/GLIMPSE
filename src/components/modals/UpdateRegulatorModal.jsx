@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ReactDOM from "react-dom";
 import { Modal, Form, Select, InputNumber, Button, Divider, Space, Tag, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
-import { v4 as uuidv4 } from "uuid";
 import { notify } from "../../utils/notify";
+import { emitDifferences } from "./device-control";
 
 // Control modes mirror the legacy gridappsd-viz RegulatorControlMenu.
 const CONTROL_MODE = {
     MANUAL: "MANUAL",
     LINE_DROP_COMPENSATION: "LINE_DROP_COMPENSATION",
 };
+
+const CONTROL_MODE_OPTIONS = [
+    { label: "Manual", value: CONTROL_MODE.MANUAL },
+    { label: "Line drop compensation", value: CONTROL_MODE.LINE_DROP_COMPENSATION },
+];
 
 // A regulator edge carries per-phase tap-changer info under a phase key
 // (e.g. "AN"/"BN"/"CN"), each of the shape { step, tap } where `tap` is the
@@ -36,7 +41,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
     const [form] = Form.useForm();
     const { token } = theme.useToken();
     const [loading, setLoading] = useState(false);
-    const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
+    const [simulationState, setSimulationState] = useState(() => socketClientHelper.simulationState);
 
     // Mirrors the "controlMode" form field (set below on open, changed by the
     // Select) so the phase inputs can switch between the two layouts.
@@ -81,14 +86,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
         form.setFieldsValue(initial);
     }, [open, phaseValues, loadError, form]);
 
-    useEffect(() => {
-        const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
-            setSimulationState(simState);
-        });
-        return () => {
-            unsubSimState();
-        };
-    });
+    useEffect(() => socketClientHelper.on("sim-state-change", setSimulationState), []);
 
     const handleSave = async () => {
         try {
@@ -97,7 +95,6 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
 
             if (socketClientHelper.simulationState !== "running") {
                 notify.error("Simulation is not running. Cannot update tap positions.");
-                setLoading(false);
                 return;
             }
 
@@ -154,25 +151,10 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
 
             if (forwardDifferences.length === 0) {
                 notify.info("No changes to apply.");
-                setLoading(false);
                 return;
             }
 
-            const inputMessage = {
-                command: "update",
-                input: {
-                    simulation_id: socketClientHelper.simulationID,
-                    message: {
-                        timestamp: Math.floor(Date.now() / 1000),
-                        difference_mrid: uuidv4(),
-                        reverse_differences: reverseDifferences,
-                        forward_differences: forwardDifferences,
-                    },
-                },
-            };
-
-            console.log(inputMessage);
-            socketClientHelper.socket.emit("sim-input", inputMessage);
+            emitDifferences(reverseDifferences, forwardDifferences);
 
             // Optimistically reflect new tap steps in the local graph so reopening
             // the modal shows the requested state before the sim echoes it back.
@@ -208,11 +190,6 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
     const deviceName = attributes.attributes?.name || attributes.attributes?.mRID || object;
     const hasPhases = phases.length > 0;
 
-    const controlModeOptions = [
-        { label: "Manual", value: CONTROL_MODE.MANUAL },
-        { label: "Line drop compensation", value: CONTROL_MODE.LINE_DROP_COMPENSATION },
-    ];
-
     return ReactDOM.createPortal(
         <Modal
             centered
@@ -246,7 +223,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                         <>
                             <Form.Item label="Control mode" name="controlMode">
                                 <Select
-                                    options={controlModeOptions}
+                                    options={CONTROL_MODE_OPTIONS}
                                     style={{ width: "100%" }}
                                     getPopupContainer={(trigger) => trigger.parentElement}
                                 />

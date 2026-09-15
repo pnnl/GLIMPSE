@@ -4,6 +4,7 @@ import { useGraph } from "../contexts/GraphContext";
 import graphHelper from "../graph-helper/GraphHelper";
 import useAreaHighlight from "../hooks/useAreaHighlight";
 import { FILL_ALPHA, BORDER_ALPHA } from "./graph/AreaHighlightLayers";
+import { surfaceFor } from "./agents/agent-palette";
 
 const buildTreeData = (areas) =>
     Object.entries(areas).map(([type, areaList]) => ({
@@ -14,10 +15,7 @@ const buildTreeData = (areas) =>
     }));
 
 const DistributionAreaSelector = () => {
-    const [treeData, setTreeData] = useState(() => {
-        const current = graphHelper.distributionAreas;
-        return Object.keys(current).length > 0 ? buildTreeData(current) : [];
-    });
+    const [treeData, setTreeData] = useState(() => buildTreeData(graphHelper.distributionAreas));
     const { darkMode } = useGraph();
     const areaHighlight = useAreaHighlight();
     const { selection, colors } = areaHighlight;
@@ -56,9 +54,7 @@ const DistributionAreaSelector = () => {
 
     if (treeData.length === 0) return null;
 
-    const c = darkMode
-        ? { bg: "rgba(31,31,31,0.92)", text: "#e0e0e0", border: "#3a3a3a" }
-        : { bg: "rgba(255,255,255,0.92)", text: "#1f1f1f", border: "#e0e0e0" };
+    const c = surfaceFor(darkMode);
 
     return (
         <>
@@ -82,7 +78,7 @@ const DistributionAreaSelector = () => {
                         marginTop: 8,
                         width: 240,
                         padding: "8px 10px",
-                        background: c.bg,
+                        background: c.panelBg,
                         color: c.text,
                         border: `1px solid ${c.border}`,
                         borderRadius: 6,

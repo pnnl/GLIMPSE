@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useMemo, useRef } from "react";
 import { Splitter, Tabs, Button, Typography, Select, Flex } from "antd";
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import graphHelper from "../../graph-helper/GraphHelper";
@@ -30,32 +30,15 @@ const orderColumns = (colSet) => [
     ...Array.from(colSet).filter((col) => !LEADING_COLUMNS.includes(col)),
 ];
 
-/**
- * Resolves the feeder ID for a given mRID by checking the graph first,
- * then falling back to the provided feederId.
- * This ensures multi-feeder correctness.
- */
+const NO_CONTROL = { open: false, object: null, type: null };
+
+// Feeder that owns an mRID, for multi-feeder models: the graph element's own
+// feeder_id wins, then the caller's, then the model-wide fallback.
 const resolveFeederIdFromGraph = (mRID, fallbackFeederId) => {
-    const graph = graphHelper.graph;
-
-    // Check nodes first
-    if (graph.hasNode(mRID)) {
-        const attrs = graph.getNodeAttributes(mRID);
-        if (attrs?.attributes?.feeder_id) {
-            return attrs.attributes.feeder_id;
-        }
-    }
-
-    // Check edges
-    if (graph.hasEdge(mRID)) {
-        const attrs = graph.getEdgeAttributes(mRID);
-        if (attrs?.attributes?.feeder_id) {
-            return attrs.attributes.feeder_id;
-        }
-    }
-
-    // Fallback: use provided or global
-    return fallbackFeederId || graphHelper.currentFeederID || null;
+    const { graph } = graphHelper;
+    const nodeFeeder = graph.hasNode(mRID) ? graph.getNodeAttributes(mRID).attributes?.feeder_id : null;
+    const edgeFeeder = graph.hasEdge(mRID) ? graph.getEdgeAttributes(mRID).attributes?.feeder_id : null;
+    return nodeFeeder || edgeFeeder || fallbackFeederId || graphHelper.currentFeederID || null;
 };
 
 const ObjectStudio = () => {
@@ -69,7 +52,7 @@ const ObjectStudio = () => {
 
     // Live device-control modal state (GridAPPS-D / CIM only). `type` is one of
     // "switch" | "capacitor" | "regulator"; `object` is the graph node/edge key.
-    const [controlContext, setControlContext] = useState({ open: false, object: null, type: null });
+    const [controlContext, setControlContext] = useState(NO_CONTROL);
 
     // Search state. The tables publish a `jumpToRow` handle through these refs;
     // both tab panes are force-rendered so the handle for the tab the user
@@ -159,116 +142,58 @@ const ObjectStudio = () => {
      * to page to the row and highlight it. Both tables are always mounted, so
      * the handle is available even for the tab that isn't showing.
      */
-    const handleSearchSelect = useCallback((_value, option) => {
+    const handleSearchSelect = (_value, option) => {
         const isNode = option.objectType === "node";
         setActiveTab(isNode ? "nodes" : "edges");
         (isNode ? nodeTableRef : edgeTableRef).current?.jumpToRow(option.objectId);
         setSearchValue(null);
-    }, []);
+    };
 
     /**
-     * Central navigation handler — called from ObjectTable or EditObject.
-     * Normalizes the object descriptor with a guaranteed feederId for CIM.
+     * Opens an object in the Edit tab (from ObjectTable or EditObject links),
+     * pushing the current one onto the back stack. CIM descriptors get their
+     * feeder resolved from the graph.
      */
-    const navigateToObject = useCallback(
-        (objectDescriptor, { pushHistory = true } = {}) => {
-            if (graphHelper.isCIM) {
-                const { mRID, feederId: providedFeederId } = objectDescriptor;
+    const navigateToObject = (descriptor) => {
+        let next = null;
 
-                // Always resolve feeder ID from the graph as the source of truth
-                const resolvedFeederId = resolveFeederIdFromGraph(mRID, providedFeederId);
+        if (graphHelper.isCIM) {
+            next = {
+                mRID: descriptor.mRID,
+                feederId: resolveFeederIdFromGraph(descriptor.mRID, descriptor.feederId),
+            };
+        } else {
+            const id = descriptor.id || descriptor.mRID;
+            if (graphHelper.graph.hasNode(id)) next = { type: "node", id };
+            else if (graphHelper.graph.hasEdge(id)) next = { type: "edge", id };
+            else if (descriptor.type && descriptor.id) next = descriptor;
+        }
 
-                const normalizedObject = {
-                    mRID,
-                    feederId: resolvedFeederId,
-                };
+        if (next) {
+            if (objectToEdit) setNavigationHistory((prev) => [...prev, objectToEdit]);
+            setObjectToEdit(next);
+        }
 
-                // Push current object to history before navigating
-                if (pushHistory && objectToEdit) {
-                    setNavigationHistory((prev) => [...prev, objectToEdit]);
-                }
+        setActiveTab("edit");
+    };
 
-                setObjectToEdit(normalizedObject);
-            } else {
-                // Non-CIM: find in graph
-                let normalizedObject = null;
+    // UUID / association links in EditObject; the feeder flows from the object being viewed.
+    const handleNavigate = (value, currentFeederId) =>
+        navigateToObject(graphHelper.isCIM ? { mRID: value, feederId: currentFeederId } : { id: value });
 
-                if (graphHelper.graph.hasNode(objectDescriptor.id || objectDescriptor.mRID)) {
-                    normalizedObject = {
-                        type: "node",
-                        id: objectDescriptor.id || objectDescriptor.mRID,
-                    };
-                } else if (graphHelper.graph.hasEdge(objectDescriptor.id || objectDescriptor.mRID)) {
-                    normalizedObject = {
-                        type: "edge",
-                        id: objectDescriptor.id || objectDescriptor.mRID,
-                    };
-                } else if (objectDescriptor.type && objectDescriptor.id) {
-                    normalizedObject = objectDescriptor;
-                }
-
-                if (normalizedObject) {
-                    if (pushHistory && objectToEdit) {
-                        setNavigationHistory((prev) => [...prev, objectToEdit]);
-                    }
-                    setObjectToEdit(normalizedObject);
-                }
-            }
-
-            setActiveTab("edit");
-        },
-        [objectToEdit],
-    );
-
-    /**
-     * Called from ObjectTable when user clicks an object row.
-     */
-    const handleEditObject = useCallback(
-        (objectDetails) => {
-            navigateToObject(objectDetails, { pushHistory: true });
-        },
-        [navigateToObject],
-    );
-
-    /**
-     * Called from EditObject when clicking UUID links / association links.
-     * The feederId context flows from the current object being viewed.
-     */
-    const handleNavigate = useCallback(
-        (value, currentFeederId) => {
-            if (graphHelper.isCIM) {
-                navigateToObject({ mRID: value, feederId: currentFeederId }, { pushHistory: true });
-            } else {
-                navigateToObject({ id: value }, { pushHistory: true });
-            }
-        },
-        [navigateToObject],
-    );
-
-    /**
-     * Open the appropriate live-control modal for a device row. Switches and
-     * capacitors use the open/close modal; regulators use the tap-changer modal.
-     * The record's graph key (record.id) is what the modals read/mutate.
-     */
-    const handleControlObject = useCallback((record, controlType) => {
+    // The record's graph key (record.id) is what the control modals read/mutate.
+    const handleControlObject = (record, controlType) => {
         setControlContext({ open: true, object: record.id, type: controlType });
-    }, []);
+    };
 
-    const closeControlModal = useCallback(
-        () => setControlContext({ open: false, object: null, type: null }),
-        [],
-    );
+    const closeControlModal = () => setControlContext(NO_CONTROL);
 
-    /**
-     * Go back in navigation history
-     */
-    const handleGoBack = useCallback(() => {
+    const handleGoBack = () => {
         if (navigationHistory.length === 0) return;
 
-        const previous = navigationHistory[navigationHistory.length - 1];
+        setObjectToEdit(navigationHistory[navigationHistory.length - 1]);
         setNavigationHistory((prev) => prev.slice(0, -1));
-        setObjectToEdit(previous);
-    }, [navigationHistory]);
+    };
 
     const tabItems = [
         {
@@ -282,7 +207,7 @@ const ObjectStudio = () => {
                     <ObjectTable
                         data={filteredEdges}
                         columns={edgeColumns}
-                        onEditObject={handleEditObject}
+                        onEditObject={navigateToObject}
                         onControlObject={handleControlObject}
                         isCIM={graphHelper.isCIM}
                         elementType="edge"
@@ -301,7 +226,7 @@ const ObjectStudio = () => {
                     <ObjectTable
                         data={filteredNodes}
                         columns={nodeColumns}
-                        onEditObject={handleEditObject}
+                        onEditObject={navigateToObject}
                         onControlObject={handleControlObject}
                         isCIM={graphHelper.isCIM}
                         elementType="node"

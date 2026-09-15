@@ -7,9 +7,8 @@ export const setCanvasDarkMode = (val) => {
 // Change these to adjust colors across ALL renderers at once.
 const TEXT_COLOR = () => (_isDark ? "#ffffff" : "#000000");
 const HOVER_BG_COLOR = () => (_isDark ? "#1f1f1f" : "#ffffff");
-const HOVER_SHADOW_COLOR = () => (_isDark ? "#000000" : "#000000");
+const HOVER_SHADOW_COLOR = "#000000";
 const LABEL_BG_COLOR = () => (_isDark ? "#1f1f1fcc" : "#ffffffcc");
-const LABEL_TEXT_COLOR = () => (_isDark ? "#ffffff" : "#000000");
 
 // ── Hover Tooltip Layout ────────────────────────────────────────────────────
 // These control spacing inside the hover card that appears on node hover.
@@ -28,27 +27,8 @@ const LABEL_PADDING_Y = 4; // Vertical padding around label background
 const LABEL_LINE_HEIGHT_MULTIPLIER = 1.2; // Multiplied by font size to get line spacing
 const LABEL_NODE_SPACING = 6; // Pixels between the bottom of the node circle and the label
 
-// ── Shadow / Halo ───────────────────────────────────────────────────────────
-// These control the subtle halo drawn behind a hovered node.
-const SHADOW_HALO_EXTRA_RADIUS = 3; // Extra pixels beyond node radius for the halo
-const SHADOW_HALO_FILL = "rgba(0,0,0,0.12)"; // Halo fill color & opacity
-const SHADOW_HALO_SHADOW_COLOR = "rgba(0,0,0,0.45)";
-const SHADOW_HALO_BLUR = 6;
-
-// ============================================================================
-// drawRoundRect — Traces a rounded-corner rectangle path (does NOT fill/stroke)
-// ============================================================================
-// Use this as a building block: call it, then context.fill() or context.stroke()
-// yourself. Adjust `radius` to make corners sharper (0) or rounder.
-//
-// Parameters:
-//   ctx    – CanvasRenderingContext2D
-//   x, y   – top-left corner
-//   width  – rectangle width
-//   height – rectangle height
-//   radius – corner radius (px)
-// ============================================================================
-export function drawRoundRect(ctx, x, y, width, height, radius) {
+/** Traces (does not fill or stroke) a rounded-rectangle path. */
+function drawRoundRect(ctx, x, y, width, height, radius) {
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
     ctx.lineTo(x + width - radius, y);
@@ -123,12 +103,11 @@ export function drawHover(context, data, settings) {
     const cardHeight = bodyBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
 
     // ── Draw background card with shadow ──
-    context.beginPath();
     context.fillStyle = HOVER_BG_COLOR();
     context.shadowOffsetX = HOVER_SHADOW_OFFSET_X;
     context.shadowOffsetY = HOVER_SHADOW_OFFSET_Y;
     context.shadowBlur = HOVER_SHADOW_BLUR;
-    context.shadowColor = HOVER_SHADOW_COLOR();
+    context.shadowColor = HOVER_SHADOW_COLOR;
 
     drawRoundRect(
         context,
@@ -138,7 +117,6 @@ export function drawHover(context, data, settings) {
         cardHeight,
         HOVER_CORNER_RADIUS,
     );
-    context.closePath();
     context.fill();
 
     // Reset shadow so it doesn't bleed into text
@@ -244,7 +222,7 @@ export function drawLabel(context, data, settings) {
     context.fillRect(centerX - rectWidth / 2, topY, rectWidth, rectHeight);
 
     // ── Draw each text line ──
-    context.fillStyle = LABEL_TEXT_COLOR();
+    context.fillStyle = TEXT_COLOR();
     for (let i = 0; i < lines.length; i++) {
         const line = String(lines[i]);
         const yLine = topY + LABEL_PADDING_Y + i * lineHeight;
@@ -255,26 +233,4 @@ export function drawLabel(context, data, settings) {
     // Other sigma renderers may expect these defaults.
     context.textAlign = "left";
     context.textBaseline = "alphabetic";
-}
-
-export function drawShadow(context, data, settings) {
-    const x = Math.round(data.x || 0);
-    const y = Math.round(data.y || 0);
-
-    // Determine the node's visual radius; fall back to labelSize or a default.
-    const nodeSize = typeof data.size === "number" ? data.size : (settings?.labelSize ?? 8);
-
-    const outerRadius = nodeSize + SHADOW_HALO_EXTRA_RADIUS;
-
-    context.save();
-
-    // Draw halo circle with soft shadow
-    context.beginPath();
-    context.arc(x, y, outerRadius, 0, Math.PI * 2);
-    context.fillStyle = SHADOW_HALO_FILL;
-    context.shadowColor = SHADOW_HALO_SHADOW_COLOR;
-    context.shadowBlur = SHADOW_HALO_BLUR;
-    context.fill();
-
-    context.restore();
 }

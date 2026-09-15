@@ -2,14 +2,14 @@
 // ANSI C84.1 service voltage limits, expressed per-unit. Range A is the normal
 // operating band; Range B is the wider band that is tolerable but should be
 // corrected. Outside Range B is treated as severe.
-export const VOLTAGE_LIMITS = {
+const VOLTAGE_LIMITS = {
     rangeA: { min: 0.95, max: 1.05 },
     rangeB: { min: 0.9167, max: 1.0583 },
 };
 
 // ── Loading limits ──────────────────────────────────────────────────────────
 // Fractions of an element's normal (continuous) rating.
-export const LOADING_LIMITS = {
+const LOADING_LIMITS = {
     elevated: 0.8, // worth noticing
     overloaded: 1.0, // above the normal rating
 };
@@ -37,7 +37,7 @@ export const SEVERITY = {
     severeHigh: severity("severeHigh", "Severe overvoltage", "#A31515", "#FF5C4D"),
     elevated: severity("elevated", "Elevated loading", "#C77700", "#E69F00"),
     overloaded: severity("overloaded", "Overloaded", "#A31515", "#FF5C4D"),
-    unknown: severity("unknown", "No data", "#AFB6BA", "#5E6469"),
+    unknown: severity("unknown", "No data", "#AFB6BA", "#43494D"),
 };
 
 /** True for the classifications that should count as a violation. */
@@ -54,7 +54,7 @@ const BASE_VOLTAGE_KEYS = [
 ];
 
 /** Line-to-neutral bases for common North American distribution classes. */
-export const STANDARD_LN_BASES = [
+const STANDARD_LN_BASES = [
     120, // 120/240 split-phase, 208Y/120
     240,
     277, // 480Y/277
@@ -91,7 +91,7 @@ const SNAP_TOLERANCE = 0.1;
  * @param {number} magnitude - measured volts
  * @returns {number|null}
  */
-export const snapToStandardBase = (magnitude) => {
+const snapToStandardBase = (magnitude) => {
     if (!Number.isFinite(magnitude) || magnitude <= 0) return null;
 
     let best = null;
@@ -137,7 +137,7 @@ export const resolveBaseVoltage = (attributes, sampleMagnitude) => {
  * @param {number} pu - per-unit voltage
  * @returns {Object} one of SEVERITY
  */
-export const classifyVoltage = (pu) => {
+const classifyVoltage = (pu) => {
     if (!Number.isFinite(pu)) return SEVERITY.unknown;
     if (pu < VOLTAGE_LIMITS.rangeB.min) return SEVERITY.severeLow;
     if (pu > VOLTAGE_LIMITS.rangeB.max) return SEVERITY.severeHigh;
@@ -150,7 +150,7 @@ export const classifyVoltage = (pu) => {
  * @param {number} ratio - apparent power / normal rating
  * @returns {Object} one of SEVERITY
  */
-export const classifyLoading = (ratio) => {
+const classifyLoading = (ratio) => {
     if (!Number.isFinite(ratio) || ratio < 0) return SEVERITY.unknown;
     if (ratio >= LOADING_LIMITS.overloaded) return SEVERITY.overloaded;
     if (ratio >= LOADING_LIMITS.elevated) return SEVERITY.elevated;
@@ -160,7 +160,7 @@ export const classifyLoading = (ratio) => {
 // ── Summaries ───────────────────────────────────────────────────────────────
 
 const PHASE_ORDER = ["A", "B", "C", "s1", "s2", "s12", "N"];
-const orderPhases = (keys) =>
+export const orderPhases = (keys) =>
     [...keys].sort((a, b) => {
         const ia = PHASE_ORDER.indexOf(a);
         const ib = PHASE_ORDER.indexOf(b);
@@ -309,14 +309,14 @@ export const formatPu = (pu) => (Number.isFinite(pu) ? pu.toFixed(3) : "-");
 
 export const formatPercent = (ratio) => (Number.isFinite(ratio) ? `${(ratio * 100).toFixed(0)}%` : "-");
 
-export const EDGE_WIDTH_MIN = 1.5; // energized but essentially unloaded
-export const EDGE_WIDTH_MAX = 6; // at or beyond EDGE_LOADING_FULL_SCALE
-export const DOT_SPEED_MIN = 0.1; // cycles/sec — slow creep, still legible
-export const DOT_SPEED_MAX = 1.0; // fast, without blurring into a solid line
+const EDGE_WIDTH_MIN = 1.5; // energized but essentially unloaded
+const EDGE_WIDTH_MAX = 6; // at or beyond EDGE_LOADING_FULL_SCALE
+const DOT_SPEED_MIN = 0.1; // cycles/sec — slow creep, still legible
+const DOT_SPEED_MAX = 1.0; // fast, without blurring into a solid line
 
 // Loading at which the scales top out. Slightly above 1.0 so an overloaded line
 // still reads as worse than a fully-loaded one before saturating.
-export const EDGE_LOADING_FULL_SCALE = 1.25;
+const EDGE_LOADING_FULL_SCALE = 1.25;
 
 /** Normalized 0..1 position of a loading ratio on the visual scale. */
 const loadingScale = (ratio) => {

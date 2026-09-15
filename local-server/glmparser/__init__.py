@@ -5,9 +5,7 @@ from .errors import GlmParseError
 from .parser import Parser
 from .writer import dumps
 
-__version__ = "1.0.0"
-
-__all__ = ["load", "loads", "dump", "dumps", "version", "GlmParseError"]
+__all__ = ["load", "loads", "dump", "dumps", "GlmParseError"]
 
 def loads(text):
     """Parse GLM source text into the AST dict."""
@@ -31,7 +29,3 @@ def dump(data, file):
         return None
     file.write(text)
     return None
-
-
-def version():
-    return __version__

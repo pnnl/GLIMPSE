@@ -1,83 +1,47 @@
-import React from "react";
 import { Typography, Collapse, Tag, Divider, Space } from "antd";
 
+const TAG_STYLE = {
+    border: "1px solid #d9d9d9",
+    borderRadius: 4,
+    cursor: "pointer",
+    userSelect: "none",
+};
+
+// filterTypes is null (show everything) or { nodes?: string[], edges?: string[] }.
 const ObjectTypesPane = ({ nodeTypes, edgeTypes, filterTypes, setFilterTypes }) => {
-    const handleFilterClick = (category, typeName) => {
+    const toggleFilter = (category, typeName) => {
         setFilterTypes((prev) => {
-            // Clone or start fresh
-            const next = prev ? { ...prev } : {};
+            const next = { ...prev };
+            const current = next[category] ?? [];
+            const updated = current.includes(typeName)
+                ? current.filter((t) => t !== typeName)
+                : [...current, typeName];
 
-            if (next[category]) {
-                if (next[category].includes(typeName)) {
-                    // Remove this type
-                    next[category] = next[category].filter((t) => t !== typeName);
-                    // If no types left in this category, remove the key entirely
-                    if (next[category].length === 0) {
-                        delete next[category];
-                    }
-                } else {
-                    next[category] = [...next[category], typeName];
-                }
-            } else {
-                next[category] = [typeName];
-            }
+            if (updated.length > 0) next[category] = updated;
+            else delete next[category];
 
-            // If both categories are gone, return null (show everything)
             return Object.keys(next).length === 0 ? null : next;
         });
     };
 
-    const isActive = (category, typeName) => {
-        return filterTypes && category in filterTypes && filterTypes[category].includes(typeName);
-    };
+    const typeTags = (category, types) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {types.map((type) => (
+                <Tag.CheckableTag
+                    key={type}
+                    checked={Boolean(filterTypes?.[category]?.includes(type))}
+                    onChange={() => toggleFilter(category, type)}
+                    style={TAG_STYLE}
+                >
+                    {type}
+                </Tag.CheckableTag>
+            ))}
+        </div>
+    );
 
     const collapseItems = [
-        {
-            key: "nodes",
-            label: "Node Types",
-            children: (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {nodeTypes.map((ntype) => (
-                        <Tag.CheckableTag
-                            key={ntype}
-                            checked={isActive("nodes", ntype)}
-                            onChange={() => handleFilterClick("nodes", ntype)}
-                            style={{
-                                border: "1px solid #d9d9d9",
-                                borderRadius: 4,
-                                cursor: "pointer",
-                                userSelect: "none",
-                            }}
-                        >
-                            {ntype}
-                        </Tag.CheckableTag>
-                    ))}
-                </div>
-            ),
-        },
-        {
-            key: "edges",
-            label: "Edge Types",
-            children: (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                    {edgeTypes.map((etype) => (
-                        <Tag.CheckableTag
-                            key={etype}
-                            checked={isActive("edges", etype)}
-                            onChange={() => handleFilterClick("edges", etype)}
-                            style={{
-                                border: "1px solid #d9d9d9",
-                                borderRadius: 4,
-                                cursor: "pointer",
-                                userSelect: "none",
-                            }}
-                        >
-                            {etype}
-                        </Tag.CheckableTag>
-                    ))}
-                </div>
-            ),
-        },
+        { key: "nodes", label: "Node Types", children: typeTags("nodes", nodeTypes) },
+        { key: "edges", label: "Edge Types", children: typeTags("edges", edgeTypes) },
     ];
 
     return (

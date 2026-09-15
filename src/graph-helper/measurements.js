@@ -12,6 +12,17 @@ import {
     summarizeNodeVoltage,
 } from "../utils/electrical";
 
+/** Complex sum of an edge's per-phase power. */
+export const sumPower = (power) => {
+    let real = 0;
+    let imag = 0;
+    for (const phase of Object.values(power ?? {})) {
+        if (Number.isFinite(phase.real)) real += phase.real;
+        if (Number.isFinite(phase.imag)) imag += phase.imag;
+    }
+    return { real, imag };
+};
+
 export const nodeVoltageSummary = (graph, live, nodeId) => {
     if (!graph.hasNode(nodeId)) return null;
     const measured = live.nodes.get(nodeId);
@@ -146,13 +157,7 @@ export const edgeVitals = (graph, live, edgeId) => {
         lines.push({ text: `Flow  ${formatVA(summary.apparent)}` });
     }
 
-    const measured = live.edges.get(edgeId);
-    let real = 0;
-    let imag = 0;
-    for (const phase of Object.values(measured?.power ?? {})) {
-        if (Number.isFinite(phase.real)) real += phase.real;
-        if (Number.isFinite(phase.imag)) imag += phase.imag;
-    }
+    const { real, imag } = sumPower(live.edges.get(edgeId)?.power);
     lines.push({ text: `P ${formatWatts(real, "W")}   Q ${formatWatts(imag, "VAr")}` });
 
     return lines;

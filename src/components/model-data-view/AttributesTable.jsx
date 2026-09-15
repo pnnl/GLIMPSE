@@ -1,4 +1,3 @@
-import React from "react";
 import { Table, Typography, Input, Button, theme } from "antd";
 
 const { Link, Text } = Typography;

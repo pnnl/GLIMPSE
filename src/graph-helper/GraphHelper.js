@@ -1,33 +1,23 @@
-import { MultiUndirectedGraph } from "graphology";
 import { emptyRoster, mergeRoster, normalizeRoster } from "./agents";
-import { assignParallelEdgeCurvatures as assignCurvatures } from "./edge-curvature";
+import { assignParallelEdgeCurvatures } from "./edge-curvature";
 import { EdgeFocus } from "./edge-focus";
-import { createEdge, createNode, hoverPayload } from "./element-factory";
-import { buildGraph } from "./graph-builder";
+import { createEdge, createNode } from "./element-factory";
+import { buildGraph, newGraph } from "./graph-builder";
 import { HighlightState } from "./highlight-state";
 import { legendEntries } from "./legend";
 import {
     edgeLoadingSummary,
     edgeSeverity,
-    edgeVitals,
     nodeSeverity,
-    nodeVitals,
     nodeVoltageSummary,
     refreshNodeHover as rebuildNodeHover,
     violationCounts,
 } from "./measurements";
 import { applyCapacitorStates, applySimulationOutput, applySwitchStates } from "./simulation";
 import * as socketApi from "./socket-api";
-import {
-    edgeTypesOf,
-    emptyTypeCounts,
-    flattenTheme,
-    nodeTypesOf,
-    resolveTheme,
-    themeSourceFor,
-} from "./theme";
+import { edgeTypesOf, emptyTypeCounts, flattenTheme, nodeTypesOf, themeSourceFor } from "./theme";
 
-const newGraph = () => new MultiUndirectedGraph({ allowSelfLoops: true, type: "undirected" });
+const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
 // Hints for every bulk updateEachEdgeAttributes below. Without them sigma takes
 // its "repaint in place" path, which reuses the program index it built during
@@ -67,8 +57,6 @@ class GraphHelper {
     nodeTypes = [];
     edgeTypes = [];
     isCIM = false;
-    communitiesArray = [];
-    communityColorPallet = {};
     themeName = "feeder-model-theme";
     selectedGridappsdModels = [];
     glmFileData = {};
@@ -127,10 +115,9 @@ class GraphHelper {
     // ── Theme ───────────────────────────────────────────────────────────────
 
     setThemeObject = (jsonTheme = null) => {
-        const theme = resolveTheme(this.themeName, jsonTheme, this.#darkMode);
         this.#themeSource = themeSourceFor(this.themeName, jsonTheme);
 
-        if (!theme) {
+        if (!this.#themeSource) {
             // The custom theme was selected but no theme file came with the
             // upload: there is nothing to derive types from, so the existing
             // type lists and counts are left as they are.
@@ -138,6 +125,7 @@ class GraphHelper {
             return;
         }
 
+        const theme = flattenTheme(this.#themeSource, this.#darkMode);
         this.#theme = theme;
         this.nodeTypes = nodeTypesOf(theme);
         this.edgeTypes = edgeTypesOf(theme);
@@ -210,9 +198,7 @@ class GraphHelper {
     #setDirty = (value) => {
         if (this.#dirty === value) return;
         this.#dirty = value;
-        if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("graph-dirty-change", { detail: { dirty: value } }));
-        }
+        dispatch("graph-dirty-change", { dirty: value });
     };
 
     /** Call after any user edit to the model. */
@@ -233,11 +219,7 @@ class GraphHelper {
         const next = Boolean(value);
         if (this.#violationMode === next) return;
         this.#violationMode = next;
-        if (typeof window !== "undefined") {
-            window.dispatchEvent(
-                new CustomEvent("graph-violation-mode-change", { detail: { enabled: next } }),
-            );
-        }
+        dispatch("graph-violation-mode-change", { enabled: next });
         this.sigmaInstance?.refresh();
     };
 
@@ -257,25 +239,10 @@ class GraphHelper {
 
     getViolationCounts = () => violationCounts(this.graph, this.liveMeasurements);
 
-    buildNodeVitals = (nodeId) => nodeVitals(this.graph, this.liveMeasurements, nodeId);
-
-    buildEdgeVitals = (edgeId) => edgeVitals(this.graph, this.liveMeasurements, edgeId);
-
-    /** The hover-card fields drawHover reads; see element-factory.hoverPayload. */
-    buildHoverPayload = (attributes, vitals = []) => hoverPayload(attributes, vitals);
-
     /** Recompute and store a live node's hover card in place. */
     refreshNodeHover = (nodeId) => rebuildNodeHover(this.graph, this.liveMeasurements, nodeId);
 
     // ── Highlighting (see highlight-state.js) ───────────────────────────────
-
-    get highlightedNodeIDs() {
-        return this.#highlights.nodeIDs;
-    }
-
-    get highlightedEdgeIDs() {
-        return this.#highlights.edgeIDs;
-    }
 
     get highlightedObjects() {
         return this.#highlights.objects;
@@ -358,10 +325,6 @@ class GraphHelper {
     /** Flat legend data for the DOM legend panel. */
     getLegendData = () => legendEntries(this.#theme, this.objectTypeCount);
 
-    resetObjectTypeCounts = () => {
-        this.objectTypeCount = emptyTypeCounts(this.#theme);
-    };
-
     // ── Layout ──────────────────────────────────────────────────────────────
 
     #rotate = (angle) => {
@@ -375,8 +338,6 @@ class GraphHelper {
     rotateCCW = () => this.#rotate(this.#ROTATE_ANGLE);
 
     rotateCW = () => this.#rotate(-this.#ROTATE_ANGLE);
-
-    assignParallelEdgeCurvatures = (graph = this.graph) => assignCurvatures(graph);
 
     // ── Simulation (see simulation.js) ──────────────────────────────────────
 
@@ -459,15 +420,14 @@ class GraphHelper {
     loadGraphFromData = (fileData, themeData = null) => {
         if (this.graph.order > 0) {
             this.clearGraphData();
-            if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-cleared"));
+            dispatch("graph-cleared");
         }
 
         this.isCIM = false;
         this.setThemeObject(themeData);
         this.setGraphData(fileData);
 
-        if (typeof window !== "undefined")
-            window.dispatchEvent(new CustomEvent("graph-loaded", { detail: { source: "socket" } }));
+        dispatch("graph-loaded", { source: "socket" });
     };
 
     applyUpdate = (data) => {
@@ -479,7 +439,7 @@ class GraphHelper {
     addNode = (obj) => {
         this.#ensureTheme();
         const added = socketApi.addNode(this.#socketContext(), obj);
-        if (added) this.#afterTopologyChange();
+        if (added) this.sigmaInstance?.refresh();
         return added;
     };
 
@@ -487,21 +447,21 @@ class GraphHelper {
         this.#ensureTheme();
         const added = socketApi.addEdge(this.#socketContext(), obj);
         if (added) {
-            this.assignParallelEdgeCurvatures();
-            this.#afterTopologyChange();
+            assignParallelEdgeCurvatures(this.graph);
+            this.sigmaInstance?.refresh();
         }
         return added;
     };
 
     deleteNode = (nodeID) => {
         const removed = socketApi.deleteNode(this.#socketContext(), nodeID);
-        if (removed) this.#afterTopologyChange();
+        if (removed) this.sigmaInstance?.refresh();
         return removed;
     };
 
     deleteEdge = (edgeID) => {
         const removed = socketApi.deleteEdge(this.#socketContext(), edgeID);
-        if (removed) this.#afterTopologyChange();
+        if (removed) this.sigmaInstance?.refresh();
         return removed;
     };
 
@@ -513,10 +473,6 @@ class GraphHelper {
         objectTypeCount: this.objectTypeCount,
         bounds: this.#boundsCoords,
     });
-
-    #afterTopologyChange = () => {
-        this.sigmaInstance?.refresh();
-    };
 
     // ── Lifecycle ───────────────────────────────────────────────────────────
 
@@ -562,12 +518,12 @@ class GraphHelper {
 
         // Let UI (e.g. the legend panel) clear any per-type highlight/hide state it
         // mirrors locally, since we just cleared it on the graph.
-        if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("graph-reset"));
+        dispatch("graph-reset");
     };
 
     /** Throws the model away. Callers confirm with the user first — see confirmDiscardChanges. */
     clearGraphData = () => {
-        this.resetObjectTypeCounts();
+        this.objectTypeCount = emptyTypeCounts(this.#theme);
         this.isCIM = false;
         // Whatever was edited is being discarded here.
         this.clearDirty();
@@ -587,8 +543,6 @@ class GraphHelper {
         this.#hasFixedNodes = false;
         this.hasGeoCoords = false;
         this.#boundsCoords = { maxX: 0, maxY: 0, minX: 0, minY: 0 };
-        this.communitiesArray = [];
-        this.communityColorPallet = {};
         this.distributionAreas = {};
         this.objectDetails = {};
         this.agents = emptyRoster();
@@ -636,11 +590,7 @@ class GraphHelper {
         // The model still loads — say so rather than letting the gap go unnoticed.
         // Dispatched rather than notified directly: utils/notify imports this
         // module, so calling into it here would close an import cycle.
-        if (skipped > 0 && typeof window !== "undefined") {
-            window.dispatchEvent(
-                new CustomEvent("model-objects-skipped", { detail: { count: skipped } }),
-            );
-        }
+        if (skipped > 0) dispatch("model-objects-skipped", { count: skipped });
 
         // A freshly loaded model matches its source file — nothing to save yet.
         this.clearDirty();
@@ -648,22 +598,19 @@ class GraphHelper {
 
     /** The parsed model, with every edited attribute written back onto it. */
     export = () => {
-        const edgeIDs = this.graph.edges();
-        const nodeIDs = this.graph.nodes();
+        for (const { objects } of Object.values(this.glmFileData)) {
+            for (const obj of objects) {
+                if (!("attributes" in obj)) continue;
 
-        Object.keys(this.glmFileData).forEach((file) => {
-            this.glmFileData[file].objects.forEach((obj) => {
-                if (!("attributes" in obj)) return;
-
-                if (nodeIDs.includes(obj.attributes.name)) {
+                if (this.graph.hasNode(obj.attributes.name)) {
                     obj.attributes = this.graph.getNodeAttributes(obj.attributes.name).attributes;
                 }
 
-                if (edgeIDs.includes(obj.attributes.name)) {
+                if (this.graph.hasEdge(obj.attributes.name)) {
                     obj.attributes = this.graph.getEdgeAttributes(obj.attributes.name).attributes;
                 }
-            });
-        });
+            }
+        }
 
         return this.glmFileData;
     };

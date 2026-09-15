@@ -13,12 +13,22 @@ Set GLIMPSE_SERVER_URL to point at a non-default backend, e.g.:
     GLIMPSE_SERVER_URL=http://127.0.0.1:5052 python test_load_graph.py
 """
 
+import json
 import os
 import sys
 
 import socketio
 
 DEFAULT_URL = os.environ.get("GLIMPSE_SERVER_URL", "http://127.0.0.1:5052")
+SOCIAL_EXAMPLE = os.path.join(
+    os.path.dirname(__file__), "..", "models", "demo_examples", "socialExample.json"
+)
+
+
+def social_example():
+    """The socialExample.json graph, in GLIMPSE objects format."""
+    with open(SOCIAL_EXAMPLE, "r") as f:
+        return json.load(f)
 
 
 def _obj_id(data):

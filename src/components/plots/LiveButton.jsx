@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 
+const isStreaming = (state) => state === "running" || state === "paused";
+
 const LiveButton = ({ following, onResume }) => {
-    const isStreaming = (state) => state === "running" || state === "paused";
     const [streaming, setStreaming] = useState(() => isStreaming(socketClientHelper.simulationState));
 
     useEffect(() => {

@@ -9,21 +9,9 @@ Run the GLIMPSE frontend alongside this to watch each graph render.
     python socket-testing/test_load_graph.py
 """
 
-import json
-import os
-
 import networkx as nx
 
 import common
-
-SOCIAL_EXAMPLE = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "testing",
-    "models",
-    "demo_examples",
-    "socialExample.json",
-)
 
 
 def build_networkx_graph():
@@ -47,10 +35,8 @@ def main():
     sio = common.connect()
     try:
         # 1) GLIMPSE objects format
-        with open(SOCIAL_EXAMPLE, "r") as f:
-            social_graph = json.load(f)
         print("\n[1/2] Loading GLIMPSE objects format (socialExample.json)")
-        common.call(sio, "load-graph", social_graph)
+        common.call(sio, "load-graph", common.social_example())
 
         sio.sleep(2)  # pause so you can see it in the UI before it's replaced
 

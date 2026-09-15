@@ -2,14 +2,9 @@ import { useEffect, useRef, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../../contexts/GraphContext";
-import {
-    TIMELINE_GRID_BOTTOM,
-    timelineDataZoom,
-    trimHistory,
-    useChartTimeline,
-} from "../../hooks/useChartTimeline";
+import { trimHistory, useChartTimeline } from "../../hooks/useChartTimeline";
 import LiveButton from "./LiveButton";
-import { MEASUREMENT_TYPE } from "./plotConstants";
+import { MEASUREMENT_TYPE, baseChartOption, chartColors } from "./plotConstants";
 
 // Series color palette (same hues the default charts use).
 const PALETTE = ["#5470c6", "#91cc75", "#ee6666", "#fac858", "#73c0de", "#3ba272", "#fc8452", "#9a60b4"];
@@ -103,37 +98,13 @@ const CustomPlot = ({ plot, onRemove }) => {
         return socketClientHelper.on("sim-output", processOutput);
     }, [processOutput]);
 
-    const text = darkMode ? "#cccccc" : "#333333";
-    const bg = darkMode ? "#1f1f1f" : "#fafafa";
-    const gridLine = darkMode ? "#2e2e2e" : "#ebebeb";
+    const { text } = chartColors(darkMode);
 
     const option = {
-        backgroundColor: bg,
-        textStyle: { color: text },
-        grid: { left: 52, right: 10, top: 38, bottom: TIMELINE_GRID_BOTTOM },
-        tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
-        legend: {
-            top: 4,
-            textStyle: { color: text, fontSize: 9 },
-            itemWidth: 14,
-            itemHeight: 7,
-            data: plot.components.map((c) => c.displayName),
-        },
-        xAxis: {
-            type: "category",
-            axisLabel: { color: text, fontSize: 8, rotate: 30, interval: "auto" },
-            splitLine: { lineStyle: { color: gridLine } },
-            axisTick: { show: false },
-        },
-        yAxis: {
-            type: "value",
-            name: yAxisLabel(plot),
-            scale: true,
-            nameTextStyle: { color: text, fontSize: 9 },
-            axisLabel: { color: text, fontSize: 8 },
-            splitLine: { lineStyle: { color: gridLine } },
-        },
-        dataZoom: timelineDataZoom(darkMode ? "#8ab4f8" : "#5470c6"),
+        ...baseChartOption(darkMode, {
+            legend: plot.components.map((c) => c.displayName),
+            yAxis: { name: yAxisLabel(plot), scale: true },
+        }),
         series: plot.components.map((c, i) => ({
             name: c.displayName,
             type: "line",

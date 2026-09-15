@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "../styles/VisToolbar.css";
 import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
@@ -28,15 +28,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
         return () => window.removeEventListener("graph-violation-mode-change", handler);
     }, []);
 
-    useEffect(() => {
-        const unsubSimState = socketClientHelper.on("sim-state-change", (simState) => {
-            setSimulationState(simState);
-        });
-
-        return () => {
-            unsubSimState();
-        };
-    }, []);
+    useEffect(() => socketClientHelper.on("sim-state-change", setSimulationState), []);
 
     const rotateCCW = () => {
         graphHelper.rotateCCW();
@@ -48,40 +40,32 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
         graphHelper.sigmaInstance?.refresh();
     };
 
-    const unHighlightCurrent = (obj) => {
-        if (obj.type === "edge") {
-            graphHelper.graph.setEdgeAttribute(obj.id, "highlighted", false);
+    const clearCurrentHighlight = () => {
+        const current = graphHelper.getCurrentHighlightedObject();
+        if (!current) return;
+
+        if (current.type === "edge") {
+            graphHelper.graph.setEdgeAttribute(current.id, "highlighted", false);
         } else {
-            graphHelper.graph.setNodeAttribute(obj.id, "highlighted", false);
+            graphHelper.graph.setNodeAttribute(current.id, "highlighted", false);
         }
     };
 
     const goToPrevious = () => {
         if (graphHelper.highlightedObjects.length === 0) return;
-
-        if (graphHelper.getCurrentHighlightedObject()) {
-            unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
-        }
-
+        clearCurrentHighlight();
         graphHelper.focus(graphHelper.getPrevious());
     };
 
     const goToNext = () => {
         if (graphHelper.highlightedObjects.length === 0) return;
-
-        if (graphHelper.getCurrentHighlightedObject()) {
-            unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
-        }
-
+        clearCurrentHighlight();
         graphHelper.focus(graphHelper.getNext());
     };
 
     const handleReset = () => {
         if (graphHelper.graph.order === 0) return;
-
-        if (graphHelper.getCurrentHighlightedObject()) {
-            unHighlightCurrent(graphHelper.getCurrentHighlightedObject());
-        }
+        clearCurrentHighlight();
 
         graphHelper.reset();
         graphHelper.sigmaInstance?.refresh();
@@ -161,7 +145,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                         )}
                         <Tooltip title="Stop Simulation">
                             <Button
-                                disabled={!(simulationState === "running")}
+                                disabled={simulationState !== "running"}
                                 size="medium"
                                 aria-label="Stop simulation"
                                 onClick={handleStopSimulation}

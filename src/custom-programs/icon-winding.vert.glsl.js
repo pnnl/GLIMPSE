@@ -22,7 +22,7 @@ const float bias = 255.0 / 254.0;
 void main() {
   vec2 diff = a_positionEnd - a_positionStart;
 
-  // Sit on the apex of the (possibly curved) edge so parallel regulators keep
+  // Sit on the apex of the (possibly curved) edge so parallel icons keep
   // their icon centered on the visible line. a_curvature == 0 => plain midpoint.
   vec2 midpoint = (a_positionStart + a_positionEnd) * 0.5;
   vec2 center = midpoint + 0.5 * vec2(-diff.y, diff.x) * a_curvature;

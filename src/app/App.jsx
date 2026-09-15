@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import "../styles/App.css";
 import { App as AntApp, ConfigProvider, Layout, theme } from "antd";
 import { Content } from "antd/es/layout/layout";
@@ -58,8 +58,10 @@ const useUnsavedChangesGuard = () => {
     }, []);
 };
 
-const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRef }) => {
+const AppContent = () => {
     const { view, darkMode } = useGraph();
+    const [aboutOpen, setAboutOpen] = useState(false);
+    const [loadModelOpen, setLoadModelOpen] = useState(true);
 
     useUnsavedChangesGuard();
 
@@ -134,14 +136,10 @@ const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRe
                 <NotificationBridge />
                 <Layout style={{ backgroundColor: darkMode ? "#141414" : "#FFFFFF" }}>
                     <AppHeader
-                        onAboutClick={openAboutModalRef}
-                        openModelLoader={openLoadModelModalRef}
+                        onAboutClick={() => setAboutOpen(true)}
+                        onLoadClick={() => setLoadModelOpen(true)}
                     />
-                    <LoadModelModal
-                        onMount={(setter) => {
-                            openLoadModelModalRef.current = setter;
-                        }}
-                    />
+                    <LoadModelModal open={loadModelOpen} close={() => setLoadModelOpen(false)} />
                     <Content style={{ position: "relative" }}>
                         <div
                             style={
@@ -163,27 +161,16 @@ const AppContent = ({ onAboutModalMount, openAboutModalRef, openLoadModelModalRe
                 </Layout>
                 {/* Must stay inside ConfigProvider — a modal rendered outside it
                     gets antd's default (light) algorithm regardless of darkMode. */}
-                <AboutModal onMount={onAboutModalMount} />
+                <AboutModal open={aboutOpen} close={() => setAboutOpen(false)} />
             </AntApp>
         </ConfigProvider>
     );
 };
 
 function App() {
-    const openAboutModalRef = useRef(null);
-    const openLoadModelModalRef = useRef(null);
-
-    const handleAboutModalMount = (setter) => {
-        openAboutModalRef.current = setter;
-    };
-
     return (
         <GraphProvider>
-            <AppContent
-                onAboutModalMount={handleAboutModalMount}
-                openAboutModalRef={openAboutModalRef}
-                openLoadModelModalRef={openLoadModelModalRef}
-            />
+            <AppContent />
         </GraphProvider>
     );
 }

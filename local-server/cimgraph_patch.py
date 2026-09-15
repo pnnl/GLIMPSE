@@ -16,8 +16,6 @@ _EDGE_CACHE_ATTR = "__glimpse_edge_ids__"
 _applied = False
 # Bound to cimgraph's logger when the patch is installed.
 _log = None
-# The implementation replaced, so it can be put back.
-_original = None
 
 
 def _patched_create_edge(self, graph, cim_class, identifier, attribute, edge_class, edge_mRID):
@@ -80,7 +78,7 @@ def apply() -> bool:
 
     Safe to call more than once; only the first call does anything.
     """
-    global _applied, _log, _original
+    global _applied, _log
 
     if _applied:
         return True
@@ -107,31 +105,7 @@ def apply() -> bool:
         return False
 
     _log = cimgraph_log
-    _original = ConnectionInterface.create_edge
     ConnectionInterface.create_edge = _patched_create_edge
     _applied = True
     return True
 
-
-def revert() -> bool:
-    """Put the library's own implementation back. Returns whether it was on.
-
-    Exists so the patch can be taken out of the picture without restarting —
-    when comparing against stock behaviour, or if it is ever suspected of
-    causing something.
-    """
-    global _applied, _original
-
-    if not _applied:
-        return False
-
-    from cimgraph.databases import ConnectionInterface
-
-    ConnectionInterface.create_edge = _original
-    _original = None
-    _applied = False
-    return True
-
-
-def is_applied() -> bool:
-    return _applied

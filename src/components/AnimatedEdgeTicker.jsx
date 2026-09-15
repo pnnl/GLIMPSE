@@ -8,7 +8,6 @@ const AnimatedEdgeTicker = () => {
     useEffect(() => {
         const RECHECK_MS = 250;
         let frameId;
-        let running = true;
         let wasPulsing = false;
         let cachedHasAnimated = false;
         let checkedAt = 0;
@@ -24,8 +23,6 @@ const AnimatedEdgeTicker = () => {
         };
 
         const animate = (now) => {
-            if (!running) return;
-
             const graph = sigma.getGraph();
             const pulseId = graphHelper.getFocusedEdgeId();
             const pulsing = Boolean(
@@ -34,9 +31,8 @@ const AnimatedEdgeTicker = () => {
 
             if (hasAnimatedEdges(now)) {
                 sigma.refresh({ skipIndexation: true });
-            } else if (pulsing) {
-                sigma.refresh({ partialGraph: { edges: [pulseId] }, skipIndexation: true });
-            } else if (wasPulsing && pulseId && graph.hasEdge(pulseId)) {
+            } else if ((pulsing || wasPulsing) && pulseId && graph.hasEdge(pulseId)) {
+                // One last repaint after the pulse ends clears its final frame.
                 sigma.refresh({ partialGraph: { edges: [pulseId] }, skipIndexation: true });
             }
 
@@ -46,10 +42,7 @@ const AnimatedEdgeTicker = () => {
 
         frameId = requestAnimationFrame(animate);
 
-        return () => {
-            running = false;
-            if (frameId) cancelAnimationFrame(frameId);
-        };
+        return () => cancelAnimationFrame(frameId);
     }, [sigma]);
 
     return null;

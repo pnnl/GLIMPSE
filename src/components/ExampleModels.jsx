@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Flex, Card, Button, Tag, Alert, Empty, Typography } from "antd";
 import axios from "axios";
 import { useGraph } from "../contexts/GraphContext";
-import graphHelper from "../graph-helper/GraphHelper";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { API_BASE_URL, PARSE_TIMEOUT_MS } from "../config";
 import { confirmDiscardChanges, errorText, reportError } from "../utils/notify";
+import { replaceModel } from "./modals/load-model";
 
 const ExampleModels = ({ closeModal }) => {
     const { newGraphUpdate } = useGraph();
@@ -45,17 +45,7 @@ const ExampleModels = ({ closeModal }) => {
                 { headers: { "Content-Type": "application/json" }, timeout: PARSE_TIMEOUT_MS },
             );
 
-            if ("error" in response) throw new Error(response.error);
-
-            if (graphHelper.graph.order > 0) {
-                graphHelper.clearGraphData();
-                window.dispatchEvent(new CustomEvent("graph-cleared"));
-            }
-
-            graphHelper.setIsCIM(response.isCIM);
-            graphHelper.setThemeObject(response.themeData ?? null);
-            graphHelper.setObjectDetails(response.objectDetails);
-            graphHelper.setGraphData(response.data ?? response);
+            replaceModel(response, response.isCIM);
 
             // Example models aren't driveable via GridAPPS-D, so detach from any
             // previous run: hides the controls/log/charts/id badge and stops a

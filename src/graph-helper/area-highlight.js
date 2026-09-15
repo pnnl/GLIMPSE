@@ -1,7 +1,7 @@
 import graphHelper from "./GraphHelper";
 import { notify } from "../utils/notify";
 
-export const MAX_HIGHLIGHT_AREAS = 10;
+const MAX_HIGHLIGHT_AREAS = 10;
 
 const AREA_PALETTE = {
     light: [
@@ -52,20 +52,12 @@ class AreaHighlight {
         return this.#colorsCache;
     }
 
-    colorFor(areaId) {
-        return this.colors[areaId];
-    }
-
     setDarkMode(darkMode) {
         const next = Boolean(darkMode);
         if (next === this.#darkMode) return;
         this.#darkMode = next;
         this.#colorsCache = null;
         if (this.#selection.length > 0) this.#notify();
-    }
-
-    isSelected(areaId) {
-        return this.#selection.includes(areaId);
     }
 
     select(areaIds) {

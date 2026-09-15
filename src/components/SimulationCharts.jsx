@@ -2,16 +2,16 @@ import { useEffect, useRef, useCallback } from "react";
 import ReactECharts from "echarts-for-react";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { useGraph } from "../contexts/GraphContext";
-import {
-    TIMELINE_GRID_BOTTOM,
-    timelineDataZoom,
-    trimHistory,
-    useChartTimeline,
-} from "../hooks/useChartTimeline";
+import { trimHistory, useChartTimeline } from "../hooks/useChartTimeline";
 import LiveButton from "./plots/LiveButton";
+import { baseChartOption, chartColors } from "./plots/plotConstants";
 import "../styles/SimulationCharts.css";
 
 const LOAD_TYPES = new Set(["EnergyConsumer", "ConformLoad", "NonConformLoad"]);
+const LOAD_KEYS = ["loadP", "loadQ", "batP", "batQ", "solP", "solQ"];
+
+const emptyVoltage = () => ({ timestamps: [], min: [], avg: [], max: [] });
+const emptyLoad = () => ({ timestamps: [], ...Object.fromEntries(LOAD_KEYS.map((key) => [key, []])) });
 
 function polarToRect(magnitude, angleDeg) {
     if (!isFinite(magnitude) || !isFinite(angleDeg)) return [0, 0];
@@ -19,40 +19,60 @@ function polarToRect(magnitude, angleDeg) {
     return [magnitude * Math.cos(rad), magnitude * Math.sin(rad)];
 }
 
+// Which load-demand series ("load" | "bat" | "sol") a VA measurement feeds, or null.
+const loadCategory = (m) => {
+    if (LOAD_TYPES.has(m.equipment_type)) return "load";
+    const name = m.equipment_name || "";
+    if (name.startsWith("PowerElectronicsConnection_BatteryUnit")) return "bat";
+    if (name.startsWith("PowerElectronicsConnection_PhotovoltaicUnit")) return "sol";
+    return null;
+};
+
+const line = (name, color, dashed = false) => ({
+    name,
+    type: "line",
+    smooth: true,
+    showSymbol: false,
+    lineStyle: { color, width: 1.5, ...(dashed ? { type: "dashed" } : {}) },
+    itemStyle: { color },
+});
+
 const SimulationCharts = () => {
     const { darkMode } = useGraph();
 
-    const vd = useRef({ timestamps: [], min: [], avg: [], max: [] });
-    const ld = useRef({
-        timestamps: [],
-        loadP: [],
-        loadQ: [],
-        batP: [],
-        batQ: [],
-        solP: [],
-        solQ: [],
-    });
+    const vd = useRef(emptyVoltage());
+    const ld = useRef(emptyLoad());
 
     const voltageChartRef = useRef(null);
     const loadChartRef = useRef(null);
 
-    // Each chart owns its own scroll position, so the two timelines are
-    // independent — scrolling back through voltage doesn't move load demand.
-    const clearVoltage = useCallback(() => {
-        vd.current = { timestamps: [], min: [], avg: [], max: [] };
+    const renderVoltage = useCallback(() => {
+        const v = vd.current;
         voltageChartRef.current?.getEchartsInstance()?.setOption({
-            xAxis: { data: [] },
-            series: [{ data: [] }, { data: [] }, { data: [] }],
+            xAxis: { data: [...v.timestamps] },
+            series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
         });
     }, []);
 
-    const clearLoad = useCallback(() => {
-        ld.current = { timestamps: [], loadP: [], loadQ: [], batP: [], batQ: [], solP: [], solQ: [] };
+    const renderLoad = useCallback(() => {
+        const l = ld.current;
         loadChartRef.current?.getEchartsInstance()?.setOption({
-            xAxis: { data: [] },
-            series: [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }],
+            xAxis: { data: [...l.timestamps] },
+            series: LOAD_KEYS.map((key) => ({ data: [...l[key]] })),
         });
     }, []);
+
+    // Each chart owns its own scroll position, so the two timelines are
+    // independent — scrolling back through voltage doesn't move load demand.
+    const clearVoltage = useCallback(() => {
+        vd.current = emptyVoltage();
+        renderVoltage();
+    }, [renderVoltage]);
+
+    const clearLoad = useCallback(() => {
+        ld.current = emptyLoad();
+        renderLoad();
+    }, [renderLoad]);
 
     const voltageTimeline = useChartTimeline(
         voltageChartRef,
@@ -81,139 +101,70 @@ const SimulationCharts = () => {
                 .filter(isFinite);
 
             if (pnvMags.length > 0) {
-                const minV = Math.min(...pnvMags);
-                const maxV = Math.max(...pnvMags);
                 const avgV = pnvMags.reduce((a, b) => a + b, 0) / pnvMags.length;
                 const v = vd.current;
                 v.timestamps.push(ts);
-                v.min.push(parseFloat(minV.toFixed(2)));
+                v.min.push(parseFloat(Math.min(...pnvMags).toFixed(2)));
                 v.avg.push(parseFloat(avgV.toFixed(2)));
-                v.max.push(parseFloat(maxV.toFixed(2)));
+                v.max.push(parseFloat(Math.max(...pnvMags).toFixed(2)));
                 // Trimmed only at the retention cap — the run's history is kept so
-                // it can be scrolled back through, not discarded after 20 samples.
+                // it can be scrolled back through.
                 [v.timestamps, v.min, v.avg, v.max].forEach(trimHistory);
 
-                voltageChartRef.current?.getEchartsInstance()?.setOption({
-                    xAxis: { data: [...v.timestamps] },
-                    series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
-                });
+                renderVoltage();
                 syncVoltage();
             }
 
             // ── Load Demand (VA) ───────────────────────────────────────────────
-            let lP = 0,
-                lQ = 0,
-                bP = 0,
-                bQ = 0,
-                sP = 0,
-                sQ = 0;
-            for (const m of Analog.filter((m) => m.measurement_type === "VA")) {
+            const sums = Object.fromEntries(LOAD_KEYS.map((key) => [key, 0]));
+            for (const m of Analog) {
+                if (m.measurement_type !== "VA") continue;
+                const category = loadCategory(m);
+                if (!category) continue;
                 const [P, Q] = polarToRect(m.magnitude, m.angle);
-                const name = m.equipment_name || "";
-                if (LOAD_TYPES.has(m.equipment_type)) {
-                    lP += P;
-                    lQ += Q;
-                } else if (name.startsWith("PowerElectronicsConnection_BatteryUnit")) {
-                    bP += P;
-                    bQ += Q;
-                } else if (name.startsWith("PowerElectronicsConnection_PhotovoltaicUnit")) {
-                    sP += P;
-                    sQ += Q;
-                }
+                sums[`${category}P`] += P;
+                sums[`${category}Q`] += Q;
             }
 
             const l = ld.current;
-            const push = (arr, val) => {
-                arr.push(parseFloat((val / 1000).toFixed(3)));
-                trimHistory(arr);
-            };
             l.timestamps.push(ts);
             trimHistory(l.timestamps);
-            push(l.loadP, lP);
-            push(l.loadQ, lQ);
-            push(l.batP, bP);
-            push(l.batQ, bQ);
-            push(l.solP, sP);
-            push(l.solQ, sQ);
+            for (const key of LOAD_KEYS) {
+                l[key].push(parseFloat((sums[key] / 1000).toFixed(3)));
+                trimHistory(l[key]);
+            }
 
-            loadChartRef.current?.getEchartsInstance()?.setOption({
-                xAxis: { data: [...l.timestamps] },
-                series: [
-                    { data: [...l.loadP] },
-                    { data: [...l.loadQ] },
-                    { data: [...l.batP] },
-                    { data: [...l.batQ] },
-                    { data: [...l.solP] },
-                    { data: [...l.solQ] },
-                ],
-            });
+            renderLoad();
             syncLoad();
         },
-        [syncVoltage, syncLoad],
+        [renderVoltage, renderLoad, syncVoltage, syncLoad],
     );
 
     useEffect(() => {
         return socketClientHelper.on("sim-output", processOutput);
     }, [processOutput]);
 
-    // ── ECharts theme helpers ──────────────────────────────────────────────
-    const text = darkMode ? "#cccccc" : "#333333";
-    const bg = darkMode ? "#1f1f1f" : "#fafafa";
-    const gridLine = darkMode ? "#2e2e2e" : "#ebebeb";
+    useEffect(() => {
+        if (vd.current.timestamps.length === 0 && ld.current.timestamps.length === 0) return;
 
-    const accent = darkMode ? "#8ab4f8" : "#5470c6";
-    // Extra bottom room for the zoom slider.
-    const sharedGrid = { left: 52, right: 10, top: 38, bottom: TIMELINE_GRID_BOTTOM };
-    const xAxisBase = {
-        type: "category",
-        axisLabel: { color: text, fontSize: 8, rotate: 30, interval: "auto" },
-        splitLine: { lineStyle: { color: gridLine } },
-        axisTick: { show: false },
-    };
-    const yAxisBase = (name) => ({
-        type: "value",
-        name,
-        nameTextStyle: { color: text, fontSize: 9 },
-        axisLabel: { color: text, fontSize: 8 },
-        splitLine: { lineStyle: { color: gridLine } },
-    });
-    const legendBase = {
-        top: 4,
-        textStyle: { color: text, fontSize: 9 },
-        itemWidth: 14,
-        itemHeight: 7,
-    };
+        renderVoltage();
+        renderLoad();
+        syncVoltage();
+        syncLoad();
+    }, [renderVoltage, renderLoad, syncVoltage, syncLoad]);
 
-    const line = (name, color, dashed = false) => ({
-        name,
-        type: "line",
-        smooth: true,
-        showSymbol: false,
-        lineStyle: { color, width: 1.5, ...(dashed ? { type: "dashed" } : {}) },
-        itemStyle: { color },
-    });
+    const { text, bg } = chartColors(darkMode);
 
     const voltageOption = {
-        backgroundColor: bg,
-        textStyle: { color: text },
-        grid: sharedGrid,
-        tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
-        legend: { ...legendBase, data: ["Min", "Avg", "Max"] },
-        xAxis: xAxisBase,
-        yAxis: yAxisBase("V"),
-        dataZoom: timelineDataZoom(accent),
+        ...baseChartOption(darkMode, { legend: ["Min", "Avg", "Max"], yAxis: { name: "V" } }),
         series: [line("Min", "#5470c6"), line("Avg", "#91cc75"), line("Max", "#ee6666")],
     };
 
     const loadOption = {
-        backgroundColor: bg,
-        textStyle: { color: text },
-        grid: sharedGrid,
-        tooltip: { trigger: "axis", confine: true, textStyle: { fontSize: 10 } },
-        legend: { ...legendBase, data: ["Load P", "Load Q", "Bat P", "Bat Q", "Sol P", "Sol Q"] },
-        xAxis: xAxisBase,
-        yAxis: yAxisBase("kVA"),
-        dataZoom: timelineDataZoom(accent),
+        ...baseChartOption(darkMode, {
+            legend: ["Load P", "Load Q", "Bat P", "Bat Q", "Sol P", "Sol Q"],
+            yAxis: { name: "kVA" },
+        }),
         series: [
             line("Load P", "#5470c6"),
             line("Load Q", "#5470c6", true),
@@ -223,31 +174,6 @@ const SimulationCharts = () => {
             line("Sol Q", "#fac858", true),
         ],
     };
-
-    useEffect(() => {
-        const v = vd.current;
-        const l = ld.current;
-        if (v.timestamps.length === 0 && l.timestamps.length === 0) return;
-
-        voltageChartRef.current?.getEchartsInstance()?.setOption({
-            xAxis: { data: [...v.timestamps] },
-            series: [{ data: [...v.min] }, { data: [...v.avg] }, { data: [...v.max] }],
-        });
-        loadChartRef.current?.getEchartsInstance()?.setOption({
-            xAxis: { data: [...l.timestamps] },
-            series: [
-                { data: [...l.loadP] },
-                { data: [...l.loadQ] },
-                { data: [...l.batP] },
-                { data: [...l.batQ] },
-                { data: [...l.solP] },
-                { data: [...l.solQ] },
-            ],
-        });
-
-        syncVoltage();
-        syncLoad();
-    }, [syncVoltage, syncLoad]);
 
     return (
         <div className="sim-charts" style={{ backgroundColor: bg }}>

@@ -16,12 +16,6 @@ let quitting = false;
 const MAX_SERVER_RESTARTS = 1;
 let restartsUsed = 0;
 
-const notifyRenderer = (channel) => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(channel);
-    }
-};
-
 app.commandLine.appendSwitch("enable-unsafe-swiftshader");
 
 const isWSL =
@@ -82,18 +76,15 @@ const startServer = () => {
         if (restartsUsed < MAX_SERVER_RESTARTS) {
             restartsUsed += 1;
             console.warn(`[server] exited (code ${code}, signal ${signal}) — restarting.`);
-            notifyRenderer("backend-restarting");
 
             startServer();
-            waitForServer()
-                .then(() => notifyRenderer("backend-restarted"))
-                .catch((err) => {
-                    dialog.showErrorBox(
-                        "GLIMPSE backend stopped",
-                        `The local server exited and could not be restarted.\n\n${err.message}`,
-                    );
-                    app.quit();
-                });
+            waitForServer().catch((err) => {
+                dialog.showErrorBox(
+                    "GLIMPSE backend stopped",
+                    `The local server exited and could not be restarted.\n\n${err.message}`,
+                );
+                app.quit();
+            });
             return;
         }
 
@@ -248,7 +239,6 @@ const createWindow = () => {
             sandbox: true,
             nodeIntegration: false,
             contextIsolation: true,
-            enableRemoteModule: false,
         },
     });
 

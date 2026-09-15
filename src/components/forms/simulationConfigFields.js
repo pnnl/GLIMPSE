@@ -1,5 +1,3 @@
-export const DISABLED_CONFIG_FIELDS = [];
-export const isFieldDisabled = (key) => DISABLED_CONFIG_FIELDS.includes(key);
 const YES_NO_OPTIONS = [
     { value: "y", label: "Yes (y)" },
     { value: "n", label: "No (n)" },

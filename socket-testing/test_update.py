@@ -15,19 +15,7 @@ through a few updates with pauses so you can watch them in the GLIMPSE UI.
     python socket-testing/test_update.py
 """
 
-import json
-import os
-
 import common
-
-SOCIAL_EXAMPLE = os.path.join(
-    os.path.dirname(__file__),
-    "..",
-    "testing",
-    "models",
-    "demo_examples",
-    "socialExample.json",
-)
 
 # ids that exist in socialExample.json
 NODE_ID = "John-Doe"
@@ -37,8 +25,7 @@ EDGE_ID = "JaneDoe-JohnDoe"
 def main():
     sio = common.connect()
     try:
-        with open(SOCIAL_EXAMPLE, "r") as f:
-            common.call(sio, "load-graph", json.load(f))
+        common.call(sio, "load-graph", common.social_example())
         sio.sleep(1.5)
 
         # Recolor + enlarge a node (all three properties)
