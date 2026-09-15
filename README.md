@@ -20,7 +20,7 @@ The application is built with **React.js**, **Electron.js**, **Node.js**, **Sigm
 >
 > **For MacOS installer**
 >
-> GLIMPSE app is not signed and will not run after installation. Run the following command to remove the application from "quarintine"
+> GLIMPSE app is not signed and will not run after installation. Run the following command to remove the application from "quarantine"
 >
 > ```bash
 > sudo xattr -r -d com.apple.quarantine /Applications/GLIMPSE.app
