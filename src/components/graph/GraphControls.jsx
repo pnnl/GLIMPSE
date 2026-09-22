@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Button, Tooltip, Space } from "antd";
 import { useCamera, useFullScreen, useSigma } from "@react-sigma/core";
-import { useWorkerLayoutForceAtlas2 } from "@react-sigma/layout-forceatlas2";
+import { useWorkerLayoutForceAtlas2 } from "../../layout/useWorkerLayoutForceAtlas2";
 import bindLeafletLayer from "@sigma/layer-leaflet";
 import "leaflet/dist/leaflet.css";
 import { BiZoomIn, BiZoomOut } from "react-icons/bi";
@@ -29,7 +29,6 @@ const GraphControls = () => {
 
     const { start, stop, kill, isRunning } = useWorkerLayoutForceAtlas2({
         settings: {
-            barnesHutOptimize: sigma.getGraph().order > 2_500,
             barnesHutTheta: 0.5,
             linLogMode: false,
             adjustSizes: false,

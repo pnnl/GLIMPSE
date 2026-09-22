@@ -13,6 +13,7 @@
         "dev:backend": "cd local-server && python3 server.py || python server.py",
         "dev:frontend": "vite",
         "build": "vite build",
+        "build:wasm": "cd fa2-wasm && cargo build --release && cp target/wasm32-unknown-unknown/release/fa2_wasm.wasm ../src/layout/fa2.wasm && cd ..  && node fa2-wasm/check.mjs",
         "lint": "eslint .",
         "preview": "vite preview",
         "codespace:build": "npm run build && bash scripts/write-codespace-env.sh",

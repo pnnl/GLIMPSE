@@ -26,6 +26,8 @@ export default defineConfig({
             "/socket.io": { target: "http://127.0.0.1:5052", ws: true },
         },
     },
+    // Inline fa2.wasm so its (blob) worker needs no fetch — file:// in Electron can't
+    build: { assetsInlineLimit: (file) => (file.endsWith(".wasm") ? true : undefined) },
     optimizeDeps: { entries: ["index.html"] },
     resolve: {
         alias: {
