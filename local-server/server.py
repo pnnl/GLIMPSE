@@ -571,6 +571,8 @@ def get_models():
 def get_agents():
     model_id = request.args.get("model") or ""
 
+    print(f"Requesting agents for model {model_id}")
+
     if not model_id:
         loaded = list(cim_helper.area_maps.keys())
         if len(loaded) != 1:
@@ -588,6 +590,8 @@ def get_agents():
         area_map=cim_helper.area_maps[model_id],
         object_index=cim_helper.object_index.get(model_id, {}),
         model_id=model_id,
+        source=request.args.get("source") or "derived",
+        gridappsd_helper=gridappsd_helper,
     )), 200
 
 

@@ -41,7 +41,7 @@ def test_glm_round_trip():
     assert zipfile.ZipFile(io.BytesIO(exported.data)).namelist() == ["IEEE-13.glm"]
 
 
-def test_cim_upload_objects_and_agents():
+def test_cim_upload_objects_and_agents(monkeypatch, tmp_path):
     client = server.app.test_client()
     resp = upload(client, "/api/upload/cim", "IEEE13.xml", (MODELS / "CIM/IEEE13.xml").read_bytes())
     objects = resp.get_json()["data"]["IEEE13.xml"]["objects"]
@@ -55,6 +55,19 @@ def test_cim_upload_objects_and_agents():
 
     agents = client.get("/api/gridappsd/agents?model=IEEE13.xml").get_json()
     assert agents["agents"][0]["agent_type"] == "coordinating"
+
+    fixture = tmp_path / "agents.json"
+    fixture.write_text(json.dumps({"agents": [{"agent_id": "a1", "message_bus_id": "bus-1",
+                                               "devices": [{"@id": "d1", "cimType": "regulator"}]}]}))
+    monkeypatch.setenv("GLIMPSE_AGENTS_FIXTURE", str(fixture))
+    roster = client.get("/api/gridappsd/agents?model=IEEE13.xml&source=fixture").get_json()
+    assert roster["source"] == "gridappsd"
+    assert roster["agents"][0]["devices"][0]["cim_type"] == "RatioTapChanger"
+    assert [b["bus_id"] for b in roster["buses"]] == ["system", "bus-1"]
+
+    # Unconnected GridAPPS-D falls back to the derived roster.
+    derived = client.get("/api/gridappsd/agents?model=IEEE13.xml&source=gridappsd").get_json()
+    assert derived["source"] == "derived"
 
 
 def test_socket_events_validate_and_broadcast():

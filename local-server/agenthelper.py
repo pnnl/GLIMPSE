@@ -1,3 +1,9 @@
+import json
+import logging
+import os
+
+logger = logging.getLogger(__name__)
+
 LEVELS = ("feeder", "switch", "secondary")
 SYSTEM_BUS_ID = "system"
 DEVICE_LABELS = {
@@ -52,18 +58,25 @@ def invert_area_map(area_map: dict) -> dict:
     return index
 
 
-def build_agent_model(area_map: dict, object_index: dict, model_id: str) -> dict:
-    """The agent roster a loaded model implies: one agent per distribution area."""
+def build_agent_model(area_map: dict, object_index: dict, model_id: str,
+                      source: str = "derived", gridappsd_helper=None) -> dict:
+    """The agent roster for a model: from GridAPPS-D or a fixture when asked, else derived."""
     area_index = invert_area_map(area_map)
-    buses = [
-        {
-            "bus_id": SYSTEM_BUS_ID,
-            "level": "system",
-            "name": "Distribution System",
-            "area_id": None,
-            "parent_bus_id": None,
-        }
-    ]
+    raw = None
+
+    if source == "gridappsd":
+        raw = agents_from_gridappsd(gridappsd_helper, model_id)
+    elif source == "fixture":
+        raw = agents_from_fixture(os.environ.get("GLIMPSE_AGENTS_FIXTURE", ""))
+
+    if isinstance(raw, dict) and isinstance(raw.get("agents"), list) and raw["agents"]:
+        return normalize_agents(raw, area_index, model_id)
+    return derive_agents(area_index, object_index, model_id)
+
+
+def derive_agents(area_index: dict, object_index: dict, model_id: str) -> dict:
+    """The agent roster a loaded model implies: one agent per distribution area."""
+    buses = [_system_bus()]
     agents = [
         {
             "agent_id": f"coordinating-{_uuid_tail(model_id)}",
@@ -104,8 +117,80 @@ def build_agent_model(area_map: dict, object_index: dict, model_id: str) -> dict
     return {"model": model_id, "source": "derived", "buses": buses, "agents": agents}
 
 
+def agents_from_fixture(path: str) -> dict | None:
+    """Raw agent payload captured from the platform and saved to disk."""
+    try:
+        with open(path, "r", encoding="utf-8") as fixture:
+            return json.load(fixture)
+    except (OSError, ValueError) as exc:
+        # Fall back to the derived roster rather than failing the request.
+        logger.warning("Agent fixture %r could not be read (%s); deriving instead.", path, exc)
+        return None
+
+
+def agents_from_gridappsd(gridappsd_helper, model_id: str) -> dict | None:
+    if gridappsd_helper is None or not gridappsd_helper.is_connected():
+        logger.info("GridAPPS-D not connected; deriving the agent roster for %s.", model_id)
+        return None
+    return gridappsd_helper.get_agent_roster(model_id)
+
+
+def normalize_agents(raw: dict, area_index: dict, model_id: str) -> dict:
+    """Maps a platform agent payload onto the roster shape the frontend renders."""
+    area_by_id = {
+        area_id: (level, area)
+        for level in LEVELS
+        for area_id, area in area_index[level].items()
+    }
+
+    agents = []
+    for entry in raw.get("agents") or []:
+        if not isinstance(entry, dict):
+            continue
+
+        area_id = entry.get("area_id") or entry.get("message_bus_id")
+        if area_id == SYSTEM_BUS_ID:
+            area_id = None
+
+        level, area = area_by_id.get(area_id, (None, None))
+        level = entry.get("level") or level or ("system" if area_id is None else "switch")
+
+        agents.append(
+            {
+                "agent_id": str(entry.get("agent_id") or entry.get("name") or ""),
+                "agent_type": entry.get("agent_type")
+                or ("coordinating" if level == "system" else "distributed"),
+                "level": level,
+                "message_bus_id": entry.get("message_bus_id") or area_id or SYSTEM_BUS_ID,
+                "area_id": area_id,
+                "area_name": entry.get("area_name")
+                or (area["name"] if area else None)
+                or ("Distribution System" if area_id is None else _uuid_tail(area_id)),
+                "status": entry.get("status") or "unknown",
+                "devices": _normalize_devices(entry.get("devices")),
+            }
+        )
+
+    return {
+        "model": raw.get("model") or model_id,
+        "source": raw.get("source") or "gridappsd",
+        "buses": _buses_for(agents, area_index),
+        "agents": agents,
+    }
+
+
 def _uuid_tail(mrid) -> str:
     return str(mrid).split("-")[-1]
+
+
+def _system_bus() -> dict:
+    return {
+        "bus_id": SYSTEM_BUS_ID,
+        "level": "system",
+        "name": "Distribution System",
+        "area_id": None,
+        "parent_bus_id": None,
+    }
 
 
 def _area_devices(members: list, object_index: dict, level: str) -> list:
@@ -139,6 +224,51 @@ def _area_devices(members: list, object_index: dict, level: str) -> list:
 
     devices.sort(key=lambda d: _device_rank(d["type"]))
     return devices[:MAX_DEVICES_PER_AGENT]
+
+
+def _normalize_devices(devices) -> list:
+    if not isinstance(devices, list):
+        return []
+
+    normalized = []
+    for device in devices:
+        if not isinstance(device, dict):
+            continue
+        mrid = device.get("mrid") or device.get("@id") or ""
+        cim_type = str(device.get("cim_type") or device.get("cimType") or device.get("class_type") or "")
+        normalized.append(
+            {
+                "mrid": str(mrid),
+                "name": str(device.get("name") or _uuid_tail(mrid)),
+                "type": str(device.get("type") or "Device"),
+                "cim_type": CIM_TYPE_OVERRIDES.get(cim_type, cim_type),
+                "phases": str(device.get("phases") or ""),
+            }
+        )
+    return normalized[:MAX_DEVICES_PER_AGENT]
+
+
+def _buses_for(agents: list, area_index: dict) -> list:
+    parent_by_area = {
+        area_id: area["parent_id"]
+        for level in LEVELS
+        for area_id, area in area_index[level].items()
+    }
+
+    buses = {SYSTEM_BUS_ID: _system_bus()}
+    for agent in agents:
+        bus_id = agent["message_bus_id"]
+        if bus_id in buses:
+            continue
+        buses[bus_id] = {
+            "bus_id": bus_id,
+            "level": agent["level"],
+            "name": agent["area_name"],
+            "area_id": agent["area_id"],
+            "parent_bus_id": parent_by_area.get(agent["area_id"]) or SYSTEM_BUS_ID,
+        }
+
+    return list(buses.values())
 
 
 def _device_rank(device_type: str) -> int:

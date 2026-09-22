@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import socket
@@ -187,6 +188,30 @@ class GridAPPSDHelper:
 
         # Some GridAPPS-D services wrap the payload under a "data" key.
         if "DistributionArea" not in response and isinstance(response.get("data"), dict):
+            return response["data"]
+        return response
+
+    def get_agent_roster(self, model_mrid: str) -> dict | None:
+        # TODO: set once the platform exposes the agents request topic.
+        topic = "goss.gridappsd.process.request.status.platform"
+        message = {"agents": True}
+        if not topic:
+            logger.info(f"Agent roster requested for {model_mrid}, but no GridAPPS-D agents topic is set.")
+            return None
+
+        self._ensure_connected()
+        try:
+            response = self.gapps.get_response(topic, message, timeout=30)
+            print(json.dumps(response, indent=4))
+        except Exception as e:
+            logger.warning(f"Agent roster request failed for {model_mrid}: {e}")
+            return None
+
+        # Logged whole until the response structure is known.
+        logger.info(f"Agent roster response for {model_mrid}: {response}")
+        if not response or "error" in response:
+            return None
+        if "agents" not in response and isinstance(response.get("data"), dict):
             return response["data"]
         return response
 
