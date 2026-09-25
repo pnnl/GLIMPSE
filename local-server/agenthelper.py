@@ -66,6 +66,9 @@ def build_agent_model(area_map: dict, object_index: dict, model_id: str,
 
     if source == "gridappsd":
         raw = agents_from_gridappsd(gridappsd_helper, model_id)
+        if isinstance(raw, dict) and "fieldAgents" in raw:
+            # The platform answered: its agents are the roster, and none means no agents view.
+            return field_agents_roster(raw["fieldAgents"], area_index, object_index, model_id)
     elif source == "fixture":
         raw = agents_from_fixture(os.environ.get("GLIMPSE_AGENTS_FIXTURE", ""))
 
@@ -133,6 +136,67 @@ def agents_from_gridappsd(gridappsd_helper, model_id: str) -> dict | None:
         logger.info("GridAPPS-D not connected; deriving the agent roster for %s.", model_id)
         return None
     return gridappsd_helper.get_agent_roster(model_id)
+
+
+def field_agents_roster(field_agents, area_index: dict, object_index: dict, model_id: str) -> dict:
+    """The platform's field agents that sit on this model's message-bus tree.
+
+    The platform lists every deployed agent, whatever model is loaded. Each agent's
+    downstream bus is its area ID and its upstream bus is its parent area, so an agent
+    belongs to this model only if following upstream links reaches the model's own bus.
+    """
+    entries = [
+        e for e in (field_agents.values() if isinstance(field_agents, dict) else [])
+        if isinstance(e, dict) and e.get("downstream_message_bus_id")
+    ]
+    upstream_of = {e["downstream_message_bus_id"]: e.get("upstream_message_bus_id") for e in entries}
+    area_by_id = {
+        area_id: (level, area)
+        for level in LEVELS
+        for area_id, area in area_index[level].items()
+    }
+
+    def depth(bus_id):
+        seen = set()
+        while bus_id != model_id:
+            if bus_id in seen or bus_id not in upstream_of:
+                return None
+            seen.add(bus_id)
+            bus_id = upstream_of[bus_id]
+        return len(seen)
+
+    buses = {SYSTEM_BUS_ID: _system_bus()}
+    agents = []
+    for entry in entries:
+        area_id = entry["downstream_message_bus_id"]
+        d = depth(area_id)
+        if d is None:
+            continue
+
+        known_level, area = area_by_id.get(area_id, (None, None))
+        level = known_level or LEVELS[min(d, len(LEVELS) - 1)]
+        name = area["name"] if area else _uuid_tail(area_id)
+
+        buses.setdefault(area_id, {
+            "bus_id": area_id,
+            "level": level,
+            "name": name,
+            "area_id": area_id,
+            "parent_bus_id": SYSTEM_BUS_ID if d == 0 else entry.get("upstream_message_bus_id"),
+        })
+        agents.append({
+            "agent_id": str(entry.get("agent_id") or area_id),
+            "agent_type": "distributed",
+            "level": level,
+            "message_bus_id": area_id,
+            "area_id": area_id,
+            "area_name": name,
+            # Listed by the platform status request, so running.
+            "status": "online",
+            "devices": _area_devices(area["members"], object_index, level) if area else [],
+        })
+
+    return {"model": model_id, "source": "gridappsd", "buses": list(buses.values()) if agents else [], "agents": agents}
 
 
 def normalize_agents(raw: dict, area_index: dict, model_id: str) -> dict:
