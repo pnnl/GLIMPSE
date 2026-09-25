@@ -100,6 +100,9 @@ const AppContent = () => {
                     Dropdown: {
                         colorPrimary: darkMode ? "#45AB48" : "#333333",
                     },
+                    Tag: {
+                        colorPrimary: darkMode ? "#45AB48" : "#333333",
+                    },
                     Button: darkMode
                         ? {
                               colorPrimary: "#333333",

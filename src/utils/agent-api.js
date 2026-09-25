@@ -10,11 +10,12 @@ import graphHelper from "../graph-helper/GraphHelper";
  *   the backend keyed the parse by.
  */
 export const loadAgentRoster = async (modelId) => {
+    console.log(`Loading agent roster for model ${modelId}`);
     if (!modelId) return;
 
     try {
         const { data } = await axios.get(`${API_BASE_URL}/api/gridappsd/agents`, {
-            params: { model: modelId },
+            params: { model: modelId, source: "gridappsd" },
         });
 
         graphHelper.setAgentData(data);
