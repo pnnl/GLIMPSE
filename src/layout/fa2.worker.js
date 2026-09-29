@@ -67,6 +67,7 @@ const parallelStep = async (wasm, ptr, length, settings) => {
 };
 
 let edges;
+let lastSettings;
 
 self.addEventListener("message", async ({ data }) => {
     const wasm = await ready;
@@ -78,6 +79,13 @@ self.addEventListener("message", async ({ data }) => {
         // Edges come with each (re)start, when the graph may have changed: resync helpers
         edges = new Float32Array(data.edges);
         if (wasm) write(wasm, "fa2_edges", edges);
+        helpers?.forEach((h) => (h.synced = false));
+    }
+
+    // Helpers only take settings on resync, so a live settings edit forces one
+    const settingsKey = JSON.stringify(s);
+    if (settingsKey !== lastSettings) {
+        lastSettings = settingsKey;
         helpers?.forEach((h) => (h.synced = false));
     }
 

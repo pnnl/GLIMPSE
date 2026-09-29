@@ -219,7 +219,10 @@ class GridAPPSDHelper:
 
     def start_simulation(self, sim_config: dict) -> dict:
         """Start a simulation and store the simulation ID."""
-        self._ensure_connected()
+        # A heartbeat timeout drops the broker session silently; nothing is running
+        # yet, so reconnecting here is safe and saves the user a page reload.
+        if not self.is_connected() and not self.try_connect():
+            raise GridAPPSDError("Lost connection to GridAPPS-D and could not reconnect. Check that the platform is running.")
         try:
             response = self.gapps.get_response(
                 topics.REQUEST_SIMULATION, sim_config, timeout=30
@@ -299,14 +302,15 @@ class GridAPPSDHelper:
             self.sim_state = SimulationState.ERROR
             raise GridAPPSDError(f"Failed to stop simulation: {e}") from e
 
-    def send_simulation_input(self, input_data: dict) -> None:
-        """Send input data to the tracked simulation."""
-        target_id = self._target_sim()
+    def send_simulation_input(self, input_data: dict) -> str:
+        """Send input data to the simulation it names, else the tracked one. Returns that id."""
+        # Topic and body must name the same run, or the platform drops the message.
+        target_id = self._target_sim((input_data.get("input") or {}).get("simulation_id"))
         try:
             self.gapps.send(topics.simulation_input_topic(target_id), input_data)
-            logger.debug(f"Sent input to simulation {target_id}: {input_data}")
         except Exception as e:
             raise GridAPPSDError(f"Failed to send input: {e}") from e
+        return target_id
 
     # ─── Simulation Output Subscription ───────────────────────────────
 

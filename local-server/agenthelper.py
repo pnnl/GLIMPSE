@@ -66,9 +66,9 @@ def build_agent_model(area_map: dict, object_index: dict, model_id: str,
 
     if source == "gridappsd":
         raw = agents_from_gridappsd(gridappsd_helper, model_id)
-        if isinstance(raw, dict) and "fieldAgents" in raw:
-            # The platform answered: its agents are the roster, and none means no agents view.
-            return field_agents_roster(raw["fieldAgents"], area_index, object_index, model_id)
+        # Only the platform's own agents count; no answer means no agents view, never a derived one.
+        fields = raw.get("fieldAgents") if isinstance(raw, dict) else None
+        return field_agents_roster(fields, area_index, object_index, model_id)
     elif source == "fixture":
         raw = agents_from_fixture(os.environ.get("GLIMPSE_AGENTS_FIXTURE", ""))
 

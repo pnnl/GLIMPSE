@@ -41,7 +41,11 @@ export const flattenTheme = (theme, darkMode) => {
 export const themeSourceFor = (themeName, jsonTheme = null) =>
     themeName === CUSTOM_THEME_NAME ? jsonTheme : POWER_GRID_THEME;
 
-export const nodeTypesOf = (theme) => Object.keys(theme.groups ?? {});
+// Opaque on purpose: sigma blends as premultiplied alpha, so a translucent line
+// color adds onto the light canvas and washes out to white.
+export const inactiveColorOf = (theme) => theme.groups?.inactive?.color ?? "#AFB6BA";
+
+export const nodeTypesOf =(theme) => Object.keys(theme.groups ?? {});
 
 export const edgeTypesOf = (theme) => Object.keys(theme.edgeOptions ?? {});
 

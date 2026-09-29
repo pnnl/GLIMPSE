@@ -783,9 +783,11 @@ def handle_start_simulation(config):
 @socketio.on("sim-input")
 def handle_sim_input(input_data):
     try:
-        gridappsd_helper.send_simulation_input(input_data)
-        return "", 204
+        sim_id = gridappsd_helper.send_simulation_input(input_data)
+        print(f"[SIM-INPUT] Sent to simulation {sim_id}: {json.dumps(input_data)}")
+        return {"status": "ok", "simulation_id": sim_id}
     except Exception as e:
+        print(f"[SIM-INPUT] Not sent: {e}")
         return {"error": str(e)}
 
 

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import { Modal, Form, Select, Button, Divider, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
+import { notify, reportError } from "../../utils/notify";
 import { emitDifferences } from "./device-control";
 
 /**
@@ -102,17 +103,22 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
             setLoading(true);
             const values = await form.validateFields();
 
-            if (socketClientHelper.simulationState !== "running") return;
+            if (socketClientHelper.simulationState !== "running") {
+                notify.error("Simulation is not running. Cannot update the device.");
+                return;
+            }
 
             const equipmentMRID = config.getAttributes(object).attributes?.mRID ?? object;
             const difference = (status) => [
                 { object: equipmentMRID, attribute: config.attribute, value: config.statusValueMap[status] },
             ];
 
-            emitDifferences(difference(currentStatus), difference(values.status));
+            await emitDifferences(difference(currentStatus), difference(values.status));
+            notify.success("Device update sent to the simulation");
             close();
         } catch (error) {
-            console.error("Save failed:", error);
+            // antd rejects validateFields with the field errors it already shows inline.
+            if (!error?.errorFields) reportError("Device update failed", error);
         } finally {
             setLoading(false);
         }

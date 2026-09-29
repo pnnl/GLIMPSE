@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import { Modal, Form, Select, InputNumber, Button, Divider, Space, Tag, Spin, theme } from "antd";
 import graphHelper from "../../graph-helper/GraphHelper";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
-import { notify } from "../../utils/notify";
+import { notify, reportError } from "../../utils/notify";
 import { emitDifferences } from "./device-control";
 
 // Control modes mirror the legacy gridappsd-viz RegulatorControlMenu.
@@ -154,7 +154,7 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                 return;
             }
 
-            emitDifferences(reverseDifferences, forwardDifferences);
+            await emitDifferences(reverseDifferences, forwardDifferences);
 
             // Optimistically reflect new tap steps in the local graph so reopening
             // the modal shows the requested state before the sim echoes it back.
@@ -169,11 +169,10 @@ const UpdateRegulatorModal = ({ open, close, object }) => {
                 graphHelper.sigmaInstance?.refresh();
             }
 
-            notify.success("Tap update request sent to backend");
+            notify.success("Tap update sent to the simulation");
             close();
         } catch (error) {
-            console.error("Save failed:", error);
-            notify.error("Failed to send tap update. Please try again.");
+            if (!error?.errorFields) reportError("Tap update failed", error);
         } finally {
             setLoading(false);
         }

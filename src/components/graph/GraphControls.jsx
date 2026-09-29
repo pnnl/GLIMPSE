@@ -19,7 +19,7 @@ const MAP_TILE_LAYER = {
 };
 
 const GraphControls = () => {
-    const { darkMode, mapShown, setMapShown } = useGraph();
+    const { darkMode, mapShown, setMapShown, fa2Settings } = useGraph();
     const sigma = useSigma();
     const { zoomIn, zoomOut } = useCamera();
     const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
@@ -27,19 +27,7 @@ const GraphControls = () => {
     const mapLayerRef = useRef(null); // { clean, map, ... } returned by bindLeafletLayer
     const savedPositionsRef = useRef(null); // Map<nodeId, {x, y}> captured before binding
 
-    const { start, stop, kill, isRunning } = useWorkerLayoutForceAtlas2({
-        settings: {
-            barnesHutTheta: 0.5,
-            linLogMode: false,
-            adjustSizes: false,
-            edgeWeightInfluence: 1,
-            outboundAttractionDistribution: false,
-            scalingRatio: 1,
-            gravity: 1,
-            strongGravityMode: false,
-            slowDown: 5,
-        },
-    });
+    const { start, stop, kill, isRunning } = useWorkerLayoutForceAtlas2({ settings: fa2Settings });
 
     // Make sure the worker is torn down when the controls unmount.
     useEffect(() => () => kill(), [kill]);

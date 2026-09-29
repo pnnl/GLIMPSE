@@ -319,8 +319,9 @@ class SocketClientHelper {
             this.socket.emit("start-simulation", gridappsdConfig, (ack) => {
                 console.log(ack);
                 if (!ack || ack.error) {
-                    this.simulationState = "error";
-                    this.#emit("sim-state-change", "error");
+                    // Back to idle so the start button returns for a retry.
+                    this.simulationState = "idle";
+                    this.#emit("sim-state-change", "idle");
                     const errorMsg =
                         ack?.error?.message || ack?.error || "Unknown error starting simulation";
                     this.#emit("error", { type: "simulation", message: errorMsg });
@@ -369,9 +370,17 @@ class SocketClientHelper {
             }
 
             this.socket.emit("stop-simulation", this.simulationID, (ack) => {
+                // Even a failed stop (e.g. the broker connection dropped) ends the
+                // run as far as this client can drive it, so the controls reset.
                 this.simulationID = null;
-                this.simulationState = ack.state;
-                this.#emit("sim-state-change", ack.state);
+                this.simulationState = "stopped";
+                this.#emit("sim-state-change", "stopped");
+                if (ack?.error) {
+                    const message = ack.error.message ?? ack.error;
+                    this.#emit("error", { type: "simulation", message });
+                    reject(new Error(message));
+                    return;
+                }
                 resolve(ack);
             });
         });

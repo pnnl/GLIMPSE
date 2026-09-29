@@ -17,18 +17,33 @@ export const getControlType = ({ group, attributes }, elementType) => {
     return null;
 };
 
-/** Sends a GridAPPS-D difference message to the running simulation. */
-export const emitDifferences = (reverseDifferences, forwardDifferences) => {
-    socketClientHelper.socket.emit("sim-input", {
-        command: "update",
-        input: {
-            simulation_id: socketClientHelper.simulationID,
-            message: {
-                timestamp: Math.floor(Date.now() / 1000),
-                difference_mrid: uuidv4(),
-                reverse_differences: reverseDifferences,
-                forward_differences: forwardDifferences,
+const SIM_INPUT_ACK_MS = 10000;
+
+/** Sends a GridAPPS-D difference message; resolves once the backend has published it. */
+export const emitDifferences = (reverseDifferences, forwardDifferences) =>
+    new Promise((resolve, reject) => {
+        // socket.io would otherwise buffer it and replay a stale command on reconnect.
+        if (!socketClientHelper.isConnected()) {
+            reject(new Error("Not connected to the GLIMPSE server."));
+            return;
+        }
+
+        const payload = {
+            command: "update",
+            input: {
+                simulation_id: socketClientHelper.simulationID,
+                message: {
+                    timestamp: Math.floor(Date.now() / 1000),
+                    difference_mrid: uuidv4(),
+                    reverse_differences: reverseDifferences,
+                    forward_differences: forwardDifferences,
+                },
             },
-        },
+        };
+
+        socketClientHelper.socket.timeout(SIM_INPUT_ACK_MS).emit("sim-input", payload, (err, ack) => {
+            if (err) reject(new Error("The server did not confirm the update."));
+            else if (ack?.error) reject(new Error(ack.error));
+            else resolve(ack);
+        });
     });
-};

@@ -4,10 +4,11 @@ import { Button, Divider, Space, Tooltip } from "antd";
 import graphHelper from "../graph-helper/GraphHelper";
 import { BiRotateLeft, BiRotateRight } from "react-icons/bi";
 import { IoPlay, IoAddCircle, IoStop, IoPause, IoSettingsSharp, IoWarning } from "react-icons/io5";
-import { MdShowChart } from "react-icons/md";
+import { MdShowChart, MdTune } from "react-icons/md";
 import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import SimulationConfigForm from "./forms/SimulationConfigForm";
 import StartSimulationModal, { HIDE_START_SIM_WARNING_KEY } from "./modals/StartSimulationModal";
+import LayoutSettingsForm from "./forms/LayoutSettingsForm";
 import { useGraph } from "../contexts/GraphContext";
 import { useShortcut } from "../hooks/useShortcut";
 import { reportError } from "../utils/notify";
@@ -16,6 +17,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
     const [simulationState, setSimulationState] = useState("inactive"); // inactive | idle | running | paused | stopped
     const [simConfigOpen, setSimConfigOpen] = useState(false);
     const [startWarningOpen, setStartWarningOpen] = useState(false);
+    const [layoutSettingsOpen, setLayoutSettingsOpen] = useState(false);
     const [violationMode, setViolationMode] = useState(() => graphHelper.isViolationMode());
     const { darkMode } = useGraph();
 
@@ -100,10 +102,18 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
             .catch((err) => reportError("Could not pause the simulation", err));
     };
 
+    const handleResumeSimulation = () => {
+        socketClientHelper
+            .resumeSimulation()
+            .catch((err) => reportError("Could not resume the simulation", err));
+    };
+
     useShortcut("n", goToNext);
     useShortcut("p", goToPrevious);
     useShortcut("r", handleReset);
     useShortcut("v", () => graphHelper.toggleViolationMode(), { enabled: canShowViolations });
+    // allowInInput so the browser's print dialog never opens instead
+    useShortcut("ctrl+p", () => setLayoutSettingsOpen((v) => !v), { allowInInput: true });
 
     return (
         <div className="vis-toolbar" style={{ backgroundColor: darkMode ? "#1f1f1f" : "#ffffff" }}>
@@ -112,6 +122,14 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                 style={{ marginRight: "auto" }}
                 separator={<Divider orientation="vertical" />}
             >
+                <Tooltip title="Force Layout Settings (Ctrl+P)" placement="bottom">
+                    <Button
+                        size="medium"
+                        aria-label="Force layout settings"
+                        icon={<MdTune />}
+                        onClick={() => setLayoutSettingsOpen(true)}
+                    />
+                </Tooltip>
                 {simulationState !== "inactive" && (
                     <Space.Compact block>
                         <Tooltip title="Simulation Configuration" placement="bottom">
@@ -123,6 +141,16 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                                 onClick={() => setSimConfigOpen(true)}
                             />
                         </Tooltip>
+                        {simulationState === "paused" && (
+                            <Tooltip title={"Resume Simulation"} placement="bottom">
+                                <Button
+                                    size="medium"
+                                    aria-label="Resume simulation"
+                                    onClick={handleResumeSimulation}
+                                    icon={<IoPlay />}
+                                />
+                            </Tooltip>
+                        )}
                         {(simulationState === "idle" || simulationState === "stopped") && (
                             <Tooltip title={"Start Simulation"} placement="bottom">
                                 <Button
@@ -145,7 +173,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                         )}
                         <Tooltip title="Stop Simulation">
                             <Button
-                                disabled={simulationState !== "running"}
+                                disabled={simulationState !== "running" && simulationState !== "paused"}
                                 size="medium"
                                 aria-label="Stop simulation"
                                 onClick={handleStopSimulation}
@@ -251,6 +279,7 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
                     </Button>
                 </Tooltip>
             </Space>
+            <LayoutSettingsForm open={layoutSettingsOpen} close={() => setLayoutSettingsOpen(false)} />
             <SimulationConfigForm open={simConfigOpen} onClose={() => setSimConfigOpen(false)} />
             <StartSimulationModal
                 open={startWarningOpen}

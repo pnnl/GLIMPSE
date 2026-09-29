@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback } from "react";
+import { FA2_DEFAULT_SETTINGS } from "../layout/useWorkerLayoutForceAtlas2";
 
 const GraphContext = createContext();
 
@@ -10,6 +11,8 @@ export const GraphProvider = ({ children }) => {
     // GraphControls because the map's tiles are light in both themes, so
     // GraphRenderer has to paint the graph in its light colors while it shows.
     const [mapShown, setMapShown] = useState(false);
+    // Here so edits survive the SigmaContainer remount on each new graph
+    const [fa2Settings, setFa2Settings] = useState(FA2_DEFAULT_SETTINGS);
 
     const newGraphUpdate = useCallback(() => {
         // A new graph remounts SigmaContainer, which drops the bound map layer.
@@ -28,6 +31,8 @@ export const GraphProvider = ({ children }) => {
                 setDarkMode,
                 mapShown,
                 setMapShown,
+                fa2Settings,
+                setFa2Settings,
             }}
         >
             {children}

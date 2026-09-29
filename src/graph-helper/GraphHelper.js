@@ -15,7 +15,7 @@ import {
 } from "./measurements";
 import { applyCapacitorStates, applySimulationOutput, applySwitchStates } from "./simulation";
 import * as socketApi from "./socket-api";
-import { edgeTypesOf, emptyTypeCounts, flattenTheme, nodeTypesOf, themeSourceFor } from "./theme";
+import { edgeTypesOf, emptyTypeCounts, flattenTheme, inactiveColorOf, nodeTypesOf, themeSourceFor } from "./theme";
 
 const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
@@ -89,7 +89,8 @@ class GraphHelper {
     // when the simulation ends. Keyed by graph node/edge id:
     //   nodes: id -> { voltage: { <phase>: { magnitude, angle } } }
     //   edges: id -> { power:   { <phase>: { real, imag, magnitude, angle } } }
-    liveMeasurements = { nodes: new Map(), edges: new Map() };
+    //   dead:  ids of nodes cut off from power (see markDeenergized)
+    liveMeasurements = { nodes: new Map(), edges: new Map(), dead: new Set() };
 
     constructor() {
         this.graph = newGraph();
@@ -241,6 +242,13 @@ class GraphHelper {
 
     /** Recompute and store a live node's hover card in place. */
     refreshNodeHover = (nodeId) => rebuildNodeHover(this.graph, this.liveMeasurements, nodeId);
+
+    isNodeDeenergized = (nodeId) => this.liveMeasurements.dead.has(nodeId);
+
+    isEdgeDeenergized = (edgeId) =>
+        this.isNodeDeenergized(this.graph.source(edgeId)) && this.isNodeDeenergized(this.graph.target(edgeId));
+
+    getInactiveColor = () => inactiveColorOf(this.#theme);
 
     // ── Highlighting (see highlight-state.js) ───────────────────────────────
 
@@ -483,6 +491,7 @@ class GraphHelper {
         const measuredNodes = [...this.liveMeasurements.nodes.keys()];
         this.liveMeasurements.nodes.clear();
         this.liveMeasurements.edges.clear();
+        this.liveMeasurements.dead.clear();
         for (const nodeId of measuredNodes) {
             // Cleared first, so this rebuilds with empty vitals.
             this.refreshNodeHover(nodeId);
@@ -533,6 +542,7 @@ class GraphHelper {
         // voltages and loading for objects that were never measured.
         this.liveMeasurements.nodes.clear();
         this.liveMeasurements.edges.clear();
+        this.liveMeasurements.dead.clear();
         this.setViolationMode(false);
 
         this.#highlights.clear();
