@@ -23,7 +23,27 @@ export const sumPower = (power) => {
     return { real, imag };
 };
 
-export const nodeVoltageSummary = (graph, live, nodeId) => {
+// Below this a phase reads as cut off rather than merely low.
+const DEAD_VOLTS = 1;
+
+/**
+ * Refills `live.dead` with the nodes an open switch has cut off: buses reading
+ * ~0 V on every phase, plus unmeasured equipment (loads, capacitors) whose
+ * measured neighbors are all dead.
+ */
+export const markDeenergized = (graph, live) => {
+    live.dead.clear();
+    for (const [nodeId, { voltage }] of live.nodes) {
+        if (Object.values(voltage).every((v) => Number(v.magnitude) < DEAD_VOLTS)) live.dead.add(nodeId);
+    }
+    graph.forEachNode((nodeId) => {
+        if (live.nodes.has(nodeId)) return;
+        const measured = graph.neighbors(nodeId).filter((n) => live.nodes.has(n));
+        if (measured.length > 0 && measured.every((n) => live.dead.has(n))) live.dead.add(nodeId);
+    });
+};
+
+export const nodeVoltageSummary =(graph, live, nodeId) => {
     if (!graph.hasNode(nodeId)) return null;
     const measured = live.nodes.get(nodeId);
     if (!measured) return null;

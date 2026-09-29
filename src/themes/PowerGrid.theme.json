@@ -165,8 +165,8 @@
         },
         "inactive": {
             "color": {
-                "light": "rgba(120,128,134,0.40)",
-                "dark": "rgba(150,158,164,0.35)"
+                "light": "#AFB6BA",
+                "dark": "#43494D"
             }
         }
     },

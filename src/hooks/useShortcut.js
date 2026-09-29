@@ -71,6 +71,7 @@ export const SHORTCUTS = [
     { combo: "v", label: "Color by voltage & loading violations (during a simulation)" },
     { combo: "f", label: "Center & fit the graph" },
     { combo: "l", label: "Start / stop the force layout" },
+    { combo: "Ctrl+P", label: "Force layout settings" },
     { combo: "m", label: "Toggle the map background" },
     { combo: "d", label: "Toggle dark mode" },
     { combo: "Esc", label: "Close menu / clear search focus" },

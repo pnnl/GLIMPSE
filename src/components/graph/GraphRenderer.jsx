@@ -68,10 +68,10 @@ const violationEdgeAttrs = (attrs, severity) => {
 };
 
 // Grey out a node (used when it falls outside the highlighted groups/areas).
-const dimNodeAttrs = (attrs) => ({
+const dimNodeAttrs = (attrs, color = INACTIVE_COLOR) => ({
     ...attrs,
-    color: INACTIVE_COLOR,
-    borderColor: INACTIVE_COLOR,
+    color,
+    borderColor: color,
     type: "node",
     label: "",
     image: "",
@@ -79,11 +79,11 @@ const dimNodeAttrs = (attrs) => ({
 
 // Grey out an edge, keeping its icon program but dimming the icon too. Keyed off
 // iconType (not type) so curved parallel variants dim as well.
-const dimEdgeAttrs = (attrs) => {
-    const base = { ...attrs, color: INACTIVE_COLOR, label: "", size: 1 };
-    if (attrs.iconType === "switch") return { ...base, switchColor: INACTIVE_COLOR, switchSize: 2 };
-    if (attrs.iconType === "regulator") return { ...base, regulatorColor: INACTIVE_COLOR };
-    if (attrs.iconType === "transformer") return { ...base, transformerColor: INACTIVE_COLOR };
+const dimEdgeAttrs = (attrs, color = INACTIVE_COLOR) => {
+    const base = { ...attrs, color, label: "", size: 1 };
+    if (attrs.iconType === "switch") return { ...base, switchColor: color, switchSize: 2 };
+    if (attrs.iconType === "regulator") return { ...base, regulatorColor: color };
+    if (attrs.iconType === "transformer") return { ...base, transformerColor: color };
     return base;
 };
 
@@ -95,6 +95,9 @@ const nodeReducer = (nodeId, attrs) => {
     if (graphHelper.isViolationMode()) {
         return violationNodeAttrs(attrs, graphHelper.getNodeSeverity(nodeId));
     }
+
+    // Cut off by an open switch during a run.
+    if (graphHelper.isNodeDeenergized(nodeId)) return dimNodeAttrs(attrs, graphHelper.getInactiveColor());
 
     // Distribution-area highlighting takes precedence: grey out any node that
     // is not in a selected area. Members keep their styling (the colored
@@ -123,6 +126,8 @@ const edgeReducer = (edgeId, attrs) => {
     if (graphHelper.isViolationMode()) {
         return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
     }
+
+    if (graphHelper.isEdgeDeenergized(edgeId)) return dimEdgeAttrs(attrs, graphHelper.getInactiveColor());
 
     if (graphHelper.getHighlightedAreas().length > 0) {
         return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
