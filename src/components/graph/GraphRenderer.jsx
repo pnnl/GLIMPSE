@@ -27,6 +27,7 @@ import AgentPanel from "../agents/AgentPanel";
 import AreaHighlightLayers from "./AreaHighlightLayers";
 import GraphControls from "./GraphControls";
 import SimulationIdBadge from "../SimulationIdBadge";
+import ModelNameBadge from "../ModelNameBadge";
 import LegendPanel from "../legend/LegendPanel";
 import ViolationLegend from "../legend/ViolationLegend";
 import areaHighlight from "../../graph-helper/area-highlight";
@@ -265,6 +266,7 @@ const GraphRenderer = () => {
                 <GraphControls />
             </ControlsContainer>
             <ControlsContainer style={{ border: "none", background: "none" }} position={"bottom-right"}>
+                <ModelNameBadge />
                 <SimulationIdBadge />
             </ControlsContainer>
         </SigmaContainer>

@@ -95,6 +95,7 @@ class GraphHelper {
     constructor() {
         this.graph = newGraph();
         this.objectTypeCount = { nodes: {}, edges: {} };
+        this.modelNames = [];
     }
 
     setIsCIM = (value) => {
@@ -557,6 +558,7 @@ class GraphHelper {
         this.objectDetails = {};
         this.agents = emptyRoster();
         this.currentFeederID = null;
+        this.modelNames = [];
     };
 
     /** Replaces the agent roster wholesale — the response from /api/gridappsd/agents. */
@@ -582,6 +584,7 @@ class GraphHelper {
     setGraphData = (fileData) => {
         // save glm file data for exporting changes
         if (!this.isCIM) this.glmFileData = fileData;
+        this.modelNames = Object.keys(fileData);
 
         const { graph, hasFixedNodes, hasGeoCoords, distributionAreas, skipped } = buildGraph(fileData, {
             theme: this.#theme,
