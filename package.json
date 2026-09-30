@@ -40,7 +40,7 @@
         "@sigma/node-border": "^3.0.0",
         "@sigma/node-image": "^3.0.0",
         "antd": "^6.5.1",
-        "axios": "^1.18.1",
+        "axios": "^1.20.0",
         "dayjs": "^1.11.21",
         "echarts-for-react": "^3.0.6",
         "graphology": "^0.26.0",
