@@ -825,7 +825,7 @@ def hello():
     """Basic API information endpoint (also the container health check)."""
     return {
         "api": "GLIMPSE CIM-Graph Flask Backend",
-        "version": "0.8.6",
+        "version": "0.8.7",
     }
 
 

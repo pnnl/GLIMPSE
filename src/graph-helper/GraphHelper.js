@@ -1,5 +1,4 @@
 import { emptyRoster, mergeRoster, normalizeRoster } from "./agents";
-import { assignParallelEdgeCurvatures } from "./edge-curvature";
 import { EdgeFocus } from "./edge-focus";
 import { createEdge, createNode } from "./element-factory";
 import { buildGraph, newGraph } from "./graph-builder";
@@ -9,8 +8,8 @@ import {
     edgeLoadingSummary,
     edgeSeverity,
     nodeSeverity,
+    nodeVitals,
     nodeVoltageSummary,
-    refreshNodeHover as rebuildNodeHover,
     violationCounts,
 } from "./measurements";
 import { applyCapacitorStates, applySimulationOutput, applySwitchStates } from "./simulation";
@@ -241,8 +240,19 @@ class GraphHelper {
 
     getViolationCounts = () => violationCounts(this.graph, this.liveMeasurements);
 
-    /** Recompute and store a live node's hover card in place. */
-    refreshNodeHover = (nodeId) => rebuildNodeHover(this.graph, this.liveMeasurements, nodeId);
+    /** Live readings for a node's card; [] outside a simulation. */
+    getNodeVitals = (nodeId) => nodeVitals(this.graph, this.liveMeasurements, nodeId);
+
+    /**
+     * Redraws the cards currently on screen (hovered or focused nodes). A plain
+     * sigma.refresh() keeps cached attachments, so vitals-only changes need this.
+     */
+    refreshNodeCards = () => {
+        const sigma = this.sigmaInstance;
+        if (!sigma) return;
+        const nodes = this.graph.filterNodes((id, attrs) => attrs.highlighted || sigma.getNodeState(id)?.isHovered);
+        if (nodes.length > 0) sigma.refresh({ partialGraph: { nodes } });
+    };
 
     isNodeDeenergized = (nodeId) => this.liveMeasurements.dead.has(nodeId);
 
@@ -356,6 +366,7 @@ class GraphHelper {
             output,
         );
         this.sigmaInstance?.refresh();
+        this.refreshNodeCards();
     };
 
     updateSwitches = (simOutput) => applySwitchStates(this.graph, simOutput);
@@ -455,10 +466,7 @@ class GraphHelper {
     addEdge = (obj) => {
         this.#ensureTheme();
         const added = socketApi.addEdge(this.#socketContext(), obj);
-        if (added) {
-            assignParallelEdgeCurvatures(this.graph);
-            this.sigmaInstance?.refresh();
-        }
+        if (added) this.sigmaInstance?.refresh();
         return added;
     };
 
@@ -487,16 +495,11 @@ class GraphHelper {
 
     /** Undoes every view-level change: highlights, hiding, and the sim overlay. */
     reset = () => {
-        // Drop the live-simulation overlay and restore each node's base hover
-        // card (the vitals block added during the run is removed here).
-        const measuredNodes = [...this.liveMeasurements.nodes.keys()];
+        // Drop the live-simulation overlay; open cards redraw without vitals.
         this.liveMeasurements.nodes.clear();
         this.liveMeasurements.edges.clear();
         this.liveMeasurements.dead.clear();
-        for (const nodeId of measuredNodes) {
-            // Cleared first, so this rebuilds with empty vitals.
-            this.refreshNodeHover(nodeId);
-        }
+        this.refreshNodeCards();
 
         // Condition coloring is meaningless without measurements.
         this.setViolationMode(false);

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRegisterEvents, useSigma } from "@react-sigma/core";
 import GraphContextMenu from "../menus/GraphContextMenu";
 import EditAttributesModal from "../modals/EditAttributesModal";
@@ -32,21 +32,17 @@ const GraphEvents = () => {
         open: false,
         object: null,
     });
-    const [draggedNode, setDraggedNode] = useState(null);
     const [openNewNodeForm, setOpenNewNodeForm] = useState(false);
     const [openNewEdgeForm, setOpenNewEdgeForm] = useState(false);
     // `type` is "switch" | "capacitor" | "regulator"; `object` is the graph key.
     const [controlContext, setControlContext] = useState(NO_CONTROL);
     const sigma = useSigma();
     const registerEvents = useRegisterEvents();
-    // Drag moves are coalesced to one position update per animation frame.
-    const rafRef = useRef(null);
-    const pendingPosRef = useRef(null);
 
     // Pin the camera to the graph's own bounds on the first render so sigma stops
     // autoscaling as nodes move. Deliberately its own effect: a raw sigma.on has
     // no automatic cleanup (unlike registerEvents), so living in the drag effect
-    // below re-added a listener on every draggedNode change and stacked them
+    // below re-added a listener on every drag and stacked them
     // until sigma's emitter warned about a leak.
     useEffect(() => {
         const pinBBoxOnce = () => {
@@ -60,30 +56,11 @@ const GraphEvents = () => {
     }, [sigma]);
 
     useEffect(() => {
-        const moveDraggedNode = ({ x, y }) => {
-            graphHelper.graph.setNodeAttribute(draggedNode, "x", x);
-            graphHelper.graph.setNodeAttribute(draggedNode, "y", y);
-            sigma.refresh();
-        };
-
-        // Leaves dragging mode, flushing the last pending position.
-        const endDrag = () => {
-            if (draggedNode) {
-                graphHelper.graph.removeNodeAttribute(draggedNode, "highlighted");
-                document.body.style.cursor = "";
-
-                if (rafRef.current) {
-                    cancelAnimationFrame(rafRef.current);
-                    rafRef.current = null;
-                }
-                if (pendingPosRef.current) {
-                    moveDraggedNode(pendingPosRef.current);
-                    pendingPosRef.current = null;
-                }
-            }
-
-            setDraggedNode(null);
-        };
+        // Sigma state, not a graph attribute: any edge attribute write makes sigma
+        // reprocess the whole graph, while a state change restyles just that edge.
+        // GraphRenderer's edge style reads `hoverLabel`.
+        const showEdgeLabel = (edgeId) => sigma.setEdgeState(edgeId, { hoverLabel: edgeHoverLabel(edgeId) });
+        const hideEdgeLabel = (edgeId) => sigma.setEdgeState(edgeId, { hoverLabel: null });
 
         const openControl = (object, attributes, elementType) => {
             const type = getControlType(attributes, elementType);
@@ -91,36 +68,31 @@ const GraphEvents = () => {
         };
 
         registerEvents({
-            downNode: (e) => {
-                // Only allow left-click dragging
-                if (e.event.original.button !== 0) return;
+            // Sigma's own drag: it moves the node, keeps it hovered and flags it
+            // `isDragged` (GraphRenderer hides the card on that state).
+            nodeDragStart: (e) => {
+                // Model-placed nodes stay put (the press pans instead); left button only.
+                if (graphHelper.graph.getNodeAttribute(e.node, "fixed") || e.event.original.buttons !== 1) {
+                    e.preventSigmaDefault();
+                    return;
+                }
 
                 document.body.style.cursor = "grabbing";
-                setDraggedNode(e.node);
+                // Sigma counts a node drag as camera movement, and hideLabelsOnMove
+                // would blank every label for the whole drag.
+                sigma.setSetting("hideLabelsOnMove", false);
             },
-            upNode: endDrag,
-            upStage: endDrag,
-            mouseup: endDrag,
-            mousemovebody: (e) => {
-                if (!draggedNode || graphHelper.graph.getNodeAttribute(draggedNode, "fixed")) return;
-
-                pendingPosRef.current = sigma.viewportToGraph(e);
-
-                if (!rafRef.current) {
-                    rafRef.current = requestAnimationFrame(() => {
-                        rafRef.current = null;
-                        if (pendingPosRef.current) moveDraggedNode(pendingPosRef.current);
-                        pendingPosRef.current = null;
-                    });
-                }
-
-                // Prevent sigma from moving the camera
-                e.preventSigmaDefault();
+            nodeDragEnd: () => {
+                document.body.style.cursor = "";
+                sigma.setSetting("hideLabelsOnMove", true);
             },
             mousedown: () => {
-                if (graphHelper.focusedNode) {
-                    graphHelper.graph.setNodeAttribute(graphHelper.focusedNode, "highlighted", false);
+                // The focused node can be gone (model reloaded, node deleted) by now.
+                const focused = graphHelper.focusedNode;
+                if (focused && graphHelper.graph.hasNode(focused)) {
+                    graphHelper.graph.setNodeAttribute(focused, "highlighted", false);
                 }
+                graphHelper.focusedNode = null;
 
                 setContext(CLOSED_MENU);
             },
@@ -186,25 +158,14 @@ const GraphEvents = () => {
                 });
             },
             enterNode: (e) => {
-                if (graphHelper.graph.edges(e.node).length > 10) return;
-
-                graphHelper.graph.edges(e.node).forEach((edgeId) => {
-                    graphHelper.graph.setEdgeAttribute(edgeId, "label", edgeHoverLabel(edgeId));
-                });
+                const edges = graphHelper.graph.edges(e.node);
+                if (edges.length <= 10) edges.forEach(showEdgeLabel);
             },
-            leaveNode: (e) => {
-                graphHelper.graph.edges(e.node).forEach((edgeId) => {
-                    graphHelper.graph.setEdgeAttribute(edgeId, "label", "");
-                });
-            },
-            enterEdge: (e) => {
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", edgeHoverLabel(e.edge));
-            },
-            leaveEdge: (e) => {
-                graphHelper.graph.setEdgeAttribute(e.edge, "label", "");
-            },
+            leaveNode: (e) => graphHelper.graph.edges(e.node).forEach(hideEdgeLabel),
+            enterEdge: (e) => showEdgeLabel(e.edge),
+            leaveEdge: (e) => hideEdgeLabel(e.edge),
         });
-    }, [draggedNode, sigma, registerEvents]);
+    }, [sigma, registerEvents]);
 
     const closeMenu = () => setContext(CLOSED_MENU);
     const closeControl = () => setControlContext(NO_CONTROL);

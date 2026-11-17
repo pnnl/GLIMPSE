@@ -1,4 +1,3 @@
-import { hoverPayload } from "./element-factory";
 import {
     SEVERITY,
     formatAmps,
@@ -181,13 +180,4 @@ export const edgeVitals = (graph, live, edgeId) => {
     lines.push({ text: `P ${formatWatts(real, "W")}   Q ${formatWatts(imag, "VAr")}` });
 
     return lines;
-};
-
-export const refreshNodeHover = (graph, live, nodeId) => {
-    if (!graph.hasNode(nodeId)) return;
-    const vitals = nodeVitals(graph, live, nodeId);
-    graph.updateNodeAttributes(nodeId, (node) => ({
-        ...node,
-        ...hoverPayload(node.attributes, vitals),
-    }));
 };

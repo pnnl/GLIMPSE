@@ -271,6 +271,8 @@ export default function createAreaContourProgram(segments, options) {
             gl.activeTexture(gl.TEXTURE2);
             gl.bindTexture(gl.TEXTURE_2D, this.indicesTexture);
             super.renderProgram(params, programInfo);
+            // The context is sigma's own: leave the active unit where its programs expect it.
+            gl.activeTexture(gl.TEXTURE0);
         }
 
         kill() {
