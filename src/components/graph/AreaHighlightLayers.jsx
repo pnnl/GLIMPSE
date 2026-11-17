@@ -20,8 +20,7 @@ const BORDER_WIDTH = 1.5; // css pixels
  *
  * Renders nothing itself. It exists as its own component so exactly one place
  * binds the WebGL layers: the selection is driven from the area tree, the agent
- * markers and the agents view, and a second binder would leak layers and exhaust
- * the WebGL context. Mounted once, inside the SigmaContainer.
+ * markers and the agents view. Mounted once, inside the SigmaContainer.
  */
 const AreaHighlightLayers = () => {
     const sigma = useSigma();
@@ -64,7 +63,7 @@ const AreaHighlightLayers = () => {
 
             try {
                 const cleanup = bindWebGLLayer(
-                    `dist-area-${areaId}`,
+                    "areas",
                     sigma,
                     createAreaContourProgram(segments, {
                         radius,
@@ -72,6 +71,7 @@ const AreaHighlightLayers = () => {
                         fill: `${color}${FILL_ALPHA}`,
                         border: { color: `${color}${BORDER_ALPHA}`, width: BORDER_WIDTH },
                     }),
+                    `dist-area-${areaId}`,
                 );
                 return [cleanup];
             } catch (err) {

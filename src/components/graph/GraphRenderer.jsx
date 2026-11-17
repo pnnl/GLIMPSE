@@ -2,26 +2,26 @@ import "@react-sigma/core/lib/style.css";
 import { useEffect } from "react";
 import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
-import { createNodeImageProgram } from "@sigma/node-image";
-import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
-import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
+import { DEFAULT_STYLES } from "sigma";
+import { layerFill, layerPlain, pathCurved, pathLine, sdfCircle } from "sigma/rendering";
+import { layerImage } from "@sigma/node-image";
+import { layerBorder } from "@sigma/node-border";
+import {
+    LABEL_SIZE,
+    hoverBackgroundColor,
+    nodeCard,
+    labelBackgroundColor,
+    setCanvasDarkMode,
+    textColor,
+} from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
 import { sizeRatioExponent } from "../../graph-helper/zoom-scaling";
 import GraphEvents from "./GraphEvents";
-import EdgeCurveProgram from "@sigma/edge-curve";
 import { useGraph } from "../../contexts/GraphContext";
 import Graph from "./Graph";
 import WebGLRecovery from "./WebGLRecovery";
-import {
-    EdgeRectangleProgram,
-    createNodeCompoundProgram,
-    createEdgeCompoundProgram,
-} from "sigma/rendering";
-import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
+import { EDGE_OVERLAY_DEPTH } from "../../custom-programs/edge-overlays";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
-import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
-import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
-import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
 import AgentPanel from "../agents/AgentPanel";
 import AreaHighlightLayers from "./AreaHighlightLayers";
@@ -78,8 +78,7 @@ const dimNodeAttrs = (attrs, color = INACTIVE_COLOR) => ({
     image: "",
 });
 
-// Grey out an edge, keeping its icon program but dimming the icon too. Keyed off
-// iconType (not type) so curved parallel variants dim as well.
+// Grey out an edge, dimming its icon too.
 const dimEdgeAttrs = (attrs, color = INACTIVE_COLOR) => {
     const base = { ...attrs, color, label: "", size: 1 };
     if (attrs.iconType === "switch") return { ...base, switchColor: color, switchSize: 2 };
@@ -88,7 +87,7 @@ const dimEdgeAttrs = (attrs, color = INACTIVE_COLOR) => {
     return base;
 };
 
-const nodeReducer = (nodeId, attrs) => {
+const nodeReducer = (nodeId, _data, attrs) => {
     if (graphHelper.graph.order === 0) return attrs;
 
     // Condition coloring replaces type coloring outright — mixing the two
@@ -116,7 +115,7 @@ const nodeReducer = (nodeId, attrs) => {
     return { ...attrs, size: attrs.size * 2 };
 };
 
-const edgeReducer = (edgeId, attrs) => {
+const edgeReducer = (edgeId, _data, attrs) => {
     // Searched/focused edge always wins: pulse it and keep it on top —
     // never dim it, whatever the area/group highlight state is.
     const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
@@ -146,70 +145,103 @@ const edgeReducer = (edgeId, attrs) => {
     return { ...attrs, size: attrs.size * 1.5 };
 };
 
-const BorderImageNodeProgram = createNodeCompoundProgram([
-    createNodeBorderProgram({
-        borders: [
-            {
-                size: { attribute: "borderSize", defaultValue: 12 },
-                color: { attribute: "borderColor" },
-            },
-            { size: { fill: true }, color: { attribute: "color" } },
-        ],
-    }),
-    createNodeImageProgram(),
-]);
-
-// Straight line + icon, and the curved variant used when parallel edges between
-// two nodes are fanned out so the icon stays on the visible curve.
-const straightWith = (IconProgram) => createEdgeCompoundProgram([EdgeRectangleProgram, IconProgram]);
-const curvedWith = (IconProgram) => createEdgeCompoundProgram([EdgeCurveProgram, IconProgram]);
+// The reducers above stay the source of truth and return graph attributes, which
+// sigma merges over what these styles produce. The styles only translate the
+// attributes sigma no longer reads by itself (`hidden`, `highlighted`).
+const hiddenStyle = { when: (attrs) => attrs.hidden, then: "hidden", else: "visible" };
 
 // Module-level so its identity never changes: react-sigma tears down and
 // rebuilds the Sigma instance (reloading the graph and resetting the camera)
-// whenever the settings object does.
-const SETTINGS = {
-    allowInvalidContainer: true,
-    minCameraRatio: 0.02,
-    maxCameraRatio: null,
-    renderEdgeLabels: true,
-    itemSizesReference: "screen", // sizes in screen px; pairs with zoomToSizeRatioFunction
-    autoRescale: true,
-    autoCenter: true,
-    doubleClickTimeout: 300,
-    doubleClickZoomingRatio: 2.2,
-    doubleClickZoomingDuration: 200,
-    inertiaDuration: 200,
-    // Reads the order per call: the graph is swapped under a stable settings object.
-    zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, sizeRatioExponent(graphHelper.graph.order)),
-    inertiaRatio: 3,
-    cameraPanBoundaries: null,
-    zoomDuration: 250,
-    zoomingRatio: 1.5,
-    labelDensity: 0.7,
-    labelSize: 13,
-    labelGridCellSize: 80,
-    labelRenderedSizeThreshold: 8,
-    hideEdgesOnMove: false,
-    hideLabelsOnMove: true,
-    zIndex: true,
-    enableEdgeEvents: true,
-    defaultNodeType: "node",
-    defaultDrawNodeLabel: drawLabel,
-    defaultDrawNodeHover: drawHover,
-    nodeProgramClasses: {
-        nodeImg: BorderImageNodeProgram,
-        node: NodeBorderProgram,
+// whenever the options object does.
+const OPTIONS = {
+    settings: {
+        allowInvalidContainer: true,
+        minCameraRatio: 0.02,
+        maxCameraRatio: null,
+        renderEdgeLabels: true,
+        itemSizesReference: "screen", // sizes in screen px; pairs with zoomToSizeRatioFunction
+        autoRescale: true,
+        doubleClickTimeout: 300,
+        doubleClickZoomingRatio: 2.2,
+        doubleClickZoomingDuration: 200,
+        inertiaDuration: 200,
+        // Reads the order per call: the graph is swapped under a stable options object.
+        zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, sizeRatioExponent(graphHelper.graph.order)),
+        inertiaRatio: 3,
+        cameraPanBoundaries: null,
+        zoomDuration: 250,
+        zoomingRatio: 1.5,
+        labelDensity: 0.7,
+        labelGridCellSize: 80,
+        labelRenderedSizeThreshold: 8,
+        hideEdgesOnMove: false,
+        hideLabelsOnMove: true,
+        enableEdgeEvents: true,
+        enableNodeDrag: true, // fixed nodes opt out in GraphEvents' nodeDragStart
     },
-    edgeProgramClasses: {
-        straight: EdgeRectangleProgram,
-        curved: EdgeCurveProgram,
-        animated: straightWith(AnimatedDotProgram),
-        switch: straightWith(SwitchSquareProgram),
-        regulator: straightWith(RegulatorProgram),
-        transformer: straightWith(TransformerProgram),
-        curvedSwitch: curvedWith(SwitchSquareProgram),
-        curvedRegulator: curvedWith(RegulatorProgram),
-        curvedTransformer: curvedWith(TransformerProgram),
+    primitives: {
+        depthLayers: ["areas", "edges", "topEdges", EDGE_OVERLAY_DEPTH, "nodes", "topNodes"],
+        nodes: {
+            shapes: [sdfCircle()],
+            // One program for every node: the image layer is transparent without an
+            // `image`, and the border layer (its own fill included) switches itself
+            // off when the border is thinner than a pixel, hence the plain fill under it.
+            layers: [
+                layerFill(),
+                layerBorder({
+                    borders: [
+                        { size: { attribute: "borderSize", default: 0.1 }, color: { attribute: "borderColor" } },
+                        { size: 0, color: { attribute: "color" }, fill: true },
+                    ],
+                }),
+                layerImage(),
+            ],
+            labelAttachments: { card: (ctx) => nodeCard(ctx, graphHelper.getNodeVitals(ctx.node)) },
+        },
+        edges: {
+            paths: [pathLine(), pathCurved()],
+            layers: [layerPlain()],
+        },
+    },
+    styles: {
+        nodes: [
+            DEFAULT_STYLES.nodes,
+            {
+                visibility: hiddenStyle,
+                // Pictogram nodes are borderless, as they were under sigma v3.
+                borderSize: (attrs) => (attrs.type === "nodeImg" ? 0 : 0.1),
+                labelPosition: "below",
+                labelSize: LABEL_SIZE,
+                labelColor: textColor,
+                labelBackgroundColor,
+                backdropColor: hoverBackgroundColor,
+            },
+            {
+                when: (attrs, state) => attrs.highlighted || state.isHovered,
+                then: {
+                    depth: "topNodes",
+                    labelVisibility: "visible",
+                    backdropVisibility: "visible",
+                },
+            },
+            // Sigma drops a node's cached attachment on every attribute change, so a
+            // card would re-render on every drag frame; show just the name instead.
+            {
+                when: (attrs, state) => (attrs.highlighted || state.isHovered) && !state.isDragged,
+                then: { labelAttachment: "card" },
+            },
+        ],
+        edges: [
+            DEFAULT_STYLES.edges,
+            {
+                visibility: hiddenStyle,
+                label: (attrs, state) => state.hoverLabel ?? attrs.label, // set by GraphEvents
+                labelColor: textColor,
+                // Parallel edges fan out as curves; an animated one stays straight
+                // because its flow dots travel the chord.
+                parallelPath: (attrs) => (attrs.type === "animated" ? "straight" : "curved"),
+            },
+        ],
     },
     nodeReducer,
     edgeReducer,
@@ -245,7 +277,7 @@ const GraphRenderer = () => {
             className={darkMode ? "sigma-dark" : ""}
             style={{ backgroundColor: darkMode ? "#1D1D1D" : "#ffffff" }}
             graph={MultiUndirectedGraph}
-            settings={SETTINGS}
+            options={OPTIONS}
         >
             <Graph />
             <GraphEvents />

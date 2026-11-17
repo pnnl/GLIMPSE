@@ -92,9 +92,6 @@ const EditAttributesModal = ({ close, context }) => {
 
             if (object.type === "node") {
                 graphHelper.graph.setNodeAttribute(object.id, "attributes", merged);
-                // Rebuild the hover card so it reflects the edited attributes
-                // (and keeps any live vitals block).
-                graphHelper.refreshNodeHover(object.id);
             } else if (object.type === "edge") {
                 graphHelper.graph.setEdgeAttribute(object.id, "attributes", merged);
             }

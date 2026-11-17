@@ -1,5 +1,4 @@
-import { hoverPayload } from "./element-factory";
-import { edgeLoadingSummary, markDeenergized, nodeVitals, refreshNodeHover, sumPower } from "./measurements";
+import { edgeLoadingSummary, markDeenergized, sumPower } from "./measurements";
 import { inactiveColorOf } from "./theme";
 import { cleanPhase } from "../utils/live-measurements";
 import { dotSpeedForLoading, edgeWidthForLoading } from "../utils/electrical";
@@ -20,10 +19,7 @@ const setSwitchState = (graph, switchID, value) => {
 };
 
 const setCapacitorSections = (graph, live, capID, sections) => {
-    graph.updateNodeAttributes(capID, (attrs) => {
-        const attributes = { ...attrs.attributes, sections };
-        return { ...attrs, attributes, ...hoverPayload(attributes, nodeVitals(graph, live, capID)) };
-    });
+    graph.updateNodeAttributes(capID, (attrs) => ({ ...attrs, attributes: { ...attrs.attributes, sections } }));
 };
 
 // ── Analog: bus voltages (PNV) ──────────────────────────────────────────────
@@ -172,7 +168,6 @@ export const applySimulationOutput = ({ graph, live, theme }, output) => {
     const Discrete = Array.isArray(output?.Discrete) ? output.Discrete : [];
 
     const nodesWithNewVoltage = recordVoltages(graph, live, Analog);
-    for (const nodeId of nodesWithNewVoltage) refreshNodeHover(graph, live, nodeId);
     if (nodesWithNewVoltage.size > 0) markDeenergized(graph, live);
 
     animateFlow(graph, live, theme, recordPowerFlows(graph, live, Analog));

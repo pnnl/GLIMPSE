@@ -58,7 +58,7 @@ export class EdgeFocus {
             size: base * (2 + 2 * wave * decay),
             zIndex: 1000,
             label: attrs.attributes?.name ?? edgeId,
-            forceLabel: true,
+            labelVisibility: "visible",
         };
 
         // Icon edges pulse their symbol too, without overwriting a switch's

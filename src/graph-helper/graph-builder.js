@@ -1,7 +1,6 @@
 import { MultiUndirectedGraph } from "graphology";
 import louvain from "graphology-communities-louvain";
 import circlepack from "graphology-layout/circlepack";
-import { assignParallelEdgeCurvatures } from "./edge-curvature";
 import { createEdge, createNode } from "./element-factory";
 import { ensureEdgeOption, ensureNodeGroup } from "./theme";
 
@@ -311,8 +310,6 @@ export const buildGraph = (fileData, ctx) => {
     else applyLayout(graph);
 
     if (hasGeoCoords) stampLatLng(graph);
-
-    assignParallelEdgeCurvatures(graph);
 
     return { graph, hasFixedNodes, hasGeoCoords, distributionAreas, skipped: skipped.count };
 };

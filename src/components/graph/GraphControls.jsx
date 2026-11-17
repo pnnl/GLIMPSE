@@ -86,7 +86,7 @@ const GraphControls = () => {
     const toggleMap = () => {
         if (mapShown) {
             unbindMap();
-            sigma.getCamera().animatedReset();
+            sigma.getCamera().reset();
             setMapShown(false);
             return;
         }
