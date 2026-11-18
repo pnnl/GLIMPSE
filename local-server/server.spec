@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_data_files
 
 sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
-datas = collect_data_files("cimgraph", include_py_files=True) + [
+datas = collect_data_files("cimgraph", include_py_files=True) + collect_data_files("cimprofiles", include_py_files=True) + [
     # JSON validation schemas loaded at runtime relative to jsonhelper.py
     ("schemas", "schemas"),
     # Built-in example models served by server.py
