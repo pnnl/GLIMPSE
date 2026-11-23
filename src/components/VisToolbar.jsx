@@ -11,6 +11,7 @@ import StartSimulationModal, { HIDE_START_SIM_WARNING_KEY } from "./modals/Start
 import LayoutSettingsForm from "./forms/LayoutSettingsForm";
 import { useGraph } from "../contexts/GraphContext";
 import { useShortcut } from "../hooks/useShortcut";
+import { goToNext, goToPrevious, resetHighlight as handleReset } from "../graph-helper/highlight-nav";
 import { reportError } from "../utils/notify";
 
 const VisToolbar = ({ onToggleCharts, activePanel }) => {
@@ -39,37 +40,6 @@ const VisToolbar = ({ onToggleCharts, activePanel }) => {
 
     const rotateCW = () => {
         graphHelper.rotateCW();
-        graphHelper.sigmaInstance?.refresh();
-    };
-
-    const clearCurrentHighlight = () => {
-        const current = graphHelper.getCurrentHighlightedObject();
-        if (!current) return;
-
-        if (current.type === "edge") {
-            graphHelper.graph.setEdgeAttribute(current.id, "highlighted", false);
-        } else {
-            graphHelper.graph.setNodeAttribute(current.id, "highlighted", false);
-        }
-    };
-
-    const goToPrevious = () => {
-        if (graphHelper.highlightedObjects.length === 0) return;
-        clearCurrentHighlight();
-        graphHelper.focus(graphHelper.getPrevious());
-    };
-
-    const goToNext = () => {
-        if (graphHelper.highlightedObjects.length === 0) return;
-        clearCurrentHighlight();
-        graphHelper.focus(graphHelper.getNext());
-    };
-
-    const handleReset = () => {
-        if (graphHelper.graph.order === 0) return;
-        clearCurrentHighlight();
-
-        graphHelper.reset();
         graphHelper.sigmaInstance?.refresh();
     };
 

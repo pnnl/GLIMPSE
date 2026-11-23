@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Button, Flex, Dropdown, Select, Switch, Tag, Tooltip, Typography } from "antd";
+import { useState, useEffect } from "react";
+import { Button, Flex, Dropdown, Switch, Tag, Tooltip, Typography } from "antd";
 import { GiHamburgerMenu } from "react-icons/gi";
 import ConnectionStatus from "../components/ConnectionStatus";
+import ModelSearch from "../components/ModelSearch";
 import MetricsModal from "../components/modals/MetricsModal";
 import ShortcutsModal from "../components/modals/ShortcutsModal";
 import "../styles/AppHeader.css";
@@ -21,12 +22,10 @@ const AppHeader = ({ onAboutClick, onLoadClick }) => {
     const [selectedTheme, setSelectedTheme] = useState("feeder-model-theme");
     const [showMetrics, setShowMetrics] = useState(false);
     const [showShortcuts, setShowShortcuts] = useState(false);
-    const [searchValue, setSearchValue] = useState(null);
     const [exporting, setExporting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isGridappsdModel, setIsGridappsdModel] = useState(false);
-    const { graphUpdateTrigger, view, setView, darkMode, setDarkMode } = useGraph();
-    const searchRef = useRef(null);
+    const { view, setView, darkMode, setDarkMode } = useGraph();
     const canExport = graphLoaded && !graphHelper.isCIM;
 
     const hasAgents = graphLoaded && graphHelper.agents.agents.length > 0;
@@ -93,13 +92,11 @@ const AppHeader = ({ onAboutClick, onLoadClick }) => {
     useEffect(() => {
         const handleGraphLoaded = (e) => {
             setGraphLoaded(true);
-            setSearchValue(null);
             setIsGridappsdModel(e?.detail?.source === "gridappsd");
         };
 
         const handleGraphCleared = () => {
             setGraphLoaded(false);
-            setSearchValue(null);
             setIsGridappsdModel(false);
         };
 
@@ -115,33 +112,6 @@ const AppHeader = ({ onAboutClick, onLoadClick }) => {
             window.removeEventListener("graph-dirty-change", handleDirtyChange);
         };
     }, []);
-
-    // One option per node + edge — 20k+ on the larger feeders. The graph key and
-    // element type are kept as fields on the option (Select passes the whole
-    // option to onSelect), which avoids a JSON.stringify/parse round trip per
-    // entry every time the graph changes.
-    const searchOptions = useMemo(() => {
-        if (!graphLoaded) return [];
-
-        const nodeOptions = graphHelper.graph.mapNodes((id, attrs) => ({
-            value: `node:${id}`,
-            label: attrs.attributes?.name ?? id,
-            objectId: id,
-            objectType: "node",
-        }));
-        const edgeOptions = graphHelper.graph.mapEdges((id, attrs) => ({
-            value: `edge:${id}`,
-            label: attrs.attributes?.name ?? id,
-            objectId: id,
-            objectType: "edge",
-        }));
-
-        return [...nodeOptions, ...edgeOptions];
-        // graphUpdateTrigger is the app-wide invalidation counter for the
-        // module-singleton graph (bumped by newGraphUpdate after mutations) —
-        // it's intentionally a dep even though it isn't read in the callback.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [graphLoaded, graphUpdateTrigger]);
 
     const handleExport = async () => {
         const exportData = graphHelper.export();
@@ -225,11 +195,8 @@ const AppHeader = ({ onAboutClick, onLoadClick }) => {
         }
     };
 
-    useShortcut("/", () => searchRef.current?.focus(), { enabled: graphLoaded });
     useShortcut("d", () => setDarkMode((v) => !v));
     useShortcut("?", () => setShowShortcuts(true));
-    // Allowed while typing so it also gets the user out of the search box.
-    useShortcut("escape", () => searchRef.current?.blur(), { allowInInput: true });
 
     return (
         <>
@@ -267,26 +234,7 @@ const AppHeader = ({ onAboutClick, onLoadClick }) => {
                 <span style={{ marginLeft: "0.75rem" }}>
                     <ConnectionStatus />
                 </span>
-                {graphLoaded && (
-                    <Select
-                        ref={searchRef}
-                        style={{ width: "24rem", marginLeft: "auto" }}
-                        size="middle"
-                        showSearch={{
-                            filterOption: (input, option) =>
-                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase()),
-                        }}
-                        aria-label="Search the model by object ID or name"
-                        value={searchValue}
-                        options={searchOptions}
-                        placeholder="Search by ID or Name  ( / )"
-                        onSelect={(_val, option) => {
-                            graphHelper.focus({ id: option.objectId, type: option.objectType });
-                            setSearchValue(null);
-                        }}
-                        onChange={(val) => setSearchValue(val)}
-                    />
-                )}
+                <ModelSearch style={{ marginLeft: "auto" }} />
                 <Flex style={{ marginLeft: "auto" }} gap={"0.5rem"}>
                     <Button
                         style={{ textTransform: "uppercase" }}

@@ -5,6 +5,13 @@ export const setCanvasDarkMode = (val) => {
     _isDark = val;
 };
 
+// Off where there is no Model Data View to send the user to (GLIMPSE-lite).
+let _moreAttributesHint = true;
+export const setMoreAttributesHint = (val) => {
+    _moreAttributesHint = val;
+};
+export const moreAttributesHint = () => _moreAttributesHint;
+
 // ── Global Style Constants ──────────────────────────────────────────────────
 // Change these to adjust colors across ALL renderers at once.
 export const textColor = () => (_isDark ? "#ffffff" : "#000000");
@@ -43,7 +50,7 @@ export function nodeCard({ attributes, pixelRatio }, vitals) {
             color: attributes.color,
             ruleAbove: i === 0 && vitals.length > 0, // separates live readings from the model
         })),
-        ...(hiddenCount > 0
+        ...(hiddenCount > 0 && _moreAttributesHint
             ? [{ text: `+${hiddenCount} more — see Model Data View`, alpha: 0.55 }]
             : []),
     ];
