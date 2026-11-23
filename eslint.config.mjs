@@ -7,7 +7,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 export default defineConfig([
     // local-server is the Python backend — its only .js files are vendored
     // (werkzeug debugger inside .venv) or frozen PyInstaller output.
-    globalIgnores(["dist", "release", "gridappsd-viz", "local-server"]),
+    globalIgnores(["dist", "dist-lite", "release", "gridappsd-viz", "local-server"]),
     {
         files: ["electron/**/*.js"],
         extends: [js.configs.recommended],

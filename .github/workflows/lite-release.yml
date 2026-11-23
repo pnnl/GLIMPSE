@@ -1,0 +1,24 @@
+name: GLIMPSE-lite release
+
+on:
+  push:
+    tags: ["lite-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build:lite
+      - run: tar -czf glimpse-lite.tgz -C dist-lite .
+      - run: gh release create "$GITHUB_REF_NAME" glimpse-lite.tgz --title "GLIMPSE-lite ${GITHUB_REF_NAME#lite-v}" --notes "Static read-only GLIMPSE viewer for the Grid Kitchen portal."
+        env:
+          GH_TOKEN: ${{ github.token }}
