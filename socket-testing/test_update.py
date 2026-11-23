@@ -1,18 +1,6 @@
-"""
-Test the "update" event — change a node/edge color, size, and hidden state.
+"""Test the "update" event, which changes a node/edge color, size and hidden state.
 
-Update payload contract:
-    {
-        "id": "<node or edge id>",
-        "elementType": "node" | "edge",
-        "updates": { "color": <str|null>, "size": <num|null>, "hidden": <bool|null> }
-    }
-Any value in "updates" may be null to leave that property unchanged.
-
-Loads socialExample.json first so there is something to update, then walks
-through a few updates with pauses so you can watch them in the GLIMPSE UI.
-
-    python socket-testing/test_update.py
+Payload: { "id", "elementType": "node"|"edge", "updates": { "color", "size", "hidden" } }; a null update value leaves that property unchanged.
 """
 
 import common

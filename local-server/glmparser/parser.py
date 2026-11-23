@@ -54,14 +54,7 @@ class Parser:
     def _value_to_eol(self, hash_token):
         """`#set`/`#define`/`#include` run to end of line, not to a `;`.
 
-        The line bound is computed from the DIRECTIVE token's own end, not from
-        the next token's start: when nothing follows the keyword on that line,
-        anchoring to the next token finds the end of the FOLLOWING line and
-        silently swallows that statement into this directive's value.
-
-        The slice ends at the last token consumed rather than at the newline,
-        because slicing to the newline drags in a trailing `//` comment -- the
-        lexer discards comments but the raw source still contains them.
+        The bound comes from the directive token's own end (anchoring to the next token would swallow the following line), and the slice stops at the last consumed token so a trailing `//` comment is excluded.
         """
         newline = self.source.find("\n", hash_token.end)
         if newline == -1:
@@ -174,10 +167,7 @@ class Parser:
     def _class_block(self):
         """`class name { <type> <property>; ... };`
 
-        A class body is a LIST, not a dict. Its entries are `<type> <name>`
-        declarations and the same type recurs constantly in a normal class
-        (`double a; double b;`). Keying by type silently dropped all but the
-        last -- the shape module/object bodies use does not fit here.
+        The body is a LIST of `<type> <name>` entries rather than a dict, because the same type recurs (`double a; double b;`) and keying by type dropped all but the last.
         """
         name = self._expect("word").text
         if self.lex.peek().kind == "semi":

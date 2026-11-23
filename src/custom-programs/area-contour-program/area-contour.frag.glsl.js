@@ -1,23 +1,5 @@
-// Fragment shader for the distribution-area highlight layer.
-//
-// The layer is one full-canvas quad; the shape is worked out per fragment as the
-// union of capsules around every segment of the area — an edge is a real segment,
-// a lone node a zero-length one. Because we keep the distance to the *nearest*
-// segment rather than summing a falloff per node (what @sigma/layer-webgl's
-// contours program does), the halo is exactly `radius` thick everywhere: no gaps
-// where nodes sit far apart, no bulges where they bunch up.
-//
-// Only the segments near the fragment are considered, via a uniform grid built on
-// the CPU: u_cells holds a (start, count) slice per cell and u_indices the segment
-// indices those slices point into. Testing every segment for every fragment — what
-// the stock contours program does — costs 30x the rest of the scene on a large
-// feeder, and it is why the highlight used to need a smaller radius above 500
-// nodes.
-//
-// Everything is in framed-graph space — sigma's normalized node coordinates, in
-// which the model's largest dimension spans 1.0, and which is what u_invMatrix
-// maps gl_FragCoord into. A radius expressed there is a fraction of the model, so
-// it looks the same on a 13-node feeder as on a 9500-node one, at any zoom.
+// Fragment shader for the distribution-area highlight: one full-canvas quad where each fragment takes the distance to the nearest of the area's segments (an edge, or a zero-length one for a lone node), so the halo is exactly `radius` thick with no gaps or bulges.
+// Only segments near the fragment are tested via a CPU-built uniform grid (u_cells slices into u_indices), and all units are framed-graph space (largest model dimension = 1.0) so a radius looks the same on any model size.
 
 // language=GLSL
 const getFragmentShader = ({ hasBorder, segmentTextureWidth, indexTextureWidth }) => /*glsl*/ `#version 300 es
@@ -65,10 +47,8 @@ void main() {
   if (position.x < u_bounds.x || position.x > u_bounds.z ||
       position.y < u_bounds.y || position.y > u_bounds.w) discard;
 
-  // One device pixel in framed-graph units. The camera matrix scales x and y
-  // alike, so either axis answers for both. This replaces fwidth(): the early
-  // exit below makes the loop's control flow non-uniform, which would leave a
-  // screen-space derivative of the distance undefined.
+    // One device pixel in framed-graph units (the camera matrix scales x and y alike, so either axis answers for both).
+    // Used instead of fwidth(), which is undefined here because the early exit below makes the loop's control flow non-uniform.
   float pixel = length((u_invMatrix * vec3(2.0 / u_width, 0.0, 0.0)).xy);
   float feather = pixel;
   ${hasBorder ? "float border = u_borderWidth * pixel;" : "float border = 0.0;"}

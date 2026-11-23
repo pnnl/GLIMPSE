@@ -1,19 +1,5 @@
-// Colors shared by the agent marker overlay, the agent panel and the bus
-// diagram, so the same thing reads the same way wherever it appears.
-//
-// The agent/bus/device hues follow the GridAPPS-D distributed-architecture
-// diagram this view reproduces — a green coordinating agent, purple field
-// devices — but the distributed-agent orange and pale-yellow bus have been
-// re-picked: against the green they sat only ΔE 5 apart under simulated
-// red-green color vision deficiency, which is well inside the range where two
-// fills read as the same color. The replacements hold every pair at ΔE 17 or
-// better under protanopia, deuteranopia and tritanopia while staying light
-// enough for dark label text.
-//
-// They are held at the same value in both themes because they are categorical:
-// recoloring them per theme would make a dark-mode screenshot and a light-mode
-// one look like they described different systems. Only the surfaces and text
-// around them change.
+// Colors shared by the agent marker overlay, panel and bus diagram so the same thing reads the same everywhere; hues follow the GridAPPS-D architecture diagram, with the distributed-agent orange and pale-yellow bus re-picked to stay at least ΔE 17 apart under protanopia, deuteranopia and tritanopia.
+// They are identical in both themes because they are categorical; only the surfaces and text around them change.
 
 // Status keeps the IEC 60073 reading — green is normal, red is a fault — but
 // pushes green toward teal and red toward orange, which is what separates them

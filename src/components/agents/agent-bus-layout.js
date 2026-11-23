@@ -1,25 +1,5 @@
-// Geometry for the layered message-bus diagram.
-//
-// GridAPPS-D's distributed architecture is drawn as a stack of horizontal
-// message buses — the distribution-system bus at the top, then the feeder bus,
-// then one bus per switch area, then one per secondary area — with agent boxes
-// above each bus and the field devices it carries below it.
-//
-// The layout is a single bottom-up pass. Widths are decided by the leaves: a
-// secondary bus is as wide as its own content needs, a switch bus is as wide as
-// the secondary buses beneath it, and so on up. That is what keeps each subtree
-// visually contained under its parent instead of overlapping its neighbours,
-// which is the whole point of the picture.
-//
-// Two limits keep that from running away on a real feeder. The 9500-bus model
-// has ~110 switch areas and ~1275 secondary areas; drawn in full the diagram is
-// tens of thousands of pixels wide, and zooming it to fit makes every box too
-// small to read. So the caller sets how many levels to draw, and any one bus
-// draws at most MAX_SIBLINGS children — the rest are reported as a count the
-// view offers to expand. Nothing is silently dropped.
-//
-// Kept free of React and of any color decision so the arithmetic can be reasoned
-// about (and tested) on its own; AgentsView paints what this returns.
+// Geometry for the layered message-bus diagram: system, feeder, switch-area and secondary-area buses stacked, with agent boxes above each bus and field devices below.
+// One bottom-up pass sizes each bus from its content, and the caller's depth limit plus MAX_SIBLINGS keep large feeders readable by reporting hidden children as an expandable count.
 
 // Vertical distance between bus levels. A row has to clear the tallest stack a
 // bus can hold — its devices chip, an opened device row and the "+N areas" chip
@@ -71,25 +51,11 @@ const intrinsicWidth = (agentCount, devicesWidth, hasChip) =>
 
 /**
  * Arranges a roster into positioned bus bars, agent boxes and device chips.
+ * `maxDepth` limits levels drawn below the root, `expanded` lists bus ids drawn in full (the drill-down), and `collapseDevices` folds each bus's devices into one chip unless listed in `devicesExpanded`.
  *
  * @param {{buses: Array, agents: Array}} roster - normalized agent roster
- * @param {{maxDepth?: number, expanded?: Set<string>}} options
- *   maxDepth - how many levels below the root to draw (0 draws the top row only)
- *   expanded - bus ids whose children are drawn in full, ignoring both maxDepth
- *              and the sibling cap. This is the drill-down.
- *   collapseDevices - draw each bus's devices as one "N devices" chip instead of
- *              a chip per device. A switch-area row carries a dozen devices and
- *              the bus is sized to hold them, so drawing them all is what makes
- *              those bars run off the screen.
- *   devicesExpanded - bus ids whose devices are drawn in full despite that.
- * @returns {{
- *   width: number, height: number,
- *   rows: {level: string, label: string, y: number}[],
- *   buses: {busId, level, name, label, areaId, x, y, width, height, hiddenChildren, chip, deviceChip}[],
- *   agents: {agent, x, y, width, height}[],
- *   devices: {device, busId, x, y, width, height}[],
- *   truncated: boolean,
- * }}
+ * @param {{maxDepth?: number, expanded?: Set<string>, collapseDevices?: boolean, devicesExpanded?: Set<string>}} options
+ * @returns {{width, height, rows, buses, agents, devices, truncated}} positioned geometry
  */
 export const layoutAgentBuses = (
     roster,

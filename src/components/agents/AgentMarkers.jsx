@@ -12,22 +12,13 @@ import { STATUS_COLORS, surfaceFor } from "./agent-palette";
 // well outside the viewport. Skipping those keeps the DOM to what's visible.
 const OFFSCREEN_MARGIN = 40; // px
 
-// Ceiling on markers drawn in one frame. The 9500-bus model has ~1275 secondary
-// areas; drawing every one that happens to be on screen would put thousands of
-// elements through layout on every pan. Past this many the labels have long
-// since stopped being readable anyway, so the cap costs nothing you could use.
+// Ceiling on markers drawn per frame: the 9500-bus model has ~1275 secondary areas, and drawing every visible one would put thousands of elements through layout on each pan.
+// Labels are unreadable that dense anyway, so the cap costs nothing.
 const MAX_MARKERS = 120;
 
 /**
- * Pins each distributed agent to the distribution area it operates.
- *
- * Positions are DOM, not WebGL: a marker is a handful of elements, and keeping
- * them as DOM means labels, hover cards and clicks come for free. Centroids are
- * computed once per model in graph space and reprojected on each sigma frame, so
- * panning and zooming is a transform, not a recompute.
- *
- * Clicking a marker drives the shared area highlight, so an agent lights up its
- * own territory through the same contour machinery the area tree uses.
+ * Pins each distributed agent to the distribution area it operates, as DOM elements so labels, hover cards and clicks come for free.
+ * Centroids are computed once per model and reprojected each sigma frame, and clicking a marker drives the shared area highlight.
  */
 const AgentMarkers = ({ roster, level }) => {
     const sigma = useSigma();
@@ -38,18 +29,8 @@ const AgentMarkers = ({ roster, level }) => {
     // Bumped once per animation frame to reproject the markers.
     const [, setFrame] = useState(0);
     const frameRef = useRef(0);
-    // The element the markers are portalled into.
-    //
-    // Sigma empties its container when it is killed, and react-sigma kills and
-    // rebuilds the instance whenever the settings object changes — which the
-    // dark-mode toggle does. Portalling straight into sigma's container
-    // therefore lost the markers on the first theme switch and never got them
-    // back: React still believed its portal node was mounted, so it never
-    // re-appended it.
-    //
-    // Owning the layer fixes that. It is derived from `sigma`, whose identity
-    // changes on every rebuild, so a fresh element is created and attached to
-    // the fresh container each time.
+    // The element the markers are portalled into, owned here because sigma empties its container when killed (it is rebuilt on every settings change, e.g. dark mode), which left React holding a detached portal node.
+    // It derives from `sigma`, so each rebuild creates and attaches a fresh element.
     const layer = useMemo(() => {
         if (!sigma) return null;
 

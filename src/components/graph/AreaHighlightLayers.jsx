@@ -15,12 +15,8 @@ export const BORDER_ALPHA = "E6"; // 90%
 const BORDER_WIDTH = 1.5; // css pixels
 
 /**
- * Draws the halo around every selected distribution area, and flies the camera
- * to cover them.
- *
- * Renders nothing itself. It exists as its own component so exactly one place
- * binds the WebGL layers: the selection is driven from the area tree, the agent
- * markers and the agents view. Mounted once, inside the SigmaContainer.
+ * Draws the halo around every selected distribution area and flies the camera to cover them; renders nothing itself.
+ * It is its own component so exactly one place binds the WebGL layers, whichever of the area tree, agent markers or agents view drives the selection.
  */
 const AreaHighlightLayers = () => {
     const sigma = useSigma();

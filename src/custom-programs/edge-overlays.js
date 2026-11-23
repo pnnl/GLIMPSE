@@ -23,16 +23,9 @@ const IN_PLACE_GRAPH_EVENTS = [
 ];
 
 /**
- * Draws the edge icons and flow dots just above the edges. They are wider than
- * the line, so they can't be sigma edge layers, which only shade inside the edge
- * ribbon. An animated edge shows dots in place of its icon.
- *
- * The buffers are rebuilt only when something they depend on changed: refilling
- * costs ~20 ms on a 9500-node feeder, far too much to pay on every pan frame.
- *
- * @returns {{ invalidate: () => void, unbind: () => void }} `invalidate` is for
- *   changes neither the graph nor a sigma reprocess announces (reducer output
- *   that varies with time, repainted through a partial refresh).
+ * Draws the edge icons and flow dots just above the edges (wider than the line, so not sigma edge layers); an animated edge shows dots in place of its icon.
+ * Buffers are rebuilt only when their inputs change (~20 ms on a 9500-node feeder), so call `invalidate` for changes nothing announces, like time-varying reducer output.
+ * @returns {{ invalidate: () => void, unbind: () => void }}
  */
 export const bindEdgeOverlays = (sigma) => {
     const graph = sigma.getGraph();

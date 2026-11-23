@@ -1,7 +1,5 @@
 // ── Voltage limits ──────────────────────────────────────────────────────────
-// ANSI C84.1 service voltage limits, expressed per-unit. Range A is the normal
-// operating band; Range B is the wider band that is tolerable but should be
-// corrected. Outside Range B is treated as severe.
+// ANSI C84.1 service voltage limits in per-unit: Range A is the normal band, Range B the wider tolerable band, and outside Range B is severe.
 const VOLTAGE_LIMITS = {
     rangeA: { min: 0.95, max: 1.05 },
     rangeB: { min: 0.9167, max: 1.0583 },
@@ -75,18 +73,8 @@ const STANDARD_LN_BASES = [
 const SNAP_TOLERANCE = 0.1;
 
 /**
- * Infer the line-to-neutral base a measured magnitude belongs to: the closest
- * standard base within SNAP_TOLERANCE, or null if the reading isn't near any.
- *
- * Closest-wins rather than requiring an unambiguous match, because adjacent
- * distribution classes are only ~6% apart (12470Y/7200, 13200Y/7620 and
- * 13800Y/7970 all sit within 10% of one another) — demanding a unique candidate
- * would reject every reading in that band.
- *
- * The residual failure mode is a bus depressed far enough to sit nearer a lower
- * class (below roughly 0.9 p.u. of its true base), which would then read as
- * healthy. That is why an explicit nameplate always takes precedence — see
- * resolveBaseVoltage — and why the hover card marks an inferred base as such.
+ * Infer the line-to-neutral base a measured magnitude belongs to: the closest standard base within SNAP_TOLERANCE, or null if none is near.
+ * Closest-wins because adjacent classes are only ~6% apart, so a bus depressed below ~0.9 p.u. can read as a lower class and look healthy, which is why an explicit nameplate takes precedence (see resolveBaseVoltage).
  *
  * @param {number} magnitude - measured volts
  * @returns {number|null}
@@ -214,25 +202,12 @@ export const summarizeNodeVoltage = (attributes, live) => {
 };
 
 /**
- * Apparent power and loading for an edge.
- *
- * `normalLimit` is an **ampere** rating, so loading is current-based:
- *
- *     I_phase = S_phase / V_phase        (both per-phase quantities)
- *     loading = I_phase / normalLimit
- *
- * The rating applies per conductor, so the edge's severity is that of its
- * **worst phase** — the same rule used for node voltage.
+ * Apparent power and loading for an edge, where loading is current-based (I_phase = S_phase / V_phase, against the per-conductor ampere `normalLimit`).
+ * Severity is that of the worst phase, the same rule used for node voltage.
  *
  * @param {Object} live - graphHelper.liveMeasurements.edges entry
- * @param {Object} [phaseVoltages] - { <phase>: volts } at one end of the edge,
- *   needed to convert power to current. Without it no loading is reported.
- * @returns {null | {
- *   apparent: number, normalLimit: number|null,
- *   phases: Array<{ phase, amps, ratio, severity }>,
- *   worst: { phase, amps, ratio, severity } | null,
- *   ratio: number|null, severity
- * }}
+ * @param {Object} [phaseVoltages] - { <phase>: volts } at one end of the edge, needed to convert power to current (without it no loading is reported)
+ * @returns {null | {apparent, normalLimit, phases, worst, ratio, severity}}
  */
 export const summarizeEdgeLoading = (live, phaseVoltages) => {
     if (!live) return null;

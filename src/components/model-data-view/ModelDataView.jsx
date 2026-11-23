@@ -11,12 +11,8 @@ import UpdateRegulatorModal from "../modals/UpdateRegulatorModal";
 import { useSimLiveTick } from "../../hooks/useSimLiveTick";
 import "./ModelDataView.css";
 
-// Structural glue rather than real model objects, so they get no table row.
-// `parentChild` is always synthetic — the graph builder makes one per object
-// that names a `parent`. `line` is only synthetic in a CIM model, where it ties
-// a piece of equipment to its connectivity node; a JSON model may use "line" as
-// a real edge type (models/demo_examples/levelExample.json is entirely line
-// edges), so it's hidden only when the loaded model is CIM.
+// Structural glue, not real model objects, so no table row: `parentChild` is always synthetic, and `line` only in CIM models (where it ties equipment to its connectivity node).
+// A JSON model may use "line" as a real edge type (e.g. models/demo_examples/levelExample.json), so it is hidden only for CIM.
 const hiddenEdgeGroups = (isCIM) =>
     isCIM ? new Set(["parentChild", "line"]) : new Set(["parentChild"]);
 
@@ -118,9 +114,7 @@ const ObjectStudio = () => {
         return edges.filter((e) => filterTypes.edges.includes(e.group));
     }, [edges, filterTypes]);
 
-    // One option per visible row. Built from the *filtered* lists rather than
-    // the whole model so a hit is always a row the table can actually scroll
-    // to — narrowing the Object Types filter narrows the search with it.
+    // One option per visible row, built from the filtered lists so a hit is always a row the table can scroll to.
     // Falls back to the graph key when there's no name (CIM writes name: "").
     const searchOptions = useMemo(() => {
         const toOption = (record, objectType) => ({

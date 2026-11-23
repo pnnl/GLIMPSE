@@ -7,11 +7,7 @@ import { notify, reportError } from "../../utils/notify";
 import { emitDifferences } from "./device-control";
 
 /**
- * Canonical "OPEN"/"CLOSED" from any of the shapes these attributes hold:
- *   switch `status`      "OPEN" / "CLOSED"   — written by live simulation output
- *   switch `open`        boolean true/false from CIM, or "True"/"False" from a GLM
- *   capacitor `sections` a section count, 0 meaning open
- *
+ * Canonical "OPEN"/"CLOSED" from a switch `status` string, a switch `open` boolean or "True"/"False", or a capacitor `sections` count (0 = open).
  * @returns {"OPEN"|"CLOSED"|null} null when the attribute is missing or unreadable
  */
 const normalizeStatus = (raw) => {
@@ -68,12 +64,8 @@ const UpdateDeviceModal = ({ open, close, object, deviceType }) => {
 
     const config = DEVICE_CONFIG[deviceType];
 
-    // Current status, read straight off the graph while the modal is open.
-    // Derived (not state): live simulation output writes the device's new state
-    // back onto the graph element each tick, so re-reading on every open is what
-    // keeps this in step with the running simulation. It also feeds
-    // reverse_differences on save, so a stale read here sends a wrong "before"
-    // value to the platform.
+    // Current status, read off the graph while the modal is open and derived rather than state, since live simulation writes each tick's new state back onto the element.
+    // It also feeds reverse_differences on save, so a stale read would send a wrong "before" value to the platform.
     const { currentStatus, loadError } = useMemo(() => {
         if (!open || !object || !config) return { currentStatus: null, loadError: null };
 

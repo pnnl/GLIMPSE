@@ -105,14 +105,10 @@ class SocketClientHelper {
 
     // Internal Setup
 
-    /**
-     * Run a graph mutation for an incoming socket event.
-     *
-     * These payloads come off the wire, so a malformed one can throw deep inside
-     * graphHelper. Unwrapped, that throw lands in socket.io's emitter and takes
-     * the rest of the handler — including the fan-out to subscribed components —
-     * with it. Reported and contained instead.
-     */
+        /**
+         * Run a graph mutation for an incoming socket event.
+         * Payloads come off the wire and a throw inside graphHelper would take the rest of the handler (including the fan-out to subscribed components) with it, so errors are reported and contained.
+         */
     #applyToGraph(event, fn) {
         try {
             fn();

@@ -1,16 +1,6 @@
-"""
-Shared helpers for the GLIMPSE socket API test scripts.
+"""Shared helpers for the GLIMPSE socket API test scripts, which act as an external client emitting graph events.
 
-These scripts act as an "external client": they connect to the GLIMPSE
-SocketIO backend and emit the events that drive any connected frontend
-(load-graph / update / add-node / add-edge / delete-node / delete-edge).
-
-The backend broadcasts each event back out to every connected client, so we
-register listeners here too — that way the scripts can confirm what a frontend
-would receive, even when no browser is open.
-
-Set GLIMPSE_SERVER_URL to point at a non-default backend, e.g.:
-    GLIMPSE_SERVER_URL=http://127.0.0.1:5052 python test_load_graph.py
+Listeners are registered too so the scripts can confirm what a frontend would receive; set GLIMPSE_SERVER_URL for a non-default backend.
 """
 
 import json

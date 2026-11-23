@@ -10,11 +10,8 @@ const MermaidDiagram = ({ mermaidContent, objectID }) => {
     useEffect(() => {
         if (!mermaidContent || !mermaidContainerRef.current) return;
 
-        // securityLevel "strict" keeps Mermaid's built-in DOMPurify sanitization on
-        // and disables inline HTML / click handlers in labels. Diagram text is
-        // derived from model data, so it must not be treated as trusted markup.
-        // Mermaid bakes its palette into the rendered SVG, so the theme has to be
-        // set before render and the diagram re-rendered when darkMode flips.
+        // securityLevel "strict" keeps Mermaid's DOMPurify sanitization on and disables inline HTML/click handlers, since diagram text derives from model data and isn't trusted markup.
+        // Mermaid bakes its palette into the SVG, so the theme is set before render and the diagram re-rendered when darkMode flips.
         mermaid.initialize({
             startOnLoad: true,
             theme: darkMode ? "dark" : "default",

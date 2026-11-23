@@ -2,10 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import socketClientHelper from "../../socket-client-helper/SocketClientHelper";
 
 /**
- * Which live-control modal an element opens during a GridAPPS-D simulation, or
- * null. Switches (open/close) and regulators (tap positions) are edges;
- * capacitors (open/close) are nodes. A regulator is tagged by group (JSON/GLM)
- * or by class_type (CIM transformer edges).
+ * Which live-control modal an element opens during a GridAPPS-D simulation, or null: switches and regulators are edges (a regulator is tagged by group for JSON/GLM or class_type for CIM), capacitors are nodes.
  */
 export const getControlType = ({ group, attributes }, elementType) => {
     if (elementType === "edge") {

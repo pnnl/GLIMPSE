@@ -1,8 +1,5 @@
 //! ForceAtlas2 iteration, ported 1:1 from graphology-layout-forceatlas2/iterate.js.
-//!
-//! Works on the same flat matrices graphology builds (`graphToByteArrays`): 10 f32
-//! per node, 3 f32 per edge (source/target are node *offsets*). Intermediate math is
-//! f64 like JS numbers; every store into the matrices rounds to f32 like a Float32Array.
+//! Works on graphology's flat byte-array matrices (10 f32 per node, 3 per edge) with f64 math, rounding every matrix store to f32.
 
 const NODE_X: usize = 0;
 const NODE_Y: usize = 1;
@@ -398,10 +395,8 @@ fn iterate(s: &Settings, nm: &mut [f32], em: &[f32], regions: &mut Vec<Region>) 
 }
 
 // ---- WASM exports -----------------------------------------------------------
-// JS writes into buffers owned here, sets the settings once, then drives either
-// `fa2_iterate` (single thread) or `fa2_reset` → `fa2_repulse` slices → `fa2_finish`.
-// SAFETY (all `unsafe` below): each wasm instance runs on one thread; nothing else
-// touches these statics.
+// JS fills buffers owned here, then drives either `fa2_iterate` or `fa2_reset` → `fa2_repulse` slices → `fa2_finish`.
+// SAFETY (all `unsafe` below): each wasm instance runs on one thread and nothing else touches these statics.
 
 static mut NODES: Vec<f32> = Vec::new();
 static mut EDGES: Vec<f32> = Vec::new();

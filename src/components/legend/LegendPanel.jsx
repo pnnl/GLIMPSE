@@ -6,11 +6,8 @@ import ContextMenu from "../menus/ContextMenu";
 import { useGraph } from "../../contexts/GraphContext";
 import { panelHeaderStyle, panelStyle, surfaceFor } from "../agents/agent-palette";
 
-// A DOM legend rendered inside a sigma ControlsContainer (so it has sigma context
-// but its own toggle state lives inside the SigmaContainer — toggling it never
-// re-renders GraphRenderer, so the graph is not reloaded). Lists the node/edge
-// types present in the model with their color + count. Double-click a type to
-// highlight it; right-click for a context menu (Hide All).
+// A DOM legend inside a sigma ControlsContainer, so it has sigma context while its toggle state never re-renders GraphRenderer.
+// Lists the node/edge types present with color + count; double-click highlights a type and right-click opens a context menu (Hide All).
 const key = (elementType, type) => `${elementType}:${type}`;
 
 const MENU_ITEMS = [{ key: "hide-all", label: "Hide All" }];

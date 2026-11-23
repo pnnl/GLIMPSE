@@ -1,36 +1,6 @@
-"""
-Test the "agents-update" event — report which distributed agents are running.
+"""Test the "agents-update" event, which lets an external script report which distributed agents are actually running (contract in EVENTS_API.md).
 
-GLIMPSE builds its agent roster from the loaded model (GET
-/api/gridappsd/agents), which says which agents *should* exist for it. This
-event is how something outside GLIMPSE reports which of them are actually up.
-
-Payload contract:
-    {
-        "model": "<model mRID or filename>",     # optional; enables caching
-        "agents": [
-            {
-                "agent_id": "<unique id>",
-                "message_bus_id": "<area mRID, or 'system'>",
-                "status": "online" | "offline" | "unknown",
-                # optional; a payload carrying these replaces the roster
-                # wholesale instead of updating status in place
-                "agent_type": "coordinating" | "distributed",
-                "level": "system" | "feeder" | "switch" | "secondary",
-                "area_name": "...",
-                "devices": [{"mrid", "name", "type", "phases"}]
-            }
-        ]
-    }
-
-A payload with only ids and statuses is merged into the existing roster, so a
-liveness ping can't discard the areas and devices the model load established.
-
-This script needs a model loaded in GLIMPSE to have something to update — load
-IEEE123 through the UI first, then pass one of its switch-area mRIDs as
-AREA_MRID (or just run it as-is to exercise validation and the broadcast).
-
-    python socket-testing/test_agents.py
+Load IEEE123 in the UI first and pass one of its switch-area mRIDs as AREA_MRID, or run as-is to exercise validation and the broadcast.
 """
 
 import common

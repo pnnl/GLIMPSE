@@ -1,12 +1,6 @@
-"""
-Test the "load-graph" event in both supported forms:
+"""Test the "load-graph" event in both forms: GLIMPSE objects format (like socialExample.json) and a NetworkX node-link dump.
 
-  1. GLIMPSE objects format  (the same shape as socialExample.json)
-  2. NetworkX node-link data dump  (nx.node_link_data output)
-
-Run the GLIMPSE frontend alongside this to watch each graph render.
-
-    python socket-testing/test_load_graph.py
+Run the frontend alongside to watch each graph render.
 """
 
 import networkx as nx

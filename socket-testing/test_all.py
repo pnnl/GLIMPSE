@@ -1,12 +1,6 @@
-"""
-Run the full GLIMPSE external-socket API demo end to end, in one connection:
+"""Run the full external-socket API demo in one connection: load-graph -> add-node -> add-edge -> update -> delete-edge -> delete-node.
 
-    load-graph (NetworkX) -> add-node -> add-edge -> update -> delete-edge -> delete-node
-
-Open the GLIMPSE frontend first so you can watch each step. Pauses between
-steps are intentional; set FAST=1 to skip them.
-
-    python socket-testing/test_all.py
+Open the frontend first to watch each step; set FAST=1 to skip the pauses.
 """
 
 import os

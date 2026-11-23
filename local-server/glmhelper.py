@@ -30,14 +30,9 @@ class GLMHelper:
 
     @staticmethod
     def _export_filename(filename, index, taken):
-        """A safe, unique .glm name for a client-supplied key.
+        """A safe, unique .glm name for a client-supplied (hostile) key.
 
-        These keys come straight from the request body, so they are treated as
-        hostile: secure_filename flattens any directory part away, which is what
-        keeps the write inside tmpdir. It also strips non-ASCII entirely, so a
-        name it reduces to nothing falls back to a positional one rather than
-        failing the export — and names that collide after sanitizing are
-        suffixed, so one can never overwrite another.
+        secure_filename keeps the write inside tmpdir; names that sanitize to nothing fall back to a positional one, and collisions are suffixed.
         """
         base = secure_filename(
             filename if filename.endswith(".glm") else filename.replace(".json", ".glm")

@@ -7,8 +7,7 @@ set -eu
 # to the backend. Use the "is it set at all" form so an intentional empty value
 # survives (":-" would replace it with the default).
 API_URL="${API_URL-http://127.0.0.1:5052}"
-# Shared bearer token the browser must send. Must match the backend's
-# GLIMPSE_API_TOKEN. Empty = auth disabled.
+# Shared bearer token the browser must send; must match the backend's GLIMPSE_API_TOKEN (empty = auth disabled).
 API_TOKEN="${API_TOKEN:-}"
 # Overridable so non-nginx callers (scripts/write-codespace-env.sh) can point
 # this at a built dist/ instead.

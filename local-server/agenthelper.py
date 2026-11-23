@@ -139,11 +139,9 @@ def agents_from_gridappsd(gridappsd_helper, model_id: str) -> dict | None:
 
 
 def field_agents_roster(field_agents, area_index: dict, object_index: dict, model_id: str) -> dict:
-    """The platform's field agents that sit on this model's message-bus tree.
+    """Agents whose upstream bus chain reaches this model's own bus.
 
-    The platform lists every deployed agent, whatever model is loaded. Each agent's
-    downstream bus is its area ID and its upstream bus is its parent area, so an agent
-    belongs to this model only if following upstream links reaches the model's own bus.
+    The platform lists every deployed agent regardless of the loaded model, so membership is decided by following each agent's upstream links.
     """
     entries = [
         e for e in (field_agents.values() if isinstance(field_agents, dict) else [])

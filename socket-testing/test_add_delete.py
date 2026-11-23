@@ -1,15 +1,6 @@
-"""
-Test the "add-node", "add-edge", "delete-node", and "delete-edge" events.
+"""Test the "add-node", "add-edge", "delete-node" and "delete-edge" events, which use the load-graph object shape.
 
-Payloads use the same GLIMPSE object shape as load-graph:
-    add-node: { "objectType", "elementType": "node", "attributes": { "id"|"name", ... } }
-    add-edge: { "objectType", "elementType": "edge", "attributes": { "id"?, "from", "to", ... } }
-    delete-node / delete-edge: the object id (a string)
-
-Loads socialExample.json first, then adds a node + edge and removes them again,
-with pauses so you can watch the graph change in the GLIMPSE UI.
-
-    python socket-testing/test_add_delete.py
+Loads socialExample.json, then adds and removes a node + edge with pauses so you can watch the UI.
 """
 
 import common

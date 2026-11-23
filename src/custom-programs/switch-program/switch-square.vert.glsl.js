@@ -40,15 +40,8 @@ void main() {
 
   v_color.a *= bias;
 
-  // Level-of-detail: on LARGE models edge icons are a zoom-IN detail — fade them
-  // out as the camera nears the full-graph view so it reads as clean topology.
-  // u_sizeRatio < 1 = zoomed in, 1 = full view, > 1 = zoomed out.
-  //   ICON_SHOW: at/below this u_sizeRatio the icon is fully opaque (zoomed in)
-  //   ICON_HIDE: at/above this u_sizeRatio the icon is gone (full view / out)
-  // Raise ICON_HIDE (e.g. 1.3) to keep icons faintly visible at the full-graph view.
-  // u_fade (from graph order) gates it: small models + the legend pass 0 and keep
-  // full detail at full view; large models pass 1 for the full zoom fade.
-  // Guarded from PICKING_MODE so a faded icon doesn't corrupt its pick id alpha.
+    // Level-of-detail: on LARGE models edge icons are a zoom-in detail, faded out toward the full-graph view (u_sizeRatio < 1 = zoomed in, 1 = full view); ICON_SHOW is fully opaque at/below, ICON_HIDE gone at/above (raise it, e.g. 1.3, to keep icons faintly visible at full view).
+    // u_fade gates it (0 keeps full detail on small models, 1 fades large ones) except in PICKING_MODE so pick id alpha isn't corrupted.
   #ifndef PICKING_MODE
     const float ICON_SHOW = 0.7;
     const float ICON_HIDE = 1.0;

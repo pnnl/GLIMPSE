@@ -74,10 +74,7 @@ def _patched_create_edge(self, graph, cim_class, identifier, attribute, edge_cla
 
 
 def apply() -> bool:
-    """Install the patch. Returns whether it is now in effect.
-
-    Safe to call more than once; only the first call does anything.
-    """
+    """Install the patch and return whether it is in effect; safe to call repeatedly."""
     global _applied, _log
 
     if _applied:

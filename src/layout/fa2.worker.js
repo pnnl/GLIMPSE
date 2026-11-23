@@ -1,7 +1,5 @@
-// FA2 worker speaking graphology's supervisor protocol, backed by fa2.wasm (see fa2-wasm/).
-// Runs as many iterations as fit in BUDGET_MS per request, so layout speed isn't capped
-// at one iteration per rendered frame. Big graphs split repulsion across helper workers.
-// Falls back to graphology's JS iterate if WASM can't load.
+// FA2 worker speaking graphology's supervisor protocol, backed by fa2.wasm (see fa2-wasm/), falling back to graphology's JS iterate if WASM can't load.
+// It runs as many iterations as fit in BUDGET_MS per request so layout speed isn't capped at the render frame rate, and big graphs split repulsion across helper workers.
 import iterate from "graphology-layout-forceatlas2/iterate.js";
 import { PPN, loadFa2, setSettings, view, write } from "./fa2-wasm";
 import RepulseWorker from "./fa2-repulse.worker.js?worker&inline";

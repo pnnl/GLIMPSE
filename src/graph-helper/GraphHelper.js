@@ -18,15 +18,8 @@ import { edgeTypesOf, emptyTypeCounts, flattenTheme, inactiveColorOf, nodeTypesO
 
 const dispatch = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
 
-// Hints for every bulk updateEachEdgeAttributes below. Without them sigma takes
-// its "repaint in place" path, which reuses the program index it built during
-// the last process() — and throws `edge "<id>" can't be repaint` if that index
-// is stale. Any sigma.setSetting clears the index and defers the reprocess to
-// the next frame, so a bulk repaint landing in that gap crashes the renderer:
-// binding the leaflet map does exactly that (@sigma/layer-leaflet calls
-// setSetting on every map move to keep the zoom bounds in sync). Naming a
-// layout-impacting attribute makes sigma reindex instead. Sigma applies the
-// same default to node updates already, which is why only edges need this.
+// Hints for every bulk updateEachEdgeAttributes below: without them sigma repaints in place from the last process() index, which throws `edge "<id>" can't be repaint` once any sigma.setSetting (e.g. the leaflet map binding) has cleared it.
+// Naming a layout-impacting attribute makes sigma reindex instead, as it already does by default for node updates.
 const EDGE_REINDEX_HINT = { attributes: ["zIndex"] };
 
 class GraphHelper {
@@ -82,13 +75,8 @@ class GraphHelper {
     // graph already carries — see graph-helper/agents.js.
     agents = emptyRoster();
 
-    // Ephemeral per-tick simulation measurements — voltage on bus nodes (PNV)
-    // and power flow on edges (VA) — surfaced as a read-only overlay during a
-    // run. Never written into a model's own `attributes`; cleared by reset()
-    // when the simulation ends. Keyed by graph node/edge id:
-    //   nodes: id -> { voltage: { <phase>: { magnitude, angle } } }
-    //   edges: id -> { power:   { <phase>: { real, imag, magnitude, angle } } }
-    //   dead:  ids of nodes cut off from power (see markDeenergized)
+        // Ephemeral per-tick simulation measurements (bus voltage PNV, edge power VA) shown as a read-only overlay, never written into a model's `attributes` and cleared by reset().
+        // nodes: id -> { voltage: { <phase>: { magnitude, angle } } }; edges: id -> { power: { <phase>: { real, imag, magnitude, angle } } }; dead: ids of nodes cut off from power (see markDeenergized).
     liveMeasurements = { nodes: new Map(), edges: new Map(), dead: new Set() };
 
     constructor() {
@@ -138,19 +126,12 @@ class GraphHelper {
         if (!this.#theme?.groups || !this.#theme?.edgeOptions) this.setThemeObject();
     };
 
-    /**
-     * Switches the theme between its light and dark colors.
-     *
-     * Theme colors are baked into node/edge attributes when the graph is built,
-     * so re-flattening the theme is not enough on its own — every element that
-     * still carries its themed color has to be repainted. Elements the renderer
-     * is currently coloring by something other than type (violation mode, flow
-     * animation) are left alone: those reducers re-derive their color each frame
-     * anyway, and the reset path restores from the theme.
-     *
-     * @param {boolean} darkMode
-     * @returns {boolean} whether anything changed
-     */
+        /**
+         * Switches the theme between its light and dark colors, repainting every element still carrying its themed color (theme colors are baked into attributes at build).
+         * Elements colored by something other than type (violation mode, flow animation) are skipped because those reducers re-derive color each frame.
+         * @param {boolean} darkMode
+         * @returns {boolean} whether anything changed
+         */
     setDarkMode = (darkMode) => {
         const next = Boolean(darkMode);
         if (next === this.#darkMode) return false;
@@ -428,15 +409,12 @@ class GraphHelper {
     // The server validates and broadcasts these; every frontend applies them to
     // its own graph. Contract: socket-testing/EVENTS_API.md.
 
-    /**
-     * Loads a graph received over the socket "load-graph" event. `fileData` is the
-     * normalized { name: { objects: [...] } } structure produced by the server for
-     * both GLIMPSE-format and NetworkX node-link payloads. Mirrors the file-upload
-     * flow so the rest of the app reacts the same way. The caller is responsible
-     * for triggering a React re-render (e.g. via the GraphContext) afterwards.
-     * @param {Object} fileData
-     * @param {Object|null} themeData
-     */
+        /**
+         * Loads a graph received over the socket "load-graph" event from the server-normalized { name: { objects: [...] } } structure, mirroring the file-upload flow.
+         * The caller must trigger the React re-render (e.g. via GraphContext).
+         * @param {Object} fileData
+         * @param {Object|null} themeData
+         */
     loadGraphFromData = (fileData, themeData = null) => {
         if (this.graph.order > 0) {
             this.clearGraphData();

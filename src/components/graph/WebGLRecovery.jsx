@@ -3,15 +3,8 @@ import { useSigma } from "@react-sigma/core";
 import { notify } from "../../utils/notify";
 
 /**
- * WebGL context upkeep: tells the user when the browser takes the context away,
- * and works around two sigma render bugs (node picking, label text; see beforeRender).
- *
- * A GPU driver reset — sleep/wake, a laptop switching GPUs, or simply too much
- * pressure from a large model — drops the canvas context. Sigma keeps the
- * context restorable and rebuilds its programs (custom layers included) once
- * the browser hands it back, so all that is left to do here is say so.
- *
- * Renders nothing.
+ * WebGL context upkeep: tells the user when the browser takes the context away, and works around two sigma render bugs (node picking, label text; see beforeRender).
+ * Sigma restores the context and rebuilds its programs itself, so all that is left is to say so; renders nothing.
  */
 // Sigma 4.0.6 assumes reducers and function styles read its graph-wide state, so
 // every hover start/end restyles every node and edge (~100 ms on the 9500 model).
@@ -32,16 +25,8 @@ const WebGLRecovery = () => {
         };
         const onRestored = () => console.warn("[webgl] context restored");
 
-        // Works around sigma 4.0.6 + @sigma/node-image 4.0.2: every render, sigma binds
-        // the picking texture on whichever texture unit is active, and node-image's
-        // picking shader samples unit 0. When those coincide the browser rejects the
-        // nodes' picking draw and node hover/click dies after a pan or zoom. Parking
-        // the active unit on one nothing samples keeps the two apart.
-        // Works around sigma 4.0.6 label buffers: node (and edge) label text shares one
-        // buffer that each depth refills only on frames flagged dirty, so once labels
-        // span two depths (a hovered node sits in topNodes) the next clean frame draws
-        // the last depth's labels everywhere and every other label loses its text.
-        // Refilling every frame costs only the labels on screen.
+        // Works around sigma 4.0.6 + @sigma/node-image 4.0.2 picking (the active texture unit collides with node-image's unit 0, killing node hover/click after a pan or zoom) by parking the active unit on one nothing samples.
+        // Also works around sigma 4.0.6 label buffers (dirty-frame-only refills draw the last depth's labels everywhere once labels span two depths) by refilling every frame, which costs only the labels on screen.
         const beforeRender = () => {
             const gl = sigma.getWebGLContext();
             gl.activeTexture(gl.TEXTURE31);

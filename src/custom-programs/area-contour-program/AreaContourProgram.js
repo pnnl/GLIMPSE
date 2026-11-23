@@ -36,17 +36,11 @@ const createDataTexture = (gl) => {
 };
 
 /**
- * Builds a sigma WebGL layer program that fills everything within `radius` of a
- * set of graph segments — the union of capsules around them, with an optional
- * outline. Stands in for @sigma/layer-webgl's `createContoursProgram`, which can
- * only take nodes and whose summed falloff field makes the outline thickness
- * depend on how densely the nodes are packed.
+ * Builds a sigma WebGL layer program that fills everything within `radius` of a set of graph segments (the union of capsules around them), with an optional outline.
+ * It replaces @sigma/layer-webgl's `createContoursProgram`, which only takes nodes and whose summed falloff makes outline thickness depend on node density.
  *
- * @param {{source: string, target: string}[]} segments - node key pairs; source
- *   === target draws a disc around a single node. Positions are read live from
- *   the renderer on every process, so the shape follows layout/drag changes.
- * @param {{radius?: number, zoomExponent?: number, fill?: string,
- *   border?: {color: string, width: number}}} [options]
+ * @param {{source: string, target: string}[]} segments - node key pairs (source === target = disc around one node); positions are read live from the renderer
+ * @param {{radius?: number, zoomExponent?: number, fill?: string, border?: {color: string, width: number}}} [options]
  * @returns {typeof WebGLLayerProgram} a program class for `bindWebGLLayer`
  */
 export default function createAreaContourProgram(segments, options) {

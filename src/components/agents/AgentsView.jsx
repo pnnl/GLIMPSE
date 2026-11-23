@@ -31,14 +31,8 @@ const clip = (text, max) => {
 };
 
 /**
- * The distributed-agent architecture for the loaded model: a stack of message
- * buses with the agents that sit on each and the field devices they carry.
- *
- * This is the same hierarchy the graph view highlights by area, drawn as the
- * layered picture the platform's own architecture diagrams use — the graph
- * answers "where in the grid", this answers "who talks to whom". Clicking an
- * agent goes back to the graph with that agent's area highlighted, which is what
- * ties the two views together.
+ * The distributed-agent architecture for the loaded model: a stack of message buses with their agents and field devices.
+ * The graph answers "where in the grid" while this answers "who talks to whom", and clicking an agent returns to the graph with its area highlighted.
  */
 const AgentsView = () => {
     const { darkMode, setView } = useGraph();

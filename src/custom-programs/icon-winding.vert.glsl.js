@@ -54,19 +54,8 @@ void main() {
 
   v_color.a *= bias;
 
-  // Level-of-detail: on LARGE models edge icons are a zoom-IN detail — fade them
-  // out as the camera nears the full-graph view so it reads as clean topology.
-  // u_sizeRatio < 1 = zoomed in, larger = zoomed out.
-  //   ICON_SHOW: at/below this u_sizeRatio the icon is fully opaque (zoomed in)
-  //   ICON_HIDE: at/above this u_sizeRatio the icon is fully gone (zoomed out)
-  // The fit / "zoomed-out" view lands at u_sizeRatio ~0.95 (GraphControls fits to
-  // spread * 0.95), so ICON_HIDE must sit BELOW that, otherwise a small residual
-  // alpha lingers at full view — invisible on a light background but visible
-  // against the dark-mode background. Keeping a margin guarantees the icon is
-  // fully transparent by the time the model is fully zoomed out.
-  // u_fade (from graph order) gates it: small models + the legend pass 0 and keep
-  // full detail at full view; large models pass 1 for the full zoom fade.
-  // Guarded from PICKING_MODE so a faded icon doesn't corrupt its pick id alpha.
+    // Level-of-detail: on LARGE models edge icons are a zoom-in detail, faded out toward the full-graph view (u_sizeRatio < 1 = zoomed in); ICON_SHOW is fully opaque at/below, ICON_HIDE fully gone at/above.
+    // ICON_HIDE must sit below ~0.95 (the fit view's u_sizeRatio) so no residual alpha shows on the dark background, and u_fade gates it (0 keeps full detail on small models, 1 fades large ones) except in PICKING_MODE so pick id alpha isn't corrupted.
   #ifndef PICKING_MODE
     const float ICON_SHOW = 0.6;
     const float ICON_HIDE = 0.85;

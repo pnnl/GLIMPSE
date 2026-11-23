@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
-# Point the built bundle at its own origin, so `vite preview` can serve dist/
-# and proxy /api + /socket.io from a single forwarded port.
-#
-# Without this, dist/env.js is the copy of public/env.js — `{}` — and
-# src/config.js falls through to http://127.0.0.1:5052, which in a Codespace is
-# the *user's own laptop*. An empty-string API_URL is what makes every request
-# relative.
-#
-# Runs after every build, not just on container create. See scripts in
-# package.json (codespace:build).
+# Point the built bundle at its own origin (empty-string API_URL, so requests are relative) so `vite preview` can serve dist/ and proxy /api + /socket.io from one port.
+# Without it src/config.js falls through to 127.0.0.1:5052, the user's laptop in a Codespace; runs after every build (codespace:build).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

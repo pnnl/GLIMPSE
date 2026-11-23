@@ -173,14 +173,8 @@
 
 /* ─── Search-jump highlight ─── */
 
-/* The row a header search landed on. It stays marked until the next search so
-   the user can page away and back and still spot it. Listed last, and with the
-   fixed-cell selectors spelled out, so it outranks the striping rules above
-   (which set the fixed cells with !important at equal specificity).
-
-   The arrival flash is an inset box-shadow rather than a background animation:
-   the striping rules' `!important` backgrounds beat any animated
-   background-color, but nothing competes for box-shadow. */
+/* The row a header search landed on stays marked until the next search, and is listed last with the fixed-cell selectors spelled out so it outranks the striping rules' !important fixed cells.
+   The arrival flash is an inset box-shadow because the striping rules' !important backgrounds beat any animated background-color. */
 .object-table-row-highlight > td,
 .object-table-row-highlight > td.ant-table-cell-fix-left,
 .object-table-row-highlight > td.ant-table-cell-fix-right {

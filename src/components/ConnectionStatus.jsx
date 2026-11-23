@@ -5,12 +5,7 @@ import socketClientHelper from "../socket-client-helper/SocketClientHelper";
 import { notify } from "../utils/notify";
 
 /**
- * Surfaces the socket's state, which nothing previously did.
- *
- * The backend holds the model and drives simulations, so a dropped connection
- * silently disables half the app. Before this, `connection-change` had no
- * subscribers at all: the graph stayed on screen, controls stayed enabled, and
- * actions quietly did nothing.
+ * Surfaces the socket's connection state, since a dropped connection silently disables half the app (the backend holds the model and drives simulations).
  */
 const ConnectionStatus = () => {
     // Seeded from the live socket: the singleton connects at import, before this

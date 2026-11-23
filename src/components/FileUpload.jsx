@@ -148,11 +148,8 @@ const FileUpload = ({ closeModal }) => {
             // Shown inline rather than as a toast: the modal stays open, so the
             // message sits right next to the drop zone the user will retry in.
             console.error("Model upload failed:", err);
-            // A 413 here is usually not ours: GitHub Codespaces caps a forwarded
-            // port's request body at 16 MB, so a large model is rejected at the
-            // edge and never reaches the backend. The raw nginx HTML that comes
-            // back says nothing useful, so name the real constraint and the way
-            // around it.
+            // A 413 here is usually not ours: Codespaces caps a forwarded port's request body at 16 MB, so large models are rejected at the edge.
+            // The raw nginx HTML says nothing useful, so name the real constraint and the way around it.
             if (controller.signal.aborted) {
                 // The user cancelled, or the modal closed. Not a failure.
             } else if (err?.response?.status === 413) {

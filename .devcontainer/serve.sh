@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-# Start/stop/inspect the GLIMPSE stack (Flask backend :5052 + vite preview
-# :4173) as a detached background process, so the app is already up when the
-# container finishes opening.
-#
-# This serves the *built* bundle from dist/. To pick up code changes:
-#   npm run codespace:build && .devcontainer/serve.sh restart
-#
-#   .devcontainer/serve.sh start | stop | restart | status | logs
+# Start/stop/inspect the GLIMPSE stack (Flask backend :5052 + vite preview :4173) as a detached process so the app is up when the container opens.
+# It serves the built dist/, so after code changes run `npm run codespace:build && .devcontainer/serve.sh restart`.
+# Usage: .devcontainer/serve.sh start | stop | restart | status | logs
 set -uo pipefail
 
 WS="${GLIMPSE_WS:-/workspaces/GLIMPSE}"
