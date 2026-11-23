@@ -3,10 +3,10 @@ import { FA2_DEFAULT_SETTINGS } from "../layout/useWorkerLayoutForceAtlas2";
 
 const GraphContext = createContext();
 
-export const GraphProvider = ({ children }) => {
+export const GraphProvider = ({ children, defaultDarkMode = true }) => {
     const [graphUpdateTrigger, setGraphUpdateTrigger] = useState(0);
     const [view, setView] = useState("graph"); // "graph", "object-studio" or "agents"
-    const [darkMode, setDarkMode] = useState(true);
+    const [darkMode, setDarkMode] = useState(defaultDarkMode);
     // Whether the leaflet map background is up. Owned here rather than by
     // GraphControls because the map's tiles are light in both themes, so
     // GraphRenderer has to paint the graph in its light colors while it shows.

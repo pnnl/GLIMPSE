@@ -1,236 +1,96 @@
+import { buildHoverAttributes } from "./hover-attributes";
+
 let _isDark = false;
 export const setCanvasDarkMode = (val) => {
     _isDark = val;
 };
 
+// Off where there is no Model Data View to send the user to (GLIMPSE-lite).
+let _moreAttributesHint = true;
+export const setMoreAttributesHint = (val) => {
+    _moreAttributesHint = val;
+};
+export const moreAttributesHint = () => _moreAttributesHint;
+
 // ── Global Style Constants ──────────────────────────────────────────────────
 // Change these to adjust colors across ALL renderers at once.
-const TEXT_COLOR = () => (_isDark ? "#ffffff" : "#000000");
-const HOVER_BG_COLOR = () => (_isDark ? "#1f1f1f" : "#ffffff");
-const HOVER_SHADOW_COLOR = "#000000";
-const LABEL_BG_COLOR = () => (_isDark ? "#1f1f1fcc" : "#ffffffcc");
+export const textColor = () => (_isDark ? "#ffffff" : "#000000");
+export const hoverBackgroundColor = () => (_isDark ? "#1f1f1f" : "#ffffff");
+export const labelBackgroundColor = () => (_isDark ? "#1f1f1fcc" : "#ffffffcc");
 
-// ── Hover Tooltip Layout ────────────────────────────────────────────────────
-// These control spacing inside the hover card that appears on node hover.
-const HOVER_LABEL_SIZE_BOOST = 5; // Added to settings.labelSize for the main id text
-const HOVER_OBJECT_TYPE_SIZE_OFFSET = 2; // Subtracted from boosted size for the "group" subtitle
-const HOVER_CORNER_RADIUS = 5; // Border radius of the hover rounded rect
-const HOVER_SHADOW_OFFSET_X = 0;
-const HOVER_SHADOW_OFFSET_Y = 2;
-const HOVER_SHADOW_BLUR = 8;
-const HOVER_VERTICAL_PADDING = 12; // Top padding above the object-type label in the card
+// ── Hover Card Layout ───────────────────────────────────────────────────────
+export const LABEL_SIZE = 13;
+const CARD_FONT = "Arial, sans-serif";
+const CARD_FONT_SIZE = LABEL_SIZE + 3;
+const CARD_LINE_HEIGHT = CARD_FONT_SIZE + 4;
+const CARD_PADDING_X = 4;
 
-// ── Node Label Layout ───────────────────────────────────────────────────────
-// These control the small persistent label rendered below each node.
-const LABEL_PADDING_X = 6; // Horizontal padding around label background
-const LABEL_PADDING_Y = 4; // Vertical padding around label background
-const LABEL_LINE_HEIGHT_MULTIPLIER = 1.2; // Multiplied by font size to get line spacing
-const LABEL_NODE_SPACING = 6; // Pixels between the bottom of the node circle and the label
+const cardFont = (bold) => `${bold ? "bold" : "normal"} ${CARD_FONT_SIZE}px ${CARD_FONT}`;
+const measureContext = document.createElement("canvas").getContext("2d");
 
-/** Traces (does not fill or stroke) a rounded-rectangle path. */
-function drawRoundRect(ctx, x, y, width, height, radius) {
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-}
+/**
+ * Sigma label attachment drawn under a hovered/focused node's label: its group,
+ * the live vitals (severity-colored), the model attributes and a truncation hint.
+ * Built only when sigma asks for it; the card background and the name are
+ * sigma's own backdrop and label.
+ *
+ * @param {Object} ctx - sigma's LabelAttachmentContext
+ * @param {Array<{text: string, color?: string}>} vitals - from graphHelper.getNodeVitals
+ */
+export function nodeCard({ attributes, pixelRatio }, vitals) {
+    const { lines: attributeLines, hidden: hiddenCount } = buildHoverAttributes(attributes.attributes);
 
-export function drawHover(context, data, settings) {
-    // ── Derive font sizes from sigma settings ──
-    const idLabelSize = settings.labelSize + HOVER_LABEL_SIZE_BOOST;
-    const objectTypeLabelSize = idLabelSize - HOVER_OBJECT_TYPE_SIZE_OFFSET;
-    const font = settings.labelFont;
-    const weight = settings.labelWeight;
+    const rows = [
+        ...(attributes.group ? [{ text: attributes.group }] : []),
+        // Bold and severity-colored so a violation reads at a glance.
+        ...vitals.map((vital) => ({ text: vital.text, color: vital.color, bold: true })),
+        // The node's own color ties the list to the node.
+        ...attributeLines.map((text, i) => ({
+            text,
+            color: attributes.color,
+            ruleAbove: i === 0 && vitals.length > 0, // separates live readings from the model
+        })),
+        ...(hiddenCount > 0 && _moreAttributesHint
+            ? [{ text: `+${hiddenCount} more — see Model Data View`, alpha: 0.55 }]
+            : []),
+    ];
+    if (rows.length === 0) return null;
 
-    // ── Extract text content ──
-    const idLabel = data.label;
-    const objectTypeLabel = data.group; // may be undefined/null
-    const vitals = Array.isArray(data.hoverVitals) ? data.hoverVitals : [];
-    const attributesLines = data.attributesLabel ? String(data.attributesLabel).split(/\r?\n/) : [];
-    const hiddenCount = Number(data.attributesHidden) || 0;
-    const moreLine = hiddenCount > 0 ? `+${hiddenCount} more — see Model Data View` : null;
-
-    // ── Measure text widths to size the background card ──
-    context.font = `${weight} ${idLabelSize}px ${font}`;
-    const idLabelWidth = context.measureText(idLabel).width;
-
-    context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
-    const objectTypeLabelWidth = objectTypeLabel ? context.measureText(objectTypeLabel).width : 0;
-
-    let bodyMaxWidth = 0;
-    const measure = (text) => {
-        const w = context.measureText(text).width;
-        if (w > bodyMaxWidth) bodyMaxWidth = w;
-    };
-    // Vitals are drawn in a slightly heavier weight, so measure them that way.
-    context.font = `bold ${objectTypeLabelSize}px ${font}`;
-    for (const v of vitals) measure(v.text);
-    context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
-    for (const line of attributesLines) measure(line);
-    if (moreLine) measure(moreLine);
-
-    const textWidth = Math.max(idLabelWidth, objectTypeLabelWidth, bodyMaxWidth);
-
-    // ── Compute card dimensions ──
-    // Tweak these formulas to adjust card sizing relative to the node.
-    const x = Math.round(data.x);
-    const y = Math.round(data.y);
-    const cardWidth = Math.round(textWidth + idLabelSize / 2 + data.size + 3);
-
-    const idLabelHeight = Math.round(idLabelSize); // height reserved for the id text
-    const objectTypeLabelHeight = objectTypeLabel ? Math.round(objectTypeLabelSize / 2 + 9) : 0;
-
-    // Line height for multi-line body text
-    // ➤ To increase line spacing, increase the "+ 4" value below.
-    const lineHeight = Math.round(objectTypeLabelSize + 4);
-
-    // Gap taken by the separator rule drawn between vitals and attributes.
-    const separatorHeight = vitals.length > 0 && attributesLines.length > 0 ? lineHeight / 2 : 0;
-
-    const bodyLineCount = vitals.length + attributesLines.length + (moreLine ? 1 : 0);
-    const bodyBlockHeight =
-        bodyLineCount > 0
-            ? bodyLineCount * lineHeight + separatorHeight
-            : Math.round(objectTypeLabelSize / 2 + 9);
-
-    const cardHeight = bodyBlockHeight + idLabelHeight + objectTypeLabelHeight + HOVER_VERTICAL_PADDING;
-
-    // ── Draw background card with shadow ──
-    context.fillStyle = HOVER_BG_COLOR();
-    context.shadowOffsetX = HOVER_SHADOW_OFFSET_X;
-    context.shadowOffsetY = HOVER_SHADOW_OFFSET_Y;
-    context.shadowBlur = HOVER_SHADOW_BLUR;
-    context.shadowColor = HOVER_SHADOW_COLOR;
-
-    drawRoundRect(
-        context,
-        x,
-        y - objectTypeLabelHeight - HOVER_VERTICAL_PADDING,
-        cardWidth,
-        cardHeight,
-        HOVER_CORNER_RADIUS,
-    );
-    context.fill();
-
-    // Reset shadow so it doesn't bleed into text
-    context.shadowOffsetX = 0;
-    context.shadowOffsetY = 0;
-    context.shadowBlur = 0;
-
-    // ── Draw the ID label (main name) ──
-    // Positioned to the right of the node circle.
-    // ➤ To move text further from the node, increase the "+ 3" offset.
-    const textStartX = data.x + data.size + 3;
-
-    context.fillStyle = TEXT_COLOR();
-    context.font = `${weight} ${idLabelSize}px ${font}`;
-    context.fillText(idLabel, textStartX, data.y + idLabelSize / 3);
-
-    // ── Draw the object-type label (group subtitle) ──
-    // Sits above the ID label. Only drawn if `data.group` is truthy.
-    if (objectTypeLabel) {
-        context.fillStyle = TEXT_COLOR();
-        context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
-        context.fillText(objectTypeLabel, textStartX, data.y - (2 * idLabelSize) / 3 - 2);
+    let width = 0;
+    for (const row of rows) {
+        measureContext.font = cardFont(row.bold);
+        width = Math.max(width, measureContext.measureText(row.text).width);
     }
+    width = Math.ceil(width) + CARD_PADDING_X * 2;
+    const ruleHeight = CARD_LINE_HEIGHT / 2;
+    const height = rows.reduce((sum, row) => sum + CARD_LINE_HEIGHT + (row.ruleAbove ? ruleHeight : 0), 0);
 
-    let cursorY = data.y + idLabelSize / 3 + 3 + objectTypeLabelSize;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(width * pixelRatio);
+    canvas.height = Math.ceil(height * pixelRatio);
+    const context = canvas.getContext("2d");
+    context.scale(pixelRatio, pixelRatio);
+    context.textBaseline = "middle";
 
-    // ── Vitals block (live electrical readings) ──
-    // Bold and severity-colored so a violation reads at a glance.
-    if (vitals.length > 0) {
-        context.font = `bold ${objectTypeLabelSize}px ${font}`;
-        for (const vital of vitals) {
-            context.fillStyle = vital.color ?? TEXT_COLOR();
-            context.fillText(vital.text, textStartX, cursorY);
-            cursorY += lineHeight;
-        }
-
-        // Rule separating live readings from the static model attributes.
-        if (attributesLines.length > 0) {
-            const ruleY = Math.round(cursorY - lineHeight / 2) + 0.5;
-            context.beginPath();
-            context.strokeStyle = TEXT_COLOR();
+    let y = 0;
+    for (const row of rows) {
+        if (row.ruleAbove) {
+            const ruleY = Math.round(y + ruleHeight / 2) + 0.5;
             context.globalAlpha = 0.18;
-            context.lineWidth = 1;
-            context.moveTo(textStartX, ruleY);
-            context.lineTo(x + cardWidth - 6, ruleY);
+            context.strokeStyle = textColor();
+            context.beginPath();
+            context.moveTo(CARD_PADDING_X, ruleY);
+            context.lineTo(width - CARD_PADDING_X, ruleY);
             context.stroke();
-            context.globalAlpha = 1;
-            cursorY += separatorHeight;
+            y += ruleHeight;
         }
+
+        context.globalAlpha = row.alpha ?? 1;
+        context.fillStyle = row.color ?? textColor();
+        context.font = cardFont(row.bold);
+        context.fillText(row.text, CARD_PADDING_X, y + CARD_LINE_HEIGHT / 2);
+        y += CARD_LINE_HEIGHT;
     }
 
-    // ── Draw attributes lines ──
-    // Uses the node's own color so it visually ties to the node.
-    // ➤ To use a fixed color instead, replace `data.color` with a constant.
-    context.fillStyle = data.color;
-    context.font = `${weight} ${objectTypeLabelSize}px ${font}`;
-    for (const line of attributesLines) {
-        context.fillText(line, textStartX, cursorY);
-        cursorY += lineHeight;
-    }
-
-    // ── Truncation hint ──
-    if (moreLine) {
-        context.fillStyle = TEXT_COLOR();
-        context.globalAlpha = 0.55;
-        context.fillText(moreLine, textStartX, cursorY);
-        context.globalAlpha = 1;
-    }
-}
-
-export function drawLabel(context, data, settings) {
-    if (!data.label) return;
-
-    const size = settings.labelSize;
-    const font = settings.labelFont;
-    const weight = settings.labelWeight;
-
-    const text = String(data.label);
-    const lines = text.split(/\r?\n/);
-
-    context.font = `${weight} ${size}px ${font}`;
-
-    // ── Measure all lines to find the widest ──
-    let maxWidth = 0;
-    for (const line of lines) {
-        const w = context.measureText(line).width;
-        if (w > maxWidth) maxWidth = w;
-    }
-
-    // ── Background rectangle dimensions ──
-    const rectWidth = Math.ceil(maxWidth + LABEL_PADDING_X * 2);
-    const lineHeight = Math.ceil(size * LABEL_LINE_HEIGHT_MULTIPLIER);
-    const rectHeight = Math.ceil(lines.length * lineHeight + LABEL_PADDING_Y * 2);
-
-    // ── Position: centered horizontally, just below the node ──
-    const centerX = Math.round(data.x);
-    const topY = Math.round(data.y + data.size + LABEL_NODE_SPACING);
-
-    // ── Draw background ──
-    context.textAlign = "center";
-    context.textBaseline = "top";
-    context.fillStyle = LABEL_BG_COLOR();
-    context.fillRect(centerX - rectWidth / 2, topY, rectWidth, rectHeight);
-
-    // ── Draw each text line ──
-    context.fillStyle = TEXT_COLOR();
-    for (let i = 0; i < lines.length; i++) {
-        const line = String(lines[i]);
-        const yLine = topY + LABEL_PADDING_Y + i * lineHeight;
-        context.fillText(line, centerX, yLine);
-    }
-
-    // ── Restore canvas defaults ──
-    // Other sigma renderers may expect these defaults.
-    context.textAlign = "left";
-    context.textBaseline = "alphabetic";
+    return { type: "canvas", canvas };
 }

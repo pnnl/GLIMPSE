@@ -5,14 +5,14 @@ import { SHORTCUTS } from "../../hooks/useShortcut";
 
 // Reference card for the keyboard shortcuts registered around the app (see
 // hooks/useShortcut). Opened from the main menu or with "?".
-const ShortcutsModal = ({ open, close }) => {
+const ShortcutsModal = ({ open, close, shortcuts = SHORTCUTS }) => {
     return createPortal(
         <Modal centered open={open} onCancel={close} footer={null} title="Keyboard Shortcuts">
             <Typography.Paragraph type="secondary" style={{ marginTop: 0 }}>
                 Shortcuts are ignored while you are typing in a text field.
             </Typography.Paragraph>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "0.6rem 1rem" }}>
-                {SHORTCUTS.map(({ combo, label }) => (
+                {shortcuts.map(({ combo, label }) => (
                     <Fragment key={combo}>
                         <kbd
                             style={{

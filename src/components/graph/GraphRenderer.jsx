@@ -2,26 +2,14 @@ import "@react-sigma/core/lib/style.css";
 import { useEffect } from "react";
 import { SigmaContainer, ControlsContainer } from "@react-sigma/core";
 import { MultiUndirectedGraph } from "graphology";
-import { createNodeImageProgram } from "@sigma/node-image";
-import { createNodeBorderProgram, NodeBorderProgram } from "@sigma/node-border";
-import { drawLabel, drawHover, setCanvasDarkMode } from "../../utils/canvas-utils";
+import { setCanvasDarkMode } from "../../utils/canvas-utils";
 import graphHelper from "../../graph-helper/GraphHelper";
-import { sizeRatioExponent } from "../../graph-helper/zoom-scaling";
 import GraphEvents from "./GraphEvents";
-import EdgeCurveProgram from "@sigma/edge-curve";
+import EdgeHoverCard from "./EdgeHoverCard";
 import { useGraph } from "../../contexts/GraphContext";
 import Graph from "./Graph";
 import WebGLRecovery from "./WebGLRecovery";
-import {
-    EdgeRectangleProgram,
-    createNodeCompoundProgram,
-    createEdgeCompoundProgram,
-} from "sigma/rendering";
-import AnimatedDotProgram from "../../custom-programs/animated-dot-program/AnimatedDotProgram";
 import AnimatedEdgeTicker from "../AnimatedEdgeTicker";
-import SwitchSquareProgram from "../../custom-programs/switch-program/SwitchSquareProgram";
-import RegulatorProgram from "../../custom-programs/regulator-program/RegulatorProgram";
-import TransformerProgram from "../../custom-programs/transformer-program/TransformerProgram";
 import DistributionAreaSelector from "../DistributionAreaSelector";
 import AgentPanel from "../agents/AgentPanel";
 import AreaHighlightLayers from "./AreaHighlightLayers";
@@ -31,189 +19,8 @@ import ModelNameBadge from "../ModelNameBadge";
 import LegendPanel from "../legend/LegendPanel";
 import ViolationLegend from "../legend/ViolationLegend";
 import areaHighlight from "../../graph-helper/area-highlight";
-import { isViolation, setSeverityDarkMode } from "../../utils/electrical";
-
-const INACTIVE_COLOR = "rgba(145, 145, 145, 0.7)";
-
-// Violation mode recolors by electrical condition instead of object type.
-// Violating objects are also enlarged so they're findable without hunting: on a
-// 9500-node feeder a color change alone is easy to miss when zoomed out.
-const VIOLATION_NODE_SCALE = 2.2;
-const VIOLATION_EDGE_SCALE = 2.5;
-
-const violationNodeAttrs = (attrs, severity) => ({
-    ...attrs,
-    color: severity.color,
-    borderColor: severity.color,
-    // Drop the pictogram: the type-specific icon competes with the condition
-    // color, which is the only thing this mode is meant to communicate.
-    type: "node",
-    image: "",
-    size: isViolation(severity) ? attrs.size * VIOLATION_NODE_SCALE : attrs.size,
-    zIndex: isViolation(severity) ? 10 : 0,
-});
-
-const violationEdgeAttrs = (attrs, severity) => {
-    const violating = isViolation(severity);
-    const base = {
-        ...attrs,
-        color: severity.color,
-        size: violating ? attrs.size * VIOLATION_EDGE_SCALE : attrs.size,
-        zIndex: violating ? 10 : 0,
-    };
-    // Keep icon edges drawing their symbol, but in the condition color.
-    if (attrs.iconType === "switch") return { ...base, switchColor: severity.color };
-    if (attrs.iconType === "regulator") return { ...base, regulatorColor: severity.color };
-    if (attrs.iconType === "transformer") return { ...base, transformerColor: severity.color };
-    return base;
-};
-
-// Grey out a node (used when it falls outside the highlighted groups/areas).
-const dimNodeAttrs = (attrs, color = INACTIVE_COLOR) => ({
-    ...attrs,
-    color,
-    borderColor: color,
-    type: "node",
-    label: "",
-    image: "",
-});
-
-// Grey out an edge, keeping its icon program but dimming the icon too. Keyed off
-// iconType (not type) so curved parallel variants dim as well.
-const dimEdgeAttrs = (attrs, color = INACTIVE_COLOR) => {
-    const base = { ...attrs, color, label: "", size: 1 };
-    if (attrs.iconType === "switch") return { ...base, switchColor: color, switchSize: 2 };
-    if (attrs.iconType === "regulator") return { ...base, regulatorColor: color };
-    if (attrs.iconType === "transformer") return { ...base, transformerColor: color };
-    return base;
-};
-
-const nodeReducer = (nodeId, attrs) => {
-    if (graphHelper.graph.order === 0) return attrs;
-
-    // Condition coloring replaces type coloring outright — mixing the two
-    // would leave the user unsure which scale a color belongs to.
-    if (graphHelper.isViolationMode()) {
-        return violationNodeAttrs(attrs, graphHelper.getNodeSeverity(nodeId));
-    }
-
-    // Cut off by an open switch during a run.
-    if (graphHelper.isNodeDeenergized(nodeId)) return dimNodeAttrs(attrs, graphHelper.getInactiveColor());
-
-    // Distribution-area highlighting takes precedence: grey out any node that
-    // is not in a selected area. Members keep their styling (the colored
-    // contour hull marks them); nesting is handled in isInHighlightedArea.
-    if (graphHelper.getHighlightedAreas().length > 0) {
-        return graphHelper.isInHighlightedArea(attrs) ? attrs : dimNodeAttrs(attrs);
-    }
-
-    const noGroups = graphHelper.getHighlightedGroups().length === 0;
-    if (noGroups && graphHelper.getHighlightedEdgeTypes().length === 0) return attrs;
-
-    // With only edge types highlighted, every node dims.
-    if (noGroups || !graphHelper.isHighlighted(attrs.group)) return dimNodeAttrs(attrs);
-
-    return { ...attrs, size: attrs.size * 2 };
-};
-
-const edgeReducer = (edgeId, attrs) => {
-    // Searched/focused edge always wins: pulse it and keep it on top —
-    // never dim it, whatever the area/group highlight state is.
-    const focusStyle = graphHelper.getFocusedEdgeStyle(edgeId, attrs);
-    if (focusStyle) return focusStyle;
-
-    // Condition coloring replaces type coloring outright (see the node
-    // reducer). The flow-animation type is left alone so dots still move.
-    if (graphHelper.isViolationMode()) {
-        return violationEdgeAttrs(attrs, graphHelper.getEdgeSeverity(edgeId));
-    }
-
-    if (graphHelper.isEdgeDeenergized(edgeId)) return dimEdgeAttrs(attrs, graphHelper.getInactiveColor());
-
-    if (graphHelper.getHighlightedAreas().length > 0) {
-        return graphHelper.isInHighlightedArea(attrs) ? attrs : dimEdgeAttrs(attrs);
-    }
-
-    if (
-        graphHelper.getHighlightedEdgeTypes().length === 0 &&
-        graphHelper.getHighlightedGroups().length === 0
-    ) {
-        return attrs;
-    }
-
-    if (!graphHelper.isHighlighted(attrs.group)) return dimEdgeAttrs(attrs);
-
-    return { ...attrs, size: attrs.size * 1.5 };
-};
-
-const BorderImageNodeProgram = createNodeCompoundProgram([
-    createNodeBorderProgram({
-        borders: [
-            {
-                size: { attribute: "borderSize", defaultValue: 12 },
-                color: { attribute: "borderColor" },
-            },
-            { size: { fill: true }, color: { attribute: "color" } },
-        ],
-    }),
-    createNodeImageProgram(),
-]);
-
-// Straight line + icon, and the curved variant used when parallel edges between
-// two nodes are fanned out so the icon stays on the visible curve.
-const straightWith = (IconProgram) => createEdgeCompoundProgram([EdgeRectangleProgram, IconProgram]);
-const curvedWith = (IconProgram) => createEdgeCompoundProgram([EdgeCurveProgram, IconProgram]);
-
-// Module-level so its identity never changes: react-sigma tears down and
-// rebuilds the Sigma instance (reloading the graph and resetting the camera)
-// whenever the settings object does.
-const SETTINGS = {
-    allowInvalidContainer: true,
-    minCameraRatio: 0.02,
-    maxCameraRatio: null,
-    renderEdgeLabels: true,
-    itemSizesReference: "screen", // sizes in screen px; pairs with zoomToSizeRatioFunction
-    autoRescale: true,
-    autoCenter: true,
-    doubleClickTimeout: 300,
-    doubleClickZoomingRatio: 2.2,
-    doubleClickZoomingDuration: 200,
-    inertiaDuration: 200,
-    // Reads the order per call: the graph is swapped under a stable settings object.
-    zoomToSizeRatioFunction: (ratio) => Math.pow(ratio, sizeRatioExponent(graphHelper.graph.order)),
-    inertiaRatio: 3,
-    cameraPanBoundaries: null,
-    zoomDuration: 250,
-    zoomingRatio: 1.5,
-    labelDensity: 0.7,
-    labelSize: 13,
-    labelGridCellSize: 80,
-    labelRenderedSizeThreshold: 8,
-    hideEdgesOnMove: false,
-    hideLabelsOnMove: true,
-    zIndex: true,
-    enableEdgeEvents: true,
-    defaultNodeType: "node",
-    defaultDrawNodeLabel: drawLabel,
-    defaultDrawNodeHover: drawHover,
-    nodeProgramClasses: {
-        nodeImg: BorderImageNodeProgram,
-        node: NodeBorderProgram,
-    },
-    edgeProgramClasses: {
-        straight: EdgeRectangleProgram,
-        curved: EdgeCurveProgram,
-        animated: straightWith(AnimatedDotProgram),
-        switch: straightWith(SwitchSquareProgram),
-        regulator: straightWith(RegulatorProgram),
-        transformer: straightWith(TransformerProgram),
-        curvedSwitch: curvedWith(SwitchSquareProgram),
-        curvedRegulator: curvedWith(RegulatorProgram),
-        curvedTransformer: curvedWith(TransformerProgram),
-    },
-    nodeReducer,
-    edgeReducer,
-};
+import { setSeverityDarkMode } from "../../utils/electrical";
+import { OPTIONS } from "./sigma-options";
 
 const GraphRenderer = () => {
     const { graphUpdateTrigger, darkMode, mapShown } = useGraph();
@@ -245,10 +52,11 @@ const GraphRenderer = () => {
             className={darkMode ? "sigma-dark" : ""}
             style={{ backgroundColor: darkMode ? "#1D1D1D" : "#ffffff" }}
             graph={MultiUndirectedGraph}
-            settings={SETTINGS}
+            options={OPTIONS}
         >
             <Graph />
             <GraphEvents />
+            <EdgeHoverCard />
             <WebGLRecovery />
             <AnimatedEdgeTicker />
             {/* Renders nothing; owns the distribution-area contour layers for

@@ -2,7 +2,7 @@ import { EDGE_ICONS } from "./element-factory";
 
 const PULSE_DURATION = 2600; // ms
 const PULSE_PERIOD = 650; // ms — one grow/shrink cycle
-const FOCUS_COLOR = "#ff9500";
+export const FOCUS_COLOR = "#ff9500";
 
 const now = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
@@ -58,7 +58,7 @@ export class EdgeFocus {
             size: base * (2 + 2 * wave * decay),
             zIndex: 1000,
             label: attrs.attributes?.name ?? edgeId,
-            forceLabel: true,
+            labelVisibility: "visible",
         };
 
         // Icon edges pulse their symbol too, without overwriting a switch's

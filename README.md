@@ -280,6 +280,27 @@ The finished installer is written to the `release/` directory. The installed app
 > [!TIP]
 > If `pyinstaller` is not on your PATH, activate the Python environment you created for `local-server/` first (or, with UV, run `uv run pyinstaller server.spec --noconfirm` inside `local-server/`).
 
+## GLIMPSE-lite
+
+A read-only, backend-free build of the viewer (search, legend highlighting, distribution areas,
+map overlay) used by the Grid Kitchen portal. Its source is in [lite/](lite/), and it reuses `src/`.
+
+```bash
+npm run dev:lite      # dev server; open /static/glimpse/
+npm run build:lite    # static bundle -> dist-lite/
+```
+
+Pushing a `lite-v*` tag publishes `glimpse-lite.tgz` as a GitHub release, which the portal pins and
+downloads. The bundled sample models in `lite/public/models/` are the backend's example-model
+output. To regenerate them with the backend running:
+
+```bash
+curl -X POST http://127.0.0.1:5052/api/examples/load -H 'Content-Type: application/json' \
+     -d '{"id":"ieee123"}' -o lite/public/models/ieee123.json
+curl -X POST http://127.0.0.1:5052/api/examples/load -H 'Content-Type: application/json' \
+     -d '{"id":"glm3000"}' -o lite/public/models/ieee3000.json
+```
+
 ## Supported Input Files
 
 ### JSON Formats

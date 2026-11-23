@@ -1,4 +1,3 @@
-import { downloadAsImage } from "@sigma/export-image";
 import { useGraph } from "../../contexts/GraphContext";
 import graphHelper from "../../graph-helper/GraphHelper";
 import ContextMenu from "./ContextMenu";
@@ -34,14 +33,29 @@ const GraphContextMenu = ({
     const { darkMode } = useGraph();
 
     const handleImageSave = () => {
+        // Copies the live canvas rather than using @sigma/export-image: its v4
+        // re-render drops the reducers, so highlighting and violation colors
+        // would be missing from the file.
+        const sigma = graphHelper.sigmaInstance;
+        const stage = sigma.getStageCanvas();
+        const canvas = document.createElement("canvas");
+        canvas.width = stage.width;
+        canvas.height = stage.height;
+        const context = canvas.getContext("2d");
+
         // Match the canvas background of the active theme — node labels are drawn
         // white in dark mode, so a fixed white background exported them invisible.
-        downloadAsImage(graphHelper.sigmaInstance, {
-            backgroundColor: darkMode ? "#1D1D1D" : "#FFFFFF",
-            fileName: "GLIMPSE-snapshot",
-            format: "png",
-            layers: ["edges", "nodes", "labels"],
-        });
+        context.fillStyle = darkMode ? "#1D1D1D" : "#FFFFFF";
+        context.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Synchronous render: a WebGL canvas is only readable in the task it was drawn in.
+        sigma.refresh();
+        context.drawImage(stage, 0, 0);
+
+        const link = document.createElement("a");
+        link.download = "GLIMPSE-snapshot.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
     };
 
     // Toggles an edge between the "animated" program and its resting type.

@@ -1,22 +1,3 @@
-import { buildHoverAttributes } from "../utils/hover-attributes";
-
-/**
- * The three fields drawHover reads. Assign onto a node's attributes to give it a
- * hover card: a colored vitals block, a filtered attribute list, and the count
- * of attributes not shown.
- *
- * @param {Object} attributes - the node's model attributes
- * @param {Array} [vitals] - from measurements.nodeVitals; empty outside a sim
- */
-export const hoverPayload = (attributes, vitals = []) => {
-    const { lines, hidden } = buildHoverAttributes(attributes);
-    return {
-        hoverVitals: vitals,
-        attributesLabel: lines.join("\n"),
-        attributesHidden: hidden,
-    };
-};
-
 export const EDGE_ICONS = {
     switch: { type: "switch", iconType: "switch", switchSize: 8, switchColor: "#E04A1F" },
     regulator: { type: "regulator", iconType: "regulator", regulatorSize: 16 },
@@ -79,7 +60,6 @@ export const createNode = ({ id, objectType, attributes, theme, position = null,
         community: attributes.dist_area_id ?? undefined,
         fixed,
         ...theme.groups[objectType],
-        ...hoverPayload(attributes),
     };
 
     if (position) {
