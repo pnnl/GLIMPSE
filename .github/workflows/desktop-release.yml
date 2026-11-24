@@ -102,11 +102,17 @@ jobs:
           node-version: 24
           cache: npm
 
+      # setup-python provides the interpreter (PyInstaller needs a standard
+      # CPython build); uv installs the backend's packages into it, much faster
+      # than pip, with its download cache kept between runs.
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: local-server/requirements.txt
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: local-server/requirements.txt
 
       - name: Set app version from tag
         if: startsWith(github.ref, 'refs/tags/v')
@@ -116,7 +122,7 @@ jobs:
         run: npm ci
 
       - name: Install Python dependencies
-        run: python -m pip install -r local-server/requirements.txt
+        run: uv pip install --system -r local-server/requirements.txt
 
       - name: Build frontend
         run: npm run build

@@ -14,7 +14,6 @@ lerna-debug.log*
 **/.claude
 **/.venv
 **/.env
-*.lock
 **/*.pyc
 **/dist
 **/dist-ssr

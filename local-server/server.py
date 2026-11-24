@@ -51,6 +51,25 @@ def _env_flag(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes")
 
 
+def _read_app_version() -> str:
+    """The app version from the repo's package.json, its single source.
+
+    It sits next to this file in the PyInstaller bundle (server.spec) and the
+    backend image (Dockerfile.backend), and one level up in a source checkout.
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    for candidate in (os.path.join(here, "package.json"), os.path.join(here, "..", "package.json")):
+        try:
+            with open(candidate, encoding="utf-8") as f:
+                return json.load(f)["version"]
+        except (OSError, ValueError, KeyError):
+            continue
+    return "unknown"
+
+
+APP_VERSION = _read_app_version()
+
+
 # ================================================================================================
 # FLASK APP SETUP
 # ================================================================================================
@@ -825,7 +844,7 @@ def hello():
     """Basic API information endpoint (also the container health check)."""
     return {
         "api": "GLIMPSE CIM-Graph Flask Backend",
-        "version": "0.8.8",
+        "version": APP_VERSION,
     }
 
 
