@@ -7,6 +7,8 @@ sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 datas = collect_data_files("cimgraph", include_py_files=True) + collect_data_files("cimprofiles", include_py_files=True) + [
     # JSON validation schemas loaded at runtime relative to jsonhelper.py
     ("schemas", "schemas"),
+    # App version, read by server.py (package.json is its single source)
+    ("../package.json", "."),
     # Built-in example models served by server.py
     ("../models/CIM/IEEE123.xml", "models/CIM"),
     ("../models/CIM/IEEE9500bal.xml", "models/CIM"),

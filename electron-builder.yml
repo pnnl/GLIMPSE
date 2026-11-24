@@ -12,12 +12,18 @@ files:
 extraResources:
     - from: local-server/dist/server
       to: server
+# No auto-update feed. Without this, electron-builder detects the GitHub remote
+# and writes update metadata (app-update.yml, latest*.yml) on its own, and
+# unsigned Windows builds then fail on the missing publisherName.
+publish: null
 win:
     target:
         - nsis
 nsis:
     oneClick: false
     allowToChangeInstallationDirectory: true
+    # No spaces: GitHub rewrites them in release asset names.
+    artifactName: ${productName}-Setup-${version}.${ext}
 mac:
     category: public.app-category.utilities
     target:
@@ -25,11 +31,13 @@ mac:
           arch: arm64
         - target: dmg
           arch: arm64
+    # The certificate comes from CSC_LINK/CSC_KEY_PASSWORD (or the keychain).
+    # Notarization runs automatically when APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/
+    # APPLE_TEAM_ID are set.
     sign:
         entitlements: build/entitlements.mac.plist
         entitlementsInherit: build/entitlements.mac.inherit.plist
         hardenedRuntime: true
-        gatekeeperAssess: false
 pkg:
     installLocation: /Applications
     allowAnywhere: true
@@ -43,6 +51,9 @@ dmg:
     writeUpdateInfo: true
 linux:
     target:
+        # AppImage runs on most distros without installing; tar.gz is the plain archive.
+        - AppImage
         - tar.gz
     category: Science
     synopsis: Power grid model visualization tool
+    artifactName: ${productName}-${version}-${arch}.${ext}

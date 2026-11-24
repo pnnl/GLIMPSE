@@ -1,0 +1,176 @@
+name: GLIMPSE desktop release
+
+# Pushing a version tag (v0.9.0, v1.2.3-beta.1, ...) builds the Electron
+# installers on macOS, Windows and Linux and publishes them as a GitHub release.
+#
+# Pull requests that touch packaging, and manual runs (Actions > GLIMPSE desktop
+# release > Run workflow), build the installers as workflow artifacts without
+# publishing a release.
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - electron/**
+      - build/**
+      - electron-builder.yml
+      - package.json
+      - package-lock.json
+      - local-server/server.spec
+      - local-server/requirements.txt
+      - .github/workflows/desktop-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: macOS
+            os: macos-latest # Apple Silicon (arm64)
+            platform: --mac
+          - name: Windows
+            os: windows-latest
+            platform: --win
+          - name: Linux
+            # Oldest supported runner: the PyInstaller backend links against the
+            # build machine's glibc, so an older one runs on more distros.
+            os: ubuntu-22.04
+            platform: --linux
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      # Signing is optional. Each credential is exported only when its secret
+      # is set; otherwise Windows builds are unsigned and macOS builds are
+      # ad-hoc signed (they run, but users must approve them on first launch).
+      - name: Configure code signing
+        env:
+          MAC_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE }}
+          MAC_CERTIFICATE_PASSWORD: ${{ secrets.MAC_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          WIN_CERTIFICATE: ${{ secrets.WIN_CERTIFICATE }}
+          WIN_CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}
+        run: |
+          export_env() {
+            if [ -n "$2" ]; then
+              { echo "$1<<__EOF__"; echo "$2"; echo "__EOF__"; } >> "$GITHUB_ENV"
+            fi
+          }
+
+          extra=""
+          case "$RUNNER_OS" in
+            macOS)
+              if [ -n "$MAC_CERTIFICATE" ]; then
+                export_env CSC_LINK "$MAC_CERTIFICATE"
+                export_env CSC_KEY_PASSWORD "$MAC_CERTIFICATE_PASSWORD"
+                export_env APPLE_ID "$APPLE_ID"
+                export_env APPLE_APP_SPECIFIC_PASSWORD "$APPLE_APP_SPECIFIC_PASSWORD"
+                export_env APPLE_TEAM_ID "$APPLE_TEAM_ID"
+              else
+                echo "::warning::MAC_CERTIFICATE is not set: building an ad-hoc signed app. macOS users will need to approve it in Privacy & Security on first launch."
+                extra="-c.mac.sign.identity=- -c.mac.notarize=false"
+              fi
+              ;;
+            Windows)
+              if [ -n "$WIN_CERTIFICATE" ]; then
+                export_env WIN_CSC_LINK "$WIN_CERTIFICATE"
+                export_env WIN_CSC_KEY_PASSWORD "$WIN_CERTIFICATE_PASSWORD"
+              else
+                echo "::warning::WIN_CERTIFICATE is not set: the Windows installer is unsigned and SmartScreen will warn on first run."
+              fi
+              ;;
+          esac
+          echo "BUILDER_EXTRA_ARGS=$extra" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # setup-python provides the interpreter (PyInstaller needs a standard
+      # CPython build); uv installs the backend's packages into it, much faster
+      # than pip, with its download cache kept between runs.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: local-server/requirements.txt
+
+      - name: Set app version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Python dependencies
+        run: uv pip install --system -r local-server/requirements.txt
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build backend (PyInstaller)
+        run: npm run build:server
+
+      - name: Package installers
+        # --publish never: this job only builds. The release job below uploads
+        # everything at once, so a failed platform never leaves a partial release.
+        run: npx electron-builder ${{ matrix.platform }} --publish never $BUILDER_EXTRA_ARGS
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: glimpse-${{ runner.os }}
+          if-no-files-found: error
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.pkg
+            release/*.AppImage
+            release/*.tar.gz
+
+  release:
+    name: Publish GitHub release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: glimpse-*
+          path: assets
+          merge-multiple: true
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -l assets
+          version="${GITHUB_REF_NAME#v}"
+          flags=(--latest)
+          # v1.2.3-beta.1 style tags are published as prereleases.
+          if [[ "$version" == *-* ]]; then flags=(--prerelease --latest=false); fi
+          gh release create "$GITHUB_REF_NAME" assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "GLIMPSE $version" \
+            --generate-notes \
+            "${flags[@]}"

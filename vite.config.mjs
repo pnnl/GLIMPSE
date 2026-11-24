@@ -1,10 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve as pathResolve } from "path";
+import { readFileSync } from "fs";
+
+// package.json is the single source of the app version (npm version / the release
+// workflow set it); the UI reads it as __APP_VERSION__.
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
 export default defineConfig({
     base: "./",
     plugins: [react()],
+    define: { __APP_VERSION__: JSON.stringify(version) },
     // In a container the port is forwarded, so silently drifting to 5174 when
     // 5173 is taken would leave the forwarded port dead — fail loudly instead.
     server: { host: process.env.VITE_DEV_HOST, strictPort: process.env.VITE_STRICT_PORT === "1" },

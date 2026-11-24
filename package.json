@@ -28,7 +28,9 @@
         "dist:win": "npm run dist -- --win",
         "dist:mac-dmg": "npm run dist -- --mac dmg",
         "dist:mac-pkg": "npm run dist -- --mac pkg",
-        "dist:linux": "npm run dist -- --linux"
+        "dist:linux": "npm run dist -- --linux",
+        "dist:mac": "npm run dist -- --mac",
+        "version": "node scripts/sync-version.mjs && git add local-server/pyproject.toml"
     },
     "dependencies": {
         "@react-sigma/core": "^6.0.0",

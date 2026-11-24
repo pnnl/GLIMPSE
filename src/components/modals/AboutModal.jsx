@@ -14,7 +14,7 @@ const AboutModal = ({ open, close }) => {
             width={750}
         >
             <div className="about-title">
-                <h3>GLIMPSE v0.8.7</h3>
+                <h3>GLIMPSE v{__APP_VERSION__}</h3>
                 <h4>(Grid Layout Interface for Model Preview and System Exploration)</h4>
             </div>
             <div className="description">

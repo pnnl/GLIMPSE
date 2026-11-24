@@ -22,6 +22,8 @@ COPY --from=builder /usr/local /usr/local
 
 WORKDIR /app
 COPY local-server/ ./
+# server.py reports the app version from package.json
+COPY package.json ./
 
 EXPOSE 5052
 CMD ["python", "server.py"]
