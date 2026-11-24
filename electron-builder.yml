@@ -8,28 +8,45 @@ files:
     - dist/**
     - electron/**
     - package.json
-    - "!node_modules/**"
 extraResources:
     - from: local-server/dist/server
       to: server
+
+# Auto-update feed. electron-builder writes app-update.yml into the app and
+# latest*.yml next to the installers; the release workflow uploads both to the
+# GitHub release for the version tag.
+publish:
+    provider: github
+    owner: pnnl
+    repo: GLIMPSE
+    releaseType: release
+
 win:
     target:
         - nsis
 nsis:
     oneClick: false
     allowToChangeInstallationDirectory: true
+    # No spaces: GitHub rewrites them in asset names, which would break latest.yml.
+    artifactName: ${productName}-Setup-${version}.${ext}
 mac:
     category: public.app-category.utilities
     target:
-        - target: pkg
+        # zip is what the auto-updater downloads on macOS; dmg/pkg are for first installs.
+        - target: zip
           arch: arm64
         - target: dmg
           arch: arm64
+        - target: pkg
+          arch: arm64
+    artifactName: ${productName}-${version}-${arch}-mac.${ext}
+    # The certificate comes from CSC_LINK/CSC_KEY_PASSWORD (or the keychain);
+    # without one the app is left unsigned. Notarization runs automatically when
+    # APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID are set.
     sign:
         entitlements: build/entitlements.mac.plist
         entitlementsInherit: build/entitlements.mac.inherit.plist
         hardenedRuntime: true
-        gatekeeperAssess: false
 pkg:
     installLocation: /Applications
     allowAnywhere: true
@@ -43,6 +60,9 @@ dmg:
     writeUpdateInfo: true
 linux:
     target:
+        # AppImage is the Linux format electron-updater can update in place.
+        - AppImage
         - tar.gz
     category: Science
     synopsis: Power grid model visualization tool
+    artifactName: ${productName}-${version}-${arch}.${ext}

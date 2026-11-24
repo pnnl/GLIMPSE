@@ -60,7 +60,7 @@ docker compose up --build -d
 
 Once the containers are running, open your browser and navigate to:
 
-```
+```url
 http://localhost:5173
 ```
 
@@ -260,13 +260,15 @@ npm run electron:dev
 
 ### Build an Installer
 
-Installers are built **on and for the OS you are running** (electron-builder cannot cross-compile, e.g. a Windows installer must be built on Windows):
+Installers are built **on and for the OS you are running** (electron-builder cannot cross-compile, e.g. a Windows installer must be built on Windows). To build all three at once, push a version tag instead (see [Releasing the Desktop App](#releasing-the-desktop-app)).
 
 ```bash
 npm run dist          # build for the current OS
-npm run dist:linux    # AppImage + .deb   (run on Linux)
-npm run dist:win      # NSIS installer    (run on Windows)
-npm run dist:mac      # .dmg              (run on macOS)
+npm run dist:linux    # AppImage + .tar.gz          (run on Linux)
+npm run dist:win      # NSIS installer (.exe)       (run on Windows)
+npm run dist:mac      # .dmg + .pkg + .zip, arm64   (run on macOS)
+npm run dist:mac-dmg  # .dmg only
+npm run dist:mac-pkg  # .pkg only
 ```
 
 Each `dist` command runs three steps:
@@ -279,6 +281,43 @@ The finished installer is written to the `release/` directory. The installed app
 
 > [!TIP]
 > If `pyinstaller` is not on your PATH, activate the Python environment you created for `local-server/` first (or, with UV, run `uv run pyinstaller server.spec --noconfirm` inside `local-server/`).
+
+> [!NOTE]
+> The frontend libraries are `devDependencies` because Vite bundles them into `dist/`. Only packages the
+> Electron main process `require`s at runtime (currently `electron-updater`) belong in `dependencies`,
+> since those are the only ones electron-builder copies into the app.
+
+### Releasing the Desktop App
+
+Pushing a `v*` tag runs [.github/workflows/desktop-release.yml](.github/workflows/desktop-release.yml), which builds the macOS (arm64), Windows and Linux installers in parallel and publishes them as a GitHub release:
+
+```bash
+npm version patch          # or minor / major: bumps package.json, commits, and tags v0.8.8
+git push --follow-tags     # pushing the tag starts the release build
+```
+
+The app version comes from the tag, so `v0.9.0` ships as 0.9.0. A tag with a suffix (`v0.9.0-beta.1`) is published as a pre-release, which only installs already running a pre-release are offered. To test the build without releasing, run the workflow by hand from the Actions tab and download the installers from the run's artifacts.
+
+| Platform | Release assets                                   | Updates in-app                     |
+| :------- | :----------------------------------------------- | :--------------------------------- |
+| Windows  | `GLIMPSE-Setup-<version>.exe`                    | Yes                                |
+| macOS    | `.dmg`, `.pkg`, `-mac.zip` (Apple Silicon)       | Only when signed with a Developer ID |
+| Linux    | `.AppImage`, `.tar.gz`                           | AppImage only                      |
+
+#### Auto-update
+
+The desktop app checks the repository's latest GitHub release at startup and every 6 hours (also **Help → Check for Updates…**, or **GLIMPSE → Check for Updates…** on macOS). It asks before downloading, then offers to restart; an update the user postpones installs the next time they quit. Updates are driven by the `latest*.yml` files attached to each release, so **do not delete or rename release assets**. GLIMPSE-lite releases are published with `--latest=false` so they never become the "latest" release the updater reads.
+
+#### Repository secrets
+
+Set these under **Settings → Secrets and variables → Actions**.
+
+| Secret | Required | Purpose |
+| :----- | :------- | :------ |
+| `UPDATE_SIGNING_KEY` | **Yes** | Signs the update manifests; installed apps refuse updates not signed with it. Generate once with `npx electron-builder create-update-key -o ~/glimpse-update-key.pem`, store the `.pem` somewhere safe (a lost key means installed apps can no longer verify updates), and save `base64 < ~/glimpse-update-key.pem \| tr -d '\n'` as the secret. |
+| `MAC_CERTIFICATE`, `MAC_CERTIFICATE_PASSWORD` | No | "Developer ID Application" certificate as a base64 `.p12` and its password. Without it the macOS app is ad-hoc signed: users must allow it in **System Settings → Privacy & Security** on first launch, and in-app updates cannot install on macOS. |
+| `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` | No | Notarizes the signed macOS app (used only together with `MAC_CERTIFICATE`). |
+| `WIN_CERTIFICATE`, `WIN_CERTIFICATE_PASSWORD` | No | Windows code-signing certificate as a base64 `.pfx` and its password. Without it, SmartScreen warns on first install; updates still work. |
 
 ## GLIMPSE-lite
 

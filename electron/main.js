@@ -3,6 +3,7 @@ const { spawn, spawnSync } = require("child_process");
 const path = require("path");
 const http = require("http");
 const fs = require("fs");
+const { initAutoUpdater } = require("./updater");
 
 const SERVER_PORT = Number(process.env.FLASK_PORT) || 5052;
 const SERVER_URL = `http://127.0.0.1:${SERVER_PORT}`;
@@ -338,6 +339,17 @@ if (!gotSingleInstanceLock) {
         }
 
         createWindow();
+
+        initAutoUpdater({
+            getWindow: () => mainWindow,
+            beforeInstall: async () => {
+                // Mark the quit as ours so before-quit does not re-run the
+                // shutdown, then make sure the backend is gone before the
+                // installer tries to replace resources/server.
+                quitting = true;
+                await stopServer();
+            },
+        });
 
         app.on("activate", () => {
             if (BrowserWindow.getAllWindows().length === 0) createWindow();
