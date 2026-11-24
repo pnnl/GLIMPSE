@@ -21,6 +21,8 @@ nsis:
 mac:
     category: public.app-category.utilities
     target:
+        - target: pkg
+          arch: arm64
         - target: dmg
           arch: arm64
     sign:
@@ -28,6 +30,17 @@ mac:
         entitlementsInherit: build/entitlements.mac.inherit.plist
         hardenedRuntime: true
         gatekeeperAssess: false
+pkg:
+    installLocation: /Applications
+    allowAnywhere: true
+    allowCurrentUserHome: true
+    allowRootDirectory: true
+    isRelocatable: false
+    isVersionChecked: true
+    overwriteAction: upgrade
+dmg:
+    artifactName: ${productName}-${version}-${arch}.${ext}
+    writeUpdateInfo: true
 linux:
     target:
         - tar.gz

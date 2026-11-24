@@ -26,7 +26,8 @@
         "test:server": "cd local-server && .venv/bin/python -m pytest",
         "dist": "npm run build && npm run build:server && electron-builder",
         "dist:win": "npm run dist -- --win",
-        "dist:mac": "npm run dist -- --mac",
+        "dist:mac-dmg": "npm run dist -- --mac dmg",
+        "dist:mac-pkg": "npm run dist -- --mac pkg",
         "dist:linux": "npm run dist -- --linux"
     },
     "dependencies": {
