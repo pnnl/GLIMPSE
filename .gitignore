@@ -41,8 +41,3 @@ CLAUDE.md
 release/
 local-server/build/
 
-
-# Auto-update manifest signing key (electron-builder create-update-key). Keep it
-# in a password manager and the UPDATE_SIGNING_KEY repo secret, never in git.
-update-private-key.pem
-*.pem

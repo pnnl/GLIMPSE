@@ -8,41 +8,32 @@ files:
     - dist/**
     - electron/**
     - package.json
+    - "!node_modules/**"
 extraResources:
     - from: local-server/dist/server
       to: server
-
-# Auto-update feed. electron-builder writes app-update.yml into the app and
-# latest*.yml next to the installers; the release workflow uploads both to the
-# GitHub release for the version tag.
-publish:
-    provider: github
-    owner: pnnl
-    repo: GLIMPSE
-    releaseType: release
-
+# No auto-update feed. Without this, electron-builder detects the GitHub remote
+# and writes update metadata (app-update.yml, latest*.yml) on its own, and
+# unsigned Windows builds then fail on the missing publisherName.
+publish: null
 win:
     target:
         - nsis
 nsis:
     oneClick: false
     allowToChangeInstallationDirectory: true
-    # No spaces: GitHub rewrites them in asset names, which would break latest.yml.
+    # No spaces: GitHub rewrites them in release asset names.
     artifactName: ${productName}-Setup-${version}.${ext}
 mac:
     category: public.app-category.utilities
     target:
-        # zip is what the auto-updater downloads on macOS; dmg/pkg are for first installs.
-        - target: zip
+        - target: pkg
           arch: arm64
         - target: dmg
           arch: arm64
-        - target: pkg
-          arch: arm64
-    artifactName: ${productName}-${version}-${arch}-mac.${ext}
-    # The certificate comes from CSC_LINK/CSC_KEY_PASSWORD (or the keychain);
-    # without one the app is left unsigned. Notarization runs automatically when
-    # APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/APPLE_TEAM_ID are set.
+    # The certificate comes from CSC_LINK/CSC_KEY_PASSWORD (or the keychain).
+    # Notarization runs automatically when APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/
+    # APPLE_TEAM_ID are set.
     sign:
         entitlements: build/entitlements.mac.plist
         entitlementsInherit: build/entitlements.mac.inherit.plist
@@ -60,7 +51,7 @@ dmg:
     writeUpdateInfo: true
 linux:
     target:
-        # AppImage is the Linux format electron-updater can update in place.
+        # AppImage runs on most distros without installing; tar.gz is the plain archive.
         - AppImage
         - tar.gz
     category: Science

@@ -19,8 +19,6 @@ jobs:
       - run: npm ci
       - run: npm run build:lite
       - run: tar -czf glimpse-lite.tgz -C dist-lite .
-      # --latest=false: the desktop app's auto-updater reads the repo's "latest"
-      # release, which must stay a desktop (v*) release, not a lite one.
-      - run: gh release create "$GITHUB_REF_NAME" glimpse-lite.tgz --latest=false --title "GLIMPSE-lite ${GITHUB_REF_NAME#lite-v}" --notes "Static read-only GLIMPSE viewer for the Grid Kitchen portal."
+      - run: gh release create "$GITHUB_REF_NAME" glimpse-lite.tgz --title "GLIMPSE-lite ${GITHUB_REF_NAME#lite-v}" --notes "Static read-only GLIMPSE viewer for the Grid Kitchen portal."
         env:
           GH_TOKEN: ${{ github.token }}

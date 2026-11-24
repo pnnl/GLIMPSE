@@ -1,8 +1,7 @@
 name: GLIMPSE desktop release
 
 # Pushing a version tag (v0.9.0, v1.2.3-beta.1, ...) builds the Electron
-# installers on macOS, Windows and Linux and publishes them, together with the
-# latest*.yml files the in-app auto-updater reads, as a GitHub release.
+# installers on macOS, Windows and Linux and publishes them as a GitHub release.
 #
 # Pull requests that touch packaging, and manual runs (Actions > GLIMPSE desktop
 # release > Run workflow), build the installers as workflow artifacts without
@@ -56,7 +55,7 @@ jobs:
 
       # Signing is optional. Each credential is exported only when its secret
       # is set; otherwise Windows builds are unsigned and macOS builds are
-      # ad-hoc signed (they run, but macOS auto-update needs a Developer ID).
+      # ad-hoc signed (they run, but users must approve them on first launch).
       - name: Configure code signing
         env:
           MAC_CERTIFICATE: ${{ secrets.MAC_CERTIFICATE }}
@@ -66,25 +65,12 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           WIN_CERTIFICATE: ${{ secrets.WIN_CERTIFICATE }}
           WIN_CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERTIFICATE_PASSWORD }}
-          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: |
           export_env() {
             if [ -n "$2" ]; then
               { echo "$1<<__EOF__"; echo "$2"; echo "__EOF__"; } >> "$GITHUB_ENV"
             fi
           }
-
-          # Ed25519 key that signs latest*.yml. Installed apps embed its public
-          # key and reject manifests it did not sign, so a release must never
-          # go out without it.
-          if [ -n "$UPDATE_SIGNING_KEY" ]; then
-            export_env ELECTRON_BUILDER_UPDATE_SIGN_KEY "$UPDATE_SIGNING_KEY"
-          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "::error::UPDATE_SIGNING_KEY secret is not set. Generate it with 'npx electron-builder create-update-key' (see README > Releasing the desktop app)."
-            exit 1
-          else
-            echo "::warning::UPDATE_SIGNING_KEY is not set: update manifests in this build are unsigned."
-          fi
 
           extra=""
           case "$RUNNER_OS" in
@@ -96,7 +82,7 @@ jobs:
                 export_env APPLE_APP_SPECIFIC_PASSWORD "$APPLE_APP_SPECIFIC_PASSWORD"
                 export_env APPLE_TEAM_ID "$APPLE_TEAM_ID"
               else
-                echo "::warning::MAC_CERTIFICATE is not set: building an ad-hoc signed app. macOS users will need to approve it in Privacy & Security, and in-app updates will not install on macOS."
+                echo "::warning::MAC_CERTIFICATE is not set: building an ad-hoc signed app. macOS users will need to approve it in Privacy & Security on first launch."
                 extra="-c.mac.sign.identity=- -c.mac.notarize=false"
               fi
               ;;
@@ -152,12 +138,8 @@ jobs:
             release/*.exe
             release/*.dmg
             release/*.pkg
-            release/*.zip
             release/*.AppImage
             release/*.tar.gz
-            release/*.blockmap
-            release/*.yml
-            !release/builder-debug.yml
 
   release:
     name: Publish GitHub release
@@ -178,8 +160,7 @@ jobs:
           ls -l assets
           version="${GITHUB_REF_NAME#v}"
           flags=(--latest)
-          # v1.2.3-beta.1 style tags are prereleases: installed apps only offer
-          # them to users already running a prerelease.
+          # v1.2.3-beta.1 style tags are published as prereleases.
           if [[ "$version" == *-* ]]; then flags=(--prerelease --latest=false); fi
           gh release create "$GITHUB_REF_NAME" assets/* \
             --repo "$GITHUB_REPOSITORY" \
